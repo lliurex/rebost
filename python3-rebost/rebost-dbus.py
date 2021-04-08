@@ -33,7 +33,7 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
-                         in_signature='ss', out_signature='i')
+                         in_signature='ss', out_signature='s')
 	def search(self,args,extraArgs=''):
 		action='search'
 		ret=self.rebost.execute(action,args,extraArgs)
@@ -53,7 +53,7 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-                         in_signature='ss', out_signature='i')
+                         in_signature='ss', out_signature='s')
 	def show(self,args,extraArgs):
 		action='show'
 		ret=self.rebost.execute(action,args,extraArgs)

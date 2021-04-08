@@ -124,8 +124,17 @@ def _processArgs(*args):
 rebost=rebostClient.RebostClient()
 #_loadStore()
 (action,actionArgs)=_processArgs(sys.argv)
-procList=[rebost.execute(action,actionArgs)]
+#procList=[rebost.execute(action,actionArgs)]
+result=json.loads(str(rebost.execute(action,actionArgs)))
 	
+if action=='search':
+	for res in result:
+		print(_printSearch(res))
+if action=='show':
+	for res in result:
+		print(_printShow(res))
+
+sys.exit(0)
 sw=True
 while sw:
 	sw=False

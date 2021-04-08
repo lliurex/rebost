@@ -13,7 +13,7 @@ import threading
 import shutil
 from bs4 import BeautifulSoup
 import tempfile
-import definitions
+import rebostHelper
 import subprocess
 
 class appimageHelper():
@@ -21,8 +21,8 @@ class appimageHelper():
 		self.dbg=False
 		self.enabled=True
 		self.packagekind="appimage"
-		self.actions=["load","install","remove"]
-		self.autostartActions=["load"]
+		self.actions=["search","load","install","remove"]
+		#self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
 		self.progressQ={}
@@ -31,9 +31,12 @@ class appimageHelper():
 		self.result={}
 		self.appimageDir=os.getenv("HOME")+"/Applications"
 		self.wrkDir=os.path.join(os.getenv("HOME"),".cache/rebost/xml/appimage")
-		self.iconDir=os.path.join(os.getenv("HOME"),".cache/rebost/icons")
+		self.wrkDir="/tmp/.cache/rebost/xml/appimage"
+		self.iconDir="/tmp/.cache/rebost/icons"
 		self.metadataLoc=['/usr/share/metainfo',self.wrkDir]
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
+		self.store=''
+		self._loadStore()
 		#self.store=appstream.Pool()
 
 	def setDebugEnabled(self,enable=True):
@@ -44,8 +47,19 @@ class appimageHelper():
 	def _debug(self,msg):
 		if self.dbg:
 			print("appimage: %s"%str(msg))
+	
+	def execute(self,action,*args):
+		rs=''
+		if action=='search':
+			rs=self._searchPackage(*args)
+		return(rs)
 
-	def execute(self,procId,action,progress,result,store,args=''):
+	def _searchPackage(self,package):
+		searchResults=[]
+		searchResults=self._process_appimage_json(self.store,package)
+		return(searchResults)
+
+	def execute2(self,procId,action,progress,result,store,args=''):
 		self.procId=procId
 		if action in self.actions:
 			self.progressQ[action]=progress
@@ -78,7 +92,7 @@ class appimageHelper():
 		#app_info=self._get_info(app_info,force=True)
 		action='install'
 		self._debug("Installing %s"%pkg)
-		result=definitions.resultSet()
+		result=rebostHelper.resultSet()
 		result['id']=self.procId
 		result['name']=action
 		result['description']='%s'%pkg['pkgname']
@@ -120,7 +134,7 @@ class appimageHelper():
 	def _remove(self,pkg):
 		#self._debug("Removing "+app_info['package'])
 		action='remove'
-		result=definitions.resultSet()
+		result=rebostHelper.resultSet()
 		result['id']=self.procId
 		result['name']=action
 		result['description']='%s'%pkg['pkgname']
@@ -147,17 +161,15 @@ class appimageHelper():
 
 	def _loadStore(self):
 		action="load"
-		result=definitions.resultSet()
-		result['id']=self.procId
+		result=rebostHelper.resultSet()
+		#result['id']=self.procId
 		result['name']=action
-		if self._chk_update():
-			(result['error'],result['msg'])=self._get_bundles_catalogue()
-		self.progressQ[action].put(100)
-		self.resultQ[action].put(str(json.dumps([result])))
+		(result['error'],result['msg'])=self._get_bundles_catalogue()
+#		self.progressQ[action].put(100)
+#		self.resultQ[action].put(str(json.dumps([result])))
 	
 	def _chk_update(self):
 		return False
-
 
 	def _get_bundles_catalogue(self):
 		applist=[]
@@ -170,7 +182,8 @@ class appimageHelper():
 		for repo_name,repo_info in self.repos.items():
 			appimageJson=self._fetch_repo(repo_info['url'])
 			if appimageJson and repo_info['type']=='json':
-				self._process_appimage_json(appimageJson,repo_name)
+				self.store=appimageJson
+				#self._process_appimage_json(appimageJson,repo_name)
 			else:
 				err=6
 				msg="Couldn't fetch %s"%repo_info['url']
@@ -187,8 +200,8 @@ class appimageHelper():
 		return(content)
 	#def _fetch_repo
 	
-	def _process_appimage_json(self,data,repo_name):
-		thlist=[]
+	def _process_appimage_json(self,data,search=''):
+		appList=[]
 		if data:
 			try:
 				json_data=json.loads(data)
@@ -196,18 +209,36 @@ class appimageHelper():
 				json_data={}
 			applist=json_data.get('items',[])
 			maxconnections = 15
-			thlist=[]
-			semaphore = threading.BoundedSemaphore(value=maxconnections)
 			random_applist = list(applist)
 			random.shuffle(random_applist)
 			for appimage in applist:
-				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
-				th.start()
-				thlist.append(th)
-				time.sleep(0.5)
-			for th in thlist:
-				th.join()
+				rebostPkg=self._process_appimage(appimage,search)
+				if rebostPkg:
+					applist.append(rebostPkg)
+					#				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
+				#th.start()
+				#thlist.append(th)
+				#time.sleep(0.5)
+			#for th in thlist:
+			#	th.join()
+		return(applist)
 	#_process_appimage_json
+	
+	def _process_appimage(self,appimage,search):
+		appinfo=None
+		if 'links' in appimage.keys():
+			if appimage['links']:
+				add=True
+				if search:
+					if search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower():
+						pass
+					else:
+						add=False
+				if add:
+					appinfo=self.load_json_appinfo(appimage)
+		#		rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
+		return(appinfo)
+        #def _th_process_appimage
 
 	def _th_process_appimage(self,appimage,semaphore):
 		semaphore.acquire()
@@ -215,14 +246,14 @@ class appimageHelper():
 		if 'links' in appimage.keys():
 			if appimage['links']:
 				appinfo=self.load_json_appinfo(appimage)
-				definitions.rebostPkgList_to_xml([appinfo],'/home/lliurex/.cache/rebost/xml/appimage/appimage.xml')
+				rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
 		semaphore.release()
         #def _th_process_appimage
 
 	def load_json_appinfo(self,appimage):
 		#self._debug(appimage)
 		#appinfo=self._init_appinfo()
-		appinfo=definitions.rebostPkg()
+		appinfo=rebostHelper.rebostPkg()
 		appinfo['pkgname']=appimage['name'].lower().replace("_","-")
 		appinfo['id']="io.appimage.{}".format(appimage['name'])
 		appinfo['name']=appimage['name']

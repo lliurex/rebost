@@ -15,15 +15,16 @@ def rebostPkg(*kwargs):
 	return(pkg)
 
 def rebostPkgList_to_xml(rebostPkgList,xmlFile):
-	if not os.path.exists(os.path.dirname(xmlFile)):
-		try:
-			os.makedirs(os.path.dirname(xmlFile))
-		except:
-			print("Error creating folder {}".format(xmlFile))
-			rebostPkgList=[]
 
 	for rebost in rebostPkgList:
-		f_file=os.path.join(os.path.dirname(xmlFile),"{}.xml".format(rebost['id']))
+		baseDir=os.path.join(os.path.dirname(xmlFile))#,rebost['name'][0].lower())	
+		f_file=os.path.join(baseDir,"{}.xml".format(rebost['id']))
+		if not os.path.exists(baseDir):
+			try:
+				os.makedirs(baseDir)
+			except Exception as e:
+				self._debug("Error creating folder {}: {}".format(baseDir,e))
+				continue
 		_generateInfo(f_file,rebost)
 
 
@@ -43,6 +44,14 @@ def _sanitizeString(data):
 
 
 def _generateInfo(f_file,rebost):
+	#
+	if rebost.get('version'):
+		if os.path.isfile(f_file):
+			with open (f_file,'r') as f:
+				for l in f.readlines():
+						if rebost.get('version') in l:
+							return
+
 	locale="C"
 	f_list=[]
 	f_list=['<?xml version="1.0" encoding="UTF-8"?>']

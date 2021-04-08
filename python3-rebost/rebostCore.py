@@ -9,15 +9,16 @@ import signal
 import definitions
 import gi
 gi.require_version('AppStreamGlib', '1.0')
-from gi.repository import AppStream as appstream
+from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		self.plugins=""
 		self.propagateDbg=True
-		self.cache="%s/.cache/rebost"%os.environ['HOME']
-		self.cacheData="%s/xml"%self.cache
+		self.cache=os.path.join("{}".format(os.environ['HOME']),".cache/rebost")
+		self.cache="/tmp/.cache/rebost"
+		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
 		self.plugins={}
 		self.pluginInfo={}
@@ -25,12 +26,12 @@ class Rebost():
 		self.plugAttrOptional=["autostartActions"]
 		self.process={}
 		self.procDict={}
-		self.store=appstream.Pool()
+		self.store=appstream.Store()
 		self._loadPlugins()
 		self._loadPluginInfo()
 		if self.propagateDbg:
 			self._setPluginDbg()
-		self._loadAppstream()
+		#self._loadAppstream()
 		self.procId=1
 
 	def run(self):
@@ -45,119 +46,11 @@ class Rebost():
 	def _setPluginDbg(self):
 		for plugin,pluginObject in self.plugins.items():
 			try:
-				pluginObject.setDebugEnabled()
+				if plugin!="rebostHelper":
+					pluginObject.setDebugEnabled()
 			except Exception as e:
 				print(e)
 	#def _setPluginDbg
-
-	def _loadAppstream(self,progressQ=None,resultQ=None):
-		self.store.clear_metadata_locations()
-		cont=len(os.listdir(self.cacheData))
-		inc=50/cont
-		progress=0
-		for folder in os.listdir(self.cacheData):
-			self.store.add_metadata_location(self.cacheData)
-			if os.path.isdir(os.path.join(self.cacheData,folder)):
-				self._debug("Loading apps from %s"%os.path.join(self.cacheData,folder))
-				self.store.add_metadata_location(os.path.join(self.cacheData,folder))
-				if progressQ:
-					progress+=inc
-					progressQ.put(progress)
-		try:
-			self.store.load()
-		except Exception as e:
-			self._debug("Invalid files: %s"%(e))
-		self._sanitizeStore(progressQ)
-		if progressQ:
-			progressQ.put(100)
-			resultQ.put(str(json.dumps([{'name':'update','description':'Ready'}])))
-	#def _loadAppstream
-	
-
-	def _sanitizeStore(self,progressQ=None):
-		pkgDict={}
-		components=self.store.get_components()
-		progress=50
-		inc=50/len(components)
-		for component in components:
-			name=''
-			name=component.get_id().split(".")[-1].lower()
-			name=name.replace("_","-")
-			if name in pkgDict.keys():
-				component=self._appendInfo(component,pkgDict[name])
-			if not component.get_bundles():
-				if not component.get_pkgname():
-					continue
-			add=self._processBundles(component)
-			if progressQ:
-				progress+=inc
-				progressQ.put(int(progress))
-
-			if add:
-				pkgDict[name]=component
-		self.store.clear()
-		for name,component in pkgDict.items():
-			self.store.add_component(component)
-	#def _sanitizeStore
-	
-	def _processBundles(self,component):
-		add=True
-		#We already have flatpak icons at flatpak.wrkDir
-		bundles=component.get_bundles()
-		for bundle in bundles:
-			if bundle.get_kind()==3: #flatpak
-				if not ";" in bundle.get_id():
-					add=False
-					break
-				wrkDir=""
-				iconDir=""
-				for plugin,info in self.pluginInfo.items():
-					if info['packagekind']=="flatpak":
-						iconDir=os.path.join(self.plugins[plugin].wrkDir,"icons/64x64")
-						wrkDir=os.path.join(self.plugins[plugin].wrkDir,"icons/128x128")
-						break
-				icons=component.get_icons()
-				for icon in icons:
-					if os.path.isfile(os.path.join(wrkDir,icon.get_name())):
-						icon.set_kind(appstream.IconKind.LOCAL)
-						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
-						break
-					elif os.path.isfile(os.path.join(wrkDir.replace("128x128","64x64"),icon.get_name())): 
-						icon.set_kind(appstream.IconKind.LOCAL)
-						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
-		return(add)
-
-	def _appendInfo(self,component,oldComponent):
-			#if oldComponent.get_pkgname()==component.get_pkgname():
-		for bundle in component.get_bundles():
-			if ";" in bundle.get_id():
-				oldComponent.add_bundle(bundle)
-		#Always get more complete info
-		desc=oldComponent.get_description()
-		newDesc=component.get_description()
-		if desc==None:
-			desc=''
-		if newDesc==None:
-			newDesc=''
-		if len(desc)<len(newDesc):
-			oldComponent.set_description(newDesc)
-		cats=oldComponent.get_categories()
-		newCats=component.get_categories()
-		for newCat in newCats:
-			if newCat not in cats:
-				oldComponent.add_category(newCat)
-		for icon in component.get_icons():
-				#if icon.get_kind()==appstream.IconKind.CACHED or icon.get_kind()==appstream.IconKind.LOCAL:
-			oldComponent.add_icon(icon)
-		for release in component.get_releases():
-			oldComponent.add_release(release)
-		#if name is canonical then change to name
-		if oldComponent.get_pkgname() and component.get_pkgname():
-			if "." in oldComponent.get_pkgname() and not "." in component.get_pkgname():
-				oldComponent.set_pkgnames([component.get_pkgname()])
-		elif not oldComponent.get_pkgname() :
-			oldComponent.set_pkgnames([component.get_pkgname()])
-		return(oldComponent)
 
 	####
 	#Load and register the plugins from plugin dir
@@ -171,11 +64,17 @@ class Rebost():
 					try:
 						imp=importlib.import_module((plugin.replace(".py","")))
 						#Get plugin status
-						pluginObject=imp.main()
+						if "rebostHelper" not in plugin:
+							pluginObject=imp.main()
+						else:
+							pluginObject=imp
 					except Exception as e:
 						self._debug("Failed importing %s: %s"%(plugin,e))
 						continue
-					enabled=self._getPluginEnabled(pluginObject)
+					if "rebostHelper" in plugin:
+						enabled=True
+					else:
+						enabled=self._getPluginEnabled(pluginObject)
 					if enabled!=False:
 						self.plugins[plugin.replace(".py","")]=pluginObject
 						if enabled:
@@ -203,8 +102,9 @@ class Rebost():
 					mandatory.remove(item)
 			if mandatory:
 				#Disable plugin as not all values have been set
-				self._debug("Disable %s as faulting values: %s"%(plugin,mandatory))
-				delPlugins.append(plugin)
+				if plugin!="rebostHelper":
+					self._debug("Disable %s as faulting values: %s"%(plugin,mandatory))
+					delPlugins.append(plugin)
 			else:
 				self.pluginInfo[plugin]=plugInfo
 		for plugin in delPlugins:
@@ -226,12 +126,154 @@ class Rebost():
 		for priority in actionList:
 			for plugin,actions in actionDict[priority].items():
 					for action in actions:
-							#try:
+						try:
 							self._execute(action,'','',plugin=plugin)
-						#except Exception as e:
-						#	self._debug("Error launching %s from %s: %s"%(action,plugin,e))
+						except Exception as e:
+							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
 	
 	def execute(self,action,package='',extraArgs=None,plugin=None):
+		listProc=[]
+		rebostPkgList=[]
+		store=[]
+		for plugin,info in self.pluginInfo.items():
+			if action in info['actions']:
+					#listProc.append(multiprocessing.Process(target=self.plugins[plugin].execute,args=(action,package)))
+				rebostPkgList.extend(self.plugins[plugin].execute(action,package))
+		#Generate the store with results and sanitize them
+		if isinstance(rebostPkgList,list) and rebostPkgList:
+				#		xmlStore=self.plugins["rebostHelper"].rebostPkgList_to_xml(rebostPkgList)
+		#	appstore=appstream.Store()
+	#		appstore.from_xml("".join(xmlStore))
+			store=self._sanitizeStore(rebostPkgList)
+		return(store)
+			
+	def _sanitizeStore(self,appstore):
+		self._debug("Sanitize store {}".format(int(time.time())))
+		store=[]
+		pkgDict={}
+		components=[]
+		'''
+		In some versions of python-appstream there's a bug
+		Pool.get_components() don't returns a Components array
+		and only garbage is recollected. Force a get_id on 
+		first component in order to bypass this error if present
+		forcing a search of * wildcard
+		'''
+		#try:
+		#	components=appstore.get_apps()
+		#	if len(components) and components[0].get_id():
+		#		pass
+		#except UnicodeDecodeError as e:
+		#	print("ERR")
+		#	#components=self.store.search("*") #Yeah
+		self._debug("Begin Sanitize store {}".format(int(time.time())))
+		for app in appstore:
+			name=app.get('id','')
+			idArray=name.split(".")
+			if len(idArray)>2:
+				name="".join(idArray[2:]).lower()
+			name=name.replace("_","-")
+			if name in pkgDict.keys():
+				app=self._appendInfo(app,pkgDict[name])
+			if not app.get('bundle',[]) and not app.get('pkgname',''):
+				continue
+			if self._processBundles(app):
+				pkgDict[name]=app
+		self._debug("End Begin Sanitize store {}".format(int(time.time())))
+		for name,app in pkgDict.items():
+			store.append(app)
+		return(str(json.dumps(store)))
+#return(store)
+
+		for component in components:
+			name=component.get_id()
+			idArray=name.split(".")
+			if len(idArray)>2:
+				name="".join(idArray[2:]).lower()
+			name=name.replace("_","-")
+			if name in pkgDict.keys():
+				component=self._appendInfo(component,pkgDict[name])
+			if not component.get_bundles() and not component.get_pkgname():
+				continue
+			add=self._processBundles(component)
+			if add:
+				pkgDict[name]=component
+		self._debug("End Begin Sanitize store {}".format(int(time.time())))
+		for name,component in pkgDict.items():
+			store.add_app(component)
+		#self.store=store
+		self._debug("End Sanitize store {}".format(int(time.time())))
+		return(store)
+	#def _sanitizeStore
+	
+	def _processBundles(self,rebostPkg):
+		add=True
+		#We already have flatpak icons at flatpak.wrkDir
+		bundles=rebostPkg.get('bundle')
+		wrkDir=""
+		iconDir=""
+		icon128=''
+		icon64=''
+		#flatpak has his own cache dir for icons so if present use it
+		for plugin,info in self.pluginInfo.items():
+			if info['packagekind']=="flatpak":
+				icon64=os.path.join(self.plugins[plugin].wrkDir,"icons/64x64")
+				icon128=os.path.join(self.plugins[plugin].wrkDir,"icons/128x128")
+				break
+		for bundle,idBundle in bundles.items():
+			#if bundle.get_kind()==3: #flatpak
+			continue
+			if bundle=='flatpak': #flatpak
+				if not ";" in bundle.get_id():
+					add=False
+					break
+				icons=component.get_icons()
+				for icon in icons:
+					if os.path.isfile(os.path.join(icon128,icon.get_name())):
+						icon.set_kind(appstream.IconKind.LOCAL)
+						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
+						break
+					elif os.path.isfile(os.path.join(icon64,icon.get_name())): 
+						icon.set_kind(appstream.IconKind.LOCAL)
+						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
+						break
+		return(add)
+
+	def _appendInfo(self,rebostPkg,oldRebostPkg):
+			#if oldComponent.get_pkgname()==component.get_pkgname():
+		for bundle,idBundle in rebostPkg.get('bundle',{}).items():
+			if ";" in idBundle:
+				oldRebostPkg['bundle'].update({bundle:idBundle})
+		#Always get more complete info
+		desc=oldRebostPkg.get('description','')
+		newDesc=rebostPkg.get('description')
+		if desc==None:
+			desc=''
+		if newDesc==None:
+			newDesc=''
+		if len(desc)<len(newDesc):
+			oldRebostPkg['description']=newDesc
+		cats=oldRebostPkg.get('categories')
+		newCats=rebostPkg.get('categories')
+		for newCat in newCats:
+			if newCat not in cats:
+				oldRebostPkg['categories'].append(newCat)
+		for icon in rebostPkg.get('icon',[]):
+				#if icon.get_kind()==appstream.IconKind.CACHED or icon.get_kind()==appstream.IconKind.LOCAL:
+			oldRebostPkg['icons']=icon
+#		for release in component.get_releases():
+#			oldComponent.add_release(release)
+		#if name is canonical then change to name
+		oldName=oldRebostPkg.get('pkgname')
+		name=rebostPkg.get('pkgname')
+		if oldName and name:
+			if "." in oldName and not "." in name and name:
+				oldRebostPkg['pkgname']=name
+		elif not oldName:
+			oldRebostPkg['pkgName']=name
+		return(oldRebostPkg)
+
+	def execute2(self,action,package='',extraArgs=None,plugin=None):
 		bundle=''
 		self._debug("Executing %s %s"%(action,package))
 		if action=='install' or action=='remove':
@@ -428,7 +470,7 @@ class Rebost():
 		self.store.clear()
 		proc=multiprocessing.Process(target=self._loadAppstream,args=([procInfo['progressQ'],procInfo['resultQ']]))
 		procInfo['proc']=proc
-		return(self._launchCoreProcess(procInfo))
+		return(self._launchCoreProcess(procInfo,"update"))
 	
 	def fullUpdate(self):
 		procInfo=definitions.rebostProcess()
@@ -440,11 +482,11 @@ class Rebost():
 		procInfo['proc']=proc
 		return(self._launchCoreProcess(procInfo))
 
-	def _launchCoreProcess(self,procInfo):
+	def _launchCoreProcess(self,procInfo,action):
 		procInfo['plugin']="core"
 		procInfo['progress']=0
 		procInfo['result']=''
-		procInfo['action']='update'
+		procInfo['action']=action
 		procInfo['parms']=''
 		procInfo['proc'].start()
 		self.procId+=1

@@ -5,20 +5,22 @@ from gi.repository import PackageKitGlib as packagekit
 import threading
 import time
 import json
-import definitions
+import threading
+import rebostHelper
+
 class packageKit():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.packagekind="package"
-		self.actions=["load","install","remove"]
-		self.autostartActions=["load"]
+		self.actions=["show","search","load","install","remove"]
+		#self.autostartActions=["load"]
 		self.priority=0
 		self.progress={}
 		self.progressQ={}
 		self.resultQ={}
 		self.result=''
-		self.wrkDir="/home/lliurex/.cache/rebost/xml/packageKit"
+		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.pkcon=None
 
 	def setDebugEnabled(self,enable=True):
@@ -29,8 +31,18 @@ class packageKit():
 	def _debug(self,msg):
 		if self.dbg:
 			print("packageKit: %s"%str(msg))
-	
-	def execute(self,procId,action,progress,result,store=None,args=''):
+
+	def execute(self,action,*args):
+		rs=''
+		if not self.pkcon:
+			self.pkcon=packagekit.Client()
+		if action=='search':
+			rs=self._searchPackage(*args)
+		if action=='show':
+			rs=self._showPackage(*args)
+		return(rs)
+
+	def execute2(self,procId,action,progress,result,store=None,args=''):
 		if action in self.actions:
 			self.progressQ[action]=progress
 			self.resultQ[action]=result
@@ -39,7 +51,7 @@ class packageKit():
 				self.pkcon=packagekit.Client()
 			self.progress[action]=0
 			if action=='load':
-				self._loadPackages()
+				self._load()
 			if action=='install':
 				self._install(args)
 			if action=='remove':
@@ -54,18 +66,29 @@ class packageKit():
 		action='search'
 		filters=1
 		searchResults=[]
+		pkilst=[]
 		try:
 			pklist=self.pkcon.search_details(filters,[package],None,self._search_callback,None)
-			searchResults=self._collectSearchInfo(pklist)
 		except Exception as e:
-			print("Search error; %s"%e)
-		self.progressQ[action].put(100)
-		self.resultQ[action].put(str(json.dumps(searchResults)))
+			print("PackageKit error; %s"%e)
+		searchResults=self._collectSearchInfo(pklist)
+		return(searchResults)
 	
+	def _showPackage(self,package):
+		action='show'
+		filters=1
+		searchResults=[]
+		pkilst=[]
+		try:
+			pklist=self.pkcon.resolve(filters,[package],None,self._search_callback,None)
+		except Exception as e:
+			print("PackageKit error; %s"%e)
+		searchResults=self._collectSearchInfo(pklist)
+		return(searchResults)
+
 	def _info(self,rebostPkg):
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([rebostPkg])))
-
 
 	def _collectSearchInfo(self,pklist):
 		action='search'
@@ -74,24 +97,29 @@ class packageKit():
 		for pkg in pklist.get_package_array():
 			if pkg.get_name() in added:
 				continue
-			rs=definitions.resultSet()
-			added.append(pkg.get_name())
-			rs['name']=pkg.get_name()
-			rs['id']=pkg.get_id()
-			rs['description']=pkg.get_summary()
-			searchResults.append(rs)
+			#rs=definitions.resultSet()
+			rebostpkg=rebostHelper.rebostPkg()
+			rebostpkg['name']=pkg.get_name()
+			rebostpkg['pkgname']=pkg.get_name()
+			rebostpkg['id']="org.packagekit.%s"%pkg.get_name()
+			rebostpkg['summary']=pkg.get_summary()
+			rebostpkg['description']=pkg.get_summary()
+			rebostpkg['version']="package-{}".format(pkg.get_version())
+			rebostpkg['bundle']={"package":"{}".format(pkg.get_id())}
+			searchResults.append(rebostpkg)
+			#searchResults.append(pkg)
 		return(searchResults)
 
 	def _search_callback(self,*args):
 		action='search'
-		progress=self.progress[action]
-		if args[0].get_percentage()>=100 and progress==100:
-			args[0].set_percentage(100)
-		else:
-			args[0].set_percentage(args[0].get_percentage()+10)
-		progress=args[0].get_percentage()
-		self.progress[action]=self.progress[action]+progress
-		self.progressQ[action].put(int(self.progress[action]/8.33))
+		#progress=self.progress[action]
+		#if args[0].get_percentage()>=100 and progress==100:
+		#	args[0].set_percentage(100)
+		#else:
+		#	args[0].set_percentage(args[0].get_percentage()+10)
+		#progress=args[0].get_percentage()
+		#self.progress[action]=self.progress[action]+progress
+		#self.progressQ[action].put(int(self.progress[action]/8.33))
 
 	def _install(self,package):
 		action="install"
@@ -173,15 +201,22 @@ class packageKit():
 		self.progressQ[action].put(100)
 	#def _remove
 
-	def _loadPackages(self,*args):
+	def _load(self,*args):
 		action="load"
+		self._debug("Getting pkg list")
 		pkgList=self.pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		self._debug("End Getting pkg list")
 		rebostPkgList=[]
 		added=[]
+		semaphore = threading.BoundedSemaphore(value=10)
+		thList=[]
 		for pkg in pkgList.get_package_array():
+			#th=threading.Thread(target=self._th_generateXml,args=(pkg,semaphore,))
+			#th.start()
+			#thList.append(th)
 			if pkg.get_name() in added or pkg.get_arch() not in ['amd64','all']:
 				continue
-			print(pkg.get_id())
+			added.append(pkg.get_name())
 			rebostpkg=definitions.rebostPkg()
 			rebostpkg['name']=pkg.get_name()
 			rebostpkg['pkgname']=pkg.get_name()
@@ -192,8 +227,30 @@ class packageKit():
 			rebostpkg['bundle']={"package":"{}".format(pkg.get_id())}
 			added.append(pkg.get_name())
 			rebostPkgList.append(rebostpkg)
-		definitions.rebostPkgList_to_xml(rebostPkgList,'/home/lliurex/.cache/rebost/xml/packageKit/packagekit.xml')
+		definitions.rebostPkgList_to_xml(rebostPkgList,'/tmp/.cache/rebost/xml/packageKit/packagekit.xml')
+		#for th in thList:
+		#.	th.join()
+		self._debug("PKG loaded")
+		self._debug(rebostPkgList)
+		self._debug("PKG loaded")
 		self.progressQ[action].put(100)
+	
+	def _th_generateXml(self,pkg,semaphore):
+		semaphore.acquire()
+		if pkg.get_arch() not in ['amd64','all']:
+			semaphore.release()
+			return
+
+		rebostpkg=definitions.rebostPkg()
+		rebostpkg['name']=pkg.get_name()
+		rebostpkg['pkgname']=pkg.get_name()
+		rebostpkg['id']="org.packagekit.%s"%pkg.get_name()
+		rebostpkg['summary']=pkg.get_summary()
+		rebostpkg['description']=pkg.get_summary()
+		rebostpkg['version']="package-{}".format(pkg.get_version())
+		rebostpkg['bundle']={"package":"{}".format(pkg.get_id())}
+		definitions.rebostPkgList_to_xml([rebostpkg],'/tmp/.cache/rebost/xml/packageKit/packagekit.xml')
+		semaphore.release()
 
 	def _load_callback(self,*args):
 		action='install'
@@ -214,3 +271,4 @@ class packageKit():
 def main():
 	obj=packageKit()
 	return(obj)
+

@@ -5,7 +5,7 @@ from gi.repository import Gio
 gi.require_version ('Snapd', '1')
 from gi.repository import Snapd
 import json
-import definitions
+import rebostHelper
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -14,15 +14,15 @@ class snapHelper():
 		self.dbg=False
 		self.enabled=True
 		self.packagekind="snap"
-		self.actions=["load","install","remove"]
-		self.autostartActions=["load"]
+		self.actions=["show","search","load","install","remove"]
+#		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
 		self.progressQ={}
 		self.progress={}
 		self.resultQ={}
 		self.result={}
-		self.wrkDir='/home/lliurex/.cache/rebost/xml/snap'
+		self.wrkDir='/tmp/.cache/rebost/xml/snap'
 		self.snap_client=Snapd.Client()
 		try:
 			self.snap_client.connect_sync(None)
@@ -43,8 +43,15 @@ class snapHelper():
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
 
+	def execute(self,action,*args):
+		rs=''
+		if action=='search':
+			rs=self._searchPackage(*args)
+		if action=='show':
+			rs=self._showPackage(*args)
+		return(rs)
 
-	def execute(self,procId,action,progress,result,store,args=''):
+	def execute2(self,procId,action,progress,result,store,args=''):
 		self.procId=procId
 		if action in self.actions:
 			self.progressQ[action]=progress
@@ -56,6 +63,98 @@ class snapHelper():
 				self._install(args)
 			if action=='remove':
 				self._remove(args)
+	
+	def _showPackage(self,package):
+		#self._debug("Searching %s"%tokens)
+		pklist=None
+		package=package.replace("_","-")
+		try:
+			pklist,curr=self.snap_client.find_sync(Snapd.FindFlags.MATCH_NAME,package,None)
+		except Exception as e:
+			print("ERR: %s"%e)
+			#self._set_status(1)
+####	stable_pkgs=[]
+####	for pkg in pkgs:
+####		if force_stable:
+####			if pkg.get_channel()=='stable':
+####				stable_pkgs.append(pkg)
+####			else:
+####				#self._debug(pkg.get_channel())
+####				pass
+####		else:
+####			stable_pkgs.append(pkg)
+		#self._debug("Done")
+		searchResults=self._collectSearchInfo(pklist)
+		return(searchResults)
+
+	def _searchPackage(self,package):
+		#self._debug("Searching %s"%tokens)
+		pklist=None
+		package=package.replace("_","-")
+		try:
+			pklist,curr=self.snap_client.find_sync(Snapd.FindFlags.NONE,package,None)
+		except Exception as e:
+			print("ERR: %s"%e)
+			#self._set_status(1)
+####	stable_pkgs=[]
+####	for pkg in pkgs:
+####		if force_stable:
+####			if pkg.get_channel()=='stable':
+####				stable_pkgs.append(pkg)
+####			else:
+####				#self._debug(pkg.get_channel())
+####				pass
+####		else:
+####			stable_pkgs.append(pkg)
+		#self._debug("Done")
+		searchResults=self._collectSearchInfo(pklist)
+		return(searchResults)
+
+	def _collectSearchInfo(self,pklist=[]):
+		action='search'
+		searchResults=[]
+		added=[]
+		if pklist:
+			for pkg in pklist:
+				if pkg.get_name() in added:
+					continue
+				rebostpkg=rebostHelper.rebostPkg()
+				rebostpkg['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
+				rebostpkg['name']=pkg.get_name()
+				rebostpkg['pkgname']=pkg.get_name().lower().replace("_","-")
+				rebostpkg['summary']=pkg.get_summary()
+				rebostpkg['description']=pkg.get_description()
+				#rebostpkg['categories']=['Snap']
+				rebostpkg['kind']=5
+				if pkg.get_icon():
+					rebostpkg['icon']=pkg.get_icon()
+				rebostpkg['version']="snap-{}".format(pkg.get_version())
+				#if pkg.get_screenshots():
+				#if 'screenshots' in appimage.keys():
+				#	appinfo['thumbnails']=appimage['screenshots']
+				#if 'links' in appimage.keys():
+				#	if appimage['links']:
+				#		for link in appimage['links']:
+				#			if 'url' in link.keys() and link['type']=='Download':
+				#				appinfo['installerUrl']=link['url']
+				#if 'authors' in appimage.keys():
+				#	if appimage['authors']:
+				#		for author in appimage['authors']:
+				#			if 'url' in author.keys():
+				#				#self._debug("Author: %s"%author['url'])
+				#				appinfo['homepage']=author['url']
+				state="available"
+				try:
+					pkg=self.snap_client.list_one_sync(pkg.get_name())
+					state='installed'
+					pkgs=[pkg]
+				except:
+					state='available'
+				rebostpkg['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
+				#rebostpkg['categories']=self._get_categories(section)
+				searchResults.append(rebostpkg)
+				#searchResults.append(pkg)
+		return(searchResults)
 
 	def _loadStore(self):
 		action="load"
@@ -63,7 +162,7 @@ class snapHelper():
 			rebostPkgList=self._get_snap_catalogue()
 		except Exception as e:
 			raise
-		definitions.rebostPkgList_to_xml(rebostPkgList,'/home/lliurex/.cache/rebost/xml/snap/snap.xml')
+		rebostHelper.rebostPkgList_to_xml(rebostPkgList,'/tmp/.cache/rebost/xml/snap/snap.xml')
 		
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
@@ -88,7 +187,7 @@ class snapHelper():
 		return(rebostPkgList)
 
 	def _process_snap_json(self,pkg,section):
-		appinfo=definitions.rebostPkg()
+		appinfo=rebostHelper.rebostPkg()
 		appinfo['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
 		appinfo['name']=pkg.get_name()
 		appinfo['pkgname']=pkg.get_name().lower().replace("_","-")
@@ -154,7 +253,7 @@ class snapHelper():
 	def _install(self,app_info):
 		#self._debug("Installing %s"%app_info['name'])
 		action="install"
-		result=definitions.resultSet()
+		result=rebostHelper.resultSet()
 		result['id']=self.procId
 		result['name']=action
 		result['description']='%s'%app_info['pkgname']
@@ -210,7 +309,7 @@ class snapHelper():
 
 	def _remove(self,app_info):
 		action='remove'
-		result=definitions.resultSet()
+		result=rebostHelper.resultSet()
 		result['id']=self.procId
 		result['name']=action
 		result['description']='%s'%app_info['pkgname']

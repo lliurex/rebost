@@ -4,6 +4,8 @@ import html2text
 import gi
 gi.require_version('AppStream', '1.0')
 from gi.repository import AppStream as appstream
+import sqlite3
+import json
 	
 def rebostProcess(*kwargs):
 	reb={'plugin':'','kind':'','progressQ':'','progress':'','resultQ':'','result':'','action':'','parm':'','proc':''}
@@ -16,6 +18,20 @@ def resultSet(*kwargs):
 def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':{},'summary':{},'icon':'','size':'','downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':'','banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
+
+def rebostPkgList_to_sqlite(rebostPkg,table):
+	db=sqlite3.connect(table)
+	cursor=db.cursor()
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+	cursor.execute(query)
+	query="INSERT INTO catalogue (pkg,data) VALUES ('{}','{}')".format(rebostPkg.get('name').lower(),str(json.dumps(rebostPkg)))
+	print(query)
+	cursor.execute(query)
+	db.commit()
+	db.close()
+#def rebostPkgList_to_sqlite
+
+
 
 def rebostPkgList_to_xml(rebostPkgList,xmlFile=None):
 	resultSet=[]

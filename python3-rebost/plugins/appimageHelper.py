@@ -15,10 +15,13 @@ from bs4 import BeautifulSoup
 import tempfile
 import rebostHelper
 import subprocess
+import logging
+
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
+		logging.basicConfig(format='%(asctime)s %(message)s')
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["search","load","install","remove"]
@@ -46,7 +49,7 @@ class appimageHelper():
 
 	def _debug(self,msg):
 		if self.dbg:
-			print("appimage: %s"%str(msg))
+			logging.warning("appimage: %s"%str(msg))
 	
 	def execute(self,action,*args):
 		rs=''
@@ -165,8 +168,8 @@ class appimageHelper():
 		#result['id']=self.procId
 		result['name']=action
 		(result['error'],result['msg'])=self._get_bundles_catalogue()
-#		self.progressQ[action].put(100)
-#		self.resultQ[action].put(str(json.dumps([result])))
+#	   self.progressQ[action].put(100)
+#	   self.resultQ[action].put(str(json.dumps([result])))
 	
 	def _chk_update(self):
 		return False
@@ -179,17 +182,19 @@ class appimageHelper():
 		msg=""
 		#outdir=self.cache_xmls
 		#Load repos
+		self._debug("Loading store")
 		for repo_name,repo_info in self.repos.items():
 			appimageJson=self._fetch_repo(repo_info['url'])
 			if appimageJson and repo_info['type']=='json':
-				self.store=appimageJson
-				#self._process_appimage_json(appimageJson,repo_name)
+				#self.store=appimageJson
+				self._process_appimage_json(appimageJson,repo_name)
 			else:
 				err=6
 				msg="Couldn't fetch %s"%repo_info['url']
 		return (err,msg)
 	
 	def _fetch_repo(self,repo):
+		self._debug("Fetching {}".format(repo))
 		content=''
 		req=Request(repo, headers={'User-Agent':'Mozilla/5.0'})
 		try:
@@ -202,6 +207,7 @@ class appimageHelper():
 	
 	def _process_appimage_json(self,data,search=''):
 		appList=[]
+		thlist=[]
 		if data:
 			try:
 				json_data=json.loads(data)
@@ -211,16 +217,17 @@ class appimageHelper():
 			maxconnections = 15
 			random_applist = list(applist)
 			random.shuffle(random_applist)
+			semaphore = threading.BoundedSemaphore(value=maxconnections)
 			for appimage in applist:
-				rebostPkg=self._process_appimage(appimage,search)
-				if rebostPkg:
-					applist.append(rebostPkg)
-					#				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
-				#th.start()
-				#thlist.append(th)
-				#time.sleep(0.5)
-			#for th in thlist:
-			#	th.join()
+				#rebostPkg=self._process_appimage(appimage,search)
+				#if rebostPkg:
+					#applist.append(rebostPkg)
+				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
+				th.start()
+				thlist.append(th)
+				time.sleep(0.5)
+			for th in thlist:
+				th.join()
 		return(applist)
 	#_process_appimage_json
 	
@@ -236,9 +243,9 @@ class appimageHelper():
 						add=False
 				if add:
 					appinfo=self.load_json_appinfo(appimage)
-		#		rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
+			  #  rebostHelper.rebostPkgList_to_sqlite([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
 		return(appinfo)
-        #def _th_process_appimage
+		#def _th_process_appimage
 
 	def _th_process_appimage(self,appimage,semaphore):
 		semaphore.acquire()
@@ -246,9 +253,10 @@ class appimageHelper():
 		if 'links' in appimage.keys():
 			if appimage['links']:
 				appinfo=self.load_json_appinfo(appimage)
-				rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
+			  #  rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
+				rebostHelper.rebostPkgList_to_sqlite(appinfo,'appimage.sql')
 		semaphore.release()
-        #def _th_process_appimage
+		#def _th_process_appimage
 
 	def load_json_appinfo(self,appimage):
 		#self._debug(appimage)
@@ -277,10 +285,10 @@ class appimageHelper():
 			appinfo['categories']=appimage['categories']
 		if 'icon' in appimage.keys():
 			appinfo['icon']=self._download_file(appimage['icon'],appimage['name'],self.iconDir)
-		if 'icons' in appimage.keys():
-			#self._debug("Loading icon %s"%appimage['icons'])
+		elif 'icons' in appimage.keys():
+			self._debug("Loading icon %s"%appimage['icons'])
 			if appimage['icons']:
-				#self._debug("Loading icon %s"%appimage['icons'][0])
+				self._debug("Loading icon %s"%appimage['icons'][0])
 				appinfo['icon']=self._download_file(appimage['icons'][0],appimage['name'],self.iconDir)
 		if 'screenshots' in appimage.keys():
 			appinfo['thumbnails']=appimage['screenshots']
@@ -322,7 +330,7 @@ class appimageHelper():
 			if 'opensuse' in baseUrl.lower():
 				releases_page=""
 				url_source="opensuse"
-#				app_info['installerUrl']=app_info['installerUrl']+"/download"
+#			   app_info['installerUrl']=app_info['installerUrl']+"/download"
 
 			if (url_source or releases_page) and not baseUrl.lower().endswith(".appimage"):
 				content=''
@@ -364,29 +372,33 @@ class appimageHelper():
 		target_file=dest_dir+'/'+app_name+".png"
 		if not url.startswith('http'):
 			url="https://appimage.github.io/database/%s"%url
-		if not os.path.isdir(self.iconDir):
-			os.makedirs(self.iconDir)
-		if not os.path.isfile(target_file):
-			if not os.path.isfile(target_file):
-				#self._debug("Downloading %s to %s"%(url,target_file))
-				try:
-					with urllib.request.urlopen(url) as response, open(target_file, 'wb') as out_file:
-						bf=16*1024
-						acumbf=0
-						file_size=int(response.info()['Content-Length'])
-						while True:
-							if acumbf>=file_size:
-							    break
-							shutil.copyfileobj(response, out_file,bf)
-							acumbf=acumbf+bf
-					st = os.stat(target_file)
-				except Exception as e:
-					self._debug("Unable to download %s"%url)
-					self._debug("Reason: %s"%e)
-					target_file=''
+#	   if not os.path.isdir(self.iconDir):
+#		   os.makedirs(self.iconDir)
+#	   if not os.path.isfile(target_file):
+#		   self._debug("Downloading %s to %s"%(url,target_file))
+#		   try:
+#			   with urllib.request.urlopen(url) as response, open(target_file, 'wb') as out_file:
+#				   bf=16*1024
+#				   acumbf=0
+#				   file_size=int(response.info()['Content-Length'])
+#				   while True:
+#					   if acumbf>=file_size:
+#						   break
+#					   shutil.copyfileobj(response, out_file,bf)
+#					   acumbf=acumbf+bf
+#			   st = os.stat(target_file)
+#		   except Exception as e:
+#			   self._debug("Unable to download %s"%url)
+#			   self._debug("Reason: %s"%e)
+#			   target_file=''
+#	   else:
+#		   self._debug("{} already downloaded".format(self.iconDir))
 		return(target_file)
 	#def _download_file
 
 def main():
 	obj=appimageHelper()
 	return (obj)
+
+
+a=appimageHelper()

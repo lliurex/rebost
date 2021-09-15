@@ -43,15 +43,15 @@ class snapHelper():
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
 
-	def execute(self,action,*args):
-		rs=''
-		if action=='search':
-			rs=self._searchPackage(*args)
-		if action=='show':
-			rs=self._showPackage(*args)
-		return(rs)
+#	def execute(self,action,*args):
+#		rs=''
+#		if action=='search':
+#			rs=self._searchPackage(*args)
+#		if action=='show':
+#			rs=self._showPackage(*args)
+#		return(rs)
 
-	def execute2(self,procId,action,progress,result,store,args=''):
+	def execute(self,procId,action,progress,result,store,args=''):
 		self.procId=procId
 		if action in self.actions:
 			self.progressQ[action]=progress

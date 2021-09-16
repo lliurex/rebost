@@ -9,16 +9,18 @@ gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 import json
 import rebostHelper
+import logging
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=False
+		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="flatpak"
 		self.actions=["search","load","install","remove"]
-		#self.autostartActions=["load"]
+		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
 		self.progressQ={}
@@ -26,7 +28,7 @@ class flatpakHelper():
 		self.resultQ={}
 		self.result={}
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
-		self._loadStore()
+#		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -35,13 +37,13 @@ class flatpakHelper():
 
 	def _debug(self,msg):
 		if self.dbg:
-			print("flatpak: %s"%str(msg))
+			logging.warning("flatpak: %s"%str(msg))
 
 	def _on_error(self,action,e):
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
 
-	def execute(self,action,*args):
+	def execute2(self,action,*args):
 		rs=''
 		if action=='search':
 			rs=self._searchPackage(*args)
@@ -59,7 +61,7 @@ class flatpakHelper():
 		searchResults=rebostHelper.appstream_to_rebost(apps)
 		return(searchResults)
 
-	def execute2(self,procId,action,progress,result,store,args=''):
+	def execute(self,procId,action,progress,result,store,args=''):
 		self.procId=procId
 		if action in self.actions:
 			self.progressQ[action]=progress
@@ -74,7 +76,14 @@ class flatpakHelper():
 
 	def _loadStore(self):
 		action="load"
-		self.store=self._get_flatpak_catalogue()
+		self._debug("Get apps")
+		store=self._get_flatpak_catalogue()
+		self._debug("Get rebostPkg")
+		rebostPkgList=rebostHelper.appstream_to_rebost(store)
+		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.sql')
+		self._debug("SQL loaded")
+		self.progressQ[action].put(100)
+		self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
 
 	def _get_flatpak_catalogue(self):
 		action="load"
@@ -89,21 +98,27 @@ class flatpakHelper():
 			#Get all the remotes, copy appstream to wrkdir
 			flInst=Flatpak.get_system_installations()
 			for installer in flInst:
+				self._debug("Loading {}".format(installer))
 				flRemote=installer.list_remotes()
 				for remote in flRemote:
 					srcDir=remote.get_appstream_dir().get_path()
+					self._debug(srcDir)
 					installer.update_appstream_sync(remote.get_name())
+					self._debug("{} synced".format(srcDir))
 			#sections=self.snap_client.get_sections_sync()
 		except Exception as e:
 			print(e)
 			#self._on_error("load",e)
 
+		self._debug("Loading flatpak metadata from file")
 		try:
 			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
 			pass
 		added=[]
+		rebostPkgList=[]
+		self._debug("Formatting flatpak metadata")
 		for pkg in store.get_apps():
 			idx=pkg.get_id()
 			idxList=idx.split(".")
@@ -148,7 +163,7 @@ class flatpakHelper():
 				except:
 					pass
 				added.append(pkg.get_id())
-			self._debug("Loading flatpak metadata")
+			self._debug("End loading flatpak metadata")
 		return(store)
 
 	def _processRemote(self,installer,remote):
@@ -238,3 +253,5 @@ class flatpakHelper():
 def main():
 	obj=flatpakHelper()
 	return (obj)
+
+a=flatpakHelper()

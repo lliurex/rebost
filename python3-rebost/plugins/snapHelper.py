@@ -6,16 +6,19 @@ gi.require_version ('Snapd', '1')
 from gi.repository import Snapd
 import json
 import rebostHelper
+import logging
+import html
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
 class snapHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=False
+		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"
 		self.actions=["show","search","load","install","remove"]
-#		self.autostartActions=["load"]
+		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
 		self.progressQ={}
@@ -29,6 +32,7 @@ class snapHelper():
 		except Exception as e:
 			self.enabled=True
 			self._debug("Disabling snap %s"%e)
+#		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -37,7 +41,7 @@ class snapHelper():
 
 	def _debug(self,msg):
 		if self.dbg:
-			print("snap: %s"%str(msg))
+			logging.warning("snap: %s"%str(msg))
 
 	def _on_error(self,action,e):
 		self.progressQ[action].put(100)
@@ -162,8 +166,9 @@ class snapHelper():
 			rebostPkgList=self._get_snap_catalogue()
 		except Exception as e:
 			raise
-		rebostHelper.rebostPkgList_to_xml(rebostPkgList,'/tmp/.cache/rebost/xml/snap/snap.xml')
+		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.sql')
 		
+		self._debug("SQL loaded")
 		self.progressQ[action].put(100)
 		self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
 
@@ -183,7 +188,7 @@ class snapHelper():
 				rebostPkg=self._process_snap_json(pkg,section)
 				rebostPkgList.append(rebostPkg)
 			progress+=inc
-			self.progressQ[action].put(progress)
+			#self.progressQ[action].put(progress)
 		return(rebostPkgList)
 
 	def _process_snap_json(self,pkg,section):
@@ -191,8 +196,8 @@ class snapHelper():
 		appinfo['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
 		appinfo['name']=pkg.get_name()
 		appinfo['pkgname']=pkg.get_name().lower().replace("_","-")
-		appinfo['summary']=pkg.get_summary()
-		appinfo['description']=pkg.get_description()
+		appinfo['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
+		appinfo['description']=html.escape(pkg.get_description()).encode('ascii', 'xmlcharrefreplace').decode() 
 		#appinfo['categories']=['Snap']
 		appinfo['kind']=5
 		if pkg.get_icon():
@@ -333,3 +338,6 @@ class snapHelper():
 def main():
 	obj=snapHelper()
 	return (obj)
+
+
+a=snapHelper()

@@ -16,12 +16,13 @@ import tempfile
 import rebostHelper
 import subprocess
 import logging
-
+from queue import Queue
+import html
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
-		logging.basicConfig(format='%(asctime)s %(message)s')
+		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["search","load","install","remove"]
@@ -39,7 +40,8 @@ class appimageHelper():
 		self.metadataLoc=['/usr/share/metainfo',self.wrkDir]
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.store=''
-		self._loadStore()
+		self.queue=Queue(maxsize=0)
+#		self._loadStore()
 		#self.store=appstream.Pool()
 
 	def setDebugEnabled(self,enable=True):
@@ -228,6 +230,12 @@ class appimageHelper():
 				time.sleep(0.5)
 			for th in thlist:
 				th.join()
+		self._debug("PKG loaded")
+		pkgList=[]
+		while not self.queue.empty():
+			pkgList.append(self.queue.get())
+		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.sql')
+		self._debug("SQL loaded")
 		return(applist)
 	#_process_appimage_json
 	
@@ -254,7 +262,8 @@ class appimageHelper():
 			if appimage['links']:
 				appinfo=self.load_json_appinfo(appimage)
 			  #  rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
-				rebostHelper.rebostPkgList_to_sqlite(appinfo,'appimage.sql')
+				#rebostHelper.rebostPkg_to_sqlite(appinfo,'appimage.sql')
+				self.queue.put(appinfo)
 		semaphore.release()
 		#def _th_process_appimage
 
@@ -273,11 +282,13 @@ class appimageHelper():
 					appinfo['description'].update({lang:appimage['description'][lang]})
 					desc=".".join(appinfo['description'][lang].split(".")[0:2])
 					desc=" ".join(desc.split(" ")[0:8])
+					desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
 					appinfo['summary'].update({lang:desc})
 			else:
 				appinfo['description']={"C":appimage['description']}
 				desc=".".join(appinfo['description']["C"].split(".")[0:2])
 				desc=" ".join(desc.split(" ")[0:8])
+				desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
 				appinfo['summary'].update({"C":desc})
 		else:
 			appinfo['summary']={"C":'Appimage of {}'.format(appinfo["name"])}
@@ -400,5 +411,3 @@ def main():
 	obj=appimageHelper()
 	return (obj)
 
-
-a=appimageHelper()

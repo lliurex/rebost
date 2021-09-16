@@ -6,6 +6,7 @@ gi.require_version('AppStream', '1.0')
 from gi.repository import AppStream as appstream
 import sqlite3
 import json
+import html
 	
 def rebostProcess(*kwargs):
 	reb={'plugin':'','kind':'','progressQ':'','progress':'','resultQ':'','result':'','action':'','parm':'','proc':''}
@@ -19,19 +20,51 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':{},'summary':{},'icon':'','size':'','downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':'','banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 
-def rebostPkgList_to_sqlite(rebostPkg,table):
+def rebostPkgList_to_sqlite(rebostPkgList,table):
+	db=sqlite3.connect(table)
+	table=table.replace('.sql','')
+	cursor=db.cursor()
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.sql',''))
+	cursor.execute(query)
+	for rebostPkg in rebostPkgList:
+		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+		try:
+			cursor.execute(query)
+		except Exception as e:
+			print(query)
+			print(e)
+	db.commit()
+	db.close()
+
+def enable_connection(table):
 	db=sqlite3.connect(table)
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	cursor.execute(query)
-	query="INSERT INTO catalogue (pkg,data) VALUES ('{}','{}')".format(rebostPkg.get('name').lower(),str(json.dumps(rebostPkg)))
-	print(query)
+
+def close_connection(table):
+	db=sqlite3.connect(table)
+	db.commit()
+	db.close()
+
+def rebostPkg_to_sqlite(rebostPkg,table):
+	db=sqlite3.connect(table)
+	table=table.replace('.sql','')
+	cursor=db.cursor()
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+	#print(query)
 	cursor.execute(query)
+	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+	#print(query)
+	try:
+		cursor.execute(query)
+	except sqlite3.OperationalError as e:
+		if "locked" in e:
+			time.sleep(0.1)
+			cursor.execute(query)
 	db.commit()
 	db.close()
 #def rebostPkgList_to_sqlite
-
-
 
 def rebostPkgList_to_xml(rebostPkgList,xmlFile=None):
 	resultSet=[]
@@ -70,6 +103,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
 		pkg['name']=component.get_name().lower()
+		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode() 
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
@@ -82,13 +116,15 @@ def appstream_to_rebost(appstreamCatalogue):
 				pkg['pkgname']=join('-').candidateName
 			elif len(candidateName)>0:
 				pkg['pkgname']=candidateName[0]
-		print("{} - {}".format(pkg['name'],pkg['pkgname']))
+		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
 		pkg['summary']=component.get_comment()
 		pkg['summary']=_sanitizeString(html2text.html2text(pkg['summary'],"lxml"))
+		pkg['summary']=html.escape(pkg['summary']).encode('ascii', 'xmlcharrefreplace').decode() 
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		pkg['description']=_sanitizeString(html2text.html2text(pkg['description'],"lxml"))
+		pkg['description']=html.escape(pkg['description']).encode('ascii', 'xmlcharrefreplace').decode() 
 		for icon in component.get_icons():
 			if icon.get_filename():
 				pkg['icon']=icon.get_filename()

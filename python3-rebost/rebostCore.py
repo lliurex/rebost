@@ -143,17 +143,27 @@ class Rebost():
 		listProc=[]
 		rebostPkgList=[]
 		store=[]
+		preaction=''
+		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
 		if action=='install' or action=='remove':
-			(bundle,package)=self._executePreInstallRemove(package,extraArgs,plugin)
+			preaction="show"
+			self._debug("Executing {} from {}".format(preaction,self.plugins['sqlHelper']))
+			(pkgname,rebostPkg)=self.plugins['sqlHelper'].execute(procId=0,action=preaction,progress='',result='',store='',args=package)[0]
+			bundles=json.loads(rebostPkg).get('bundle')
+			if len(bundles)>1:
+				store=json.dumps([{"-1":bundles}])
+#			rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action="show",progress='',result='',store='',args=package))
+#			(bundle,package)=self._executePreInstallRemove(package,extraArgs,plugin)
 		elif extraArgs:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraArgs):
-						bundle=str(extraArgs)
-		for plugin,info in self.pluginInfo.items():
-			if action in info['actions']:
-				self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-				self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
-				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package))
+					bundle=str(extraArgs)
+		if store==[]:
+			for plugin,info in self.pluginInfo.items():
+				if action in info['actions']:
+					self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
+					self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
+					rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package))
 
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list) and rebostPkgList:
@@ -169,66 +179,11 @@ class Rebost():
 		unorder_store=[]
 		pkgDict={}
 		components=[]
-		'''
-		In some versions of python-appstream there's a bug
-		Pool.get_components() don't returns a Components array
-		and only garbage is recollected. Force a get_id on 
-		first component in order to bypass this error if present
-		forcing a search of * wildcard
-		'''
-		#try:
-		#   components=appstore.get_apps()
-		#   if len(components) and components[0].get_id():
-		#	   pass
-		#except UnicodeDecodeError as e:
-		#   print("ERR")
-		#   #components=self.store.search("*") #Yeah
 		self._debug("Begin Sanitize store {}".format(int(time.time())))
 		for rebostpkg in appstore:
 			(pkg,app)=rebostpkg
 			store.append(app)
-####		app=json.dumps(app)
-####		name=app.get('id','')
-####		idArray=name.split(".")
-####		if len(idArray)>2:
-####			name="".join(idArray[2:]).lower()
-####		name=name.replace("_","-")
-####		if name in pkgDict.keys():
-####			app=self._appendInfo(app,pkgDict[name])
-####		if not app.get('bundle',[]) and not app.get('pkgname',''):
-####			continue
-####		if self._processBundles(app):
-####			pkgDict[name]=app
-####	self._debug("End Begin Sanitize store {}".format(int(time.time())))
-####	#sort list by relevant matches
-####	if package:
-####		unsorted=sorted(pkgDict.keys(), key=lambda x: difflib.SequenceMatcher(None, x, package).ratio(),reverse=True)
-####		for pkg in unsorted:
-####		   store.append(pkgDict[pkg])
-####	else:
-####		store=unorder_store
 		return((json.dumps(store)))
-#return(store)
-
-		for component in components:
-			name=component.get_id()
-			idArray=name.split(".")
-			if len(idArray)>2:
-				name="".join(idArray[2:]).lower()
-			name=name.replace("_","-")
-			if name in pkgDict.keys():
-				component=self._appendInfo(component,pkgDict[name])
-			if not component.get_bundles() and not component.get_pkgname():
-				continue
-			add=self._processBundles(component)
-			if add:
-				pkgDict[name]=component
-		self._debug("End Begin Sanitize store {}".format(int(time.time())))
-		for name,component in pkgDict.items():
-			store.add_app(component)
-		#self.store=store
-		self._debug("End Sanitize store {}".format(int(time.time())))
-		return(store)
 	#def _sanitizeStore
 	
 	def _processBundles(self,rebostPkg):
@@ -316,18 +271,22 @@ class Rebost():
 		result={}
 		bundle=''
 		showProc=self._execute("show",package['name'],plugin=plugin)
-		time.sleep(0.5)
 		showProcResult=json.loads(self.chkProgress(showProc))
-		if showProcResult:
-			while not showProcResult[str(showProc)].get('result',''):
-				showProcResult=json.loads(self.chkProgress(showProc))
-				time.sleep(0.2)
+		resultList=json.loads(self.chkProgress(showProc))
+		if resultList:
+#		if showProcResult:
+####		while not showProcResult[str(showProc)].get('result',''):
+####			showProcResult=json.loads(self.chkProgress(showProc))
+####			time.sleep(0.2)
 			if extraArgs:
 				if extraArgs in ['package','appimage','snap','flatpak']:
 					bundle=extraArgs
 				else:
 					bundle='package'
-			resultList=json.loads(showProcResult[str(showProc)]['result'])
+#			resultList=json.loads(showProcResult[str(showProc)]['result'])
+			print("*****")
+			self._debug(resultList)
+			print("*****")
 			for pkg in resultList:
 				package=pkg
 				if pkg['bundle']:
@@ -346,8 +305,8 @@ class Rebost():
 				break
 			return([bundle,package])
 
-	def _execute(self,action,package,bundle='',plugin=None,th=False):
-			#action,args=action_args.split("#")
+	def _execute(self,action,package,bundle='',plugin=None,th=True):
+		#action,args=action_args.split("#")
 		procInfo=definitions.rebostProcess()
 		plugList=[]
 		procId=0
@@ -386,10 +345,10 @@ class Rebost():
 			procIndex=-1
 		return(procIndex)
 
-	def _executeAction(self,plugin,action,package,bundle='',th=False):
+	def _executeAction(self,plugin,action,package,bundle='',th=True):
 		procInfo=definitions.rebostProcess()
 		self.procId+=1
-		self._debug("Launching %s from %s"%(action,plugin))
+		self._debug("Launching {} from {} (th {})".format(action,plugin,th))
 		procInfo['plugin']=plugin
 		procInfo['progressQ']=multiprocessing.Queue()
 		procInfo['resultQ']=multiprocessing.Queue()

@@ -4,6 +4,7 @@ import importlib
 import difflib
 import os
 import multiprocessing
+import threading
 import time
 import json
 import signal
@@ -125,14 +126,18 @@ class Rebost():
 				actionDict[priority]=newDict.copy()
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
-		actionList.sort(reverse=True)
+		actionList.sort(reverse=False)
+		procList=[]
 		for priority in actionList:
 			for plugin,actions in actionDict[priority].items():
 					for action in actions:
 						try:
-							self._execute(action,'','',plugin=plugin)
+							procList.append(self._execute(action,'','',plugin=plugin,th=True))
 						except Exception as e:
 							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
+		for proc in procList:
+			self.process[proc]['proc'].join()
+
 	
 	def execute(self,action,package='',extraArgs=None,plugin=None):
 		listProc=[]
@@ -146,7 +151,10 @@ class Rebost():
 						bundle=str(extraArgs)
 		for plugin,info in self.pluginInfo.items():
 			if action in info['actions']:
-				rebostPkgList.extend(self.plugins[plugin].execute(action,package))
+				self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
+				self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
+				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package))
+
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list) and rebostPkgList:
 				#	   xmlStore=self.plugins["rebostHelper"].rebostPkgList_to_xml(rebostPkgList)
@@ -176,27 +184,30 @@ class Rebost():
 		#   print("ERR")
 		#   #components=self.store.search("*") #Yeah
 		self._debug("Begin Sanitize store {}".format(int(time.time())))
-		for app in appstore:
-			name=app.get('id','')
-			idArray=name.split(".")
-			if len(idArray)>2:
-				name="".join(idArray[2:]).lower()
-			name=name.replace("_","-")
-			if name in pkgDict.keys():
-				app=self._appendInfo(app,pkgDict[name])
-			if not app.get('bundle',[]) and not app.get('pkgname',''):
-				continue
-			if self._processBundles(app):
-				pkgDict[name]=app
-		self._debug("End Begin Sanitize store {}".format(int(time.time())))
-		#sort list by relevant matches
-		if package:
-			unsorted=sorted(pkgDict.keys(), key=lambda x: difflib.SequenceMatcher(None, x, package).ratio(),reverse=True)
-			for pkg in unsorted:
-			   store.append(pkgDict[pkg])
-		else:
-			store=unorder_store
-		return(str(json.dumps(store)))
+		for rebostpkg in appstore:
+			(pkg,app)=rebostpkg
+			store.append(app)
+####		app=json.dumps(app)
+####		name=app.get('id','')
+####		idArray=name.split(".")
+####		if len(idArray)>2:
+####			name="".join(idArray[2:]).lower()
+####		name=name.replace("_","-")
+####		if name in pkgDict.keys():
+####			app=self._appendInfo(app,pkgDict[name])
+####		if not app.get('bundle',[]) and not app.get('pkgname',''):
+####			continue
+####		if self._processBundles(app):
+####			pkgDict[name]=app
+####	self._debug("End Begin Sanitize store {}".format(int(time.time())))
+####	#sort list by relevant matches
+####	if package:
+####		unsorted=sorted(pkgDict.keys(), key=lambda x: difflib.SequenceMatcher(None, x, package).ratio(),reverse=True)
+####		for pkg in unsorted:
+####		   store.append(pkgDict[pkg])
+####	else:
+####		store=unorder_store
+		return((json.dumps(store)))
 #return(store)
 
 		for component in components:
@@ -254,7 +265,7 @@ class Rebost():
 		return(add)
 
 	def _appendInfo(self,rebostPkg,oldRebostPkg):
-			#if oldComponent.get_pkgname()==component.get_pkgname():
+		#if oldComponent.get_pkgname()==component.get_pkgname():
 		for bundle,idBundle in rebostPkg.get('bundle',{}).items():
 			if ";" in idBundle:
 				oldRebostPkg['bundle'].update({bundle:idBundle})
@@ -310,15 +321,12 @@ class Rebost():
 		if showProcResult:
 			while not showProcResult[str(showProc)].get('result',''):
 				showProcResult=json.loads(self.chkProgress(showProc))
-				print(showProcResult)
-				print(showProc)
 				time.sleep(0.2)
 			if extraArgs:
 				if extraArgs in ['package','appimage','snap','flatpak']:
 					bundle=extraArgs
 				else:
 					bundle='package'
-			print("***")
 			resultList=json.loads(showProcResult[str(showProc)]['result'])
 			for pkg in resultList:
 				package=pkg
@@ -336,10 +344,9 @@ class Rebost():
 						else:
 							bundle='package'
 				break
-			print("***")
 			return([bundle,package])
 
-	def _execute(self,action,package,bundle='',plugin=None):
+	def _execute(self,action,package,bundle='',plugin=None,th=False):
 			#action,args=action_args.split("#")
 		procInfo=definitions.rebostProcess()
 		plugList=[]
@@ -360,7 +367,7 @@ class Rebost():
 			plugList.append(plugin)
 		if plugList:
 			for plugin in plugList:
-				procId=self._executeAction(plugin,action,package,bundle)
+				procId=self._executeAction(plugin,action,package,bundle,th)
 				if procId:
 					procList.append(procId)
 		else:
@@ -373,13 +380,13 @@ class Rebost():
 			self.process[procIndex]['plugin']=''
 			self.process[procIndex]['progressQ']=''
 			self.process[procIndex]['resultQ']=''
-			self.process[procIndex]['proc']=''
+			#self.process[procIndex]['proc']=''
 		else:
 			print("Failed!!!")
 			procIndex=-1
 		return(procIndex)
 
-	def _executeAction(self,plugin,action,package,bundle=''):
+	def _executeAction(self,plugin,action,package,bundle='',th=False):
 		procInfo=definitions.rebostProcess()
 		self.procId+=1
 		self._debug("Launching %s from %s"%(action,plugin))
@@ -390,7 +397,10 @@ class Rebost():
 		procInfo['result']=''
 		procInfo['action']=action
 		procInfo['parms']=package
-		proc=multiprocessing.Process(target=self.plugins[plugin].execute,args=(self.procId,action,procInfo['progressQ'],procInfo['resultQ'],self.store,package))
+		if th:
+			proc=threading.Thread(target=self.plugins[plugin].execute,args=(self.procId,action,procInfo['progressQ'],procInfo['resultQ'],self.store,package))
+		else:
+			proc=multiprocessing.Process(target=self.plugins[plugin].execute,args=(self.procId,action,procInfo['progressQ'],procInfo['resultQ'],self.store,package))
 		procInfo['proc']=proc
 		self.process[self.procId]=procInfo.copy()
 		retval=self.procId

@@ -14,7 +14,7 @@ class sqlHelper():
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
-		self.actions=["search","load"]
+		self.actions=["show","search","load"]
 		self.packagekind="*"
 		self.priority=100
 		#self.autostartActions=["load"]
@@ -42,13 +42,15 @@ class sqlHelper():
 
 	#def execute(self,action,*args):
 	def execute(self,procId,action,progress,result,store,args=''):
+		self._debug(action)
 		rs=''
 		if action=='search':
 			rs=self._searchPackage(args)
 		if action=='show':
-			rs=self._showPackage(*args)
+			rs=self._showPackage(args)
 		if action=='load':
 			rs=self.consolidate_sql_tables()
+		self._debug(rs)
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):
@@ -59,6 +61,15 @@ class sqlHelper():
 			self.progress[action]=0
 			if action=='search':
 				self._searchStore(args)
+
+	def _showPackage(self,pkgname):
+		table=self.main_table.replace(".db","")
+		(db,cursor)=self.enable_connection(self.main_table)
+		query="SELECT * FROM {} WHERE pkg LIKE '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
+		#self._debug(query)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		return(rows)
 
 	def _searchPackage(self,pkgname):
 		table=self.main_table.replace(".db","")

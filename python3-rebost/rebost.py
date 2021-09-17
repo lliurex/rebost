@@ -22,7 +22,8 @@ class color:
    END = '\033[0m'
 
 def _printSearch(result):
-	msg=(f"{result['pkgname']} - {result['summary']}")
+	#msg=(f"{result['pkgname']} - {result['summary']}")
+	msg=("{} - {}".format(result['pkgname'],result['summary']))
 	if (result['bundle']):
 		bundleStr=''
 		for bundle in sorted(result['bundle'].keys()):
@@ -125,11 +126,12 @@ rebost=rebostClient.RebostClient()
 #_loadStore()
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
-result=json.loads(str(rebost.execute(action,actionArgs)))
+#result=json.loads(str(rebost.execute(action,actionArgs)))
+result=json.loads((rebost.execute(action,actionArgs)))
 	
 if action=='search':
 	for res in result:
-		print(_printSearch(res))
+		print(_printSearch(json.loads(res)))
 if action=='show':
 	for res in result:
 		print(_printShow(res))

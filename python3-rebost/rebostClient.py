@@ -43,7 +43,6 @@ class RebostClient():
 					if "-" in package:
 						package=package.replace("-","_")
 					if action=='install':
-						self._debug("Action: %s %s"%(action,package))
 						procId=self.rebost.install(package,extraArgs)
 					elif action=='search':
 						procId=self.rebost.search(package,extraArgs)

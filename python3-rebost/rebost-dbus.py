@@ -21,11 +21,10 @@ class rebostDbusMethods(dbus.service.Object):
 			logging.warning("rebost-dbus: %s"%str(msg))
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
+						 in_signature='ss', out_signature='s')
 	def install(self,args,extraArgs):
 		action='install'
 		ret=self.rebost.execute(action,args,extraArgs)
-		ret=1
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",

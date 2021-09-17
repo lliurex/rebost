@@ -21,6 +21,11 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
+def _printInstall(result):
+	if "-1" in result.keys():
+		print("Package {} it's available from different sources. Specify one to proceed".format(actionArgs[0]))
+		print("Package {} available as {}".format(actionArgs[0],list(result["-1"].keys())))
+
 def _printSearch(result):
 	#msg=(f"{result['pkgname']} - {result['summary']}")
 	msg=("{} - {}".format(result['pkgname'],result['summary']))
@@ -41,7 +46,8 @@ def _printSearch(result):
 	return(msg)
 
 def _printShow(result):
-	msg=f"Package: {result['pkgname']}\n"
+	#msg=f"Package: {result['pkgname']}\n"
+	msg="Package: {}\n".format(result['pkgname'])
 	bundleStr=''
 	for bundle in sorted(result['bundle'].keys()):
 		if bundle=='appimage':
@@ -127,14 +133,17 @@ rebost=rebostClient.RebostClient()
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
-result=json.loads((rebost.execute(action,actionArgs)))
+result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search':
 	for res in result:
 		print(_printSearch(json.loads(res)))
 if action=='show':
 	for res in result:
-		print(_printShow(res))
+		print(_printShow(json.loads(res)))
+if action=='install':
+	for res in result:
+		print(_printInstall(res))
 
 sys.exit(0)
 sw=True

@@ -25,7 +25,7 @@ class appimageHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="appimage"
-		self.actions=["search","load","install","remove"]
+		self.actions=["load","install","remove"]
 		#self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
@@ -234,7 +234,7 @@ class appimageHelper():
 		pkgList=[]
 		while not self.queue.empty():
 			pkgList.append(self.queue.get())
-		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.sql')
+		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.db')
 		self._debug("SQL loaded")
 		return(applist)
 	#_process_appimage_json
@@ -262,7 +262,7 @@ class appimageHelper():
 			if appimage['links']:
 				appinfo=self.load_json_appinfo(appimage)
 			  #  rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
-				#rebostHelper.rebostPkg_to_sqlite(appinfo,'appimage.sql')
+				#rebostHelper.rebostPkg_to_sqlite(appinfo,'appimage.db')
 				self.queue.put(appinfo)
 		semaphore.release()
 		#def _th_process_appimage

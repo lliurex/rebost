@@ -22,9 +22,9 @@ def rebostPkg(*kwargs):
 
 def rebostPkgList_to_sqlite(rebostPkgList,table):
 	db=sqlite3.connect(table)
-	table=table.replace('.sql','')
+	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.sql',''))
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
@@ -36,20 +36,11 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	db.commit()
 	db.close()
 
-def enable_connection(table):
-	db=sqlite3.connect(table)
-	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
-	cursor.execute(query)
 
-def close_connection(table):
-	db=sqlite3.connect(table)
-	db.commit()
-	db.close()
 
 def rebostPkg_to_sqlite(rebostPkg,table):
 	db=sqlite3.connect(table)
-	table=table.replace('.sql','')
+	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)

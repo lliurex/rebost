@@ -15,11 +15,12 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
+		self._debug("Loaded")
 		self.enabled=True
 		self.packagekind="flatpak"
-		self.actions=["search","load","install","remove"]
+		self.actions=["load","install","remove"]
 		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
@@ -28,7 +29,7 @@ class flatpakHelper():
 		self.resultQ={}
 		self.result={}
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
-#		self._loadStore()
+		#self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -80,10 +81,10 @@ class flatpakHelper():
 		store=self._get_flatpak_catalogue()
 		self._debug("Get rebostPkg")
 		rebostPkgList=rebostHelper.appstream_to_rebost(store)
-		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.sql')
+		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 		self._debug("SQL loaded")
-		self.progressQ[action].put(100)
-		self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
+		#self.progressQ[action].put(100)
+		#self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
 
 	def _get_flatpak_catalogue(self):
 		action="load"
@@ -105,7 +106,6 @@ class flatpakHelper():
 					self._debug(srcDir)
 					installer.update_appstream_sync(remote.get_name())
 					self._debug("{} synced".format(srcDir))
-			#sections=self.snap_client.get_sections_sync()
 		except Exception as e:
 			print(e)
 			#self._on_error("load",e)
@@ -163,7 +163,7 @@ class flatpakHelper():
 				except:
 					pass
 				added.append(pkg.get_id())
-			self._debug("End loading flatpak metadata")
+		self._debug("End loading flatpak metadata")
 		return(store)
 
 	def _processRemote(self,installer,remote):
@@ -254,4 +254,3 @@ def main():
 	obj=flatpakHelper()
 	return (obj)
 
-a=flatpakHelper()

@@ -13,11 +13,11 @@ wrap=Gio.SimpleAsyncResult()
 
 class snapHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"
-		self.actions=["show","search","load","install","remove"]
+		self.actions=["load","install","remove"]
 		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
@@ -166,7 +166,7 @@ class snapHelper():
 			rebostPkgList=self._get_snap_catalogue()
 		except Exception as e:
 			raise
-		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.sql')
+		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
 		
 		self._debug("SQL loaded")
 		self.progressQ[action].put(100)
@@ -339,5 +339,3 @@ def main():
 	obj=snapHelper()
 	return (obj)
 
-
-a=snapHelper()

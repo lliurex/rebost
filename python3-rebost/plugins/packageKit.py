@@ -16,9 +16,10 @@ class packageKit():
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
+		self._debug("Loaded")
 		self.packagekind="package"
-		self.actions=["show","search","load","install","remove"]
-#		self.autostartActions=["load"]
+		self.actions=["load","install","remove"]
+		self.autostartActions=["load"]
 		self.priority=0
 		self.progress={}
 		self.progressQ={}
@@ -223,27 +224,15 @@ class packageKit():
 			th=threading.Thread(target=self._th_generateXml,args=(pkg,semaphore,))
 			th.start()
 			thList.append(th)
-####		rebostpkg=rebostHelper.rebostPkg()
-####		rebostpkg['name']=pkg.get_name()
-####		rebostpkg['pkgname']=pkg.get_name()
-####		rebostpkg['id']="org.packagekit.%s"%pkg.get_name()
-####		rebostpkg['summary']=pkg.get_summary()
-####		rebostpkg['description']=pkg.get_summary()
-####		rebostpkg['version']="package-{}".format(pkg.get_version())
-####		rebostpkg['bundle']={"package":"{}".format(pkg.get_id())}
-####		added.append(pkg.get_name())
-####		rebostPkgList.append(rebostpkg)
-		#definitions.rebostPkg_to_xml(rebostPkgList,'/tmp/.cache/rebost/xml/packageKit/packagekit.xml')
-#		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'packagekit.sql')
 		for th in thList:
 			th.join()
 		self._debug("PKG loaded")
 		pkgList=[]
 		while not self.queue.empty():
 			pkgList.append(self.queue.get())
-		rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.sql')
+		rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.db')
 		self._debug("SQL loaded")
-#		self.progressQ[action].put(100)
+		self.progressQ[action].put(100)
 	
 	def _th_generateXml(self,pkg,semaphore):
 		semaphore.acquire()
@@ -259,8 +248,6 @@ class packageKit():
 		rebostPkg['description']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
 		rebostPkg['version']="package-{}".format(pkg.get_version())
 		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}
-#		rebostHelper.rebostPkg_to_sqlite(rebostPkg,'packagekit.sql')
-#		definitions.rebostPkgList_to_xml([rebostpkg],'/tmp/.cache/rebost/xml/packageKit/packagekit.xml')
 		self.queue.put(rebostPkg)
 		semaphore.release()
 
@@ -278,13 +265,9 @@ class packageKit():
 		else:
 			args[0].set_percentage(args[0].get_percentage()+10)
 		progress=args[0].get_percentage()
-		self.progress[action]=self.progress.get(action,0)+progress
-		#self.progressQ[action].put(int(self.progress.get(action,0)/8.33))
-		print(progress)
-		return False
+		self.progressQ[action].put(int(self.progress.get(action,0)/8.33))
 
 def main():
 	obj=packageKit()
 	return(obj)
 
-a=packageKit()

@@ -9,6 +9,9 @@ import threading
 import rebostHelper
 import logging
 import html
+import tempfile
+import os
+import subprocess
 from queue import Queue
 
 class packageKit():
@@ -51,6 +54,8 @@ class packageKit():
 		return(rs)
 
 	def execute(self,procId,action,progress,result,store=None,args=''):
+		self._debug(action)
+		rs=''
 		if action in self.actions:
 			self.progressQ[action]=progress
 			self.resultQ[action]=result
@@ -61,11 +66,12 @@ class packageKit():
 			if action=='load':
 				self._loadStore()
 			if action=='install':
-				self._install(args)
+				rs=self._install(args)
 			if action=='remove':
 				self._remove(args)
 			if action=='info':
 				self._info(args)
+		return(rs)
 
 	def getStatus(self):
 		return (self.progress)
@@ -131,36 +137,57 @@ class packageKit():
 
 	def _install(self,package):
 		action="install"
-		searchResults=[]
-		filters=1
-		pklist=self.pkcon.search_names(filters,[package['name']],None,self._install_callback,None)
-		pkg=None
-		resultSet=definitions.resultSet()
-		for pk in pklist.get_package_array():
-			if package['name']==pk.get_name():
-				pkg=pk
-				break
-		if pkg:
-			resultSet['name']=pkg.get_name()
-			resultSet['pkgname']=pkg.get_name()
-			resultSet['id']=pkg.get_id()
-			self._debug("Installing %s"%pkg.get_id())
-			err=0
-			try:
-				self.pkcon.install_packages(True,[pkg.get_id(),],None,self._install_callback,None)
-				resultSet['description']='Installed'
-				resultSet['error']=0
-			except Exception as e:
-				resultSet['errormsg']=str(e)
-				resultSet['error']=1
-		else:
-			resultSet['errormsg']="Package %s not found"%package['name']
-			resultSet['error']=2
-		searchResults.append(resultSet)
-		self.resultQ[action].put(str(json.dumps(searchResults)))
-		self.progressQ[action].put(100)
+		self._debug("Installing {}".format(package))
+		wrkdir=tempfile.mkdtemp()
+		try:
+			self.pkcon.download_packages([package,],wrkdir,None,self._install_callback,None)
+		except Exception as e:
+			self._debug(e)
+			wrkdir=""
+		if wrkdir:
+			for pkg in os.listdir(wrkdir):
+				if pkg.endswith("deb"):
+					#Call EPI and install
+					cmd=['pkexec','/usr/bin/epi-package-installer.py',os.path.join(wrkdir,pkg)]
+					subprocess.run(cmd)
+
+		return([(package,{'package':package,'status':'installed'})])
+#			self.pkcon.install_packages(True,[package,],None,self._install_callback,None)
+####	except Exception as e:
+####		resultSet['errormsg']=str(e)
+####		resultSet['error']=1
+####	searchResults=[]
+####	filters=1
+####	pklist=self.pkcon.search_names(filters,[package['name']],None,self._install_callback,None)
+####	pkg=None
+####	resultSet=definitions.resultSet()
+####	for pk in pklist.get_package_array():
+####		if package['name']==pk.get_name():
+####			pkg=pk
+####			break
+####	if pkg:
+####		resultSet['name']=pkg.get_name()
+####		resultSet['pkgname']=pkg.get_name()
+####		resultSet['id']=pkg.get_id()
+####		self._debug("Installing %s"%pkg.get_id())
+####		err=0
+####		try:
+####			self.pkcon.install_packages(True,[pkg.get_id(),],None,self._install_callback,None)
+####			resultSet['description']='Installed'
+####			resultSet['error']=0
+####		except Exception as e:
+####			resultSet['errormsg']=str(e)
+####			resultSet['error']=1
+####	else:
+####		resultSet['errormsg']="Package %s not found"%package['name']
+####		resultSet['error']=2
+#		searchResults.append(resultSet)
+	#	self.resultQ[action].put(str(json.dumps(wrkdir)))
+	#	self.progressQ[action].put(100)
 	
 	def _install_callback(self,*args):
+		print(".")
+	def _install_callback2(self,*args):
 		action='install'
 		if action not in self.progress.keys():
 			action='remove'
@@ -186,24 +213,30 @@ class packageKit():
 	def _remove(self,package):
 		action='remove'
 		searchResults=[]
-		filters=1
-		pklist=self.pkcon.search_names(filters,[package['name']],None,self._install_callback,None)
-		pkg=None
-		resultSet=definitions.resultSet()
-		for pk in pklist.get_package_array():
-			if package['name']==pk.get_name():
-				pkg=pk
-				break
-		if pkg:
-			resultSet['name']=pkg.get_name()
-			resultSet['pkgname']=pkg.get_name()
-			resultSet['id']=pkg.get_id()
-			try:
-				self.pkcon.remove_packages(True,[pkg.get_id(),],True,False,None,self._install_callback,None)
-			except Exception as e:
-				self._debug("Remove error: %s"%e)
-				resultSet['error']=1
-				resultSet['errormsg']=str(e)
+		try:
+			self.pkcon.remove_packages(True,[package,],True,False,None,self._install_callback,None)
+		except Exception as e:
+			self._debug("Remove error: %s"%e)
+			resultSet['error']=1
+			resultSet['errormsg']=str(e)
+####	filters=1
+####	pklist=self.pkcon.search_names(filters,[package['name']],None,self._install_callback,None)
+####	pkg=None
+####	resultSet=definitions.resultSet()
+####	for pk in pklist.get_package_array():
+####		if package['name']==pk.get_name():
+####			pkg=pk
+####			break
+####	if pkg:
+####		resultSet['name']=pkg.get_name()
+####		resultSet['pkgname']=pkg.get_name()
+####		resultSet['id']=pkg.get_id()
+####		try:
+####			self.pkcon.remove_packages(True,[pkg.get_id(),],True,False,None,self._install_callback,None)
+####		except Exception as e:
+####			self._debug("Remove error: %s"%e)
+####			resultSet['error']=1
+####			resultSet['errormsg']=str(e)
 		searchResults.append(resultSet)
 		self.resultQ[action].put(str(json.dumps(searchResults)))
 		self.progressQ[action].put(100)

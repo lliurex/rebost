@@ -23,8 +23,14 @@ class color:
 
 def _printInstall(result):
 	if "-1" in result.keys():
-		print("Package {} it's available from different sources. Specify one to proceed".format(actionArgs[0]))
-		print("Package {} available as {}".format(actionArgs[0],list(result["-1"].keys())))
+		msg="Package {} it's available from different sources. Specify one to proceed\n".format(actionArgs[0])
+		msg+="Package {} available as {}".format(actionArgs[0],list(result["-1"].keys()))
+	else:
+		pkg=result.get('package','unknown')
+		if ';' in pkg:
+			pkg=pkg.split(";")[0]
+		msg=("Package {} {}".format(pkg,result.get('status','unknown')))
+	return(msg)
 
 def _printSearch(result):
 	#msg=(f"{result['pkgname']} - {result['summary']}")

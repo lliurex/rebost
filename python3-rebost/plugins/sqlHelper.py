@@ -50,7 +50,6 @@ class sqlHelper():
 			rs=self._showPackage(args)
 		if action=='load':
 			rs=self.consolidate_sql_tables()
-		self._debug(rs)
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):

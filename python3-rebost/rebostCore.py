@@ -144,32 +144,33 @@ class Rebost():
 		rebostPkgList=[]
 		store=[]
 		preaction=''
+		selected_bundle='*'
 		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
 		if action=='install' or action=='remove':
 			preaction="show"
 			self._debug("Executing {} from {}".format(preaction,self.plugins['sqlHelper']))
 			(pkgname,rebostPkg)=self.plugins['sqlHelper'].execute(procId=0,action=preaction,progress='',result='',store='',args=package)[0]
-			bundles=json.loads(rebostPkg).get('bundle')
+			bundles=json.loads(rebostPkg).get('bundle',"not found")
 			if len(bundles)>1:
-				store=json.dumps([{"-1":bundles}])
-#			rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action="show",progress='',result='',store='',args=package))
-#			(bundle,package)=self._executePreInstallRemove(package,extraArgs,plugin)
+				rebostPkgList=[("-1",{'package':package,'status':'available from many sources','bundles':bundles})]
+			for bundle,pkg_id in bundles.items():
+				selected_bundle=bundle
+				package=pkg_id
+				break
+			self._debug("Selected plugin {}".format(plugin))
 		elif extraArgs:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraArgs):
 					bundle=str(extraArgs)
-		if store==[]:
+		if rebostPkgList==[]:
 			for plugin,info in self.pluginInfo.items():
-				if action in info['actions']:
+				if action in info['actions'] and (plugin==None or info['packagekind']==selected_bundle):
 					self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 					self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
 					rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package))
 
 		#Generate the store with results and sanitize them
-		if isinstance(rebostPkgList,list) and rebostPkgList:
-				#	   xmlStore=self.plugins["rebostHelper"].rebostPkgList_to_xml(rebostPkgList)
-		#   appstore=appstream.Store()
-	#	   appstore.from_xml("".join(xmlStore))
+		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
 		return(store)
 			
@@ -219,40 +220,6 @@ class Rebost():
 						break
 		return(add)
 
-	def _appendInfo(self,rebostPkg,oldRebostPkg):
-		#if oldComponent.get_pkgname()==component.get_pkgname():
-		for bundle,idBundle in rebostPkg.get('bundle',{}).items():
-			if ";" in idBundle:
-				oldRebostPkg['bundle'].update({bundle:idBundle})
-		#Always get more complete info
-		desc=oldRebostPkg.get('description','')
-		newDesc=rebostPkg.get('description')
-		if desc==None:
-			desc=''
-		if newDesc==None:
-			newDesc=''
-		if len(desc)<len(newDesc):
-			oldRebostPkg['description']=newDesc
-		cats=oldRebostPkg.get('categories')
-		newCats=rebostPkg.get('categories')
-		for newCat in newCats:
-			if newCat not in cats:
-				oldRebostPkg['categories'].append(newCat)
-		for icon in rebostPkg.get('icon',[]):
-				#if icon.get_kind()==appstream.IconKind.CACHED or icon.get_kind()==appstream.IconKind.LOCAL:
-			oldRebostPkg['icons']=icon
-#	   for release in component.get_releases():
-#		   oldComponent.add_release(release)
-		#if name is canonical then change to name
-		oldName=oldRebostPkg.get('pkgname')
-		name=rebostPkg.get('pkgname')
-		if oldName and name:
-			if "." in oldName and not "." in name and name:
-				oldRebostPkg['pkgname']=name
-		elif not oldName:
-			oldRebostPkg['pkgName']=name
-		return(oldRebostPkg)
-
 	def execute2(self,action,package='',extraArgs=None,plugin=None):
 		bundle=''
 		self._debug("Executing %s %s"%(action,package))
@@ -284,9 +251,6 @@ class Rebost():
 				else:
 					bundle='package'
 #			resultList=json.loads(showProcResult[str(showProc)]['result'])
-			print("*****")
-			self._debug(resultList)
-			print("*****")
 			for pkg in resultList:
 				package=pkg
 				if pkg['bundle']:

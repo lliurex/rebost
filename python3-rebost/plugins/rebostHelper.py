@@ -126,6 +126,10 @@ def appstream_to_rebost(appstreamCatalogue):
 		for i in component.get_bundles():
 			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
 				pkg['bundle']={'flatpak':pkg['id']}
+				versionArray=["0.0"]
+				for release in component.get_releases():
+					versionArray.append(release.get_version())
+				pkg['versions']={'flatpak':versionArray[-1]}
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)

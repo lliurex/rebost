@@ -65,23 +65,22 @@ def _printShow(result):
 		if bundle=='flatpak':
 			bundleStr+=f" {color.PURPLE}flatpak{color.END}"
 	msg+=f"Format:{bundleStr}\n"
+	versionStr=''
+	for version in sorted(result['versions'].keys()):
+		if version=='appimage':
+			versionStr+=" {}{}{}".format(color.DARKCYAN,result['versions'].get('appimage'),color.END)
+		if version=='snap':
+			versionStr+=" {}{}{}".format(color.RED,result['versions'].get('snap'),color.END)
+		if version=='package' or bundle=="limba":
+			versionStr+=" {}{}{}".format(color.YELLOW,result['versions'].get('package'),color.END)
+		if version=='flatpak':
+			versionStr+=" {}{}{}".format(color.PURPLE,result['versions'].get('flatpak'),color.END)
+	if versionStr=='':
+			versionStr=result.get('version','unknown')
+	msg+="Versions: {}\n".format(versionStr)
 	cat=" ".join(result['categories'])
 	msg+=f"Categories: {cat}\n"
 	msg+=f"Availability: {result['installed']}\n"
-	if result['versions']:
-		versionStr=''
-		for bundle,version in sorted(result['versions'].items()):
-			if bundle=='appimage':
-				versionStr+=" {}{}{}".format(color.CYAN,version,color.END)
-			if bundle=='snap':
-				versionStr+=" {}{}{}".format(color.RED,version,color.END)
-			if bundle=='package' or bundle=="limba":
-				versionStr+=" {}{}{}".format(color.BOLD,version,color.END)
-			if bundle=='flatpak':
-				versionStr+=" {}{}{}".format(color.PURPLE,version,color.END)
-		msg+=f"Version:{versionStr}\n"
-	else:
-		msg+=f"Version: {result['version']}\n"
 	msg+="\n"
 	msg+=f"{result['description']}"
 	return(msg)

@@ -124,7 +124,6 @@ def _loadStore():
 #def _loadStore
 
 def _processArgs(*args):
-	print(args)
 	action=args[0]
 	actionArgs=[]
 	if len(action)>=2:
@@ -132,6 +131,7 @@ def _processArgs(*args):
 			actionArgs=args[0][2:]
 		action=args[0][1]
 
+	actionArgs=":".join(actionArgs)
 	return(action,actionArgs)	
 
 rebost=rebostClient.RebostClient()
@@ -139,6 +139,7 @@ rebost=rebostClient.RebostClient()
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
+
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search':

@@ -17,7 +17,7 @@ class sqlHelper():
 		self.actions=["show","search","load"]
 		self.packagekind="*"
 		self.priority=100
-		#self.autostartActions=["load"]
+		self.postAutostartActions=["load"]
 		self.store=None
 		self.progressQ={}
 		self.progress={}
@@ -113,15 +113,18 @@ class sqlHelper():
 					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,key)
 					rows=main_cursor.execute(query).fetchone()
 					if rows:
-						self._debug("Update pkg {}".format(key))
+						#self._debug("Update pkg {}".format(key))
 						(main_key,main_data)=rows
 						if main_data:
 							json_main_value=json.loads(main_data)
-							if json_value.get('bundle')!=json_main_value.get('bundle'):
+							if json_value.get('bundle') and json_value.get('bundle')!=json_main_value.get('bundle'):
 								#json_main_value['bundle'][table]=json_value['bundle']
 								json_main_value['bundle'].update(json_value['bundle'])
 								value=str(json.dumps(json_main_value))
 								#self._debug(value)
+							if json_value.get('versions') and json_value.get('versions')!=json_main_value.get('versions'):
+								json_main_value['versions'].update(json_value['versions'])
+								value=str(json.dumps(json_main_value))
 					query="INSERT INTO {} (pkg, data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET data='{}';".format(main_tmp_table,key,value,value)
 					#self._debug(query)
 					main_cursor.execute(query)
@@ -131,6 +134,8 @@ class sqlHelper():
 		#Copy tmp to definitive
 		self._debug("Copying main table")
 		copyfile(self.main_tmp_table,self.main_table)
+		self._debug("Removing tmp file")
+		os.remove(self.main_tmp_table)
 		return([])
 
 	def copy_packagekit_sql(self):

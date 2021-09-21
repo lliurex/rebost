@@ -167,12 +167,17 @@ class Rebost():
 			(pkgname,rebostPkg)=self.plugins['sqlHelper'].execute(procId=0,action=preaction,progress='',result='',store='',args=package)[0]
 			bundles=json.loads(rebostPkg).get('bundle',"not found")
 			if len(bundles)>1:
-				rebostPkgList=[("-1",{'package':package,'status':'available from many sources','bundles':bundles})]
+				if not (extraArgs and extraArgs in bundles):
+					if extraArgs:
+						rebostPkgList=[("-1",{'package':package,'status':'not available as {}, only as {}'.format(extraArgs," ".join(list(bundles.keys())))})]
+					else:
+						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+				else:
+					bundles={extraArgs:bundles.get(extraArgs)}
 			for bundle,pkg_id in bundles.items():
 				selected_bundle=bundle
 				package=pkg_id
 				break
-			self._debug("Selected plugin {}".format(plugin))
 		elif extraArgs:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraArgs):

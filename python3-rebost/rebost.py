@@ -124,6 +124,7 @@ def _loadStore():
 #def _loadStore
 
 def _processArgs(*args):
+	print(args)
 	action=args[0]
 	actionArgs=[]
 	if len(action)>=2:

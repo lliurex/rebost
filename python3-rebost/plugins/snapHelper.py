@@ -67,98 +67,6 @@ class snapHelper():
 				self._install(args)
 			if action=='remove':
 				self._remove(args)
-	
-	def _showPackage(self,package):
-		#self._debug("Searching %s"%tokens)
-		pklist=None
-		package=package.replace("_","-")
-		try:
-			pklist,curr=self.snap_client.find_sync(Snapd.FindFlags.MATCH_NAME,package,None)
-		except Exception as e:
-			print("ERR: %s"%e)
-			#self._set_status(1)
-####	stable_pkgs=[]
-####	for pkg in pkgs:
-####		if force_stable:
-####			if pkg.get_channel()=='stable':
-####				stable_pkgs.append(pkg)
-####			else:
-####				#self._debug(pkg.get_channel())
-####				pass
-####		else:
-####			stable_pkgs.append(pkg)
-		#self._debug("Done")
-		searchResults=self._collectSearchInfo(pklist)
-		return(searchResults)
-
-	def _searchPackage(self,package):
-		#self._debug("Searching %s"%tokens)
-		pklist=None
-		package=package.replace("_","-")
-		try:
-			pklist,curr=self.snap_client.find_sync(Snapd.FindFlags.NONE,package,None)
-		except Exception as e:
-			print("ERR: %s"%e)
-			#self._set_status(1)
-####	stable_pkgs=[]
-####	for pkg in pkgs:
-####		if force_stable:
-####			if pkg.get_channel()=='stable':
-####				stable_pkgs.append(pkg)
-####			else:
-####				#self._debug(pkg.get_channel())
-####				pass
-####		else:
-####			stable_pkgs.append(pkg)
-		#self._debug("Done")
-		searchResults=self._collectSearchInfo(pklist)
-		return(searchResults)
-
-	def _collectSearchInfo(self,pklist=[]):
-		action='search'
-		searchResults=[]
-		added=[]
-		if pklist:
-			for pkg in pklist:
-				if pkg.get_name() in added:
-					continue
-				rebostpkg=rebostHelper.rebostPkg()
-				rebostpkg['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
-				rebostpkg['name']=pkg.get_name()
-				rebostpkg['pkgname']=pkg.get_name().lower().replace("_","-")
-				rebostpkg['summary']=pkg.get_summary()
-				rebostpkg['description']=pkg.get_description()
-				#rebostpkg['categories']=['Snap']
-				rebostpkg['kind']=5
-				if pkg.get_icon():
-					rebostpkg['icon']=pkg.get_icon()
-				rebostpkg['version']="snap-{}".format(pkg.get_version())
-				#if pkg.get_screenshots():
-				#if 'screenshots' in appimage.keys():
-				#	appinfo['thumbnails']=appimage['screenshots']
-				#if 'links' in appimage.keys():
-				#	if appimage['links']:
-				#		for link in appimage['links']:
-				#			if 'url' in link.keys() and link['type']=='Download':
-				#				appinfo['installerUrl']=link['url']
-				#if 'authors' in appimage.keys():
-				#	if appimage['authors']:
-				#		for author in appimage['authors']:
-				#			if 'url' in author.keys():
-				#				#self._debug("Author: %s"%author['url'])
-				#				appinfo['homepage']=author['url']
-				state="available"
-				try:
-					pkg=self.snap_client.list_one_sync(pkg.get_name())
-					state='installed'
-					pkgs=[pkg]
-				except:
-					state='available'
-				rebostpkg['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
-				#rebostpkg['categories']=self._get_categories(section)
-				searchResults.append(rebostpkg)
-				#searchResults.append(pkg)
-		return(searchResults)
 
 	def _loadStore(self):
 		action="load"
@@ -203,6 +111,7 @@ class snapHelper():
 		if pkg.get_icon():
 			appinfo['icon']=pkg.get_icon()
 		appinfo['version']="snap-{}".format(pkg.get_version())
+		appinfo['versions']={"snap":"{}".format(pkg.get_version())}
 		#if pkg.get_screenshots():
 		#if 'screenshots' in appimage.keys():
 		#	appinfo['thumbnails']=appimage['screenshots']
@@ -224,6 +133,7 @@ class snapHelper():
 			pkgs=[pkg]
 		except:
 			state='available'
+		appinfo['status']={"snap":"{}".format(state)}
 		appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
 		appinfo['categories']=self._get_categories(section)
 		return appinfo	

@@ -134,7 +134,8 @@ class snapHelper():
 		except:
 			state='available'
 		appinfo['status']={"snap":"{}".format(state)}
-		appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
+		#appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
+		appinfo['bundle'].update({'snap':"{}".format(pkg.get_name())})
 		appinfo['categories']=self._get_categories(section)
 		return appinfo	
 
@@ -164,10 +165,20 @@ class snapHelper():
 		categories=catMap.get(section.lower().replace(" ",""),["Utility"])
 		return(categories)
 
+	def _install(self,snap):
+		action="install"
+		self._debug("Installing {}".format(snap))
+		result=rebostHelper.resultSet()
+		downloadedSnap=self.snap_client.download_sync(snap,None,None,None)
+		
+		print(downloadedSnap)
+		print(type(downloadedSnap))
+		pass
 	
-	def _install(self,app_info):
+	def _install2(self,app_info):
 		#self._debug("Installing %s"%app_info['name'])
 		action="install"
+		self._debug("Installing {}".format(app_info))
 		result=rebostHelper.resultSet()
 		result['id']=self.procId
 		result['name']=action

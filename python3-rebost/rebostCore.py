@@ -27,7 +27,7 @@ class Rebost():
 		self.plugins={}
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions","progress"]
-		self.plugAttrOptional=["autostartActions"]
+		self.plugAttrOptional=["autostartActions","postAutostartActions"]
 		self.process={}
 		self.procDict={}
 		self.store=appstream.Store()
@@ -116,14 +116,18 @@ class Rebost():
 
 	def _autostartActions(self):
 		actionDict={}
+		postactionDict={}
 		for plugin,info in self.pluginInfo.items():
 			actions=info.get('autostartActions',[])
+			postactions=info.get('postAutostartActions',[])
 			if actions:
 				self._debug("Loading autostart actions for %s"%plugin)
 				priority=info.get('priority',0)
 				newDict=actionDict.get(priority,{})
 				newDict[plugin]=actions
 				actionDict[priority]=newDict.copy()
+			if postactions:
+				postactionDict[plugin]=postactions
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
 		actionList.sort(reverse=False)
@@ -137,6 +141,17 @@ class Rebost():
 							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
 		for proc in procList:
 			self.process[proc]['proc'].join()
+		if postactions:
+			self._debug("Launching postactions")
+			for plugin,actions in postactionDict.items():
+				for action in actions:
+					try:
+						procList.append(self._execute(action,'','',plugin=plugin,th=True))
+					except Exception as e:
+							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
+		for proc in procList:
+			self.process[proc]['proc'].join()
+	#def _autostartActions
 
 	
 	def execute(self,action,package='',extraArgs=None,plugin=None):

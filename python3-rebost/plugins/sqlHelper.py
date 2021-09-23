@@ -7,14 +7,16 @@ import rebostHelper
 import logging
 import html
 import sqlite3
+import subprocess
 from shutil import copyfile
+from appconfig.appConfigN4d import appConfigN4d as n4d
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
-		self.actions=["show","search","load"]
+		self.actions=["show","search","load","install"]
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -25,6 +27,7 @@ class sqlHelper():
 		self.result={}
 		self.main_table="rebostStore.db"
 		self.main_tmp_table="tmpStore.db"
+		self.n4d=n4d()
 		#self.consolidate_sql_tables()
 
 	def setDebugEnabled(self,enable=True):
@@ -41,7 +44,7 @@ class sqlHelper():
 		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
 
 	#def execute(self,action,*args):
-	def execute(self,procId,action,progress,result,store,args=''):
+	def execute(self,procId,action,progress,result,store,args='',extraArgs=''):
 		self._debug(action)
 		rs=''
 		if action=='search':
@@ -50,6 +53,8 @@ class sqlHelper():
 			rs=self._showPackage(args)
 		if action=='load':
 			rs=self.consolidate_sql_tables()
+		if action=='install':
+			rs=self._installPackage(args,extraArgs)
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):
@@ -60,6 +65,19 @@ class sqlHelper():
 			self.progress[action]=0
 			if action=='search':
 				self._searchStore(args)
+
+	def enable_connection(self,table):
+		db=sqlite3.connect(table)
+		cursor=db.cursor()
+		table=table.replace(".db","")
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+		cursor.execute(query)
+		return(db,cursor)
+
+	def close_connection(self,db):
+		db.commit()
+		db.close()
+
 
 	def _showPackage(self,pkgname):
 		table=self.main_table.replace(".db","")
@@ -79,17 +97,35 @@ class sqlHelper():
 		rows=cursor.fetchall()
 		return(rows)
 
-	def enable_connection(self,table):
-		db=sqlite3.connect(table)
-		cursor=db.cursor()
-		table=table.replace(".db","")
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
-		cursor.execute(query)
-		return(db,cursor)
+	def _installPackage(self,pkgname,bundle=''):
+		self._debug("Installing package {}".format(pkgname))
+		rebostPkgList=[]
+		rebostpkg=''
+		#1st search that there's a package in the desired format
+		rows=self._showPackage(pkgname)
+		if rows:
+			(package,rebostpkg)=rows[0]
+			bundles=json.loads(rebostpkg).get('bundle',"not found")
+			if len(bundles)>1:
+				if not (bundle and bundle in bundles):
+					rebostpkg=''
+					if bundle:
+						rebostPkgList=[("-1",{'package':package,'status':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
+					else:
+						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+			else:
+				bundle=bundles[0]
+		else:
+			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
+		if rebostpkg:
+		#Well, almost the package exists and the desired format is available so generate EPI files and return.
+			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Installing','epi':epifile})]
+			#subprocess.run(['pkexec','epi-gtk',epifile])
+			self.n4d.n4dQuery("LliurexStore","install_epi",epifile)
 
-	def close_connection(self,db):
-		db.commit()
-		db.close()
+		self._debug(rebostPkgList)
+		return (rebostPkgList)
 
 	def consolidate_sql_tables(self):
 		self._debug("Merging data")

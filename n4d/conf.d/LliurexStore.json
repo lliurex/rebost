@@ -1,0 +1,14 @@
+{
+    "SETUP": {
+        "type": "python",
+        "path": "LliurexStore.py",
+        "class": "LliurexStore"
+    },
+    "METHODS": {
+        "install_epi": {
+            "allowed_groups": [
+                "anonymous"
+            ]
+        }
+	}
+}

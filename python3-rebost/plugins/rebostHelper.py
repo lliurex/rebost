@@ -7,6 +7,13 @@ from gi.repository import AppStream as appstream
 import sqlite3
 import json
 import html
+import logging
+
+DBG=True
+
+def _debug(msg):
+	if DBG:
+		logging.warning("rebostHelper: %s"%str(msg))
 	
 def rebostProcess(*kwargs):
 	reb={'plugin':'','kind':'','progressQ':'','progress':'','resultQ':'','result':'','action':'','parm':'','proc':''}
@@ -35,8 +42,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 			print(e)
 	db.commit()
 	db.close()
-
-
+#def rebostPkgList_to_sqlite
 
 def rebostPkg_to_sqlite(rebostPkg,table):
 	db=sqlite3.connect(table)
@@ -57,23 +63,6 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	db.close()
 #def rebostPkgList_to_sqlite
 
-def rebostPkgList_to_xml(rebostPkgList,xmlFile=None):
-	resultSet=[]
-	for rebostPkg in rebostPkgList:
-		if xmlFile:
-			baseDir=os.path.join(os.path.dirname(xmlFile))#,rebost['name'][0].lower())	
-			f_file=os.path.join(baseDir,"{}.xml".format(rebost['id']))
-			if not os.path.exists(baseDir):
-				try:
-					os.makedirs(baseDir)
-				except Exception as e:
-					self._debug("Error creating folder {}: {}".format(baseDir,e))
-					continue
-			_generateInfo(f_file,rebost)
-		else:
-			resultSet.append(_generateInfoMem(rebostPkg))
-	return(resultSet)
-
 def _sanitizeString(data):
 	if isinstance(data,str):
 		data=html2text.html2text(data,"lxml")
@@ -87,6 +76,7 @@ def _sanitizeString(data):
 		data=data.replace("*p*"," ")
 		data=data.replace('<\p><\p>','<\p>')
 	return(data)
+#def _sanitizeString
 
 def appstream_to_rebost(appstreamCatalogue):
 	rebostPkgList=[]
@@ -133,160 +123,98 @@ def appstream_to_rebost(appstreamCatalogue):
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)
+#def appstream_to_rebost
 
+def generate_epi_for_rebostpkg(rebostpkg,bundle):
+	if isinstance(rebostpkg,str):
+		rebostpkg=json.loads(rebostpkg)
+	_debug("Generating EPI for:\n{}".format(rebostpkg))
+	epijson=_generate_epi_json(rebostpkg)
+	episcript=_generate_epi_sh(rebostpkg,bundle)
+	return(epijson)
+	
+def _generate_epi_json(rebostpkg):
+	tmpDir="/tmp"
+	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
+	epiFile={}
+	epiFile["type"]="file"
+	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),'url_download':'/tmp','version':{'all':rebostpkg.get('name')}}]
+	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'remove':True}
+	epiFile["required_root"]=True
+	epiFile["download"]=True
+	epiFile["required_dconf"]=True
 
-def _generateInfoMem(rebostPkg):
-	locale="C"
-	xmlApp=[]
-	xmlApp=['<?xml version="1.0" encoding="UTF-8"?>']
-	xmlApp.append('<components>')
-	xmlApp.append('<component type="desktop">')
-	xmlApp.append('<id>{}</id>'.format(rebostPkg['id'].lower()))
-	xmlApp.append('<name>{}</name>'.format(rebostPkg['name']))
-	xmlApp.append('<pkgname>{}</pkgname>'.format(rebostPkg['pkgname']))
-	if isinstance(rebostPkg['summary'],dict):
-		for lang,desc in rebostPkg['summary'].items():
-			desc=_sanitizeString(rebostPkg['summary'][lang])
-			xmlApp.append("<summary xml:lang=\"{}\" >{}</summary>".format(lang.lower(),desc))
-		idx=rebostPkg['summary'].get("C",'')
-		if idx:
-			desc=_sanitizeString(rebostPkg['summary']["C"])
-			xmlApp.append("<summary>{}</summary>".format(desc))
-		else:
-			idx=list(rebostPkg['summary'].keys())[0]
-			desc=_sanitizeString(rebostPkg['summary'][idx])
-			xmlApp.append("<summary>{}</summary>".format(desc))
-	else:
-		desc=_sanitizeString(rebostPkg['summary'])
-		xmlApp.append("<summary>{}</summary>".format(desc))
-	if isinstance(rebostPkg['description'],dict):
-		for lang,desc in rebostPkg['description'].items():
-			desc=_sanitizeString(rebostPkg['description'][lang])
-			xmlApp.append("<description xml:lang=\"{}\" ><p>{}</p></description>".format(lang.lower(),desc))
-		idx=rebostPkg['description'].get("C",'')
-		if idx:
-			xmlApp.append("<description><p>{}</p></description>".format(_sanitizeString(rebostPkg['description']["C"])))
-		elif rebostPkg['description']:
-			idx=list(rebostPkg['description'].keys())[0]
-			xmlApp.append("<description><p>{}</p></description>".format(_sanitizeString(rebostPkg['description'][idx])))
-	else:
-		desc=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
-		xmlApp.append("<description><p>{}</p></description>".format(desc))
-	if rebostPkg['icon'] and os.path.isfile(rebostPkg['icon']):
-		xmlApp.append('<icon type="local">{}</icon>'.format(rebostPkg['icon']))
-	else:
-		xmlApp.append('<icon type="stock">{}</icon>'.format(rebostPkg['icon']))
-	#f_list.append('<kind>{}</kind>'.format(rebost['kind']))
-	xmlApp.append('<categories>')
-	added_cat=[]
-	for cat in rebostPkg['categories']:
-		if cat and cat.lower() not in added_cat:
-			xmlApp.append('<category>{}</category>'.format(cat))
-			added_cat.append(cat.lower())
-	if not added_cat:
-		xmlApp.append('<category>Utility</category>')
-	xmlApp.append('</categories>')
-	xstatus={}
-	if rebostPkg["bundle"]:
-		bundlePkg=''
-		if rebostPkg['installerUrl']:
-				#bundlePkg=rebost['installerUrl']
-			xmlApp.append('<url type="unknown">{}</url>'.format(rebostPkg['installerUrl']))
-		for bundle,desc in rebostPkg["bundle"].items():
-			if bundlePkg=='':
-				bundlePkg=desc
-			xmlApp.append("<bundle type=\"{}\">{}</bundle>".format(bundle,bundlePkg))
-
-	if rebostPkg['homepage']:
-		xmlApp.append('<url type="homepage">{}</url>'.format(rebostPkg['homepage']))
-	if rebostPkg['version']:
-		xmlApp.append("<releases><release version=\"{}\"/></releases>".format(rebostPkg["version"]))
-
-	xmlApp.append('</component>')
-	xmlApp.append('</components>')
-	xml="".join(xmlApp)
-	return (xml)
-
-def _generateInfo(f_file,rebost):
-	#
-	if rebost.get('version'):
-		if os.path.isfile(f_file):
-			with open (f_file,'r') as f:
-				for l in f.readlines():
-						if rebost.get('version') in l:
-							return
-
-	locale="C"
-	f_list=[]
-	f_list=['<?xml version="1.0" encoding="UTF-8"?>']
-	f_list.append('<components>')
-	f_list.append('<component type="desktop">')
-	f_list.append('<id>{}</id>'.format(rebost['id'].lower()))
-	f_list.append('<name>{}</name>'.format(rebost['name']))
-	f_list.append('<pkgname>{}</pkgname>'.format(rebost['pkgname']))
-	if isinstance(rebost['summary'],dict):
-		for lang,desc in rebost['summary'].items():
-			desc=_sanitizeString(rebost['summary'][lang])
-			f_list.append("<summary xml:lang=\"{}\" >{}</summary>".format(lang.lower(),desc))
-		idx=rebost['summary'].get("C",'')
-		if idx:
-			desc=_sanitizeString(rebost['summary']["C"])
-			f_list.append("<summary>{}</summary>".format(desc))
-		else:
-			idx=list(rebost['summary'].keys())[0]
-			desc=_sanitizeString(rebost['summary'][idx])
-			f_list.append("<summary>{}</summary>".format(desc))
-	else:
-		desc=_sanitizeString(rebost['summary'])
-		f_list.append("<summary>{}</summary>".format(desc))
-	if isinstance(rebost['description'],dict):
-		for lang,desc in rebost['description'].items():
-			desc=_sanitizeString(rebost['description'][lang])
-			f_list.append("<description xml:lang=\"{}\" ><p>{}</p></description>".format(lang.lower(),desc))
-		idx=rebost['description'].get("C",'')
-		if idx:
-			f_list.append("<description><p>{}</p></description>".format(_sanitizeString(rebost['description']["C"])))
-		elif rebost['description']:
-			idx=list(rebost['description'].keys())[0]
-			f_list.append("<description><p>{}</p></description>".format(_sanitizeString(rebost['description'][idx])))
-	else:
-		desc=_sanitizeString(html2text.html2text(rebost['description'],"lxml"))
-		f_list.append("<description><p>{}</p></description>".format(desc))
-	if rebost['icon'] and os.path.isfile(rebost['icon']):
-		f_list.append('<icon type="local">{}</icon>'.format(rebost['icon']))
-	else:
-		f_list.append('<icon type="stock">{}</icon>'.format(rebost['icon']))
-	#f_list.append('<kind>{}</kind>'.format(rebost['kind']))
-	f_list.append('<categories>')
-	added_cat=[]
-	for cat in rebost['categories']:
-		if cat and cat.lower() not in added_cat:
-			f_list.append('<category>{}</category>'.format(cat))
-			added_cat.append(cat.lower())
-	if not added_cat:
-		f_list.append('<category>Utility</category>')
-	f_list.append('</categories>')
-	xstatus={}
-	if rebost["bundle"]:
-		bundlePkg=''
-		if rebost['installerUrl']:
-				#bundlePkg=rebost['installerUrl']
-			f_list.append('<url type="unknown">{}</url>'.format(rebost['installerUrl']))
-		for bundle,desc in rebost["bundle"].items():
-			if bundlePkg=='':
-				bundlePkg=desc
-			f_list.append("<bundle type=\"{}\">{}</bundle>".format(bundle,bundlePkg))
-
-	if rebost['homepage']:
-		f_list.append('<url type="homepage">{}</url>'.format(rebost['homepage']))
-	if rebost['version']:
-		f_list.append("<releases><release version=\"{}\"/></releases>".format(rebost["version"]))
-
-	f_list.append('</component>')
-	f_list.append('</components>')
 	try:
-		with open(f_file,'w') as f:
-			f.writelines(f_list)
+		with open(epiJson,'w') as f:
+			json.dump(epiFile,f,indent=4)
 	except Exception as e:
-		print("File {} error:{}".format(f_file,e))
+		_debug("%s"%e)
+		retCode=1
+	return(epiJson)
 
+def _generate_epi_sh(rebostpkg,bundle):
+	tmpDir="/tmp"
+	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
+	try:
+		if bundle=='package':
+			_make_deb_script(rebostpkg,epiScript)
+		if bundle=='snap':
+			_make_snap_script(rebostpkg,epiScript)
+		if bundle=='flatpak':
+			_make_flatpak_script(rebostpkg,epiScript)
+		if bundle=='appimage':
+			_make_appimage_script(rebostpkg,epiScript)
+	except Exception as e:
+		_debug("%s"%e)
+		retCode=1
+	if os.path.isfile(epiScript):
+		os.chmod(epiScript,0o755)
+#def _generate_epi_sh
+
+def _make_deb_script(rebostpkg,epiScript):
+	_debug("Generating deb script for:\n{}".format(rebostpkg))
+	with open(epiScript,'w') as f:
+		f.write("#!/bin/bash\n")
+		f.write("ACTION=\"$1\"\n")
+		f.write("case $ACTION in\n")
+		f.write("\tremove)\n")
+		f.write("\t\tapt-get remove -y %s\n"%rebostpkg['pkgname'])
+		f.write("\t\tTEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )\n"%rebostpkg['pkgname'])
+		f.write("\t\tif [ \"$TEST\" == 'installed' ];then\n")
+		f.write("\t\t\texit 1\n")
+		f.write("\t\tfi\n")
+		f.write("\t\t;;\n")
+		f.write("\ttestInstall)\n")
+		f.write("\t\tapt-get update>/dev/null\"\"\n")
+		f.write("\t\tRES=$(apt-get --simulate install %s 2>/tmp/err | awk 'BEGIN {sw=\"\"}{ver=0;if ($0~\" : \") sw=1; if ($0~\"[(]\") ver=1;if (sw==1 && ver==1) { print $0 } else if (sw==1) { print $1\" \"$2\" ( ) \"$3\" \"$4\" \"$5} }' | sed 's/.*: \(.*)\) .*/\\1/g;s/( *)//')\n"%deb)
+                        
+		f.write("\t\t[ -s /tmp/err ] && RES=${RES//$'\\n'/||}\"||\"$(cat /tmp/err) || RES=\"\"\n")
+		f.write("\t\techo \"${RES}\"\n")
+		f.write("\t\t;;\n")
+		f.write("\tgetInfo)\n")
+		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
+		f.write("\t\t;;\n")
+		f.write("esac\n")
+		f.write("exit 0\n")
+#def _make_deb_script
+
+def _make_snap_script(rebostpkg,epiScript):
+	_debug("Generating snap script for:\n{}".format(rebostpkg))
+	with open(epiScript,'w') as f:
+		f.write("#!/bin/bash\n")
+		f.write("ACTION=\"$1\"\n")
+		f.write("case $ACTION in\n")
+		f.write("\tremove)\n")
+		f.write("\t\tsnap remove %s\n"%rebostpkg['pkgname'])
+		f.write("\t\t;;\n")
+		f.write("\tinstallPackage)\n")
+		f.write("\t\tsnap install %s\n"%rebostpkg['pkgname'])
+		f.write("\t\t;;\n")
+		f.write("\ttestInstall)\n")
+		f.write("\t\techo \"0\"\n")
+		f.write("\t\t;;\n")
+		f.write("\tgetInfo)\n")
+		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
+		f.write("\t\t;;\n")
+		f.write("esac\n")
+		f.write("exit 0\n")

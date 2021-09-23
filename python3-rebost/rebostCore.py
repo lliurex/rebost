@@ -117,6 +117,8 @@ class Rebost():
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
+		postactions=''
+		actions=''
 		for plugin,info in self.pluginInfo.items():
 			actions=info.get('autostartActions',[])
 			postactions=info.get('postAutostartActions',[])
@@ -152,7 +154,6 @@ class Rebost():
 		for proc in procList:
 			self.process[proc]['proc'].join()
 	#def _autostartActions
-
 	
 	def execute(self,action,package='',extraArgs=None,plugin=None):
 		listProc=[]
@@ -161,38 +162,21 @@ class Rebost():
 		preaction=''
 		selected_bundle='*'
 		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
-		if action=='install' or action=='remove':
-			preaction="show"
-			self._debug("Executing {} from {}".format(preaction,self.plugins['sqlHelper']))
-			(pkgname,rebostPkg)=self.plugins['sqlHelper'].execute(procId=0,action=preaction,progress='',result='',store='',args=package)[0]
-			bundles=json.loads(rebostPkg).get('bundle',"not found")
-			if len(bundles)>1:
-				if not (extraArgs and extraArgs in bundles):
-					if extraArgs:
-						rebostPkgList=[("-1",{'package':package,'status':'not available as {}, only as {}'.format(extraArgs," ".join(list(bundles.keys())))})]
-					else:
-						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
-				else:
-					bundles={extraArgs:bundles.get(extraArgs)}
-			for bundle,pkg_id in bundles.items():
-				selected_bundle=bundle
-				package=pkg_id
-				break
-		elif extraArgs:
+		if extraArgs:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraArgs):
 					bundle=str(extraArgs)
+		plugin='sqlHelper'
 		if rebostPkgList==[]:
-			for plugin,info in self.pluginInfo.items():
-				if action in info['actions'] and (plugin==None or info['packagekind']==selected_bundle):
-					self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-					self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
-					rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package))
-
+			#sqlHelper now manages all operations but load
+			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
+			self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
+			rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
 		return(store)
+	#def execute
 			
 	def _sanitizeStore(self,appstore,package=None):
 		self._debug("Sanitize store {}".format(int(time.time())))
@@ -207,88 +191,6 @@ class Rebost():
 		return((json.dumps(store)))
 	#def _sanitizeStore
 	
-	def _processBundles(self,rebostPkg):
-		add=True
-		#We already have flatpak icons at flatpak.wrkDir
-		bundles=rebostPkg.get('bundle')
-		wrkDir=""
-		iconDir=""
-		icon128=''
-		icon64=''
-		#flatpak has his own cache dir for icons so if present use it
-		for plugin,info in self.pluginInfo.items():
-			if info['packagekind']=="flatpak":
-				icon64=os.path.join(self.plugins[plugin].wrkDir,"icons/64x64")
-				icon128=os.path.join(self.plugins[plugin].wrkDir,"icons/128x128")
-				break
-		for bundle,idBundle in bundles.items():
-			#if bundle.get_kind()==3: #flatpak
-			continue
-			if bundle=='flatpak': #flatpak
-				if not ";" in bundle.get_id():
-					add=False
-					break
-				icons=component.get_icons()
-				for icon in icons:
-					if os.path.isfile(os.path.join(icon128,icon.get_name())):
-						icon.set_kind(appstream.IconKind.LOCAL)
-						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
-						break
-					elif os.path.isfile(os.path.join(icon64,icon.get_name())): 
-						icon.set_kind(appstream.IconKind.LOCAL)
-						icon.set_filename(os.path.join(wrkDir,icon.get_name()))
-						break
-		return(add)
-
-	def execute2(self,action,package='',extraArgs=None,plugin=None):
-		bundle=''
-		self._debug("Executing %s %s"%(action,package))
-		if action=='install' or action=='remove':
-			(bundle,package)=self._executePreInstallRemove(package,extraArgs,plugin)
-		elif extraArgs:
-			for regPlugin,info in self.pluginInfo.items():
-				if info.get('packagekind','package')==str(extraArgs):
-						bundle=str(extraArgs)
-		#Get the id
-		return(self._execute(action,package,bundle,plugin))
-
-	def _executePreInstallRemove(self,args,extraArgs='',plugin=''):
-		package=definitions.rebostPkg()
-		package['name']=str(args)
-		result={}
-		bundle=''
-		showProc=self._execute("show",package['name'],plugin=plugin)
-		showProcResult=json.loads(self.chkProgress(showProc))
-		resultList=json.loads(self.chkProgress(showProc))
-		if resultList:
-#		if showProcResult:
-####		while not showProcResult[str(showProc)].get('result',''):
-####			showProcResult=json.loads(self.chkProgress(showProc))
-####			time.sleep(0.2)
-			if extraArgs:
-				if extraArgs in ['package','appimage','snap','flatpak']:
-					bundle=extraArgs
-				else:
-					bundle='package'
-#			resultList=json.loads(showProcResult[str(showProc)]['result'])
-			for pkg in resultList:
-				package=pkg
-				if pkg['bundle']:
-					if not bundle in pkg['bundle'].keys() and extraArgs:
-						print("Package not supported")
-						sys.exit(1)
-					elif not extraArgs:
-						if "package" in pkg['bundle']:
-							bundle='package'
-						elif "snap" in pkg['bundle']:
-							bundle='snap'
-						elif "appimage" in pkg['bundle']:
-							bundle='appimage'
-						else:
-							bundle='package'
-				break
-			return([bundle,package])
-
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
 		#action,args=action_args.split("#")
 		procInfo=definitions.rebostProcess()
@@ -353,9 +255,7 @@ class Rebost():
 			retval=0
 		return(retval)
 	
-
 	def chkProgress(self,procId=None):
-
 		divisor=1
 		procId=int(procId)
 		procIdIndex=procId
@@ -430,9 +330,6 @@ class Rebost():
 #					   del (process[clearField])
 				progress[procId]=process
 		return(progress)
-
-	def getPlugins(self):
-		pass
 	
 	def update(self):
 		procInfo=definitions.rebostProcess()

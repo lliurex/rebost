@@ -68,6 +68,10 @@ class packageKit():
 		action="install"
 		self._debug("Installing {}".format(package))
 		wrkdir=tempfile.mkdtemp()
+		#Make it simple. Generate EPI files and call epi directly. 
+
+		return([(package,{'package':package,'status':'installed'})])
+		#Deprecated, don't reinvent wheel. 
 		try:
 			self.pkcon.download_packages([package,],wrkdir,None,self._install_callback,None)
 		except Exception as e:

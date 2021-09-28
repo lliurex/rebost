@@ -52,6 +52,12 @@ class RebostClient():
 						procId=self.rebost.show(package,extraArgs)
 					if action=='remove':
 						procId=self.rebost.remove(package,extraArgs)
+					if action=='enableGui':
+						if arg.lower()=="true":
+							arg=True
+						else:
+							arg=False
+						self.rebost.enableGui(arg)
 				except dbus.exceptions.DBusException as e:
 					procId=0
 					print("Dbus Error: %s"%e)
@@ -77,7 +83,7 @@ class RebostClient():
 			finally:
 				self.rebost=None
 
-		return(procId)
+		return(str(procId))
 
 	def fullUpdate(self,procId=0):
 		self._connect()

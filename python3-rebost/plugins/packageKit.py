@@ -21,7 +21,7 @@ class packageKit():
 		self.enabled=True
 		self._debug("Loaded")
 		self.packagekind="package"
-		self.actions=["load","install","remove"]
+		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=0
 		self.progress={}
@@ -55,93 +55,10 @@ class packageKit():
 			self.progress[action]=0
 			if action=='load':
 				self._loadStore()
-			if action=='install':
-				rs=self._install(args)
-			if action=='remove':
-				self._remove(args)
 		return(rs)
 
 	def getStatus(self):
 		return (self.progress)
-
-	def _install(self,package):
-		action="install"
-		self._debug("Installing {}".format(package))
-		wrkdir=tempfile.mkdtemp()
-		#Make it simple. Generate EPI files and call epi directly. 
-
-		return([(package,{'package':package,'status':'installed'})])
-		#Deprecated, don't reinvent wheel. 
-		try:
-			self.pkcon.download_packages([package,],wrkdir,None,self._install_callback,None)
-		except Exception as e:
-			self._debug(e)
-			wrkdir=""
-		if wrkdir:
-			for pkg in os.listdir(wrkdir):
-				if pkg.endswith("deb"):
-					#Call EPI and install
-					cmd=['pkexec','/usr/bin/epi-package-installer.py',os.path.join(wrkdir,pkg)]
-					subprocess.run(cmd)
-
-		return([(package,{'package':package,'status':'installed'})])
-	
-	def _install_callback(self,*args):
-		print(".")
-	def _install_callback2(self,*args):
-		action='install'
-		if action not in self.progress.keys():
-			action='remove'
-		progress=self.progress[action]
-		if type(args[0])==type(0):
-			self.progress[action]=0
-			self.progressQ[action].put(0)
-			return
-		if args[0].get_percentage()>=100 and progress==100:
-			args[0].set_percentage(100)
-		else:
-			args[0].set_percentage(args[0].get_percentage()+10)
-		progress=args[0].get_percentage()
-		self.progress[action]=self.progress[action]+progress
-		if not self.progressQ[action].empty():
-			while not self.progressQ[action].empty():
-				self.progressQ[action].get()
-		if self.progress[action]>=833:
-			self.progress[action]=700
-		self.progressQ[action].put(int(self.progress[action]/8.33))
-
-
-	def _remove(self,package):
-		action='remove'
-		searchResults=[]
-		try:
-			self.pkcon.remove_packages(True,[package,],True,False,None,self._install_callback,None)
-		except Exception as e:
-			self._debug("Remove error: %s"%e)
-			resultSet['error']=1
-			resultSet['errormsg']=str(e)
-####	filters=1
-####	pklist=self.pkcon.search_names(filters,[package['name']],None,self._install_callback,None)
-####	pkg=None
-####	resultSet=definitions.resultSet()
-####	for pk in pklist.get_package_array():
-####		if package['name']==pk.get_name():
-####			pkg=pk
-####			break
-####	if pkg:
-####		resultSet['name']=pkg.get_name()
-####		resultSet['pkgname']=pkg.get_name()
-####		resultSet['id']=pkg.get_id()
-####		try:
-####			self.pkcon.remove_packages(True,[pkg.get_id(),],True,False,None,self._install_callback,None)
-####		except Exception as e:
-####			self._debug("Remove error: %s"%e)
-####			resultSet['error']=1
-####			resultSet['errormsg']=str(e)
-		searchResults.append(resultSet)
-		self.resultQ[action].put(str(json.dumps(searchResults)))
-		self.progressQ[action].put(100)
-	#def _remove
 
 	def _loadStore(self,*args):
 		action="load"

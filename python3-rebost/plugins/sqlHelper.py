@@ -16,7 +16,8 @@ class sqlHelper():
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
-		self.actions=["show","search","load","install"]
+		self.gui=False
+		self.actions=["show","search","load","install","remove"]
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -46,7 +47,7 @@ class sqlHelper():
 	#def execute(self,action,*args):
 	def execute(self,procId,action,progress,result,store,args='',extraArgs=''):
 		self._debug(action)
-		rs=''
+		rs='[{}]'
 		if action=='search':
 			rs=self._searchPackage(args)
 		if action=='show':
@@ -55,6 +56,8 @@ class sqlHelper():
 			rs=self.consolidate_sql_tables()
 		if action=='install':
 			rs=self._installPackage(args,extraArgs)
+		if action=='remove':
+			rs=self._removePackage(args,extraArgs)
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):
@@ -114,7 +117,7 @@ class sqlHelper():
 					else:
 						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
 			else:
-				bundle=bundles[0]
+				bundle=list(bundles.keys())[0]
 		else:
 			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
@@ -122,7 +125,38 @@ class sqlHelper():
 			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Installing','epi':epifile})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
-			self.n4d.n4dQuery("LliurexStore","install_epi",epifile)
+			self._debug("Executing N4d query")
+			self.n4d.n4dQuery("LliurexStore","install_epi",epifile,self.gui)
+
+		self._debug(rebostPkgList)
+		return (rebostPkgList)
+
+	def _removePackage(self,pkgname,bundle=''):
+		self._debug("Removing package {}".format(pkgname))
+		rebostPkgList=[]
+		rebostpkg=''
+		#1st search that there's a package in the desired format
+		rows=self._showPackage(pkgname)
+		if rows:
+			(package,rebostpkg)=rows[0]
+			bundles=json.loads(rebostpkg).get('bundle',"not found")
+			if len(bundles)>1:
+				if not (bundle and bundle in bundles):
+					rebostpkg=''
+					if bundle:
+						rebostPkgList=[("-1",{'package':package,'status':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
+					else:
+						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+			else:
+				bundle=list(bundles.keys())[0]
+		else:
+			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
+		if rebostpkg:
+		#Well, almost the package exists and the desired format is available so generate EPI files and return.
+			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile})]
+			#subprocess.run(['pkexec','epi-gtk',epifile])
+			self.n4d.n4dQuery("LliurexStore","remove_epi",epifile,self.gui)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)

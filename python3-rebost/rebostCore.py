@@ -19,6 +19,7 @@ class Rebost():
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
+		self.gui=False
 		self.propagateDbg=True
 		self.cache=os.path.join("{}".format(os.environ['HOME']),".cache/rebost")
 		self.cache="/tmp/.cache/rebost"
@@ -47,6 +48,10 @@ class Rebost():
 			logging.warning("rebost: %s"%str(msg))
 	#def _debug
 	
+	def _setGuiEnabled(self,state):
+		self._debug("Gui mode: {}".format(state))
+		self.gui=state
+
 	def _setPluginDbg(self):
 		for plugin,pluginObject in self.plugins.items():
 			try:
@@ -151,8 +156,6 @@ class Rebost():
 						procList.append(self._execute(action,'','',plugin=plugin,th=True))
 					except Exception as e:
 							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
-		for proc in procList:
-			self.process[proc]['proc'].join()
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraArgs=None,plugin=None):

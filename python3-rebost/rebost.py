@@ -135,11 +135,16 @@ def _processArgs(*args):
 	return(action,actionArgs)	
 
 rebost=rebostClient.RebostClient()
+#Set cli mode
+print("Set CLI mode")
+rebost.execute('enableGui','false')
 #_loadStore()
+print("Processing args")
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
-
+r=rebost.execute(action,actionArgs)
+print(r)
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search':

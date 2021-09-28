@@ -110,8 +110,11 @@ class flatpakHelper():
 			print(e)
 			#self._on_error("load",e)
 
-		self._debug("Loading flatpak metadata from file")
+		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		try:
+			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
+			#	fcontent=f.read()
+			#store.from_xml(fcontent)
 			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
@@ -120,15 +123,15 @@ class flatpakHelper():
 		rebostPkgList=[]
 		self._debug("Formatting flatpak metadata")
 		for pkg in store.get_apps():
-			idx=pkg.get_id()
-			idxList=idx.split(".")
-			if len(idxList)>2:
-				idxList[0]="org"
-				idxList[1]="flathub"
-				newId=".".join(idxList).lower()
-			else:
-				newId="org.flathub.{}".format(idx[-1])
-			pkg.set_id(newId)
+			#idx=pkg.get_id()
+			#idxList=idx.split(".")
+			#if len(idxList)>2:
+			#	idxList[0]="org"
+			#	idxList[1]="flathub"
+			#	newId=".".join(idxList).lower()
+			#else:
+			#	newId="org.flathub.{}".format(idx[-1])
+			#pkg.set_id(newId)
 			state="available"
 			for installer in flInst:
 				installed=False

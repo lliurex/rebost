@@ -21,6 +21,12 @@ class rebostDbusMethods(dbus.service.Object):
 			logging.warning("rebost-dbus: %s"%str(msg))
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='b', out_signature='s')
+	def enableGui(self,args):
+		ret=self.rebost._setGuiEnabled(args)
+		return ("")
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
 	def install(self,args,extraArgs):
 		action='install'
@@ -62,7 +68,7 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
+						 in_signature='ss', out_signature='s')
 	def remove(self,args,extraArgs):
 		action='remove'
 		ret=self.rebost.execute(action,args,extraArgs)

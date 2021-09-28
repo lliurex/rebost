@@ -8,6 +8,7 @@ import sqlite3
 import json
 import html
 import logging
+import tempfile
 
 DBG=True
 
@@ -138,11 +139,9 @@ def _generate_epi_json(rebostpkg):
 	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
 	epiFile={}
 	epiFile["type"]="file"
-	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),'url_download':'/tmp','version':{'all':rebostpkg.get('name')}}]
-	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'remove':True}
+	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),'url_download':'','version':{'all':rebostpkg.get('name')}}]
+	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
 	epiFile["required_root"]=True
-	epiFile["download"]=True
-	epiFile["required_dconf"]=True
 
 	try:
 		with open(epiJson,'w') as f:
@@ -156,14 +155,7 @@ def _generate_epi_sh(rebostpkg,bundle):
 	tmpDir="/tmp"
 	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
 	try:
-		if bundle=='package':
-			_make_deb_script(rebostpkg,epiScript)
-		if bundle=='snap':
-			_make_snap_script(rebostpkg,epiScript)
-		if bundle=='flatpak':
-			_make_flatpak_script(rebostpkg,epiScript)
-		if bundle=='appimage':
-			_make_appimage_script(rebostpkg,epiScript)
+		_make_epi_script(rebostpkg,epiScript,bundle)
 	except Exception as e:
 		_debug("%s"%e)
 		retCode=1
@@ -171,50 +163,73 @@ def _generate_epi_sh(rebostpkg,bundle):
 		os.chmod(epiScript,0o755)
 #def _generate_epi_sh
 
-def _make_deb_script(rebostpkg,epiScript):
-	_debug("Generating deb script for:\n{}".format(rebostpkg))
-	with open(epiScript,'w') as f:
-		f.write("#!/bin/bash\n")
-		f.write("ACTION=\"$1\"\n")
-		f.write("case $ACTION in\n")
-		f.write("\tremove)\n")
-		f.write("\t\tapt-get remove -y %s\n"%rebostpkg['pkgname'])
-		f.write("\t\tTEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )\n"%rebostpkg['pkgname'])
-		f.write("\t\tif [ \"$TEST\" == 'installed' ];then\n")
-		f.write("\t\t\texit 1\n")
-		f.write("\t\tfi\n")
-		f.write("\t\t;;\n")
-		f.write("\ttestInstall)\n")
-		f.write("\t\tapt-get update>/dev/null\"\"\n")
-		f.write("\t\tRES=$(apt-get --simulate install %s 2>/tmp/err | awk 'BEGIN {sw=\"\"}{ver=0;if ($0~\" : \") sw=1; if ($0~\"[(]\") ver=1;if (sw==1 && ver==1) { print $0 } else if (sw==1) { print $1\" \"$2\" ( ) \"$3\" \"$4\" \"$5} }' | sed 's/.*: \(.*)\) .*/\\1/g;s/( *)//')\n"%deb)
-                        
-		f.write("\t\t[ -s /tmp/err ] && RES=${RES//$'\\n'/||}\"||\"$(cat /tmp/err) || RES=\"\"\n")
-		f.write("\t\techo \"${RES}\"\n")
-		f.write("\t\t;;\n")
-		f.write("\tgetInfo)\n")
-		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
-		f.write("\t\t;;\n")
-		f.write("esac\n")
-		f.write("exit 0\n")
-#def _make_deb_script
+def _make_epi_script(rebostpkg,epiScript,bundle):
+	_debug("Generating script for:\n{} - ".format(rebostpkg,bundle))
+	commands=_get_bundle_commands(bundle,rebostpkg)
 
-def _make_snap_script(rebostpkg,epiScript):
-	_debug("Generating snap script for:\n{}".format(rebostpkg))
 	with open(epiScript,'w') as f:
 		f.write("#!/bin/bash\n")
 		f.write("ACTION=\"$1\"\n")
 		f.write("case $ACTION in\n")
 		f.write("\tremove)\n")
-		f.write("\t\tsnap remove %s\n"%rebostpkg['pkgname'])
+		f.write("\t\t{}\n".format(commands.get('removeCmd')))
+		for command in commands.get('removeCmdLine',[]):
+			f.write("\t\t{}\n".format(command))
 		f.write("\t\t;;\n")
 		f.write("\tinstallPackage)\n")
-		f.write("\t\tsnap install %s\n"%rebostpkg['pkgname'])
+		f.write("\t{}\n".format(commands.get('installCmd')))
+		for command in commands.get('installCmdLine',[]):
+			f.write("\t\t{}\n".format(command))
 		f.write("\t\t;;\n")
-		f.write("\ttestInstall)\n")
+		f.write("\ttestInstall)\n")	
 		f.write("\t\techo \"0\"\n")
 		f.write("\t\t;;\n")
 		f.write("\tgetInfo)\n")
 		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
 		f.write("\t\t;;\n")
+		f.write("\tgetStatus)\n")
+		f.write("\t\t{}\n".format(commands.get('statusTestLine')))
+		f.write("\t\tif [ \"$TEST\" == 'installed' ];then\n")
+		f.write("\t\t\techo 0\n")
+		f.write("\t\telse\n")
+		f.write("\t\t\techo 1\n")
+		f.write("\t\tfi\n")
+		f.write("\t\t;;\n")
+		f.write("\tdownload)\n")
+		f.write("\t\techo \"Installing...\"\n")
+		f.write("\t\t;;\n")
 		f.write("esac\n")
 		f.write("exit 0\n")
+#def _make_epi_script
+
+def _get_bundle_commands(bundle,rebostpkg):
+	commands={}
+	installCmd=''
+	installCmdLine= []
+	removeCmd=''
+	removeCmdLine=[]
+	statusTestLine=''
+	if bundle=='package':
+		installCmd="apt-get install -y {}".format(rebostpkg['pkgname'])
+		removeCmd="apt-get remove -y {}".format(rebostpkg['pkgname'])
+		removeCmdLine.append("TEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )")
+		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
+		removeCmdLine.append("exit 1")
+		removeCmdLine.append("fi")
+		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
+	elif bundle=='snap':
+		installCmd="snap install {}".format(rebostpkg['pkgname'])
+		removeCmd="snap remove {}".format(rebostpkg['pkgname'])
+		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	elif bundle=='flatpak':
+		installCmd="flatpak -y install {}".format(rebostpkg['pkgname'])
+		removeCmd="flatpak -y uninstall {}".format(rebostpkg['pkgname'])
+	elif bundle=='appimage':
+		installCmd="flatpak -y install {}".format(rebostpkg['pkgname'])
+		removeCmd="flatpak install {}".format(rebostpkg['pkgname'])
+	commands['installCmd']=installCmd
+	commands['installCmdLine']=installCmdLine
+	commands['removeCmd']=removeCmd
+	commands['removeCmdLine']=removeCmdLine
+	commands['statusTestLine']=statusTestLine
+	return(commands)

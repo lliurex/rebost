@@ -2,6 +2,7 @@
 import rebostClient
 import json
 import os,sys
+import subprocess
 import time 
 
 action=''
@@ -134,17 +135,34 @@ def _processArgs(*args):
 	actionArgs=":".join(actionArgs)
 	return(action,actionArgs)	
 
+def _waitProcess(pid):
+	var='LliureX Store'
+	cont=1
+	inc=1
+	if os.path.exists("/proc/{}".format(pid)):
+
+		fpid=os.fork()
+		if fpid==0:
+			os._exit(0)
+		else:
+			while (os.path.exists("/proc/{}".format(pid))):
+				print("{} {}".format(var[0:cont],var[cont:]),end='\r')
+				if cont>=len(var) or cont<=0:
+					if cont<0:
+						cont=0
+					inc*=-1
+				time.sleep(0.1)
+				cont+=(inc)
+		print("                           ",end='\r')
+
 rebost=rebostClient.RebostClient()
 #Set cli mode
-print("Set CLI mode")
 rebost.execute('enableGui','false')
 #_loadStore()
-print("Processing args")
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
 r=rebost.execute(action,actionArgs)
-print(r)
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search':
@@ -155,7 +173,15 @@ if action=='show':
 		print(_printShow(json.loads(res)))
 if action=='install':
 	for res in result:
-		print(_printInstall(res))
+		pid=res.get('pid','-10')
+		_waitProcess(pid)
+		#print(_printInstall(res))
+		print("Installed")
+if action=='remove':
+	for res in result:
+		pid=res.get('pid','-10')
+		_waitProcess(pid)
+		print("Removed")
 
 sys.exit(0)
 sw=True

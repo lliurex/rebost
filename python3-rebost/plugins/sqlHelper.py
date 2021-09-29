@@ -10,6 +10,7 @@ import sqlite3
 import subprocess
 from shutil import copyfile
 from appconfig.appConfigN4d import appConfigN4d as n4d
+import time
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
@@ -17,7 +18,7 @@ class sqlHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","install","remove"]
+		self.actions=["show","search","load","install","remove",'commitInstall']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -45,7 +46,7 @@ class sqlHelper():
 		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
 
 	#def execute(self,action,*args):
-	def execute(self,procId,action,progress,result,store,args='',extraArgs=''):
+	def execute(self,procId,action,progress,result,store,args='',extraArgs='',extraArgs2=''):
 		self._debug(action)
 		rs='[{}]'
 		if action=='search':
@@ -58,6 +59,8 @@ class sqlHelper():
 			rs=self._installPackage(args,extraArgs)
 		if action=='remove':
 			rs=self._removePackage(args,extraArgs)
+		if action=='commitInstall':
+			rs=self._commitInstall(args,extraArgs,extraArgs2)
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):
@@ -126,7 +129,8 @@ class sqlHelper():
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Installing','epi':epifile})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
-			self.n4d.n4dQuery("LliurexStore","install_epi",epifile,self.gui)
+			pid=self.n4d.n4dQuery("LliurexStore","install_epi",epifile,self.gui)
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile,'pid':pid})]
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
@@ -156,10 +160,30 @@ class sqlHelper():
 			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
-			self.n4d.n4dQuery("LliurexStore","remove_epi",epifile,self.gui)
+			pid=self.n4d.n4dQuery("LliurexStore","remove_epi",epifile,self.gui)
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile,'pid':pid})]
+
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
+	
+	def _commitInstall(self,pkgname,bundle='',state=0):
+		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
+		table=self.main_table.replace(".db","")
+		(db,cursor)=self.enable_connection(self.main_table)
+		query="SELECT * FROM {} WHERE pkg LIKE '{}';".format(table,pkgname)
+		#self._debug(query)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		for row in rows:
+			(pkg,dataContent)=row
+			data=json.loads(dataContent)
+			data['state'].update({bundle:state})
+		dataContent=json.dumps(data)
+		query="UPDATE {} SET data='{}' WHERE pkg LIKE '{}';".format(table,dataContent,pkgname)
+		print(query)
+		cursor.execute(query)
+		return(rows)
 
 	def consolidate_sql_tables(self):
 		self._debug("Merging data")

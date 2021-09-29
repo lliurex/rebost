@@ -29,6 +29,8 @@ def rebostPkg(*kwargs):
 	return(pkg)
 
 def rebostPkgList_to_sqlite(rebostPkgList,table):
+	if os.path.isfile(table):
+		os.remove(table)
 	db=sqlite3.connect(table)
 	table=table.replace('.db','')
 	cursor=db.cursor()
@@ -169,6 +171,14 @@ def _make_epi_script(rebostpkg,epiScript,bundle):
 
 	with open(epiScript,'w') as f:
 		f.write("#!/bin/bash\n")
+		f.write("function getStatus()\n{")
+		f.write("\t\t{}\n".format(commands.get('statusTestLine')))
+		f.write("\t\tif [ \"$TEST\" == 'installed' ];then\n")
+		f.write("\t\t\tINSTALLED=0\n")
+		f.write("\t\telse\n")
+		f.write("\t\t\tINSTALLED=1\n")
+		f.write("\t\tfi\n")
+		f.write("}\n")
 		f.write("ACTION=\"$1\"\n")
 		f.write("case $ACTION in\n")
 		f.write("\tremove)\n")
@@ -177,7 +187,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle):
 			f.write("\t\t{}\n".format(command))
 		f.write("\t\t;;\n")
 		f.write("\tinstallPackage)\n")
-		f.write("\t{}\n".format(commands.get('installCmd')))
+		f.write("\t\t{}\n".format(commands.get('installCmd')))
 		for command in commands.get('installCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
 		f.write("\t\t;;\n")
@@ -188,12 +198,8 @@ def _make_epi_script(rebostpkg,epiScript,bundle):
 		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
 		f.write("\t\t;;\n")
 		f.write("\tgetStatus)\n")
-		f.write("\t\t{}\n".format(commands.get('statusTestLine')))
-		f.write("\t\tif [ \"$TEST\" == 'installed' ];then\n")
-		f.write("\t\t\techo 0\n")
-		f.write("\t\telse\n")
-		f.write("\t\t\techo 1\n")
-		f.write("\t\tfi\n")
+		f.write("\t\tgetStatus\n")
+		f.write("\t\techo $INSTALLED\n")
 		f.write("\t\t;;\n")
 		f.write("\tdownload)\n")
 		f.write("\t\techo \"Installing...\"\n")
@@ -218,7 +224,10 @@ def _get_bundle_commands(bundle,rebostpkg):
 		removeCmdLine.append("fi")
 		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
 	elif bundle=='snap':
-		installCmd="snap install {}".format(rebostpkg['pkgname'])
+		installCmd="snap install {} >/tmp/prueba".format(rebostpkg['pkgname'])
+		installCmdLine.append("echo $? >>/tmp/prueba")
+		installCmdLine.append("getStatus")
+		installCmdLine.append("qdbus --system net.lliurex.rebost /net/lliurex/rebost net.lliurex.rebost.commitInstall {} {} $INSTALLED".format(rebostpkg['pkgname'],bundle))
 		removeCmd="snap remove {}".format(rebostpkg['pkgname'])
 		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	elif bundle=='flatpak':

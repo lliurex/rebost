@@ -75,6 +75,13 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='sss', out_signature='s')
+	def commitInstall(self,args,bundle,state):
+		action='commitInstall'
+		ret=self.rebost.execute(action,args,bundle,state)
+		return (ret)
+	
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='i')
 	def update(self):
 		action='update'
@@ -124,7 +131,7 @@ class rebostDBus():
 		# Declare a name where our service can be reached
 		try:
 			bus_name = dbus.service.BusName("net.lliurex.rebost",
-											bus=dbus.SessionBus(),
+											bus=dbus.SystemBus(),
 											do_not_queue=True)
 		except dbus.exceptions.NameExistsException:
 			print("service is already running")

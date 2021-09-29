@@ -9,6 +9,11 @@
             "allowed_groups": [
                 "anonymous"
             ]
+        },
+        "remove_epi": {
+            "allowed_groups": [
+                "anonymous"
+            ]
         }
 	}
 }

@@ -158,13 +158,13 @@ class Rebost():
 							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
 	#def _autostartActions
 	
-	def execute(self,action,package='',extraArgs=None,plugin=None):
+	def execute(self,action,package='',extraArgs=None,extraArgs2=None):
 		listProc=[]
 		rebostPkgList=[]
 		store=[]
 		preaction=''
 		selected_bundle='*'
-		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
+		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,extraArgs2))
 		if extraArgs:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraArgs):
@@ -174,7 +174,10 @@ class Rebost():
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
-			rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
+			if extraArgs2:
+				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs,extraArgs2=extraArgs))
+			else:
+				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)

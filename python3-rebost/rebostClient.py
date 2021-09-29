@@ -16,7 +16,7 @@ class RebostClient():
 
 	def _connect(self):
 		try:
-			bus=dbus.SessionBus()
+			bus=dbus.SystemBus()
 		except Exception as e:
 			print("Could not get session bus: %s\nAborting"%e)
 			sys.exit(1)

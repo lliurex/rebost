@@ -148,7 +148,8 @@ class Rebost():
 							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
 		for proc in procList:
 			self.process[proc]['proc'].join()
-		if postactions:
+		self._debug("postactions: {}".format(postactions))
+		if postactionDict:
 			self._debug("Launching postactions")
 			for plugin,actions in postactionDict.items():
 				for action in actions:
@@ -175,10 +176,12 @@ class Rebost():
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
 			if extraArgs2:
-				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs,extraArgs2=extraArgs))
+				self._debug("ExtraArgs2: {}".format(extraArgs2))
+				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs,extraArgs2=extraArgs2))
 			else:
 				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
 		#Generate the store with results and sanitize them
+		print(rebostPkgList)
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
 		return(store)
@@ -261,7 +264,11 @@ class Rebost():
 			retval=0
 		return(retval)
 	
-	def chkProgress(self,procId=None):
+	def chkProgres(self):
+		return
+		
+
+	def chkProgress2(self,procId=None):
 		divisor=1
 		procId=int(procId)
 		procIdIndex=procId

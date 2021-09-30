@@ -98,7 +98,7 @@ class sqlHelper():
 		table=self.main_table.replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		query="SELECT * FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
-		#self._debug(query)
+		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		return(rows)

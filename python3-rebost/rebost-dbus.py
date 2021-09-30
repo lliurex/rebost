@@ -104,15 +104,15 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='i', out_signature='s')
-	def chkProgress(self,procId=0):
-		ret=self.rebost.chkProgress(procId)
+						 in_signature='s', out_signature='s')
+	def getEpiPkgStatus(self,epifile):
+		ret=self.rebost.getEpiPkgStatus(epifile)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='i', out_signature='s')
+						 in_signature='', out_signature='s')
 	def getResults(self,procId=0):
-		ret=self.rebost.getResults(procId)
+		ret=self.rebost.getProgress()
 		return (ret)
 	
 	

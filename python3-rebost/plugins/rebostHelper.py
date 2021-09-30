@@ -134,7 +134,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle):
 	_debug("Generating EPI for:\n{}".format(rebostpkg))
 	epijson=_generate_epi_json(rebostpkg)
 	episcript=_generate_epi_sh(rebostpkg,bundle)
-	return(epijson)
+	return(epijson,episcript)
 	
 def _generate_epi_json(rebostpkg):
 	tmpDir="/tmp"
@@ -163,6 +163,7 @@ def _generate_epi_sh(rebostpkg,bundle):
 		retCode=1
 	if os.path.isfile(epiScript):
 		os.chmod(epiScript,0o755)
+	return(epiScript)
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle):
@@ -242,3 +243,7 @@ def _get_bundle_commands(bundle,rebostpkg):
 	commands['removeCmdLine']=removeCmdLine
 	commands['statusTestLine']=statusTestLine
 	return(commands)
+
+def get_epi_status(epifile):
+	proc=subprocess.run([epifile,'getStatus'],stdout=PIPE,stderr=PIPE)
+	return(proc.stdout)

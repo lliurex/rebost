@@ -28,6 +28,7 @@ class sqlHelper():
 		self.resultQ={}
 		self.result={}
 		self.main_table="rebostStore.db"
+		self.proc_table="rebostPrc.db"
 		self.main_tmp_table="tmpStore.db"
 		self.n4d=n4d()
 		#self.consolidate_sql_tables()
@@ -61,6 +62,8 @@ class sqlHelper():
 			rs=self._removePackage(args,extraArgs)
 		if action=='commitInstall':
 			rs=self._commitInstall(args,extraArgs,extraArgs2)
+		if action=='getProgress':
+			rs=self._getProgress()
 		return(rs)
 
 	def execute2(self,procId,action,progress,result,store,args=''):
@@ -125,12 +128,13 @@ class sqlHelper():
 			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
 		#Well, almost the package exists and the desired format is available so generate EPI files and return.
-			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
+			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Installing','epi':epifile})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
 			pid=self.n4d.n4dQuery("LliurexStore","install_epi",epifile,self.gui)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile,'pid':pid})]
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Installing','epi':epifile,'script':episcript,'pid':pid})]
+			self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
@@ -157,15 +161,28 @@ class sqlHelper():
 			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
 		#Well, almost the package exists and the desired format is available so generate EPI files and return.
-			epifile=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
+			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			pid=self.n4d.n4dQuery("LliurexStore","remove_epi",epifile,self.gui)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile,'pid':pid})]
-
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':'Uninstalling','epi':epifile,'script':episcript,'pid':pid})]
+			self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
+
+	def _insertProcess(self,rebostPkgList):
+		(db,cursor)=self.enable_connection(self.proc_table)
+		for rebostPkg in rebostPkgList:
+			(pkg,process)=rebostPkg
+			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({process.get('script'):process.get('status')})),process.get('pid'))
+
+			self._debug(query)
+			try:
+				cursor.execute(query)
+			except Exception as e:
+				print("{}".format(e))
+		self.close_connection(db)
 	
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
@@ -181,9 +198,18 @@ class sqlHelper():
 			data['state'].update({bundle:state})
 		dataContent=json.dumps(data)
 		query="UPDATE {} SET data='{}' WHERE pkg LIKE '{}';".format(table,dataContent,pkgname)
-		print(query)
 		cursor.execute(query)
 		return(rows)
+
+	def _getProgress(self):
+		(db,cursor)=self.enable_connection(self.proc_table)
+		query="SELECT * FROM rebostPrc;"
+		self._debug(query)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		self.close_connection(db)
+		return(rows)
+
 
 	def consolidate_sql_tables(self):
 		self._debug("Merging data")
@@ -192,7 +218,7 @@ class sqlHelper():
 		main_cursor=main_db.cursor()
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
-		exclude=[self.main_tmp_table,self.main_table,"packagekit.db"]
+		exclude=[self.main_tmp_table,self.main_table,"packagekit.db",self.proc_table]
 		self.copy_packagekit_sql()
 		for f in os.listdir("."):
 			if f.endswith(".db") and f not in exclude:

@@ -14,9 +14,9 @@ class LliurexStore:
 		if os.path.exists(epifile):
 			try:
 				if gui:
-					p=subprocess.Popen([LliurexStore.EPI_GUI,"{}".format(epifile)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					p=subprocess.Popen([LliurexStore.EPI_GUI,"{}".format(epifile)])
 				else:
-					p=subprocess.Popen([LliurexStore.EPI_CLI,"-u","install","{}".format(epifile)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					p=subprocess.Popen([LliurexStore.EPI_CLI,"-u","install","{}".format(epifile)])
 				return n4d.responses.build_successful_call_response(p.pid)
 			except Exception as e:
 				print(e)
@@ -28,9 +28,9 @@ class LliurexStore:
 		if os.path.exists(epifile):
 			try:
 				if gui:
-					p=subprocess.Popen([LliurexStore.EPI_GUI,"{}".format(epifile)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					p=subprocess.Popen([LliurexStore.EPI_GUI,"{}".format(epifile)])
 				else:
-					p=subprocess.Popen([LliurexStore.EPI_CLI,"-u","uninstall","{}".format(epifile)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					p=subprocess.Popen([LliurexStore.EPI_CLI,"-u","uninstall","{}".format(epifile)])
 				return n4d.responses.build_successful_call_response(p.pid)
 			except Exception as e:
 				print(e)

@@ -10,6 +10,7 @@ import json
 import signal
 import definitions
 import logging
+import subprocess
 import gi
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
@@ -264,9 +265,18 @@ class Rebost():
 			retval=0
 		return(retval)
 	
-	def chkProgres(self):
-		return
-		
+	def getEpiPkgStatus(self,epifile):
+		self._debug("Getting status from {}".format(epifile))
+		stdout='1'
+		if os.path.isfile(epifile):
+			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
+			stdout=proc.stdout.decode().strip()
+		return (stdout)
+
+	def getProgress(self):
+		rs=self.plugins['sqlHelper'].execute(0,'getProgress',store='',result='',progress='')
+		print(rs)
+		return(json.dumps(rs))
 
 	def chkProgress2(self,procId=None):
 		divisor=1

@@ -25,7 +25,7 @@ class appimageHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="appimage"
-		self.actions=["load","install","remove"]
+		self.actions=["load"]
 		#self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
@@ -53,7 +53,7 @@ class appimageHelper():
 		if self.dbg:
 			logging.warning("appimage: %s"%str(msg))
 	
-	def execute(self,action,*args):
+	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
 		rs=''
 		if action=='search':
 			rs=self._searchPackage(*args)

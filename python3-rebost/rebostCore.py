@@ -107,13 +107,13 @@ class Rebost():
 			plugInfo={}
 			for item,value in pluginObject.__dict__.items():
 				if item in mandatory or item in self.plugAttrOptional:
-					plugInfo["%s"%item]=value
+					plugInfo["{}".format(item)]=value
 				if item in mandatory:
 					mandatory.remove(item)
 			if mandatory:
 				#Disable plugin as not all values have been set
 				if plugin!="rebostHelper":
-					self._debug("Disable %s as faulting values: %s"%(plugin,mandatory))
+					self._debug("Disable {} as faulting values: {}".format(plugin,mandatory))
 					delPlugins.append(plugin)
 			else:
 				self.pluginInfo[plugin]=plugInfo
@@ -129,7 +129,7 @@ class Rebost():
 			actions=info.get('autostartActions',[])
 			postactions=info.get('postAutostartActions',[])
 			if actions:
-				self._debug("Loading autostart actions for %s"%plugin)
+				self._debug("Loading autostart actions for {}".format(plugin))
 				priority=info.get('priority',0)
 				newDict=actionDict.get(priority,{})
 				newDict[plugin]=actions
@@ -146,7 +146,7 @@ class Rebost():
 						try:
 							procList.append(self._execute(action,'','',plugin=plugin,th=True))
 						except Exception as e:
-							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
+							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			self.process[proc]['proc'].join()
 		self._debug("postactions: {}".format(postactions))
@@ -157,7 +157,7 @@ class Rebost():
 					try:
 						procList.append(self._execute(action,'','',plugin=plugin,th=True))
 					except Exception as e:
-							self._debug("Error launching %s from %s: %s"%(action,plugin,e))
+							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraArgs=None,extraArgs2=None):
@@ -172,6 +172,11 @@ class Rebost():
 				if info.get('packagekind','package')==str(extraArgs):
 					bundle=str(extraArgs)
 		plugin='sqlHelper'
+		for plugName,plugAction in self.pluginInfo.items():
+			if action in plugAction.get('actions',[]):
+				plugin=plugName
+				break
+
 		if rebostPkgList==[]:
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
@@ -182,7 +187,6 @@ class Rebost():
 			else:
 				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
 		#Generate the store with results and sanitize them
-		print(rebostPkgList)
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
 		return(store)
@@ -274,8 +278,7 @@ class Rebost():
 		return (stdout)
 
 	def getProgress(self):
-		rs=self.plugins['sqlHelper'].execute(0,'getProgress',store='',result='',progress='')
-		print(rs)
+		rs=self.plugins['rebostPrcMan'].execute(0,action='progress')
 		return(json.dumps(rs))
 
 	def chkProgress2(self,procId=None):

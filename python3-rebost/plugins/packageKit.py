@@ -43,7 +43,7 @@ class packageKit():
 		if self.dbg:
 			logging.warning("packagekit: %s"%str(msg))
 
-	def execute(self,procId,action,progress,result,store=None,args=''):
+	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
 		self._debug(action)
 		rs=''
 		if action in self.actions:

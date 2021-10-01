@@ -4,15 +4,18 @@ import json
 import signal
 import ast
 import dbus,dbus.exceptions
+import logging
 
 class RebostClient():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
+		logging.basicConfig(format='%(message)s')
 		self.rebost=None
 
 	def _debug(self,msg):
 		if self.dbg:
-			print("rebost: %s"%str(msg))
+			logging.warning("rebost: %s"%str(msg))
+	#def _debug
 
 	def _connect(self):
 		try:
@@ -101,7 +104,7 @@ class RebostClient():
 
 	def getProgress(self,procId=0):
 		self._connect()
-		bus=self.rebost.chkProgress(procId)
+		bus=self.rebost.chkProgress()
 		progressDict=json.loads(bus)
 		self.rebost=None
 		return(progressDict)

@@ -62,8 +62,7 @@ class flatpakHelper():
 		searchResults=rebostHelper.appstream_to_rebost(apps)
 		return(searchResults)
 
-	def execute(self,procId,action,progress,result,store,args=''):
-		self.procId=procId
+	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
 		if action in self.actions:
 			self.progressQ[action]=progress
 			self.resultQ[action]=result

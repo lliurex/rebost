@@ -46,17 +46,17 @@ class sqlHelper():
 			logging.warning("sql: %s"%str(msg))
 	#def _debug
 
-	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
+	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
 		rs='[{}]'
 		if action=='search':
-			rs=self._searchPackage(args)
+			rs=self._searchPackage(parms)
 		if action=='show':
-			rs=self._showPackage(args)
+			rs=self._showPackage(parms)
 		if action=='load':
 			rs=self.consolidate_sql_tables()
 		if action=='commitInstall':
-			rs=self._commitInstall(args,extraArgs,extraArgs2)
+			rs=self._commitInstall(parms,extraParms,extraParms2)
 		return(rs)
 	#def execute
 
@@ -142,11 +142,12 @@ class sqlHelper():
 							if json_value.get('bundle') and json_value.get('bundle')!=json_main_value.get('bundle'):
 								#json_main_value['bundle'][table]=json_value['bundle']
 								json_main_value['bundle'].update(json_value['bundle'])
-								value=str(json.dumps(json_main_value))
 								#self._debug(value)
 							if json_value.get('versions') and json_value.get('versions')!=json_main_value.get('versions'):
 								json_main_value['versions'].update(json_value['versions'])
-								value=str(json.dumps(json_main_value))
+							if json_value.get('state') and json_value.get('state')!=json_main_value.get('state'):
+								json_main_value['state'].update(json_value['state'])
+							value=str(json.dumps(json_main_value))
 					query="INSERT INTO {} (pkg, data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET data='{}';".format(main_tmp_table,key,value,value)
 					#self._debug(query)
 					main_cursor.execute(query)

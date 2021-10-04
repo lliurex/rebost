@@ -32,7 +32,7 @@ class rebostPrcMan():
 		if self.dbg:
 			logging.warning("prcMan: %s"%str(msg))
 	
-	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
+	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
 		rs='[{}]'
 		if action=='progress':
@@ -40,7 +40,7 @@ class rebostPrcMan():
 		if action=='insert':
 			rs=self._insertProcess()
 		if action=='remove' or action=='install':
-			rs=self._managePackage(args,extraArgs,action)
+			rs=self._managePackage(parms,extraParms,action)
 		return(rs)
 	#def execute
 
@@ -58,15 +58,16 @@ class rebostPrcMan():
 				(pid,data)=row
 				if os.path.exists(os.path.join("/proc/",pid)):
 					dataTmp=json.loads(data).copy()
-					max_time=60
+					max_time=1000
 					runningTime=int(time.time())-int(dataTmp['time'])
 					currentTime=int(time.time())
+					estimatedTime=120
 					progressSteps=[5,10,15,20,25,30,35,40,45,50,55,60,65,70,max_time]
 					for step in progressSteps:
 					#Update percentage.
 					#Fake a progress percentage (unimplemented).
 					#process running, update progress
-						seconds=int((step*max_time)/100)
+						seconds=int((step*estimatedTime)/100)
 						print("Step seconds: {}".format(seconds))
 						print("Running seconds: {}".format(runningTime))
 						if runningTime>seconds and step<max_time:
@@ -100,7 +101,7 @@ class rebostPrcMan():
 										dataTmp['status']='-1'
 								query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
 								cursor.execute(query)
-								self.sql.execute(action='commitInstall',args=dataTmp['package'],extraArgs=dataTmp.get('bundle',"package"),extraArgs2=dataTmp['status'])
+								self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 						progress=(pid,dataTmp)
 			progressArray.append(progress)
 		self.sql.close_connection(db)
@@ -126,7 +127,7 @@ class rebostPrcMan():
 		rebostPkgList=[]
 		rebostpkg=''
 		#1st search that there's a package in the desired format
-		rows=self.sql.execute(action='show',args=pkgname)
+		rows=self.sql.execute(action='show',parms=pkgname)
 		if rows and isinstance(rows,list):
 			(package,rebostpkg)=rows[0]
 			bundles=json.loads(rebostpkg).get('bundle',"not found")
@@ -140,9 +141,9 @@ class rebostPrcMan():
 			else:
 				bundle=list(bundles.keys())[0]
 		else:
-			rebostPkgList=[("-1",{'package':package,'status':'package {} not found'.format(pkgname)})]
+			rebostPkgList=[("-1",{'package':pkgname,'status':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
-		#Well, almost the package exists and the desired format is available so generate EPI files and return.
+		#Well, the package almost exists and the desired format is available so generate EPI files and return.
 			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])

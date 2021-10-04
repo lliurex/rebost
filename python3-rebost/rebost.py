@@ -15,7 +15,7 @@ class color:
    CYAN = '\033[96m'
    DARKCYAN = '\033[36m'
    BLUE = '\033[94m'
-   GREEN = '\033[92m'
+   GREEN = '\033[32m'
    YELLOW = '\033[93m'
    RED = '\033[91m'
    BOLD = '\033[1m'
@@ -39,14 +39,18 @@ def _printSearch(result):
 	if (result['bundle']):
 		bundleStr=''
 		for bundle in sorted(result['bundle'].keys()):
+			state=''
+			if result['state'].get(bundle,''):
+				state='*'
+
 			if bundle=='appimage':
-				bundleStr+=f" {color.DARKCYAN}appimage{color.END}"
+				bundleStr+=f" {color.PURPLE}appimage{state}{color.END}"
 			if bundle=='snap':
-				bundleStr+=f" {color.RED}snap{color.END}"
+				bundleStr+=f" {color.RED}snap{state}{color.END}"
 			if bundle=='package' or bundle=="limba":
-				bundleStr+=f" {color.YELLOW}package{color.END}"
+				bundleStr+=f" {color.YELLOW}package{state}{color.END}"
 			if bundle=='flatpak':
-				bundleStr+=f" {color.PURPLE}flatpak{color.END}"
+				bundleStr+=f" {color.BLUE}flatpak{state}{color.END}"
 
 		msg=(f"{result['pkgname']} [{bundleStr} ] - {result['summary']}")
 		msg=msg.rstrip("\n")
@@ -57,14 +61,17 @@ def _printShow(result):
 	msg="Package: {}\n".format(result['pkgname'])
 	bundleStr=''
 	for bundle in sorted(result['bundle'].keys()):
+		state=''
+		if result['state'].get(bundle,''):
+			state='*'
 		if bundle=='appimage':
-			bundleStr+=f" {color.DARKCYAN}appimage{color.END}"
+			bundleStr+=f" {color.PURPLE}appimage{state}{color.END}"
 		if bundle=='snap':
-			bundleStr+=f" {color.RED}snap{color.END}"
+			bundleStr+=f" {color.RED}snap{state}{color.END}"
 		if bundle=='package' or bundle=="limba":
-			bundleStr+=f" {color.YELLOW}package{color.END}"
+			bundleStr+=f" {color.YELLOW}package{state}{color.END}"
 		if bundle=='flatpak':
-			bundleStr+=f" {color.PURPLE}flatpak{color.END}"
+			bundleStr+=f" {color.BLUE}flatpak{state}{color.END}"
 	msg+=f"Format:{bundleStr}\n"
 	versionStr=''
 	for version in sorted(result['versions'].keys()):

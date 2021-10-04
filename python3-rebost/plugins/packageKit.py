@@ -3,15 +3,12 @@ import gi
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 import threading
-import time
 import json
 import threading
 import rebostHelper
 import logging
 import html
-import tempfile
 import os
-import subprocess
 from queue import Queue
 
 class packageKit():
@@ -25,14 +22,10 @@ class packageKit():
 		self.autostartActions=["load"]
 		self.priority=0
 		self.progress={}
-		self.progressQ={}
-		self.resultQ={}
 		self.queue=Queue(maxsize=0)
 		self.result=''
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
-		#self.pkcon=None
 		self.pkcon=packagekit.Client()
-#		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -43,18 +36,13 @@ class packageKit():
 		if self.dbg:
 			logging.warning("packagekit: %s"%str(msg))
 
-	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
+	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
-		rs=''
-		if action in self.actions:
-			self.progressQ[action]=progress
-			self.resultQ[action]=result
-			self.progress[action]=0
-			if not self.pkcon:
-				self.pkcon=packagekit.Client()
-			self.progress[action]=0
-			if action=='load':
-				self._loadStore()
+		rs='[{}]'
+		if not self.pkcon:
+			self.pkcon=packagekit.Client()
+		if action=='load':
+			self._loadStore()
 		return(rs)
 
 	def getStatus(self):
@@ -83,7 +71,6 @@ class packageKit():
 			pkgList.append(self.queue.get())
 		rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.db')
 		self._debug("SQL loaded")
-		self.progressQ[action].put(100)
 	
 	def _th_generateRebostPkg(self,pkg,semaphore):
 		semaphore.acquire()
@@ -100,24 +87,15 @@ class packageKit():
 		#rebostPkg['version']="package-{}".format(pkg.get_version())
 		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
 		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}
+		if 'installed' in pkg.get_id():
+			rebostPkg['state']={"package":"0"}
+		else:
+			rebostPkg['state']={"package":"1"}
 		self.queue.put(rebostPkg)
 		semaphore.release()
 
 	def _load_callback(self,*args):
-		#action='install'
-		action='load'
-		#return
-		progress=self.progress.get(action,0)
-		if type(args[0])==type(0):
-			self.progress[action]=0
-			self.progressQ[action].put(0)
-			return
-		if args[0].get_percentage()>=100 and progress==100:
-			args[0].set_percentage(100)
-		else:
-			args[0].set_percentage(args[0].get_percentage()+10)
-		progress=args[0].get_percentage()
-		self.progressQ[action].put(int(self.progress.get(action,0)/8.33))
+		return
 
 def main():
 	obj=packageKit()

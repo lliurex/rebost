@@ -17,22 +17,15 @@ class snapHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"
-		self.actions=["load","install","remove"]
+		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=1
-		self.store=None
-		self.progressQ={}
-		self.progress={}
-		self.resultQ={}
-		self.result={}
-		self.wrkDir='/tmp/.cache/rebost/xml/snap'
 		self.snap_client=Snapd.Client()
 		try:
 			self.snap_client.connect_sync(None)
 		except Exception as e:
 			self.enabled=True
 			self._debug("Disabling snap %s"%e)
-#		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -43,30 +36,12 @@ class snapHelper():
 		if self.dbg:
 			logging.warning("snap: %s"%str(msg))
 
-	def _on_error(self,action,e):
-		self.progressQ[action].put(100)
-		self.resultQ[action].put(str(json.dumps([{'name':action,'description':'Error','error':"1",'errormsg':str(e)}])))
-
-#	def execute(self,action,*args):
-#		rs=''
-#		if action=='search':
-#			rs=self._searchPackage(*args)
-#		if action=='show':
-#			rs=self._showPackage(*args)
-#		return(rs)
-
-	def execute(self,procId,action,progress,result,store,args=''):
-		self.procId=procId
-		if action in self.actions:
-			self.progressQ[action]=progress
-			self.resultQ[action]=result
-			self.progress[action]=0
-			if action=='load':
-				self._loadStore()
-			if action=='install':
-				self._install(args)
-			if action=='remove':
-				self._remove(args)
+	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
+		self._debug(action)
+		rs='[{}]'
+		if action=='load':
+			self._loadStore()
+		return(rs)
 
 	def _loadStore(self):
 		action="load"
@@ -77,26 +52,20 @@ class snapHelper():
 		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
 		
 		self._debug("SQL loaded")
-		self.progressQ[action].put(100)
-		self.resultQ[action].put(str(json.dumps([{'name':'load','description':'Ready'}])))
 
 	def _get_snap_catalogue(self):
 		action="load"
 		rebostPkgList=[]
 		sections=[]
-		progress=0
 		try:
 			sections=self.snap_client.get_sections_sync()
 		except Exception as e:
-			self._on_error("load",e)
-		inc=100.0/(len(sections)+1)
+			self._debug(e)
 		for section in sections:
 			apps,curr=self.snap_client.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 			for pkg in apps:
 				rebostPkg=self._process_snap_json(pkg,section)
 				rebostPkgList.append(rebostPkg)
-			progress+=inc
-			#self.progressQ[action].put(progress)
 		return(rebostPkgList)
 
 	def _process_snap_json(self,pkg,section):
@@ -133,7 +102,7 @@ class snapHelper():
 			pkgs=[pkg]
 		except:
 			state='available'
-		appinfo['status']={"snap":"{}".format(state)}
+		appinfo['state']={"snap":"{}".format(state)}
 		#appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
 		appinfo['bundle'].update({'snap':"{}".format(pkg.get_name())})
 		appinfo['categories']=self._get_categories(section)
@@ -165,97 +134,6 @@ class snapHelper():
 		categories=catMap.get(section.lower().replace(" ",""),["Utility"])
 		return(categories)
 
-	def _install(self,snap):
-		action="install"
-		self._debug("Installing {}".format(snap))
-		result=rebostHelper.resultSet()
-		downloadedSnap=self.snap_client.download_sync(snap,None,None,None)
-		
-		print(downloadedSnap)
-		print(type(downloadedSnap))
-		pass
-	
-	def _install2(self,app_info):
-		#self._debug("Installing %s"%app_info['name'])
-		action="install"
-		self._debug("Installing {}".format(app_info))
-		result=rebostHelper.resultSet()
-		result['id']=self.procId
-		result['name']=action
-		result['description']='%s'%app_info['pkgname']
-		def install(app_name,flags):
-			self.snap_client.install2_sync(flags,app_name.replace('.snap',''),
-					None, # channel
-					None, #revision
-					self._callback, (None,),
-					None) # cancellable
-			result['msg']='installed'
-
-		#if app_info['state']=='installed':
-		#	self._set_status(4)
-		#else:
-		try:
-			install(app_info['name'],Snapd.InstallFlags.NONE)
-		except Exception as e:
-				#try:
-					#	if e.code==19:
-					#install(app_info['name'],Snapd.InstallFlags.CLASSIC)
-			#except Exception as e:
-				self._debug("Install error %s"%e)
-				result['msg']='error: %s'%e
-				result['errormsg']='error: %s'%e
-				result['error']=1
-		#self._debug("Installed %s"%app_info)
-		self.resultQ[action].put(str(json.dumps([result])))
-		self.progress[action] = 100
-		self.progressQ[action].put(int(self.progress[action]))
-		return app_info
-	#def _install_snap
-		
-	def _callback(self,client,change, _,user_data):
-	    # Interate over tasks to determine the aggregate tasks for completion.
-		action='install'
-		if action not in self.progress.keys():
-			action='remove'
-			
-		total = 0
-		done = 0
-		for task in change.get_tasks():
-			total += task.get_progress_total()
-			done += task.get_progress_done()
-		acum=round((done/total)*100)
-		if acum>self.progress[action]:
-			self.progress[action]=acum
-		if not self.progressQ[action].empty():
-			while not self.progressQ[action].empty():
-				self.progressQ[action].get()
-
-		self.progressQ[action].put(int(self.progress[action]))
-	#def _callback
-
-	def _remove(self,app_info):
-		action='remove'
-		result=rebostHelper.resultSet()
-		result['id']=self.procId
-		result['name']=action
-		result['description']='%s'%app_info['pkgname']
-			#		if app_info['state']=='available':
-#			self._set_status(3)
-			#pass
-		#else:
-		try:
-			self.snap_client.remove_sync(app_info['name'].replace('.snap',''),
-                   self._callback, (None,),
-					None) # cancellable
-			#	app_info['state']='available'
-#			self._set_status(0)
-		except Exception as e:
-				print("Remove error %s"%e)
-#				self._set_status(6)
-		self.resultQ[action].put(str(json.dumps([result])))
-		self.progress[action] = 100
-		self.progressQ[action].put(int(self.progress[action]))
-	#def _remove_snap
 def main():
 	obj=snapHelper()
 	return (obj)

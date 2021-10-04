@@ -104,14 +104,14 @@ class RebostClient():
 
 	def getProgress(self,procId=0):
 		self._connect()
-		bus=self.rebost.chkProgress()
+		bus=self.rebost.getResults()
 		progressDict=json.loads(bus)
 		self.rebost=None
 		return(progressDict)
 	
 	def getResults(self,procId=0):
 		self._connect()
-		bus=self.rebost.chkProgress(procId)
+		bus=self.rebost.getResults()
 		results=json.loads(bus)
 		self.rebost=None
 		return(results)

@@ -111,7 +111,7 @@ class rebostDbusMethods(dbus.service.Object):
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
-	def getResults(self,procId=0):
+	def getResults(self):
 		ret=self.rebost.getProgress()
 		return (ret)
 	

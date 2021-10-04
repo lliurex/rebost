@@ -155,6 +155,24 @@ def _waitProcess(pid):
 				cont+=(inc)
 		print("                           ",end='\r')
 
+def _getResult(pid):
+	status='Unknown'
+	result=status
+	for proc in rebost.getResults():
+		(ppid,data)=proc
+		if str(ppid)==str(pid):
+			status=data.get('status',-2)
+			if status=='0':
+				result="Installed"
+			elif status=='1':
+				result="Uninstalled"
+			elif status=='-1':
+				result="An {}error{} ocurred when attempting to {}".format(color.RED,color.END,action)
+			else:
+				result="Unknown"
+
+	return(result)
+
 rebost=rebostClient.RebostClient()
 #Set cli mode
 rebost.execute('enableGui','false')
@@ -162,7 +180,6 @@ rebost.execute('enableGui','false')
 (action,actionArgs)=_processArgs(sys.argv)
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
-r=rebost.execute(action,actionArgs)
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search':
@@ -176,12 +193,14 @@ if action=='install':
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
 		#print(_printInstall(res))
-		print("Installed")
+		status=_getResult(pid)
+		print("{} {}".format(status,actionArgs))
 if action=='remove':
 	for res in result:
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
-		print("Removed")
+		status=_getResult(pid)
+		print("{} {}".format(status,actionArgs))
 
 sys.exit(0)
 sw=True

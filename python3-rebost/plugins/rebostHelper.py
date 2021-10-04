@@ -119,7 +119,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['categories']=component.get_categories()
 		for i in component.get_bundles():
 			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':pkg['id']}
+				pkg['bundle']={'flatpak':component.get_id()}
 				versionArray=["0.0"]
 				for release in component.get_releases():
 					versionArray.append(release.get_version())
@@ -230,8 +230,9 @@ def _get_bundle_commands(bundle,rebostpkg):
 		removeCmd="snap remove {}".format(rebostpkg['pkgname'])
 		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	elif bundle=='flatpak':
-		installCmd="flatpak -y install {}".format(rebostpkg['pkgname'])
-		removeCmd="flatpak -y uninstall {}".format(rebostpkg['pkgname'])
+		installCmd="flatpak -y install {}".format(rebostpkg['bundle']['flatpak'])
+		removeCmd="flatpak -y uninstall {}".format(rebostpkg['bundle']['flatpak'])
+		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
 		installCmd="flatpak -y install {}".format(rebostpkg['pkgname'])
 		removeCmd="flatpak install {}".format(rebostpkg['pkgname'])

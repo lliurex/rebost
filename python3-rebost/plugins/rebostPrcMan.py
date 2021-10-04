@@ -6,6 +6,7 @@ from appconfig.appConfigN4d import appConfigN4d as n4d
 import json
 import rebostHelper
 import subprocess
+import time
 
 class rebostPrcMan():
 	def __init__(self,*args,**kwargs):
@@ -49,36 +50,68 @@ class rebostPrcMan():
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
-		self.sql.close_connection(db)
+		progressArray=[]
 		for row in rows:
+			progress=()
+			progress=row
 			if isinstance(row,tuple):
 				(pid,data)=row
-				print(row)
 				if os.path.exists(os.path.join("/proc/",pid)):
+					dataTmp=json.loads(data).copy()
+					max_time=60
+					runningTime=int(time.time())-int(dataTmp['time'])
+					currentTime=int(time.time())
+					progressSteps=[5,10,15,20,25,30,35,40,45,50,55,60,65,70,max_time]
+					for step in progressSteps:
+					#Update percentage.
+					#Fake a progress percentage (unimplemented).
 					#process running, update progress
-					pass
+						seconds=int((step*max_time)/100)
+						print("Step seconds: {}".format(seconds))
+						print("Running seconds: {}".format(runningTime))
+						if runningTime>seconds and step<max_time:
+							continue
+						stepPercentage=((runningTime*100/seconds))
+						print("Step percentage: {}".format(stepPercentage))
+						pending=int((step*stepPercentage)/100)
+						print("Total: {}".format(pending))
+						dataTmp['status']=int(pending)
+						print(progress)
+						progress=(pid,dataTmp)
+						break
 				else:
 					#process finished, invoke epi status
-					print(data)
-					for episcript,action in json.loads(data).items():
-						self._debug("Select {} from {}".format(action,episcript))
-						proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE)
-						stdout=proc.stdout.decode().strip()
-						if action=='install' or action=='remove':
-							if stdout=="0":
-								self._debug("Uninstalled")
-								if action=='install':
-									query="UPDATE data from rebostPrc set values({}) where pkg={}".format(data,pid)
-							else:
-								self._debug("Installed")
-		return(rows)
+					dataTmp=json.loads(data).copy()
+					action=dataTmp.get('status','')
+					if action=='install' or action=='remove':
+						self._debug("Select {} from {}".format(action,dataTmp.get('episcript','')))
+						if dataTmp.get('episcript',None):
+							stdout=rebostHelper.get_epi_status(dataTmp.get('episcript'))
+							if action=='install' or action=='remove':
+								if stdout=="0":
+									if action=='install':
+										dataTmp['status']='0'
+									else:
+										dataTmp['status']='-1'
+								else:
+									if action=='remove':
+										dataTmp['status']='1'
+									else:
+										dataTmp['status']='-1'
+								query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
+								cursor.execute(query)
+								self.sql.execute(action='commitInstall',args=dataTmp['package'],extraArgs=dataTmp.get('bundle',"package"),extraArgs2=dataTmp['status'])
+						progress=(pid,dataTmp)
+			progressArray.append(progress)
+		self.sql.close_connection(db)
+		return(progressArray)
 	#def _getProgress
 	
 	def _insertProcess(self,rebostPkgList):
 		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)
 		for rebostPkg in rebostPkgList:
 			(pkg,process)=rebostPkg
-			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({process.get('script'):process.get('status')})),process.get('pid'))
+			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({'episcript':process.get('script'),'status':process.get('status'),'bundle':process.get('bundle',''),'package':process.get('package',''),'time':int(time.time())})),process.get('pid'))
 			self._debug(query)
 			try:
 				cursor.execute(query)
@@ -111,11 +144,11 @@ class rebostPrcMan():
 		if rebostpkg:
 		#Well, almost the package exists and the desired format is available so generate EPI files and return.
 			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile})]
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
 			pid=self.n4d.n4dQuery("LliurexStore","{}_epi".format(action),epifile,self.gui)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid})]
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 			self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)

@@ -17,7 +17,7 @@ class sqlHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","install","remove",'commitInstall']
+		self.actions=["show","search","load",'commitInstall']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -57,8 +57,6 @@ class sqlHelper():
 			rs=self.consolidate_sql_tables()
 		if action=='commitInstall':
 			rs=self._commitInstall(args,extraArgs,extraArgs2)
-		if action=='getProgress':
-			rs=self._getProgress()
 		return(rs)
 	#def execute
 
@@ -110,6 +108,7 @@ class sqlHelper():
 			data['state'].update({bundle:state})
 		dataContent=json.dumps(data)
 		query="UPDATE {} SET data='{}' WHERE pkg LIKE '{}';".format(table,dataContent,pkgname)
+		self._debug(query)
 		cursor.execute(query)
 		return(rows)
 	#def _commitInstall

@@ -53,7 +53,7 @@ class appimageHelper():
 		if self.dbg:
 			logging.warning("appimage: %s"%str(msg))
 	
-	def execute(self,*argcc,action='',args='',extraArgs='',extraArgs2='',**kwargs):
+	def execute(self,*argcc,action='',args='',extraParms='',extraParms2='',**kwargs):
 		rs=''
 		if action=='search':
 			rs=self._searchPackage(*args)

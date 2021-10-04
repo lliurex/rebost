@@ -28,50 +28,50 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
-	def install(self,args,extraArgs):
+	def install(self,args,extraParms):
 		action='install'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='i')
-	def load(self,args,extraArgs):
+	def load(self,args,extraParms):
 		action='load'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
-	def search(self,args,extraArgs=''):
+	def search(self,args,extraParms=''):
 		action='search'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='i')
-	def listAll(self,args,extraArgs):
+	def listAll(self,args,extraParms):
 		action='list'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='i')
-	def search_by_category(self,args,extraArgs):
+	def search_by_category(self,args,extraParms):
 		action='list'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
-	def show(self,args,extraArgs):
+	def show(self,args,extraParms):
 		action='show'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
-	def remove(self,args,extraArgs):
+	def remove(self,args,extraParms):
 		action='remove'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
@@ -98,9 +98,9 @@ class rebostDbusMethods(dbus.service.Object):
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='i')
-	def upgrade(self,args,extraArgs):
+	def upgrade(self,args,extraParms):
 		action='upgrade'
-		ret=self.rebost.execute(action,args,extraArgs)
+		ret=self.rebost.execute(action,args,extraParms)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",

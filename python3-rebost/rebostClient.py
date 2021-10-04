@@ -29,7 +29,7 @@ class RebostClient():
 			print("Could not connect to bus: %s\nAborting"%e)
 			sys.exit(1)
 	
-	def execute(self,action,args='',extraArgs=''):
+	def execute(self,action,args='',extraParms=''):
 		self._connect()
 		procId=0
 		if isinstance(args,str):
@@ -38,7 +38,7 @@ class RebostClient():
 			for arg in args:
 				if ":" in arg:
 					package=arg.split(":")
-					extraArgs=package[-1]
+					extraParms=package[-1]
 					package=package.pop(0)
 				else:
 					package=arg
@@ -46,15 +46,15 @@ class RebostClient():
 					if "-" in package:
 						package=package.replace("-","_")
 					if action=='install':
-						procId=self.rebost.install(package,extraArgs)
+						procId=self.rebost.install(package,extraParms)
 					elif action=='search':
-						procId=self.rebost.search(package,extraArgs)
+						procId=self.rebost.search(package,extraParms)
 					elif action=='list':
-						procId=self.rebost.search_by_category(package,extraArgs)
+						procId=self.rebost.search_by_category(package,extraParms)
 					elif action=='show':
-						procId=self.rebost.show(package,extraArgs)
+						procId=self.rebost.show(package,extraParms)
 					if action=='remove':
-						procId=self.rebost.remove(package,extraArgs)
+						procId=self.rebost.remove(package,extraParms)
 					if action=='enableGui':
 						if arg.lower()=="true":
 							arg=True
@@ -76,7 +76,7 @@ class RebostClient():
 				if action=='fullupdate':
 					procId=self.rebost.fullUpdate()
 				if action=='load':
-					procId=self.rebost.load(package,extraArgs)
+					procId=self.rebost.load(package,extraParms)
 			except dbus.exceptions.DBusException as e:
 				procId=0
 				print("Dbus Error: %s"%e)

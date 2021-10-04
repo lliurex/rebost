@@ -278,7 +278,7 @@ class Rebost():
 		return (stdout)
 
 	def getProgress(self):
-		rs=self.plugins['rebostPrcMan'].execute(0,action='progress')
+		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
 
 	def chkProgress2(self,procId=None):

@@ -28,10 +28,9 @@ class Rebost():
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
 		self.plugins={}
 		self.pluginInfo={}
-		self.plugAttrMandatory=["enabled","packagekind","priority","actions","progress"]
+		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["autostartActions","postAutostartActions"]
 		self.process={}
-		self.procDict={}
 		self.store=appstream.Store()
 		self._loadPlugins()
 		self._loadPluginInfo()
@@ -148,29 +147,26 @@ class Rebost():
 						except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
-			self.process[proc]['proc'].join()
+			proc.join()
 		self._debug("postactions: {}".format(postactions))
 		if postactionDict:
 			self._debug("Launching postactions")
 			for plugin,actions in postactionDict.items():
 				for action in actions:
 					try:
-						procList.append(self._execute(action,'','',plugin=plugin,th=True))
+						self._execute(action,'','',plugin=plugin,th=True)
 					except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
-	def execute(self,action,package='',extraArgs=None,extraArgs2=None):
-		listProc=[]
+	def execute(self,action,package='',extraParms=None,extraParms2=None):
 		rebostPkgList=[]
 		store=[]
-		preaction=''
-		selected_bundle='*'
-		self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,extraArgs2))
-		if extraArgs:
+		self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,extraParms2))
+		if extraParms:
 			for regPlugin,info in self.pluginInfo.items():
-				if info.get('packagekind','package')==str(extraArgs):
-					bundle=str(extraArgs)
+				if info.get('packagekind','package')==str(extraParms):
+					bundle=str(extraParms)
 		plugin='sqlHelper'
 		for plugName,plugAction in self.pluginInfo.items():
 			if action in plugAction.get('actions',[]):
@@ -180,12 +176,12 @@ class Rebost():
 		if rebostPkgList==[]:
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-			self._debug("Parms:\n-action: {}\n-package: {}\n-extraArgs: {}\nplugin: {}".format(action,package,extraArgs,plugin))
-			if extraArgs2:
-				self._debug("ExtraArgs2: {}".format(extraArgs2))
-				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs,extraArgs2=extraArgs2))
+			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,plugin))
+			if extraParms2:
+				self._debug("ExtraArgs2: {}".format(extraParms2))
+				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2))
 			else:
-				rebostPkgList.extend(self.plugins[plugin].execute(procId=0,action=action,progress='',result='',store='',args=package,extraArgs=extraArgs))
+				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms))
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
@@ -207,13 +203,8 @@ class Rebost():
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
 		#action,args=action_args.split("#")
-		procInfo=definitions.rebostProcess()
+		proc=None
 		plugList=[]
-		procId=0
-		self.procId+=1
-		procIndex=self.procId
-		self.process[procIndex]=procInfo.copy()
-		procList=[]
 		if not plugin:  
 			for plugin,info in self.pluginInfo.items():
 				if action in info['actions']:
@@ -226,48 +217,25 @@ class Rebost():
 			plugList.append(plugin)
 		if plugList:
 			for plugin in plugList:
-				procId=self._executeAction(plugin,action,package,bundle,th)
-				if procId:
-					procList.append(procId)
+				proc=self._executeAction(plugin,action,package,bundle,th)
 		else:
-			procIndex=-1
-			procList=[]
-		if procList:
-			self.procDict[procIndex]=procList
-		if procIndex in self.process.keys():
-			self.process[procIndex]=self.process[self.procId].copy()
-			self.process[procIndex]['plugin']=''
-			self.process[procIndex]['progressQ']=''
-			self.process[procIndex]['resultQ']=''
-			#self.process[procIndex]['proc']=''
-		else:
-			print("Failed!!!")
-			procIndex=-1
-		return(procIndex)
+			proc=None
+		return(proc)
 
 	def _executeAction(self,plugin,action,package,bundle='',th=True):
+		retval=1
 		procInfo=definitions.rebostProcess()
-		self.procId+=1
+		proc=None
 		self._debug("Launching {} from {} (th {})".format(action,plugin,th))
-		procInfo['plugin']=plugin
-		procInfo['progressQ']=multiprocessing.Queue()
-		procInfo['resultQ']=multiprocessing.Queue()
-		procInfo['progress']=0
-		procInfo['result']=''
-		procInfo['action']=action
-		procInfo['parms']=package
 		if th:
-			proc=threading.Thread(target=self.plugins[plugin].execute,args=(self.procId,action,procInfo['progressQ'],procInfo['resultQ'],self.store,package))
+			proc=threading.Thread(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
 		else:
-			proc=multiprocessing.Process(target=self.plugins[plugin].execute,args=(self.procId,action,procInfo['progressQ'],procInfo['resultQ'],self.store,package))
-		procInfo['proc']=proc
-		self.process[self.procId]=procInfo.copy()
-		retval=self.procId
+			proc=multiprocessing.Process(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
 		try:
 			proc.start()
 		except:
 			retval=0
-		return(retval)
+		return(proc)
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -280,83 +248,9 @@ class Rebost():
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
+	#def getProgress(self):
 
-	def chkProgress2(self,procId=None):
-		divisor=1
-		procId=int(procId)
-		procIdIndex=procId
-		progressDict={procIdIndex:self.process.get(procIdIndex,definitions.rebostProcess()).copy()}
-		if procId<0:
-			progressDict[procIdIndex]['progress']=100
-			return(str(json.dumps(progressDict)))
 
-		if procId:
-			procList=self.procDict.get(procId,[])
-			divisor=len(procList)
-		else:
-			procList=list(self.process.keys())
-		for procId in procList:
-			progress=self._chkProgress(procId)
-			try:
-				if procIdIndex==procId:
-					progressDict[procIdIndex]['progress']=int(progress[procId].get('progress',0)/divisor)
-					progressDict[procIdIndex]['result']=progress[procId]['result']
-				else:
-					progressDict[procIdIndex]['progress']+=int(progress[procId].get('progress',0)/divisor)
-					progressDict[procIdIndex]['result']+=progress[procId]['result']
-			except TypeError as e:
-				if isinstance(progressDict[procIdIndex].get('progress',""),str):
-					progressDict[procIdIndex]['progress']=0
-			except org.freedesktop.DBus.Python.TypeError as e:
-				if isinstance(progressDict[procIdIndex].get('progress',""),str):
-					progressDict[procIdIndex]['progress']=0
-			except Exception as e:
-				print(e)
-			self.process[procId]['progress']=progressDict[procIdIndex].get('progress',0)
-			self.process[procId]['result']=progressDict[procIdIndex].get('result','')
-
-		for clearField in ['proc','progressQ','resultQ']:
-			if progressDict[procIdIndex].get(clearField):
-				del (progressDict[procIdIndex][clearField])
-		return(str(json.dumps(progressDict)))
-
-	def _chkProgress(self,procId=None):
-		progress={}
-		if procId:
-			procList=[int(procId)]
-		else:
-			procList=list(self.process.keys())
-		for procId in procList:
-			if procId in self.process.keys():
-				process=self.process.get(procId,{}).copy()
-				try:
-					if self.process[procId].get('progress',0)<100 and self.process[procId].get('result','-1')!="-1":
-						if self.process[procId]['resultQ'] and not isinstance(self.process[procId]['resultQ'],str):
-							if not self.process[procId]['resultQ'].empty():
-								self.process[procId]['progress']=100
-								while not self.process[procId]['resultQ'].empty():
-									res=self.process[procId]['resultQ'].get()
-									self.process[procId]['result']=res
-								self.process[procId]['proc'].terminate()
-								self.process[procId]['proc'].join()
-							elif not isinstance(self.process[procId]['progressQ'],str) and not self.process[procId]['progressQ'].empty():
-								self.process[procId]['progress']=self.process[procId]['progressQ'].get()
-						elif not self.process[procId]['progressQ'].empty():
-							self.process[procId]['progress']=self.process[procId]['progressQ'].get()
-				except AttributeError as e:
-					print("Can't get queue msg: %s"%self.process[procId])
-					self.process[procId]['progress']=100
-					self.process[procId]['result']="Ended"
-
-				except Exception as e:
-					print("_chkProgress: %s"%e)
-				process=self.process.get(procId,{}).copy()
-#			   if process:
-#				   for clearField in ['progressQ','resultQ']:
-#					   del (process[clearField])
-				progress[procId]=process
-		return(progress)
-	
 	def update(self):
 		procInfo=definitions.rebostProcess()
 		procInfo['progressQ']=multiprocessing.Queue()
@@ -364,7 +258,7 @@ class Rebost():
 		self.store.clear()
 		proc=multiprocessing.Process(target=self._loadAppstream,args=([procInfo['progressQ'],procInfo['resultQ']]))
 		procInfo['proc']=proc
-		return(self._launchCoreProcess(procInfo,"update"))
+		#return(self._launchCoreProcess(procInfo,"update"))
 	
 	def fullUpdate(self):
 		procInfo=definitions.rebostProcess()
@@ -376,14 +270,3 @@ class Rebost():
 		procInfo['proc']=proc
 		return(self._launchCoreProcess(procInfo))
 
-	def _launchCoreProcess(self,procInfo,action):
-		procInfo['plugin']="core"
-		procInfo['progress']=0
-		procInfo['result']=''
-		procInfo['action']=action
-		procInfo['parms']=''
-		procInfo['proc'].start()
-		self.procId+=1
-		self.procDict[self.procId]=[self.procId]
-		self.process[self.procId]=procInfo.copy()
-		return (self.procId)

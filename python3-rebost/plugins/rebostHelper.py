@@ -9,6 +9,7 @@ import json
 import html
 import logging
 import tempfile
+import subprocess
 
 DBG=True
 
@@ -226,9 +227,6 @@ def _get_bundle_commands(bundle,rebostpkg):
 		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
 	elif bundle=='snap':
 		installCmd="snap install {} >/tmp/prueba".format(rebostpkg['pkgname'])
-		installCmdLine.append("echo $? >>/tmp/prueba")
-		installCmdLine.append("getStatus")
-		installCmdLine.append("qdbus --system net.lliurex.rebost /net/lliurex/rebost net.lliurex.rebost.commitInstall {} {} $INSTALLED".format(rebostpkg['pkgname'],bundle))
 		removeCmd="snap remove {}".format(rebostpkg['pkgname'])
 		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	elif bundle=='flatpak':
@@ -244,6 +242,6 @@ def _get_bundle_commands(bundle,rebostpkg):
 	commands['statusTestLine']=statusTestLine
 	return(commands)
 
-def get_epi_status(epifile):
-	proc=subprocess.run([epifile,'getStatus'],stdout=PIPE,stderr=PIPE)
-	return(proc.stdout)
+def get_epi_status(episcript):
+	proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	return(proc.stdout.decode().strip())

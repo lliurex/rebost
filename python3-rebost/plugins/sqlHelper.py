@@ -81,6 +81,7 @@ class sqlHelper():
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
+		self.close_connection(db)
 		return(rows)
 	#def _showPackage
 
@@ -91,6 +92,7 @@ class sqlHelper():
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
+		self.close_connection(db)
 		return(rows)
 	#def _searchPackage
 
@@ -105,11 +107,12 @@ class sqlHelper():
 		for row in rows:
 			(pkg,dataContent)=row
 			data=json.loads(dataContent)
-			data['state'].update({bundle:state})
+			data['state'][bundle]=state
 		dataContent=json.dumps(data)
-		query="UPDATE {} SET data='{}' WHERE pkg LIKE '{}';".format(table,dataContent,pkgname)
+		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
 		self._debug(query)
 		cursor.execute(query)
+		self.close_connection(db)
 		return(rows)
 	#def _commitInstall
 

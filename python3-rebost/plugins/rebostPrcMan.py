@@ -7,6 +7,7 @@ import json
 import rebostHelper
 import subprocess
 import time
+import random
 
 class rebostPrcMan():
 	def __init__(self,*args,**kwargs):
@@ -33,7 +34,6 @@ class rebostPrcMan():
 			logging.warning("prcMan: %s"%str(msg))
 	
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
-		self._debug(action)
 		rs='[{}]'
 		if action=='progress':
 			rs=self._getProgress()
@@ -47,7 +47,6 @@ class rebostPrcMan():
 	def _getProgress(self):
 		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)
 		query="SELECT * FROM rebostPrc;"
-		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		progressArray=[]
@@ -56,57 +55,69 @@ class rebostPrcMan():
 			progress=row
 			if isinstance(row,tuple):
 				(pid,data)=row
-				if os.path.exists(os.path.join("/proc/",pid)):
-					dataTmp=json.loads(data).copy()
-					max_time=1000
-					runningTime=int(time.time())-int(dataTmp['time'])
-					currentTime=int(time.time())
-					estimatedTime=120
-					progressSteps=[5,10,15,20,25,30,35,40,45,50,55,60,65,70,max_time]
-					for step in progressSteps:
-					#Update percentage.
-					#Fake a progress percentage (unimplemented).
-					#process running, update progress
-						seconds=int((step*estimatedTime)/100)
-						print("Step seconds: {}".format(seconds))
-						print("Running seconds: {}".format(runningTime))
-						if runningTime>seconds and step<max_time:
-							continue
-						stepPercentage=((runningTime*100/seconds))
-						print("Step percentage: {}".format(stepPercentage))
-						pending=int((step*stepPercentage)/100)
-						print("Total: {}".format(pending))
-						dataTmp['status']=int(pending)
-						print(progress)
-						progress=(pid,dataTmp)
-						break
-				else:
-					#process finished, invoke epi status
-					dataTmp=json.loads(data).copy()
-					action=dataTmp.get('status','')
-					if action=='install' or action=='remove':
-						self._debug("Select {} from {}".format(action,dataTmp.get('episcript','')))
-						if dataTmp.get('episcript',None):
-							stdout=rebostHelper.get_epi_status(dataTmp.get('episcript'))
-							if action=='install' or action=='remove':
-								if stdout=="0":
-									if action=='install':
-										dataTmp['status']='0'
-									else:
-										dataTmp['status']='-1'
-								else:
-									if action=='remove':
-										dataTmp['status']='1'
-									else:
-										dataTmp['status']='-1'
-								query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
-								cursor.execute(query)
-								self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
+				data=json.loads(data).copy()
+				if not data.get('done',None):
+					if os.path.exists(os.path.join("/proc/",pid)):
+						progress=(pid,self._getFakePercent(data))
+					else:
+						dataTmp=self._getEpiState(data)
+						dataTmp['done']=1
+						query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
+						cursor.execute(query)
+						self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 						progress=(pid,dataTmp)
 			progressArray.append(progress)
 		self.sql.close_connection(db)
 		return(progressArray)
 	#def _getProgress
+
+	def _getFakePercent(self,data):
+		max_time=1000
+		runningTime=int(time.time())-int(data['time'])
+		currentTime=int(time.time())
+		estimatedTime=120
+		#Real progress is unknown so fake it
+		firstStep=int(random.randrange(20,53))
+		secondStep=int(random.randrange(firstStep+1,80))
+		thirdStep=100-(firstStep-secondStep)
+		progressSteps=[firstStep,secondStep,thirdStep]
+		for step in progressSteps:
+		#Update percentage.
+		#Fake a progress percentage (unimplemented).
+		#process running, update progress
+			seconds=int((step*estimatedTime)/100)
+			#print("Step seconds: {}".format(seconds))
+			#print("Running seconds: {}".format(runningTime))
+			if runningTime>seconds and step<max_time:
+				estimatedTime+=30
+				continue
+			stepPercentage=((runningTime*100/seconds))
+			#print("Step percentage: {}".format(stepPercentage))
+			pending=int((step*stepPercentage)/100)
+			#print("Total: {}".format(pending))
+			data['status']=int(pending)
+			break
+		return data
+
+	def _getEpiState(self,data):
+		#process finished, invoke epi status
+		action=data.get('status','')
+		if action=='install' or action=='remove':
+			self._debug("Select {} from {}".format(action,data.get('episcript','')))
+			if data.get('episcript',None):
+				stdout=rebostHelper.get_epi_status(data.get('episcript'))
+				if action=='install' or action=='remove':
+					if stdout=="0":
+						if action=='install':
+							data['status']='0'
+						else:
+							data['status']='-1'
+					else:
+						if action=='remove':
+							data['status']='1'
+						else:
+							data['status']='-1'
+		return data
 	
 	def _insertProcess(self,rebostPkgList):
 		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)

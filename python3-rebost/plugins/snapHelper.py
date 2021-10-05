@@ -98,10 +98,10 @@ class snapHelper():
 		state="available"
 		try:
 			pkg=self.snap_client.list_one_sync(pkg.get_name())
-			state='installed'
+			state='0'
 			pkgs=[pkg]
 		except:
-			state='available'
+			state='1'
 		appinfo['state']={"snap":"{}".format(state)}
 		#appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
 		appinfo['bundle'].update({'snap':"{}".format(pkg.get_name())})

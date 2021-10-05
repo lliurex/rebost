@@ -174,7 +174,6 @@ class Rebost():
 				break
 
 		if rebostPkgList==[]:
-			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,plugin))
 			if extraParms2:

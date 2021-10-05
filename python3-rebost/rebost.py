@@ -144,32 +144,63 @@ def _processArgs(*args):
 	return(action,actionArgs)	
 
 def _waitProcess(pid):
-	var='LliureX Store'
+	var='LliureX Store '
+	var2=var
 	cont=1
 	inc=1
-	if os.path.exists("/proc/{}".format(pid)):
-
-		fpid=os.fork()
-		if fpid==0:
-			os._exit(0)
-		else:
-			while (os.path.exists("/proc/{}".format(pid))):
-				print("{} {}".format(var[0:cont],var[cont:]),end='\r')
-				if cont>=len(var) or cont<=0:
-					if cont<0:
-						cont=0
-					inc*=-1
-				time.sleep(0.1)
-				cont+=(inc)
-		print("                           ",end='\r')
+	data={}
+	done=None
+	for proc in rebost.getResults():
+		(ppid,pdata)=proc
+		if str(ppid)==str(pid):
+			if isinstance(pdata,str):
+				data=json.loads(pdata)
+			elif isinstance(pdata,dict):
+				data=pdata.copy()
+			break
+	if data:
+		while done==None:
+			done=data.get('done')
+			print("{} {}".format(var[0:cont],var[cont:]),end='\r')
+			if cont>=len(var) or cont<=0:
+				if cont<=0:
+					cont=1
+				else:
+					print('{} {} {}%'.format(var[0:cont],var[cont:],data.get('status',0)),end='\r')
+				inc*=-1
+			time.sleep(0.1)
+			cont+=(inc)
+			for proc in rebost.getResults():
+				(ppid,pdata)=proc
+				if str(ppid)==str(pid):
+					if isinstance(pdata,str):
+						data=json.loads(pdata)
+					elif isinstance(pdata,dict):
+						data=pdata.copy()
+					break
+		cont=1
+		var2="Finishing...        done!"
+		while cont<=len(var2):
+			print("{} {}".format(var2[0:cont],var[cont:]),end='\r')
+			cont+=1
+			time.sleep(0.1)
+		time.sleep(0.2)
+	print("                                ",end='\r')
 
 def _getResult(pid):
 	status='Unknown'
 	result=status
 	for proc in rebost.getResults():
 		(ppid,data)=proc
+		if isinstance(data,str):
+			data=json.loads(data)
 		if str(ppid)==str(pid):
-			status=data.get('status',-2)
+			try:
+				status=data.get('status',-2)
+			except Exception as e:
+				print(data)
+				print(e)
+
 			if status=='0':
 				result="Installed"
 			elif status=='1':
@@ -177,7 +208,7 @@ def _getResult(pid):
 			elif status=='-1':
 				result="An {}error{} ocurred when attempting to {}".format(color.RED,color.END,action)
 			else:
-				result="Unknown"
+				result="Unknown status {}".format(status)
 
 	return(result)
 

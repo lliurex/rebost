@@ -226,16 +226,19 @@ def _get_bundle_commands(bundle,rebostpkg):
 		removeCmdLine.append("fi")
 		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
 	elif bundle=='snap':
-		installCmd="snap install {} >/tmp/prueba".format(rebostpkg['pkgname'])
-		removeCmd="snap remove {}".format(rebostpkg['pkgname'])
-		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+		installCmd="snap install {}".format(rebostpkg['bundle']['snap'])
+		removeCmd="snap remove {}".format(rebostpkg['bundle']['snap'])
+		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
 	elif bundle=='flatpak':
 		installCmd="flatpak -y install {}".format(rebostpkg['bundle']['flatpak'])
 		removeCmd="flatpak -y uninstall {}".format(rebostpkg['bundle']['flatpak'])
-		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
-		installCmd="flatpak -y install {}".format(rebostpkg['pkgname'])
-		removeCmd="flatpak install {}".format(rebostpkg['pkgname'])
+		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
+		installCmdLine.append("mv /tmp/{}.appimage /opt/appimages/".format(rebostpkg['pkgname']))
+		installCmdLine.append("chmod +x /opt/appimages/{}.appimage".format(rebostpkg['pkgname']))
+		removeCmd="rm /opt/appimages/{}.appimage".format(rebostpkg['pkgname'])
+		statusTestLine=("TEST=$( ls /opt/appimages/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(rebostpkg['pkgname']))
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

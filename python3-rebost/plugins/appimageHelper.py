@@ -225,7 +225,16 @@ class appimageHelper():
 			print("pkgname: {}".format(pkgname))
 			pkgname=".".join(pkgname.split(".")[:-1])
 			print("pkgname: {}".format(pkgname))
-			version=pkgname.split("-")[1]
+			if len(pkgname.split("-"))>1:
+				version=pkgname.split("-")[1]
+			elif len(pkgname.split("."))>1:
+				version=""
+				for i in pkgname.split("."):
+					if i.isnumeric():
+						version+="{}.".format(i)
+				version=version[:-1]
+			else:
+				version="0.1"
 			print("version: {}".format(version))
 			rebostPkg['versions']['appimage']="{}".format(version)
 		if installerUrl:
@@ -234,6 +243,9 @@ class appimageHelper():
 				rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
 		else:
 			rebostPkg['bundle'].pop('appimage',None)
+		rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+		rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
 		return json.dumps(rebostPkg)
 
 	def _get_releases(self,baseUrl):

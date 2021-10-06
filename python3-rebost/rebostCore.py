@@ -8,7 +8,6 @@ import threading
 import time
 import json
 import signal
-import definitions
 import logging
 import subprocess
 import gi
@@ -224,7 +223,7 @@ class Rebost():
 
 	def _executeAction(self,plugin,action,package,bundle='',th=True):
 		retval=1
-		procInfo=definitions.rebostProcess()
+		procInfo=self.plugins['rebostHelper'].rebostProcess()
 		proc=None
 		self._debug("Launching {} from {} (th {})".format(action,plugin,th))
 		if th:
@@ -252,7 +251,7 @@ class Rebost():
 
 
 	def update(self):
-		procInfo=definitions.rebostProcess()
+		procInfo=self.plugins['rebostHelper'].rebostProcess()
 		procInfo['progressQ']=multiprocessing.Queue()
 		procInfo['resultQ']=multiprocessing.Queue()
 		self.store.clear()
@@ -261,7 +260,7 @@ class Rebost():
 		#return(self._launchCoreProcess(procInfo,"update"))
 	
 	def fullUpdate(self):
-		procInfo=definitions.rebostProcess()
+		procInfo=self.plugins['rebostHelper'].rebostProcess()
 		procInfo['progressQ']=multiprocessing.Queue()
 		procInfo['resultQ']=multiprocessing.Queue()
 		self.store.clear()

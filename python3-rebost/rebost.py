@@ -61,7 +61,6 @@ def _printShow(result):
 	msg="Package: {}\n".format(result['pkgname'])
 	bundleStr=''
 	for bundle in sorted(result['bundle'].keys()):
-		print(result)
 		state=''
 		if result['state'].get(bundle,'')=="0":
 			state='*'
@@ -89,7 +88,6 @@ def _printShow(result):
 	msg+="Versions: {}\n".format(versionStr)
 	cat=" ".join(result['categories'])
 	msg+=f"Categories: {cat}\n"
-	msg+=f"Availability: {result['installed']}\n"
 	msg+="\n"
 	msg+=f"{result['description']}"
 	return(msg)
@@ -166,7 +164,15 @@ def _waitProcess(pid):
 				if cont<=0:
 					cont=1
 				else:
-					print('{} {} {}%'.format(var[0:cont],var[cont:],data.get('status',0)),end='\r')
+					percentage=0
+					perc=data.get('status',0)
+					if isinstance(perc,str):
+						if perc.isnumeric():
+							percentage=int(perc)
+					elif isinstance(perc,int):
+						percentage=perc
+					if percentage>0:
+						print('{} {} {}%'.format(var[0:cont],var[cont:],perc),end='\r')
 				inc*=-1
 			time.sleep(0.1)
 			cont+=(inc)
@@ -178,12 +184,11 @@ def _waitProcess(pid):
 					elif isinstance(pdata,dict):
 						data=pdata.copy()
 					break
-		cont=1
-		var2="Finishing...        done!"
-		while cont<=len(var2):
-			print("{} {}".format(var2[0:cont],var[cont:]),end='\r')
-			cont+=1
-			time.sleep(0.1)
+		per=int(data.get('status',0))
+		while per<=100:
+			print('{} {} {}%'.format(var[0:cont],var[cont:],per),end='\r')
+			per+=1
+			time.sleep(0.01)
 		time.sleep(0.2)
 	print("                                ",end='\r')
 

@@ -10,6 +10,7 @@ import logging
 import html
 import os
 from queue import Queue
+from bs4 import BeautifulSoup
 
 class packageKit():
 	def __init__(self,*args,**kwargs):
@@ -82,8 +83,10 @@ class packageKit():
 		rebostPkg['name']=pkg.get_name()
 		rebostPkg['pkgname']=pkg.get_name()
 		rebostPkg['id']="org.packagekit.%s"%pkg.get_name()
-		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		rebostPkg['description']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
+		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
+		rebostPkg['description']=""
+		#rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
+		#rebostPkg['description']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
 		#rebostPkg['version']="package-{}".format(pkg.get_version())
 		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
 		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}

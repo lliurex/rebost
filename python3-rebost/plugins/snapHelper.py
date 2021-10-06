@@ -7,7 +7,7 @@ from gi.repository import Snapd
 import json
 import rebostHelper
 import logging
-import html
+from bs4 import BeautifulSoup
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -73,13 +73,12 @@ class snapHelper():
 		appinfo['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
 		appinfo['name']=pkg.get_name()
 		appinfo['pkgname']=pkg.get_name().lower().replace("_","-")
-		appinfo['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		appinfo['description']=html.escape(pkg.get_description()).encode('ascii', 'xmlcharrefreplace').decode() 
+		appinfo['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
+		appinfo['description']=BeautifulSoup(pkg.get_description(),"html.parser").get_text().replace("'","''")
 		#appinfo['categories']=['Snap']
 		appinfo['kind']=5
 		if pkg.get_icon():
 			appinfo['icon']=pkg.get_icon()
-		appinfo['version']="snap-{}".format(pkg.get_version())
 		appinfo['versions']={"snap":"{}".format(pkg.get_version())}
 		#if pkg.get_screenshots():
 		#if 'screenshots' in appimage.keys():

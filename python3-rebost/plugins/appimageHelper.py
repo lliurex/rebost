@@ -159,12 +159,14 @@ class appimageHelper():
 					appinfo['description']=description
 					desc=".".join(description.split(".")[0:2])
 					desc=" ".join(desc.split(" ")[0:8])
-					desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
+					desc=BeautifulSoup(desc,"html.parser").get_text()
+					#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
 			else:
-				appinfo['description']=appimage['description']
+				appinfo['description']=description
 				desc=".".join(appinfo['description'].split(".")[0:2])
 				desc=" ".join(desc.split(" ")[0:8])
-				desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
+				desc=BeautifulSoup(desc,"html.parser").get_text()
+				#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
 			appinfo['summary']=desc
 		else:
 			appinfo['summary']='Appimage of {}'.format(appinfo["name"])

@@ -38,6 +38,8 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
+		rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
+		rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
 		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
 		try:
 			cursor.execute(query)
@@ -55,6 +57,8 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
+	rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
+	rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
 	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
 	#print(query)
 	try:
@@ -79,6 +83,8 @@ def _sanitizeString(data):
 		data=data.replace("*br*"," ")
 		data=data.replace("*p*"," ")
 		data=data.replace('<\p><\p>','<\p>')
+		data=data.replace("''","'")
+		data=data.replace("'","''")
 	return(data)
 #def _sanitizeString
 
@@ -108,8 +114,10 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
-		pkg['description']=_sanitizeString(html2text.html2text(pkg['description'],"lxml"))
-		pkg['description']=html.escape(pkg['description']).encode('ascii', 'xmlcharrefreplace').decode() 
+		else:
+			pkg['description']=_sanitizeString(html2text.html2text(pkg['description'],"lxml"))
+			pkg['description']=html.escape(pkg['description']).encode('ascii', 'xmlcharrefreplace').decode() 
+			pkg['description']=pkg['description'].replace("'","''")
 		for icon in component.get_icons():
 			if icon.get_filename():
 				pkg['icon']=icon.get_filename()

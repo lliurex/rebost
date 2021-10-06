@@ -18,6 +18,8 @@ class rebostPrcMan():
 		self.enabled=True
 		logging.basicConfig(format='%(message)s')
 		self.sql=sqlHelper.sqlHelper()
+		if os.path.isfile(self.sql.proc_table):
+			os.remove(self.sql.proc_table)
 		self.progress={}
 		self.priority=100
 		self.gui=False
@@ -77,19 +79,22 @@ class rebostPrcMan():
 		currentTime=int(time.time())
 		estimatedTime=120
 		#Real progress is unknown so fake it
-		firstStep=int(random.randrange(20,53))
+		firstStep=int(random.randrange(10,43))
 		secondStep=int(random.randrange(firstStep+1,80))
-		thirdStep=100-(firstStep-secondStep)
+		thirdStep=100-(firstStep+secondStep)
 		progressSteps=[firstStep,secondStep,thirdStep]
 		for step in progressSteps:
 		#Update percentage.
 		#Fake a progress percentage (unimplemented).
 		#process running, update progress
+			if estimatedTime<step:
+				print("E.T.: {}".format(estimatedTime))
+				print("")
+				estimatedTime=step+10
 			seconds=int((step*estimatedTime)/100)
 			#print("Step seconds: {}".format(seconds))
 			#print("Running seconds: {}".format(runningTime))
 			if runningTime>seconds and step<max_time:
-				estimatedTime+=30
 				continue
 			stepPercentage=((runningTime*100/seconds))
 			#print("Step percentage: {}".format(stepPercentage))

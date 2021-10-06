@@ -10,6 +10,7 @@ import sqlite3
 import subprocess
 from shutil import copyfile
 import time
+import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
@@ -22,17 +23,12 @@ class sqlHelper():
 		self.priority=100
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.progressQ={}
-		self.progress={}
-		self.resultQ={}
-		self.result={}
 		self.main_table="rebostStore.db"
 		self.proc_table="rebostPrc.db"
-		if os.path.isfile(self.proc_table):
-			os.remove(self.proc_table)
 		self.main_tmp_table="tmpStore.db"
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
+		self.appimage=appimageHelper.appimageHelper()
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -80,7 +76,19 @@ class sqlHelper():
 		query="SELECT * FROM {} WHERE pkg LIKE '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		self._debug(query)
 		cursor.execute(query)
-		rows=cursor.fetchall()
+		rowsTmp=cursor.fetchall()
+		rows=[]
+		for row in rowsTmp:
+			(pkg,data)=row
+			if 'appimage' in json.loads(data).get('bundle',{}).keys():
+				if not json.loads(data).get('bundle',{}).get('appimage',',appimage').lower().endswith(".appimage"):
+					dataTmp=self.appimage.fillData(data)
+					data=dataTmp
+					row=(pkg,data)
+					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,data,pkgname)
+					cursor.execute(query)
+					db.commit()
+			rows.append(row)
 		self.close_connection(db)
 		return(rows)
 	#def _showPackage
@@ -124,38 +132,43 @@ class sqlHelper():
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
 		exclude=[self.main_tmp_table,self.main_table,"packagekit.db",self.proc_table]
+		include=["appimage.db","flatpak.db","snap.db"]
 		self.copy_packagekit_sql()
-		for f in os.listdir("."):
-			if f.endswith(".db") and f not in exclude:
+		for f in include:
+			if os.path.isfile(f) and f not in exclude:
 				table=f.replace(".db","")
 				self._debug("Accesing {}".format(f))
 				(db,cursor)=self.enable_connection(f)
 				query="SELECT * FROM {}".format(table)
 				cursor.execute(query)
 				for data in cursor.fetchall():
-					(key,value)=data
+					(pkgname,value)=data
 					json_value=json.loads(value)
-					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,key)
-					rows=main_cursor.execute(query).fetchone()
-					if rows:
-						#self._debug("Update pkg {}".format(key))
-						(main_key,main_data)=rows
-						if main_data:
-							json_main_value=json.loads(main_data)
-							if json_value.get('bundle') and json_value.get('bundle')!=json_main_value.get('bundle'):
-								#json_main_value['bundle'][table]=json_value['bundle']
-								json_main_value['bundle'].update(json_value['bundle'])
-								#self._debug(value)
-							if json_value.get('versions') and json_value.get('versions')!=json_main_value.get('versions'):
-								json_main_value['versions'].update(json_value['versions'])
-							if json_value.get('state') and json_value.get('state')!=json_main_value.get('state'):
-								json_main_value['state'].update(json_value['state'])
-							value=str(json.dumps(json_main_value))
-					query="INSERT INTO {} (pkg, data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET data='{}';".format(main_tmp_table,key,value,value)
+					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,pkgname)
+					row=main_cursor.execute(query).fetchone()
+					if row:
+						(main_key,main_data)=row
+						json_main_value=json.loads(main_data).copy()
+						for key,item in json_value.items():
+							if not key in json_main_value.keys():
+								json_main_value[key]=item
+							elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
+								json_main_value[key].update(item)
+							elif isinstance(item,list) and isinstance(json_main_value.get(key,''),list):
+								json_main_value[key].extend(item)
+								json_main_value[key] = list(set(json_main_value[key]))
+							elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
+								if len(item)>len(json_main_value.get(key,'')):
+									json_main_value[key]=item
+
+						value=str(json.dumps(json_main_value))
+						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(main_tmp_table,value,pkgname)
+					else:
+						query="INSERT INTO {} (pkg, data) VALUES ('{}', '{}');".format(main_tmp_table,pkgname,value,value)
 					#self._debug(query)
 					main_cursor.execute(query)
+				main_db.commit()
 				self.close_connection(db)
-		main_db.commit()
 		main_db.close()
 		#Copy tmp to definitive
 		self._debug("Copying main table")

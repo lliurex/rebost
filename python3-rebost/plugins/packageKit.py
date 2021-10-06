@@ -54,12 +54,10 @@ class packageKit():
 		self._debug("Getting pkg list")
 		pkgList=self.pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		self._debug("End Getting pkg list")
-		rebostPkgList=[]
-		added=[]
-		semaphore = threading.BoundedSemaphore(value=10)
+		semaphore = threading.BoundedSemaphore(value=20)
 		thList=[]
 		for pkg in pkgList.get_package_array():
-			if pkg.get_name() in added or pkg.get_arch() not in ['amd64','all']:
+			if pkg.get_arch() not in ['amd64','all']:
 				continue
 			th=threading.Thread(target=self._th_generateRebostPkg,args=(pkg,semaphore,))
 			th.start()
@@ -84,9 +82,10 @@ class packageKit():
 		rebostPkg['pkgname']=pkg.get_name()
 		rebostPkg['id']="org.packagekit.%s"%pkg.get_name()
 		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-		rebostPkg['description']=""
-		#rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		#rebostPkg['description']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
+
+		rebostPkg['name']=pkg.get_name()
+		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
+		rebostPkg['description']=rebostPkg['summary']
 		#rebostPkg['version']="package-{}".format(pkg.get_version())
 		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
 		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}

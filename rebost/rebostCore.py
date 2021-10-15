@@ -20,7 +20,6 @@ class Rebost():
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
-		self.cache=os.path.join("{}".format(os.environ['HOME']),".cache/rebost")
 		self.cache="/tmp/.cache/rebost"
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")

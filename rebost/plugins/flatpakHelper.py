@@ -70,10 +70,10 @@ class flatpakHelper():
 					installer.update_appstream_sync(remote.get_name())
 					self._debug("{} synced".format(srcDir))
 		except Exception as e:
-			print(e)
+			print("Error getting flatpak remote: {}".format(e))
 
-		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		try:
+			self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
 			#	fcontent=f.read()
 			#store.from_xml(fcontent)

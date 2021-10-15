@@ -18,9 +18,14 @@ class rebostPrcMan():
 		self.enabled=True
 		logging.basicConfig(format='%(message)s')
 		self.sql=sqlHelper.sqlHelper()
+		self.failProc=0
 		if os.path.isfile(self.sql.proc_table):
 			os.remove(self.sql.proc_table)
-		self.progress={}
+		self.user=''
+		if self.user:
+			self.appimageDir=os.getenv("HOME")+"/.local/bin"
+		else:
+			self.appimageDir="/opt/appimages"
 		self.priority=100
 		self.gui=False
 		self.n4d=n4d()
@@ -37,12 +42,15 @@ class rebostPrcMan():
 	
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
+		user=''
+		if kwargs:
+			user=kwargs.get('user','')
 		if action=='progress':
 			rs=self._getProgress()
 		if action=='insert':
 			rs=self._insertProcess()
 		if action=='remove' or action=='install':
-			rs=self._managePackage(parms,extraParms,action)
+			rs=self._managePackage(parms,extraParms,action,user=user)
 		return(rs)
 	#def execute
 
@@ -68,6 +76,9 @@ class rebostPrcMan():
 						cursor.execute(query)
 						self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 						progress=(pid,dataTmp)
+				else:
+					if data.get('msg',''):
+						progress=(pid,data)
 			progressArray.append(progress)
 		self.sql.close_connection(db)
 		return(progressArray)
@@ -79,7 +90,7 @@ class rebostPrcMan():
 		currentTime=int(time.time())
 		estimatedTime=120
 		#Real progress is unknown so fake it
-		firstStep=int(random.randrange(10,43))
+		firstStep=int(random.randrange(20,30))
 		secondStep=int(random.randrange(firstStep+1,80))
 		thirdStep=100-(firstStep+secondStep)
 		progressSteps=[firstStep,secondStep,thirdStep]
@@ -138,8 +149,8 @@ class rebostPrcMan():
 		return('[{}]')
 	#def _insertProcess
 	
-	def _managePackage(self,pkgname,bundle='',action='install'):
-		self._debug("{} package {}".format(action,pkgname))
+	def _managePackage(self,pkgname,bundle='',action='install',user=''):
+		self._debug("{} package {} for user {}".format(action,pkgname,user))
 		rebostPkgList=[]
 		rebostpkg=''
 		#1st search that there's a package in the desired format
@@ -148,25 +159,28 @@ class rebostPrcMan():
 			(package,rebostpkg)=rows[0]
 			bundles=json.loads(rebostpkg).get('bundle',"not found")
 			if len(bundles)>1:
+				self.failProc+=1
 				if not (bundle and bundle in bundles):
 					rebostpkg=''
 					if bundle:
-						rebostPkgList=[("-1",{'package':package,'status':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
+						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
 					else:
-						rebostPkgList=[("-1",{'package':package,'status':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
-			else:
+						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+			elif bundles:
 				bundle=list(bundles.keys())[0]
+			else:
+				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available at {}'.format(bundles)})]
 		else:
-			rebostPkgList=[("-1",{'package':pkgname,'status':'package {} not found'.format(pkgname)})]
+			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
-			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle)
+			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
 			pid=self.n4d.n4dQuery("LliurexStore","{}_epi".format(action),epifile,self.gui)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
-			self._insertProcess(rebostPkgList)
+		self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)

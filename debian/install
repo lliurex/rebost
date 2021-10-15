@@ -1,0 +1,3 @@
+rebost/* /usr/share/rebost
+n4d/* /usr/share/n4d/python-plugins
+dbus/* /etc/dbus-1/system.d/

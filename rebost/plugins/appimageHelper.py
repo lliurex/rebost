@@ -36,7 +36,6 @@ class appimageHelper():
 			self.appimageDir=os.getenv("HOME")+"/.local/bin"
 		else:
 			self.appimageDir="/opt/appimages"
-		self.wrkDir=os.path.join(os.getenv("HOME"),".cache/rebost/xml/appimage")
 		self.wrkDir="/tmp/.cache/rebost/xml/appimage"
 		self.iconDir="/tmp/.cache/rebost/icons"
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}

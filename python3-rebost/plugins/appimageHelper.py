@@ -29,7 +29,13 @@ class appimageHelper():
 		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
-		self.appimageDir=os.getenv("HOME")+"/Applications"
+		self.user=''
+		if kwargs:
+			self.user=kwargs.get('user','')
+		if self.user:
+			self.appimageDir=os.getenv("HOME")+"/.local/bin"
+		else:
+			self.appimageDir="/opt/appimages"
 		self.wrkDir=os.path.join(os.getenv("HOME"),".cache/rebost/xml/appimage")
 		self.wrkDir="/tmp/.cache/rebost/xml/appimage"
 		self.iconDir="/tmp/.cache/rebost/icons"

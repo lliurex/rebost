@@ -74,7 +74,7 @@ class sqlHelper():
 		table=self.main_table.replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		query="SELECT * FROM {} WHERE pkg LIKE '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
-		self._debug(query)
+		#self._debug(query)
 		cursor.execute(query)
 		rowsTmp=cursor.fetchall()
 		rows=[]
@@ -83,9 +83,8 @@ class sqlHelper():
 			if 'appimage' in json.loads(data).get('bundle',{}).keys():
 				if not json.loads(data).get('bundle',{}).get('appimage',',appimage').lower().endswith(".appimage"):
 					dataTmp=self.appimage.fillData(data)
-					data=dataTmp
-					row=(pkg,data)
-					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,data,pkgname)
+					row=(pkg,dataTmp)
+					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
 					cursor.execute(query)
 					db.commit()
 			rows.append(row)
@@ -97,7 +96,7 @@ class sqlHelper():
 		table=self.main_table.replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		query="SELECT * FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
-		self._debug(query)
+		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		self.close_connection(db)
@@ -122,7 +121,7 @@ class sqlHelper():
 		data['name']=rebostHelper._sanitizeString(data['name'])
 		dataContent=json.dumps(data)
 		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
-		self._debug(query)
+		#self._debug(query)
 		cursor.execute(query)
 		self.close_connection(db)
 		return(rows)

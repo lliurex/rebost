@@ -137,12 +137,12 @@ def appstream_to_rebost(appstreamCatalogue):
 	return(rebostPkgList)
 #def appstream_to_rebost
 
-def generate_epi_for_rebostpkg(rebostpkg,bundle):
+def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	_debug("Generating EPI for:\n{}".format(rebostpkg))
 	epijson=_generate_epi_json(rebostpkg)
-	episcript=_generate_epi_sh(rebostpkg,bundle)
+	episcript=_generate_epi_sh(rebostpkg,bundle,user)
 	return(epijson,episcript)
 	
 def _generate_epi_json(rebostpkg):
@@ -162,11 +162,11 @@ def _generate_epi_json(rebostpkg):
 		retCode=1
 	return(epiJson)
 
-def _generate_epi_sh(rebostpkg,bundle):
+def _generate_epi_sh(rebostpkg,bundle,user=''):
 	tmpDir="/tmp"
 	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
 	try:
-		_make_epi_script(rebostpkg,epiScript,bundle)
+		_make_epi_script(rebostpkg,epiScript,bundle,user)
 	except Exception as e:
 		_debug("%s"%e)
 		retCode=1
@@ -175,9 +175,9 @@ def _generate_epi_sh(rebostpkg,bundle):
 	return(epiScript)
 #def _generate_epi_sh
 
-def _make_epi_script(rebostpkg,epiScript,bundle):
+def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
 	_debug("Generating script for:\n{} - ".format(rebostpkg,bundle))
-	commands=_get_bundle_commands(bundle,rebostpkg)
+	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
 		f.write("#!/bin/bash\n")
@@ -218,7 +218,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle):
 		f.write("exit 0\n")
 #def _make_epi_script
 
-def _get_bundle_commands(bundle,rebostpkg):
+def _get_bundle_commands(bundle,rebostpkg,user=''):
 	commands={}
 	installCmd=''
 	installCmdLine= []
@@ -243,10 +243,17 @@ def _get_bundle_commands(bundle,rebostpkg):
 		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
 		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
-		installCmdLine.append("mv /tmp/{}.appimage /opt/appimages/".format(rebostpkg['pkgname']))
-		installCmdLine.append("chmod +x /opt/appimages/{}.appimage".format(rebostpkg['pkgname']))
-		removeCmd="rm /opt/appimages/{}.appimage".format(rebostpkg['pkgname'])
-		statusTestLine=("TEST=$( ls /opt/appimages/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(rebostpkg['pkgname']))
+		if user:
+			installCmdLine.append("mv /tmp/{}.appimage /home/{}/.local/bin/".format(rebostpkg['pkgname'],user))
+			installCmdLine.append("chown {}:{} /home/{}/.local/bin/{}.appimage".format(user,user,user,rebostpkg['pkgname']))
+			installCmdLine.append("chmod +x /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname']))
+			removeCmd="rm /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname'])
+			statusTestLine=("TEST=$( ls /home/{}/.local/bin/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(user,rebostpkg['pkgname']))
+		else:
+			installCmdLine.append("mv /tmp/{}.appimage /opt/appimages".format(rebostpkg['pkgname'],user))
+			installCmdLine.append("chmod +x /opt/appimages/{}.appimage".format(rebostpkg['pkgname']))
+			removeCmd="rm /opt/appimages/{}.appimage".format(rebostpkg['pkgname'])
+			statusTestLine=("TEST=$( ls /opt/appimages/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(rebostpkg['pkgname']))
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

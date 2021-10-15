@@ -178,7 +178,7 @@ class rebostPrcMan():
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
-			pid=self.n4d.n4dQuery("LliurexStore","{}_epi".format(action),epifile,self.gui)
+			pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 		self._insertProcess(rebostPkgList)
 

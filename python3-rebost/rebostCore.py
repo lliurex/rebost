@@ -28,7 +28,7 @@ class Rebost():
 		self.plugins={}
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
-		self.plugAttrOptional=["autostartActions","postAutostartActions"]
+		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
 		self.store=appstream.Store()
 		self._loadPlugins()
@@ -106,6 +106,8 @@ class Rebost():
 			for item,value in pluginObject.__dict__.items():
 				if item in mandatory or item in self.plugAttrOptional:
 					plugInfo["{}".format(item)]=value
+					if item=="user":
+						pluginObject.__dict__[item]="lliurex"
 				if item in mandatory:
 					mandatory.remove(item)
 			if mandatory:
@@ -158,7 +160,7 @@ class Rebost():
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
-	def execute(self,action,package='',extraParms=None,extraParms2=None):
+	def execute(self,action,package='',extraParms=None,extraParms2=None,user=None):
 		rebostPkgList=[]
 		store=[]
 		self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,extraParms2))
@@ -175,12 +177,8 @@ class Rebost():
 		if rebostPkgList==[]:
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,plugin))
-			if extraParms2:
-				self._debug("ExtraArgs2: {}".format(extraParms2))
-				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2))
-			else:
-				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms))
+			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
+			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user))
 		#Generate the store with results and sanitize them
 		if isinstance(rebostPkgList,list):
 			store=self._sanitizeStore(rebostPkgList,package)
@@ -243,12 +241,12 @@ class Rebost():
 			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
 			stdout=proc.stdout.decode().strip()
 		return (stdout)
+	#def getEpiPkgStatus
 
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
 	#def getProgress(self):
-
 
 	def update(self):
 		procInfo=self.plugins['rebostHelper'].rebostProcess()

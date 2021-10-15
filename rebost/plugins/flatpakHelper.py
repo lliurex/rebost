@@ -8,6 +8,7 @@ gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 import rebostHelper
 import logging
+import subprocess
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -64,16 +65,20 @@ class flatpakHelper():
 			for installer in flInst:
 				self._debug("Loading {}".format(installer))
 				flRemote=installer.list_remotes()
+				if not flRemote:
+					self._init_flatpak_repo()
+					self._debug("Reloading {}".format(installer))
+					flRemote=installer.list_remotes()
 				for remote in flRemote:
 					srcDir=remote.get_appstream_dir().get_path()
 					self._debug(srcDir)
 					installer.update_appstream_sync(remote.get_name())
 					self._debug("{} synced".format(srcDir))
 		except Exception as e:
-			print(e)
+			print("Error getting flatpak remote: {}".format(e))
 
-		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		try:
+			self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
 			#	fcontent=f.read()
 			#store.from_xml(fcontent)
@@ -120,6 +125,10 @@ class flatpakHelper():
 				added.append(pkg.get_id())
 		self._debug("End loading flatpak metadata")
 		return(store)
+
+	def _init_flatpak_repo(self):
+		cmd=['/usr/binflatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub,flatpakrepo']
+		subprocess.run(cmd)
 
 def main():
 	obj=flatpakHelper()

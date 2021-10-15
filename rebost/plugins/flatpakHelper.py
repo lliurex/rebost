@@ -8,6 +8,7 @@ gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 import rebostHelper
 import logging
+import subprocess
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -64,6 +65,10 @@ class flatpakHelper():
 			for installer in flInst:
 				self._debug("Loading {}".format(installer))
 				flRemote=installer.list_remotes()
+				if not flRemote:
+					self._init_flatpak_repo()
+					self._debug("Reloading {}".format(installer))
+					flRemote=installer.list_remotes()
 				for remote in flRemote:
 					srcDir=remote.get_appstream_dir().get_path()
 					self._debug(srcDir)
@@ -120,6 +125,10 @@ class flatpakHelper():
 				added.append(pkg.get_id())
 		self._debug("End loading flatpak metadata")
 		return(store)
+
+	def _init_flatpak_repo(self):
+		cmd=['/usr/binflatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub,flatpakrepo']
+		subprocess.run(cmd)
 
 def main():
 	obj=flatpakHelper()

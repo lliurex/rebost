@@ -10,6 +10,10 @@ class RebostClient():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
+		self.user=''
+		if kwargs:
+			self.user=kwargs.get('user','')
+			#self._debug("Selected user: {}".format(self.user))
 		self.rebost=None
 
 	def _debug(self,msg):
@@ -46,15 +50,15 @@ class RebostClient():
 					if "-" in package:
 						package=package.replace("-","_")
 					if action=='install':
-						procId=self.rebost.install(package,extraParms)
+						procId=self.rebost.install(package,extraParms,self.user)
 					elif action=='search':
-						procId=self.rebost.search(package,extraParms)
+						procId=self.rebost.search(package)
 					elif action=='list':
 						procId=self.rebost.search_by_category(package,extraParms)
 					elif action=='show':
-						procId=self.rebost.show(package,extraParms)
+						procId=self.rebost.show(package)
 					if action=='remove':
-						procId=self.rebost.remove(package,extraParms)
+						procId=self.rebost.remove(package,extraParms,self.user)
 					if action=='enableGui':
 						if arg.lower()=="true":
 							arg=True

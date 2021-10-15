@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import importlib
-import difflib
 import os
 import multiprocessing
 import threading

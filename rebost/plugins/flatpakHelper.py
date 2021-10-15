@@ -127,7 +127,7 @@ class flatpakHelper():
 		return(store)
 
 	def _init_flatpak_repo(self):
-		cmd=['/usr/binflatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub,flatpakrepo']
+		cmd=['/usr/bin/flatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub,flatpakrepo']
 		subprocess.run(cmd)
 
 def main():

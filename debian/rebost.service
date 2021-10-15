@@ -1,0 +1,15 @@
+[Unit]
+Description=Brings up rebost DBus
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/share/rebost/rebost-dbus.py
+Restart=always
+RestartSec=2
+RestartPreventExitStatus=0
+StartLimitInterval=200
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

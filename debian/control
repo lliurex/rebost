@@ -1,0 +1,15 @@
+Source: rebost
+Section: admin
+Priority: optional
+Maintainer: Juanma1980 <juanma1980@gmail.com>
+Build-Depends: debhelper-compat (= 12), dh-python, python3-setuptools, python3-all
+Standards-Version: 4.4.1
+Homepage: https://github.com/lliurex/rebost
+
+Package: rebost
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Software management for LliureX
+ Rebost it's a software management system through n4d 
+ that supports snap, flatpack, appimage and packageKit. 
+ It provides a dbus interface for software-related operations.

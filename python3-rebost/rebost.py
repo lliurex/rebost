@@ -217,7 +217,7 @@ def _getResult(pid):
 
 	return(result)
 
-rebost=rebostClient.RebostClient()
+rebost=rebostClient.RebostClient(user=os.getenv('USER'))
 #Set cli mode
 rebost.execute('enableGui','false')
 #_loadStore()

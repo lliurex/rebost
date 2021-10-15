@@ -22,56 +22,56 @@ class rebostDbusMethods(dbus.service.Object):
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')
-	def enableGui(self,args):
-		ret=self.rebost._setGuiEnabled(args)
+	def enableGui(self,enable):
+		ret=self.rebost._setGuiEnabled(enable)
 		return ("")
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def install(self,args,extraParms):
+						 in_signature='sss', out_signature='s')
+	def install(self,pkg,bundle,user=''):
 		action='install'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
-	def load(self,args,extraParms):
+						 in_signature='', out_signature='i')
+	def load(self):
 		action='load'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def search(self,args,extraParms=''):
+						 in_signature='s', out_signature='s')
+	def search(self,pkgname):
 		action='search'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,pkgname)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
-	def listAll(self,args,extraParms):
+						 in_signature='s', out_signature='i')
+	def listAll(self,fill):
 		action='list'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,fill)
 		return (ret)
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
-	def search_by_category(self,args,extraParms):
+						 in_signature='s', out_signature='i')
+	def search_by_category(self,category):
 		action='list'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,category)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def show(self,args,extraParms):
+						 in_signature='s', out_signature='s')
+	def show(self,pkg):
 		action='show'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,pkg)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def remove(self,args,extraParms):
+						 in_signature='sss', out_signature='s')
+	def remove(self,pkg,bundle,user=''):
 		action='remove'
-		ret=self.rebost.execute(action,args,extraParms)
+		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",

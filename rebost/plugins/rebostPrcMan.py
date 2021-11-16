@@ -13,7 +13,7 @@ class rebostPrcMan():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		self.rebost=None
-		self.actions=["install","remove","progress"]
+		self.actions=["test","install","remove","progress"]
 		self.packagekind="*"
 		self.enabled=True
 		logging.basicConfig(format='%(message)s')
@@ -49,7 +49,7 @@ class rebostPrcMan():
 			rs=self._getProgress()
 		if action=='insert':
 			rs=self._insertProcess()
-		if action=='remove' or action=='install':
+		if action in ['remove','install','test']:
 			rs=self._managePackage(parms,extraParms,action,user=user)
 		return(rs)
 	#def execute
@@ -178,7 +178,10 @@ class rebostPrcMan():
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
-			pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
+			if action!='test':
+				pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
+			else:
+				pid=-9999
 			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 		self._insertProcess(rebostPkgList)
 

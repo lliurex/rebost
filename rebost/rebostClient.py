@@ -49,6 +49,7 @@ class RebostClient():
 				try:
 					if "-" in package:
 						package=package.replace("-","_")
+
 					if action=='install':
 						procId=self.rebost.install(package,extraParms,self.user)
 					elif action=='search':
@@ -65,6 +66,8 @@ class RebostClient():
 						else:
 							arg=False
 						self.rebost.enableGui(arg)
+					if action=='test':
+						procId=self.rebost.test(package,extraParms,self.user)
 				except dbus.exceptions.DBusException as e:
 					procId=0
 					print("Dbus Error: %s"%e)

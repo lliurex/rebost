@@ -34,6 +34,13 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='sss', out_signature='s')
+	def test(self,pkg,bundle,user=''):
+		action='test'
+		ret=self.rebost.execute(action,pkg,bundle,user=user)
+		return (ret)
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='i')
 	def load(self):
 		action='load'

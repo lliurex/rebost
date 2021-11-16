@@ -94,6 +94,7 @@ def _printShow(result):
 
 def printResults(proc=0):
 	res=rebost.getResults(proc)
+	print(res)
 	for procId,procInfo in res.items():
 		if 'result' in procInfo.keys():
 			if procInfo['result']:
@@ -229,22 +230,24 @@ result=json.loads(rebost.execute(action,actionArgs))
 if action=='search':
 	for res in result:
 		print(_printSearch(json.loads(res)))
-if action=='show':
+elif action=='show':
 	for res in result:
 		print(_printShow(json.loads(res)))
-if action=='install':
+elif action=='install':
 	for res in result:
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
 		#print(_printInstall(res))
 		status=_getResult(pid)
 		print("{} {}".format(status,actionArgs))
-if action=='remove':
+elif action=='remove':
 	for res in result:
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
 		status=_getResult(pid)
 		print("{} {}".format(status,actionArgs))
+elif action=='test':
+	print(result)
 
 sys.exit(0)
 sw=True

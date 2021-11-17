@@ -89,6 +89,7 @@ class flatpakHelper():
 		rebostPkgList=[]
 		self._debug("Formatting flatpak metadata")
 		for pkg in store.get_apps():
+			idx=pkg.get_id()
 			state="available"
 			for installer in flInst:
 				installed=False
@@ -102,6 +103,20 @@ class flatpakHelper():
 				if installed:
 					state="installed"
 					break
+			#flatpak has his own cache dir for icons so if present use it
+			iconPath=''
+			icon64=os.path.join(srcDir,"icons/64x64")
+			icon128=os.path.join(srcDir,"icons/128x128")
+			idx=idx.replace(".desktop","")
+			if os.path.isfile(os.path.join(icon128,"{}.png".format(idx))):
+				iconPath=os.path.join(icon128,"{}.png".format(idx))
+			elif os.path.isfile(os.path.join(icon64,"{}.png".format(idx))):
+				iconPath=os.path.join(icon64,"{}.png".format(idx))
+			if iconPath!='':
+				icon=appstream.Icon()
+				icon.set_kind(appstream.IconKind.LOCAL)
+				icon.set_filename(iconPath)
+				pkg.add_icon(icon)
 			add=False
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()

@@ -149,6 +149,7 @@ def _generate_epi_json(rebostpkg):
 	tmpDir="/tmp"
 	name=rebostpkg.get('name').strip()
 	pkgname=rebostpkg.get('pkgname').strip()
+	icon=rebostpkg.get('icon','')
 	epiJson="{}.epi".format(os.path.join(tmpDir,pkgname))
 	epiFile={}
 	epiFile["type"]="file"

@@ -147,14 +147,19 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 	
 def _generate_epi_json(rebostpkg):
 	tmpDir="/tmp"
+	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
 	name=rebostpkg.get('name').strip()
 	pkgname=rebostpkg.get('pkgname').strip()
 	icon=rebostpkg.get('icon','')
-	epiJson="{}.epi".format(os.path.join(tmpDir,pkgname))
+	iconFolder=''
+	if icon:
+		iconFolder=os.path.dirname(icon)
+		icon=os.path.basename(icon)
 	epiFile={}
 	epiFile["type"]="file"
-	epiFile["pkg_list"]=[{"name":pkgname,"key_store":pkgname,'url_download':'','version':{'all':name}}]
-	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,pkgname)),'download':True,'remove':True,'getStatus':True,'getInfo':True}
+	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),"key_store":rebostpkg.get('pkgname'),'url_download':'','custom_icon':icon,'version':{'all':rebostpkg.get('name')}}]
+	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
+	epiFile["custom_icon_path"]=iconFolder
 	epiFile["required_root"]=True
 
 	try:

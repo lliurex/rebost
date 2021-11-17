@@ -23,9 +23,10 @@ class sqlHelper():
 		self.priority=100
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.main_table="rebostStore.db"
-		self.proc_table="rebostPrc.db"
-		self.main_tmp_table="tmpStore.db"
+		wrkDir="/usr/share/rebost"
+		self.main_table=os.path.join(wrkDir,"rebostStore.db")
+		self.proc_table=os.path.join(wrkDir,"rebostPrc.db")
+		self.main_tmp_table=os.path.join(wrkDir,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()

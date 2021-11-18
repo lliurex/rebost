@@ -89,6 +89,13 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def addTransaction(self,args):
+		action='insert'
+		ret=self.rebost.execute(action,args)
+		return (ret)
+	
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='i')
 	def update(self):
 		action='update'

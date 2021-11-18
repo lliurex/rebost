@@ -30,9 +30,11 @@ def rebostPkg(*kwargs):
 	return(pkg)
 
 def rebostPkgList_to_sqlite(rebostPkgList,table):
-	if os.path.isfile(table):
-		os.remove(table)
-	db=sqlite3.connect(table)
+	wrkDir="/usr/share/rebost"
+	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	if os.path.isfile(tablePath):
+		os.remove(tablePath)
+	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
@@ -51,7 +53,9 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 #def rebostPkgList_to_sqlite
 
 def rebostPkg_to_sqlite(rebostPkg,table):
-	db=sqlite3.connect(table)
+	wrkDir="/usr/share/rebost"
+	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)

@@ -175,15 +175,13 @@ class rebostPrcMan():
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
 			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
+			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 			#subprocess.run(['pkexec','epi-gtk',epifile])
 			self._debug("Executing N4d query")
 			if action!='test':
 				pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
-			else:
-				pid=-9999
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
-		self._insertProcess(rebostPkgList)
+				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
+				self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)

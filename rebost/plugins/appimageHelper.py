@@ -227,9 +227,7 @@ class appimageHelper():
 		installerUrl=self._get_releases(bundles)
 		if len(installerUrl.split('/'))>2:
 			pkgname=installerUrl.split('/')[-1]
-			print("pkgname: {}".format(pkgname))
 			pkgname=".".join(pkgname.split(".")[:-1])
-			print("pkgname: {}".format(pkgname))
 			if len(pkgname.split("-"))>1:
 				version=pkgname.split("-")[1]
 			elif len(pkgname.split("."))>1:
@@ -240,7 +238,6 @@ class appimageHelper():
 				version=version[:-1]
 			else:
 				version="0.1"
-			print("version: {}".format(version))
 			rebostPkg['versions']['appimage']="{}".format(version)
 		if installerUrl:
 			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})

@@ -40,9 +40,10 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
+		name=rebostPkg.get('pkgname','').strip().lower()
 		rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
 		rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
-		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))
 		try:
 			cursor.execute(query)
 		except Exception as e:
@@ -61,9 +62,10 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
+	name=rebostPkg.get('pkgname','').strip().lower()
 	rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
 	rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
-	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))
 	#print(query)
 	try:
 		cursor.execute(query)
@@ -97,7 +99,7 @@ def appstream_to_rebost(appstreamCatalogue):
 	for component in appstreamCatalogue.get_apps():
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=component.get_name().lower()
+		pkg['name']=component.get_name().lower().strip()
 		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode() 
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
@@ -112,6 +114,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			elif len(candidateName)>0:
 				pkg['pkgname']=candidateName[0]
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
+		pkg['pkgname']=pkg['pkgname'].strip()
 		pkg['summary']=component.get_comment()
 		pkg['summary']=_sanitizeString(html2text.html2text(pkg['summary'],"lxml"))
 		pkg['summary']=html.escape(pkg['summary']).encode('ascii', 'xmlcharrefreplace').decode() 
@@ -144,7 +147,8 @@ def appstream_to_rebost(appstreamCatalogue):
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
-	_debug("Generating EPI for:\n{}".format(rebostpkg))
+	#_debug("Generating EPI for:\n{}".format(rebostpkg))
+	_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 	epijson=_generate_epi_json(rebostpkg)
 	episcript=_generate_epi_sh(rebostpkg,bundle,user)
 	return(epijson,episcript)
@@ -152,38 +156,40 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 def _generate_epi_json(rebostpkg):
 	tmpDir="/tmp"
 	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
-	name=rebostpkg.get('name').strip()
-	pkgname=rebostpkg.get('pkgname').strip()
-	icon=rebostpkg.get('icon','')
-	iconFolder=''
-	if icon:
-		iconFolder=os.path.dirname(icon)
-		icon=os.path.basename(icon)
-	epiFile={}
-	epiFile["type"]="file"
-	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),"key_store":rebostpkg.get('pkgname'),'url_download':'','custom_icon':icon,'version':{'all':rebostpkg.get('name')}}]
-	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
-	epiFile["custom_icon_path"]=iconFolder
-	epiFile["required_root"]=True
+	if not os.path.isfile(epiJson):
+		name=rebostpkg.get('name').strip()
+		pkgname=rebostpkg.get('pkgname').strip()
+		icon=rebostpkg.get('icon','')
+		iconFolder=''
+		if icon:
+			iconFolder=os.path.dirname(icon)
+			icon=os.path.basename(icon)
+		epiFile={}
+		epiFile["type"]="file"
+		epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),"key_store":rebostpkg.get('pkgname'),'url_download':'','custom_icon':icon,'version':{'all':rebostpkg.get('name')}}]
+		epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
+		epiFile["custom_icon_path"]=iconFolder
+		epiFile["required_root"]=True
 
-	try:
-		with open(epiJson,'w') as f:
-			json.dump(epiFile,f,indent=4)
-	except Exception as e:
-		_debug("%s"%e)
-		retCode=1
+		try:
+			with open(epiJson,'w') as f:
+				json.dump(epiFile,f,indent=4)
+		except Exception as e:
+			_debug("%s"%e)
+			retCode=1
 	return(epiJson)
 
 def _generate_epi_sh(rebostpkg,bundle,user=''):
 	tmpDir="/tmp"
 	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
-	try:
-		_make_epi_script(rebostpkg,epiScript,bundle,user)
-	except Exception as e:
-		_debug("%s"%e)
-		retCode=1
-	if os.path.isfile(epiScript):
-		os.chmod(epiScript,0o755)
+	if not os.path.isfile(epiScript):
+		try:
+			_make_epi_script(rebostpkg,epiScript,bundle,user)
+		except Exception as e:
+			_debug("%s"%e)
+			retCode=1
+		if os.path.isfile(epiScript):
+			os.chmod(epiScript,0o755)
 	return(epiScript)
 #def _generate_epi_sh
 

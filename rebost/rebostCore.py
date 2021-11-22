@@ -191,7 +191,6 @@ class Rebost():
 		components=[]
 		self._debug("Begin Sanitize store {}".format(int(time.time())))
 		for rebostpkg in appstore:
-			self._debug(rebostpkg)
 			if isinstance(rebostpkg,tuple):
 				(pkg,app)=rebostpkg
 				store.append(app)

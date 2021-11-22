@@ -178,8 +178,9 @@ class Rebost():
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user))
 		#Generate the store with results and sanitize them
-		if isinstance(rebostPkgList,list):
-			store=self._sanitizeStore(rebostPkgList,package)
+		if not isinstance(rebostPkgList,list):
+			rebostPkgList=[rebostPkgList]
+		store=self._sanitizeStore(rebostPkgList,package)
 		return(store)
 	#def execute
 			

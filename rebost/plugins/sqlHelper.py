@@ -150,12 +150,11 @@ class sqlHelper():
 			(pkg,dataContent)=row
 			data=json.loads(dataContent)
 			data['state'][bundle]=state
-
-		data['description']=rebostHelper._sanitizeString(data['description'])
-		data['summary']=rebostHelper._sanitizeString(data['summary'])
-		data['name']=rebostHelper._sanitizeString(data['name'])
-		dataContent=json.dumps(data)
-		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
+			data['description']=rebostHelper._sanitizeString(data['description'])
+			data['summary']=rebostHelper._sanitizeString(data['summary'])
+			data['name']=rebostHelper._sanitizeString(data['name'])
+			dataContent=json.dumps(data)
+			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		self.close_connection(db)

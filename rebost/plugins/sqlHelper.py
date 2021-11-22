@@ -18,7 +18,7 @@ class sqlHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load",'commitInstall']
+		self.actions=["show","search","load","list",'commitInstall']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -48,6 +48,8 @@ class sqlHelper():
 		rs='[{}]'
 		if action=='search':
 			rs=self._searchPackage(parms)
+		if action=='list':
+			rs=self._listPackages(parms)
 		if action=='show':
 			rs=self._showPackage(parms)
 		if action=='load':
@@ -113,7 +115,7 @@ class sqlHelper():
 	#def _showPackage
 
 	def _searchPackage(self,pkgname):
-		table=self.main_table.replace(".db","")
+		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		query="SELECT * FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
@@ -123,11 +125,24 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
+	def _listPackages(self,category=''):
+		self._debug("Type: {}".format(type(category)))
+		if isinstance(category,list):
+			category=category[0]
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enable_connection(self.main_table)
+		query="SELECT * FROM {} WHERE data LIKE '%categories%{}%' ORDER BY pkg".format(table,str(category))
+		self._debug(query)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		self.close_connection(db)
+		return(rows)
+
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
-		query="SELECT * FROM {} WHERE pkg LIKE '{}';".format(table,pkgname)
+		query="SELECT * FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()

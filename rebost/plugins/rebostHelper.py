@@ -283,3 +283,17 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 def get_epi_status(episcript):
 	proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return(proc.stdout.decode().strip())
+
+def check_remove_unsure(package):
+	sw=False
+	_debug("Checking if remove {} is unsure".format(package))
+	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	version=llx.stdout.decode().strip()
+	for depend in proc.stdout.decode().split("\n"):
+		if "lliurex-meta-{}".format(version) in depend:
+			sw=True
+			break
+	_debug(proc.stdout)
+	_debug("Checked")
+	return(sw)

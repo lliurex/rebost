@@ -100,7 +100,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
 		pkg['name']=component.get_name().lower().strip()
-		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode() 
+		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
@@ -114,7 +114,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			elif len(candidateName)>0:
 				pkg['pkgname']=candidateName[0]
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
-		pkg['pkgname']=pkg['pkgname'].strip()
+		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()
 		pkg['summary']=_sanitizeString(html2text.html2text(pkg['summary'],"lxml"))
 		pkg['summary']=html.escape(pkg['summary']).encode('ascii', 'xmlcharrefreplace').decode() 
@@ -134,7 +134,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['categories']=component.get_categories()
 		for i in component.get_bundles():
 			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':component.get_id()}
+				pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
 				versionArray=["0.0"]
 				for release in component.get_releases():
 					versionArray.append(release.get_version())
@@ -149,13 +149,13 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 		rebostpkg=json.loads(rebostpkg)
 	#_debug("Generating EPI for:\n{}".format(rebostpkg))
 	_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
-	epijson=_generate_epi_json(rebostpkg)
+	epijson=_generate_epi_json(rebostpkg,bundle)
 	episcript=_generate_epi_sh(rebostpkg,bundle,user)
 	return(epijson,episcript)
 	
-def _generate_epi_json(rebostpkg):
+def _generate_epi_json(rebostpkg,bundle):
 	tmpDir="/tmp"
-	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
+	epiJson="{}_{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not os.path.isfile(epiJson):
 		name=rebostpkg.get('name').strip()
 		pkgname=rebostpkg.get('pkgname').strip()
@@ -167,9 +167,10 @@ def _generate_epi_json(rebostpkg):
 		epiFile={}
 		epiFile["type"]="file"
 		epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),"key_store":rebostpkg.get('pkgname'),'url_download':'','custom_icon':icon,'version':{'all':rebostpkg.get('name')}}]
-		epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
+		epiFile["script"]={"name":"{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle),'download':True,'remove':True,'getStatus':True,'getInfo':True}
 		epiFile["custom_icon_path"]=iconFolder
 		epiFile["required_root"]=True
+		epiFile["check_zomando_state"]=False
 
 		try:
 			with open(epiJson,'w') as f:
@@ -181,7 +182,7 @@ def _generate_epi_json(rebostpkg):
 
 def _generate_epi_sh(rebostpkg,bundle,user=''):
 	tmpDir="/tmp"
-	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
+	epiScript="{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not os.path.isfile(epiScript):
 		try:
 			_make_epi_script(rebostpkg,epiScript,bundle,user)
@@ -194,7 +195,7 @@ def _generate_epi_sh(rebostpkg,bundle,user=''):
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
-	_debug("Generating script for:\n{} - ".format(rebostpkg,bundle))
+	_debug("Generating script for:\n{} - {}".format(rebostpkg,bundle))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:

@@ -61,7 +61,7 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,fill)
 		return (ret)
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='i')
+						 in_signature='s', out_signature='s')
 	def search_by_category(self,category):
 		action='list'
 		ret=self.rebost.execute(action,category)

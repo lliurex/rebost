@@ -59,24 +59,10 @@ class flatpakHelper():
 		flInst=''
 		store=appstream.Store()
 		#metadata=appstream.Metadata()
-		try:
-			#Get all the remotes, copy appstream to wrkdir
-			flInst=Flatpak.get_system_installations()
-			for installer in flInst:
-				self._debug("Loading {}".format(installer))
-				flRemote=installer.list_remotes()
-				if not flRemote:
-					self._init_flatpak_repo()
-					self._debug("Reloading {}".format(installer))
-					flRemote=installer.list_remotes()
-				for remote in flRemote:
-					srcDir=remote.get_appstream_dir().get_path()
-					self._debug(srcDir)
-					installer.update_appstream_sync(remote.get_name())
-					self._debug("{} synced".format(srcDir))
-		except Exception as e:
-			print("Error getting flatpak remote: {}".format(e))
-
+		(srcDir,flInst)=self._get_flatpak_metadata()
+		if srcDir=='':
+		#When initializing for first time metada needs a reload
+			(srcDir,flInst)=self._get_flatpak_metadata()
 		try:
 			self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
@@ -85,37 +71,43 @@ class flatpakHelper():
 			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
+		self._debug("Formatting flatpak metadata")
+		store=self._generate_store(store,flInst,srcDir)
+		self._debug("End loading flatpak metadata")
+		return(store)
+
+	def _get_flatpak_metadata(self):
+		#Get all the remotes, copy appstream to wrkdir
+		flInst=[]
+		srcDir=''
+		try:
+			flInst=Flatpak.get_system_installations()
+		except Exception as e:
+			print("Error getting flatpak remote: {}".format(e))
+		for installer in flInst:
+			self._debug("Loading {}".format(installer))
+			flRemote=installer.list_remotes()
+			if not flRemote:
+				self._init_flatpak_repo()
+				self._debug("Reloading {}".format(installer))
+				break
+			for remote in flRemote:
+				srcDir=remote.get_appstream_dir().get_path()
+				self._debug("flatpak srcdir: {}".format(srcDir))
+				installer.update_appstream_sync(remote.get_name())
+				self._debug("{} synced".format(srcDir))
+		return(srcDir,flInst)
+	#def _get_flatpak_metadata
+
+	def _generate_store(self,store,flInst,srcDir):
 		added=[]
 		rebostPkgList=[]
-		self._debug("Formatting flatpak metadata")
 		for pkg in store.get_apps():
 			idx=pkg.get_id()
-			state="available"
-			for installer in flInst:
-				installed=False
-				try:
-					installed=installer.get_installed_ref(0,pkg.get_name())
-				except:
-					try:
-						installed=installer.get_installed_ref(1,pkg.get_name())
-					except:
-						pass
-				if installed:
-					state="installed"
-					break
+			state=self._get_state(flInst,pkg)
 			#flatpak has his own cache dir for icons so if present use it
-			iconPath=''
-			icon64=os.path.join(srcDir,"icons/64x64")
-			icon128=os.path.join(srcDir,"icons/128x128")
-			idx=idx.replace(".desktop","")
-			if os.path.isfile(os.path.join(icon128,"{}.png".format(idx))):
-				iconPath=os.path.join(icon128,"{}.png".format(idx))
-			elif os.path.isfile(os.path.join(icon64,"{}.png".format(idx))):
-				iconPath=os.path.join(icon64,"{}.png".format(idx))
-			if iconPath!='':
-				icon=appstream.Icon()
-				icon.set_kind(appstream.IconKind.LOCAL)
-				icon.set_filename(iconPath)
+			icon=self._get_app_icons(srcDir,idx)
+			if icon:
 				pkg.add_icon(icon)
 			add=False
 			if not pkg.get_bundles():
@@ -138,12 +130,47 @@ class flatpakHelper():
 				except:
 					pass
 				added.append(pkg.get_id())
-		self._debug("End loading flatpak metadata")
 		return(store)
+	#def _generate_store
+
+	def _get_state(self,flInst,pkg):
+		state="available"
+		for installer in flInst:
+			installed=False
+			try:
+				installed=installer.get_installed_ref(0,pkg.get_name())
+			except:
+				try:
+					installed=installer.get_installed_ref(1,pkg.get_name())
+				except:
+					pass
+			if installed:
+				state="installed"
+				break
+		return(state)
+	#def _get_state
+
+	def _get_app_icons(self,srcDir,idx):
+		iconPath=''
+		icon=None
+		icon64=os.path.join(srcDir,"icons/64x64")
+		icon128=os.path.join(srcDir,"icons/128x128")
+		idx=idx.replace(".desktop","")
+		if os.path.isfile(os.path.join(icon128,"{}.png".format(idx))):
+			iconPath=os.path.join(icon128,"{}.png".format(idx))
+		elif os.path.isfile(os.path.join(icon64,"{}.png".format(idx))):
+			iconPath=os.path.join(icon64,"{}.png".format(idx))
+		if iconPath!='':
+			icon=appstream.Icon()
+			icon.set_kind(appstream.IconKind.LOCAL)
+			icon.set_filename(iconPath)
+		return(icon)
+	#def _get_app_icons
 
 	def _init_flatpak_repo(self):
 		cmd=['/usr/bin/flatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub.flatpakrepo']
 		subprocess.run(cmd)
+	#def _init_flatpak_repo
 
 def main():
 	obj=flatpakHelper()

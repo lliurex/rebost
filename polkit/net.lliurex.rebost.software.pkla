@@ -1,0 +1,8 @@
+[/usr/share/rebost/helper/rebost-software-manager.sh]
+Identity=unix-group:sudo;unix-group:admins;
+Action=net.lliurex.rebost.software-manager.launcher
+ResultActive=yes
+ResultAny=yes
+ResultInactive=yes
+
+

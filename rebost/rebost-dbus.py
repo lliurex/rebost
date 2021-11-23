@@ -61,17 +61,17 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,fill)
 		return (ret)
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='i')
+						 in_signature='s', out_signature='s')
 	def search_by_category(self,category):
 		action='list'
 		ret=self.rebost.execute(action,category)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def show(self,pkg):
+						 in_signature='ss', out_signature='s')
+	def show(self,pkg,user=''):
 		action='show'
-		ret=self.rebost.execute(action,pkg)
+		ret=self.rebost.execute(action,pkg,user)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
@@ -86,6 +86,13 @@ class rebostDbusMethods(dbus.service.Object):
 	def commitInstall(self,args,bundle,state):
 		action='commitInstall'
 		ret=self.rebost.execute(action,args,bundle,state)
+		return (ret)
+	
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def addTransaction(self,args):
+		action='insert'
+		ret=self.rebost.execute(action,args)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",

@@ -78,12 +78,10 @@ class packageKit():
 			return
 
 		rebostPkg=rebostHelper.rebostPkg()
-		rebostPkg['name']=pkg.get_name()
-		rebostPkg['pkgname']=pkg.get_name()
-		rebostPkg['id']="org.packagekit.%s"%pkg.get_name()
+		rebostPkg['name']=pkg.get_name().strip()
+		rebostPkg['pkgname']=pkg.get_name().strip()
+		rebostPkg['id']="org.packagekit.%s"%pkg.get_name().strip()
 		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-
-		rebostPkg['name']=pkg.get_name()
 		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
 		rebostPkg['description']=rebostPkg['summary']
 		#rebostPkg['version']="package-{}".format(pkg.get_version())

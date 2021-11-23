@@ -232,7 +232,10 @@ if action=='search':
 		print(_printSearch(json.loads(res)))
 elif action=='show':
 	for res in result:
-		print(_printShow(json.loads(res)))
+		if isinstance(res,dict):
+			print(_printShow(res))
+		else:
+			print(_printShow(json.loads(res)))
 elif action=='install':
 	for res in result:
 		pid=res.get('pid','-10')

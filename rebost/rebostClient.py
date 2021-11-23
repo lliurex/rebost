@@ -55,9 +55,9 @@ class RebostClient():
 					elif action=='search':
 						procId=self.rebost.search(package)
 					elif action=='list':
-						procId=self.rebost.search_by_category(package,extraParms)
+						procId=self.rebost.search_by_category(package)
 					elif action=='show':
-						procId=self.rebost.show(package)
+						procId=self.rebost.show(package,self.user)
 					if action=='remove':
 						procId=self.rebost.remove(package,extraParms,self.user)
 					if action=='enableGui':

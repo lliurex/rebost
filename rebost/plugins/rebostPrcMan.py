@@ -150,14 +150,21 @@ class rebostPrcMan():
 	#def _insertProcess
 	
 	def _managePackage(self,pkgname,bundle='',action='install',user=''):
-		self._debug("{} package {} for user {}".format(action,pkgname,user))
+		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
 		rebostPkgList=[]
 		rebostpkg=''
 		#1st search that there's a package in the desired format
 		rows=self.sql.execute(action='show',parms=pkgname)
 		if rows and isinstance(rows,list):
 			(package,rebostpkg)=rows[0]
-			bundles=json.loads(rebostpkg).get('bundle',"not found")
+			try:
+				bundles=json.loads(rebostpkg).get('bundle',"not found")
+			except Exception as e:
+				if isinstance(rebostpkg,dict):
+					bundles=rebostpkg.get('bundle',"not found")
+				else:
+					self._debug(e)
+
 			if len(bundles)>1:
 				self.failProc+=1
 				if not (bundle and bundle in bundles):
@@ -166,24 +173,27 @@ class rebostPrcMan():
 						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
 					else:
 						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
-			elif bundles:
-				bundle=list(bundles.keys())[0]
+		#	elif bundles:
+		#		bundle=list(bundles.keys())[0]
 			else:
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available at {}'.format(bundles)})]
 		else:
 			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
-			(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user)
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'bundle':bundle})]
-			#subprocess.run(['pkexec','epi-gtk',epifile])
-			self._debug("Executing N4d query")
-			if action!='test':
-				pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
+		#1st check if removing and if removing package doesn't removes meta
+			if (action=='remove' or action=='test') and bundle=='package':
+				if rebostHelper.check_remove_unsure(pkgname):
+					rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} is a system package'.format(pkgname)})]
 			else:
-				pid=-9999
-			rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
-		self._insertProcess(rebostPkgList)
+				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user)
+				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
+				#subprocess.run(['pkexec','epi-gtk',epifile])
+				if action!='test':
+					self._debug("Executing N4d query")
+					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
+					rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
+					self._insertProcess(rebostPkgList)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)

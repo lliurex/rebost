@@ -30,17 +30,20 @@ def rebostPkg(*kwargs):
 	return(pkg)
 
 def rebostPkgList_to_sqlite(rebostPkgList,table):
-	if os.path.isfile(table):
-		os.remove(table)
-	db=sqlite3.connect(table)
+	wrkDir="/usr/share/rebost"
+	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	if os.path.isfile(tablePath):
+		os.remove(tablePath)
+	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
+		name=rebostPkg.get('pkgname','').strip().lower()
 		rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
 		rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
-		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))
 		try:
 			cursor.execute(query)
 		except Exception as e:
@@ -51,15 +54,18 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 #def rebostPkgList_to_sqlite
 
 def rebostPkg_to_sqlite(rebostPkg,table):
-	db=sqlite3.connect(table)
+	wrkDir="/usr/share/rebost"
+	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
+	name=rebostPkg.get('pkgname','').strip().lower()
 	rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
 	rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
-	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,rebostPkg.get('pkgname').lower(),str(json.dumps(rebostPkg)))
+	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))
 	#print(query)
 	try:
 		cursor.execute(query)
@@ -93,8 +99,8 @@ def appstream_to_rebost(appstreamCatalogue):
 	for component in appstreamCatalogue.get_apps():
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=component.get_name().lower()
-		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode() 
+		pkg['name']=component.get_name().lower().strip()
+		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
@@ -108,6 +114,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			elif len(candidateName)>0:
 				pkg['pkgname']=candidateName[0]
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
+		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()
 		pkg['summary']=_sanitizeString(html2text.html2text(pkg['summary'],"lxml"))
 		pkg['summary']=html.escape(pkg['summary']).encode('ascii', 'xmlcharrefreplace').decode() 
@@ -127,7 +134,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['categories']=component.get_categories()
 		for i in component.get_bundles():
 			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':component.get_id()}
+				pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
 				versionArray=["0.0"]
 				for release in component.get_releases():
 					versionArray.append(release.get_version())
@@ -140,43 +147,55 @@ def appstream_to_rebost(appstreamCatalogue):
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
-	_debug("Generating EPI for:\n{}".format(rebostpkg))
-	epijson=_generate_epi_json(rebostpkg)
+	#_debug("Generating EPI for:\n{}".format(rebostpkg))
+	_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+	epijson=_generate_epi_json(rebostpkg,bundle)
 	episcript=_generate_epi_sh(rebostpkg,bundle,user)
 	return(epijson,episcript)
 	
-def _generate_epi_json(rebostpkg):
+def _generate_epi_json(rebostpkg,bundle):
 	tmpDir="/tmp"
-	epiJson="{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
-	epiFile={}
-	epiFile["type"]="file"
-	epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),'url_download':'','version':{'all':rebostpkg.get('name')}}]
-	epiFile["script"]={"name":"{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname'))),'download':True,'remove':True,'getStatus':True,'getInfo':True}
-	epiFile["required_root"]=True
+	epiJson="{}_{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
+	if not os.path.isfile(epiJson):
+		name=rebostpkg.get('name').strip()
+		pkgname=rebostpkg.get('pkgname').strip()
+		icon=rebostpkg.get('icon','')
+		iconFolder=''
+		if icon:
+			iconFolder=os.path.dirname(icon)
+			icon=os.path.basename(icon)
+		epiFile={}
+		epiFile["type"]="file"
+		epiFile["pkg_list"]=[{"name":rebostpkg.get('pkgname'),"key_store":rebostpkg.get('pkgname'),'url_download':'','custom_icon':icon,'version':{'all':rebostpkg.get('name')}}]
+		epiFile["script"]={"name":"{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle),'download':True,'remove':True,'getStatus':True,'getInfo':True}
+		epiFile["custom_icon_path"]=iconFolder
+		epiFile["required_root"]=True
+		epiFile["check_zomando_state"]=False
 
-	try:
-		with open(epiJson,'w') as f:
-			json.dump(epiFile,f,indent=4)
-	except Exception as e:
-		_debug("%s"%e)
-		retCode=1
+		try:
+			with open(epiJson,'w') as f:
+				json.dump(epiFile,f,indent=4)
+		except Exception as e:
+			_debug("%s"%e)
+			retCode=1
 	return(epiJson)
 
 def _generate_epi_sh(rebostpkg,bundle,user=''):
 	tmpDir="/tmp"
-	epiScript="{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')))
-	try:
-		_make_epi_script(rebostpkg,epiScript,bundle,user)
-	except Exception as e:
-		_debug("%s"%e)
-		retCode=1
-	if os.path.isfile(epiScript):
-		os.chmod(epiScript,0o755)
+	epiScript="{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
+	if not os.path.isfile(epiScript):
+		try:
+			_make_epi_script(rebostpkg,epiScript,bundle,user)
+		except Exception as e:
+			_debug("%s"%e)
+			retCode=1
+		if os.path.isfile(epiScript):
+			os.chmod(epiScript,0o755)
 	return(epiScript)
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
-	_debug("Generating script for:\n{} - ".format(rebostpkg,bundle))
+	_debug("Generating script for:\n{} - {}".format(rebostpkg,bundle))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
@@ -250,10 +269,15 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 			removeCmd="rm /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname'])
 			statusTestLine=("TEST=$( ls /home/{}/.local/bin/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(user,rebostpkg['pkgname']))
 		else:
-			installCmdLine.append("mv /tmp/{}.appimage /opt/appimages".format(rebostpkg['pkgname'],user))
-			installCmdLine.append("chmod +x /opt/appimages/{}.appimage".format(rebostpkg['pkgname']))
-			removeCmd="rm /opt/appimages/{}.appimage".format(rebostpkg['pkgname'])
-			statusTestLine=("TEST=$( ls /opt/appimages/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(rebostpkg['pkgname']))
+			destdir="/opt/appimages"
+			if user:
+				destdir=os.path.join("/home",user,".local/bin")
+			destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
+			installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
+			installCmdLine.append("chmod +x {}".format(destPath))
+			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
+			removeCmd="rm {}".format(destPath)
+			statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
@@ -264,3 +288,17 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 def get_epi_status(episcript):
 	proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	return(proc.stdout.decode().strip())
+
+def check_remove_unsure(package):
+	sw=False
+	_debug("Checking if remove {} is unsure".format(package))
+	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	version=llx.stdout.decode().strip()
+	for depend in proc.stdout.decode().split("\n"):
+		if "lliurex-meta-{}".format(version) in depend:
+			sw=True
+			break
+	_debug(proc.stdout)
+	_debug("Checked")
+	return(sw)

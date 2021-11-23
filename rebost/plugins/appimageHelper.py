@@ -261,14 +261,14 @@ class appimageHelper():
 			rebostPkg['versions'].update({'appimage':"{}".format(version)})
 		if installerUrl:
 			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
-			if rebostPkg.get('icon','')=='' or not os.path.isfile(rebostPkg.get('icon')):
+			if rebostPkg.get('icon','')!='' and not os.path.isfile(rebostPkg.get('icon')):
 				rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
 		#Uncomment for remove bundle if not url 
 		#else:
 		#	rebostPkg['bundle'].pop('appimage',None)
 		rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 		rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
 		return (json.dumps(rebostPkg))
 
 	def _get_releases(self,baseUrl):
@@ -319,7 +319,7 @@ class appimageHelper():
 		self._debug(releases)
 		rel=''
 		for release in releases:
-			if release:
+			if release.startswith("http"):
 				rel=release
 				break
 		self._debug("Selected url: {}".format(rel))
@@ -328,7 +328,7 @@ class appimageHelper():
 	def _download_file(self,url,app_name,dest_dir):
 		#self._debug("Downloading to %s"%self.iconDir)
 		target_file=dest_dir+'/'+app_name.strip()+".png"
-		print(url)
+		self._debug("Orig url: {}".format(url))
 		if not url.startswith('http'):
 			url="https://appimage.github.io/database/%s"%url
 		if not os.path.isdir(self.iconDir):

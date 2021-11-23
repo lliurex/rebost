@@ -269,10 +269,15 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 			removeCmd="rm /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname'])
 			statusTestLine=("TEST=$( ls /home/{}/.local/bin/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(user,rebostpkg['pkgname']))
 		else:
-			installCmdLine.append("mv /tmp/{}.appimage /opt/appimages".format(rebostpkg['pkgname'],user))
-			installCmdLine.append("chmod +x /opt/appimages/{}.appimage".format(rebostpkg['pkgname']))
-			removeCmd="rm /opt/appimages/{}.appimage".format(rebostpkg['pkgname'])
-			statusTestLine=("TEST=$( ls /opt/appimages/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(rebostpkg['pkgname']))
+			destdir="/opt/appimages"
+			if user:
+				destdir=os.path.join("/home",user,".local/bin")
+			destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
+			installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
+			installCmdLine.append("chmod +x {}".format(destPath))
+			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
+			removeCmd="rm {}".format(destPath)
+			statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

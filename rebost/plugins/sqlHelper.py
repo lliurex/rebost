@@ -51,7 +51,7 @@ class sqlHelper():
 		if action=='list':
 			rs=self._listPackages(parms)
 		if action=='show':
-			rs=self._showPackage(parms)
+			rs=self._showPackage(parms,extraParms)
 		if action=='load':
 			rs=self.consolidate_sql_tables()
 		if action=='commitInstall':
@@ -73,7 +73,7 @@ class sqlHelper():
 		db.close()
 	#def close_connection
 
-	def _showPackage(self,pkgname):
+	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		query="SELECT * FROM {} WHERE pkg LIKE '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
@@ -96,7 +96,7 @@ class sqlHelper():
 						cursor.execute(query)
 						db.commit()
 						rebostPkg=json.loads(dataTmp)
-				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle)
+				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
 				state=rebostHelper.get_epi_status(script)
 				sw=False
 				if state!=rebostPkg['state'].get(bundle,''):

@@ -68,10 +68,10 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def show(self,pkg):
+						 in_signature='ss', out_signature='s')
+	def show(self,pkg,user=''):
 		action='show'
-		ret=self.rebost.execute(action,pkg)
+		ret=self.rebost.execute(action,pkg,user)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",

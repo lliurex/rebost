@@ -85,15 +85,17 @@ class sqlHelper():
 			(pkg,data)=row
 			rebostPkg=json.loads(data)
 			bundles=rebostPkg.get('bundle',{})
-			if 'appimage' in bundles.keys():
-				if not bundles.get('appimage',',appimage').lower().endswith(".appimage"):
-					dataTmp=self.appimage.fillData(data)
-					row=(pkg,dataTmp)
-					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
-					cursor.execute(query)
-					db.commit()
 			#Update state for bundles as they can be installed outside rebost
 			for bundle in bundles.keys():
+				if bundle=='appimage':
+					app=bundles.get('appimage','')
+					if not app.lower().endswith(".appimage") and app!='':
+						dataTmp=self.appimage.fillData(data)
+						row=(pkg,dataTmp)
+						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
+						cursor.execute(query)
+						db.commit()
+						rebostPkg=json.loads(dataTmp)
 				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle)
 				state=rebostHelper.get_epi_status(script)
 				sw=False

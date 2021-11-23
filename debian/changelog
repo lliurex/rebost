@@ -1,4 +1,4 @@
-rebost (0.2.1) focal; urgency=medium
+rebost (0.2.2) focal; urgency=medium
 
   * Add polkit rules for installing with GUI
   * Appimage catalogue loads all info

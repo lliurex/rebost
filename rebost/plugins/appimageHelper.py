@@ -38,6 +38,8 @@ class appimageHelper():
 			self.appimageDir="/opt/appimages"
 		self.wrkDir="/tmp/.cache/rebost/xml/appimage"
 		self.iconDir="/tmp/.cache/rebost/icons"
+		if not os.path.isdir(self.iconDir):
+			os.makedirs(self.iconDir)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
 #		self._loadStore()
@@ -118,7 +120,8 @@ class appimageHelper():
 		self._debug("PKG loaded")
 		pkgList=[]
 		while not self.queue.empty():
-			pkgList.append(self.queue.get())
+			rebostPkg=self.queue.get()
+			pkgList.append(rebostPkg)
 		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.db')
 		self._debug("SQL loaded")
 		return(applist)
@@ -157,6 +160,9 @@ class appimageHelper():
 		appinfo['id']="io.appimage.{}".format(appimage['name'])
 		appinfo['name']=appimage['name'].strip()
 		appinfo['license']=appimage.get('license','unknown')
+		if not appinfo.get('license'):
+			appinfo['license']='unknown'
+
 		description=appimage.get('description','')
 		if description:
 			if isinstance(description,dict):
@@ -179,16 +185,24 @@ class appimageHelper():
 		appinfo['categories']=appimage.get('categories',"")
 		icons=appimage.get('icons','')
 		appinfo['icon']=appimage.get('icon','')
-		if appinfo['icon'] and download:
-			appinfo['icon']=self._download_file(appimage['icon'],appimage['name'],self.iconDir)
+		if appinfo['icon']:# and download:
+			if not appinfo['icon'].startswith("http"):
+				appinfo['icon']="https://appimage.github.io/database/{}".format(appinfo['icon'])
+			#appinfo['icon']=self._download_file(appimage['icon'],appimage['name'],self.iconDir)
 		elif icons:
 			#self._debug("Loading icon %s"%appimage['icons'])
-			if  download:
+ #			if  download:
 				#self._debug("Loading icon %s"%appimage['icons'][0])
-				appinfo['icon']=self._download_file(appimage['icons'][0],appimage['name'],self.iconDir)
-			else:
-				appinfo['icon']=icons[0]
-		appinfo['thumbnails']=appimage.get('screenshots','')
+#				appinfo['icon']=self._download_file(appimage['icons'][0],appimage['name'],self.iconDir)
+#			else:
+			appinfo['icon']="https://appimage.github.io/database/{}".format(icons[0])
+				#appinfo['icon']=icons[0]
+		appinfo['screenshots']=appimage.get('screenshots',[])
+		if appinfo['screenshots']:
+			scrArray=[]
+			for scr in appinfo['screenshots']:
+				scrArray.append("https://appimage.github.io/database/{}".format(scr))
+			appinfo["screenshots"]=scrArray
 		links=appimage.get('links')
 		installerurl=''
 		for link in links:
@@ -218,14 +232,20 @@ class appimageHelper():
 				appinfo['homepage']=author['url']
 		if not appimage['authors']:
 			appinfo['homepage']='/'.join(appinfo['installerUrl'].split('/')[0:-1])
-		return appinfo
+		return (appinfo)
 	#def load_json_appinfo
 
 	def fillData(self,rebostPkg):
-		rebostPkg=json.loads(rebostPkg)
-		bundles=rebostPkg['bundle'].get('appimage','')
-		installerUrl=self._get_releases(bundles)
+		try:
+			rebostPkg=json.loads(rebostPkg)
+		except Exception as e:
+			self._debug(e)
+		self._debug("Filling data for {}".format(rebostPkg.get('name')))
+		bundle=rebostPkg['bundle'].get('appimage','')
+		self._debug("Base URL {}".format(bundle))
+		installerUrl=self._get_releases(bundle)
 		if len(installerUrl.split('/'))>2:
+			self._debug("Installer {}".format(installerUrl))
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])
 			if len(pkgname.split("-"))>1:
@@ -238,74 +258,76 @@ class appimageHelper():
 				version=version[:-1]
 			else:
 				version="0.1"
-			rebostPkg['versions']['appimage']="{}".format(version)
+			rebostPkg['versions'].update({'appimage':"{}".format(version)})
 		if installerUrl:
 			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
-			if rebostPkg.get('icon','')=='':
+			if rebostPkg.get('icon','')=='' or not os.path.isfile(rebostPkg.get('icon')):
 				rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
-		else:
-			rebostPkg['bundle'].pop('appimage',None)
+		#Uncomment for remove bundle if not url 
+		#else:
+		#	rebostPkg['bundle'].pop('appimage',None)
 		rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 		rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-		return json.dumps(rebostPkg)
+		return (json.dumps(rebostPkg))
 
 	def _get_releases(self,baseUrl):
 		releases=[""]
 		releases_page=''
 		#self._debug("Info url: %s"%app_info['installerUrl'])
 		url_source=""
-		try:
-			if 'github' in baseUrl:
-				releases_page="https://github.com"
-			if 'gitlab' in baseUrl:
-				releases_page="https://gitlab.com"
-			if 'opensuse' in baseUrl.lower():
-				releases_page=""
-				url_source="opensuse"
-#			   app_info['installerUrl']=app_info['installerUrl']+"/download"
+		if 'github' in baseUrl:
+			releases_page="https://github.com"
+		if 'gitlab' in baseUrl:
+			releases_page="https://gitlab.com"
+		if 'opensuse' in baseUrl.lower():
+			releases_page=""
+			url_source="opensuse"
+#		   app_info['installerUrl']=app_info['installerUrl']+"/download"
 
-			if (url_source or releases_page) and not baseUrl.lower().endswith(".appimage"):
-				self._debug(baseUrl)
-				content=''
-				with urllib.request.urlopen(baseUrl) as f:
-					try:
-						content=f.read().decode('utf-8')
-					except:
-						self._debug("UTF-8 failed")
-						pass
-					soup=BeautifulSoup(content,"html.parser")
-					package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
+		self._debug("URL Source {}".format(url_source))
+		self._debug("Releases Page {}".format(releases_page))
+		if (url_source or releases_page) and not baseUrl.lower().endswith(".appimage"):
+			self._debug("base Url: {}".format(baseUrl))
+			content=''
+			with urllib.request.urlopen(baseUrl) as f:
+				try:
+					content=f.read().decode('utf-8')
+				except:
+					self._debug("UTF-8 failed")
+					pass
+				soup=BeautifulSoup(content,"html.parser")
+				package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
 
-					for package_data in package_a:
-						if url_source=="opensuse":
-							package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
-						else:
-							package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
-						package_link=package_data['href']
+				for package_data in package_a:
+					if url_source=="opensuse":
+						package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
+					else:
+						package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
+					package_link=package_data['href']
+					#self._debug("Link: {}".format(package_link))
+					#self._debug("Rel: {}".format(releases_page))
+					#self._debug("Source: {}".format(url_source))
+					if releases_page or url_source:
+						package_link=releases_page+package_link
 						self._debug("Link: {}".format(package_link))
-						self._debug("Rel: {}".format(releases_page))
-						self._debug("Source: {}".format(url_source))
-						if releases_page or url_source:
-							package_link=releases_page+package_link
-							if baseUrl in package_link:
-								releases.append(package_link)
-			if releases==[]:
-				releases=[baseUrl]
-		except Exception as e:
-			self._debug("error reading %s: %s"%(baseUrl,e))
-			pass
+						#if baseUrl in package_link:
+						if package_link.lower().endswith(".appimage"):
+							releases.append(package_link)
+		if releases==[]:
+			releases=[baseUrl]
 		self._debug(releases)
 		rel=''
 		for release in releases:
 			if release:
 				rel=release
 				break
+		self._debug("Selected url: {}".format(rel))
 		return rel
 	
 	def _download_file(self,url,app_name,dest_dir):
 		#self._debug("Downloading to %s"%self.iconDir)
-		target_file=dest_dir+'/'+app_name+".png"
+		target_file=dest_dir+'/'+app_name.strip()+".png"
 		print(url)
 		if not url.startswith('http'):
 			url="https://appimage.github.io/database/%s"%url

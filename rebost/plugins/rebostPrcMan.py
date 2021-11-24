@@ -165,7 +165,7 @@ class rebostPrcMan():
 				else:
 					self._debug(e)
 
-			if len(bundles)>1:
+			if len(bundles)>0:
 				self.failProc+=1
 				if not (bundle and bundle in bundles):
 					rebostpkg=''
@@ -173,19 +173,22 @@ class rebostPrcMan():
 						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
 					else:
 						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
-		#	elif bundles:
-		#		bundle=list(bundles.keys())[0]
 			else:
-				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available at {}'.format(bundles)})]
+				rebostpkg=''
+				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}'.format(bundles)})]
 		else:
+			rebostpkg=''
 			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
 		#1st check if removing and if removing package doesn't removes meta
+			sure=True
 			if (action=='remove' or action=='test') and bundle=='package':
 				if rebostHelper.check_remove_unsure(pkgname):
 					rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} is a system package'.format(pkgname)})]
-			else:
+					sure=False
+			#else:
+			if sure:
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				#subprocess.run(['pkexec','epi-gtk',epifile])

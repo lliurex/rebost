@@ -63,8 +63,8 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	#print(query)
 	cursor.execute(query)
 	name=rebostPkg.get('pkgname','').strip().lower()
-	rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
-	rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
+	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'])
+	rebostPkg['description']=_sanitizeString(rebostPkg['description'])
 	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))
 	#print(query)
 	try:
@@ -79,16 +79,17 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 
 def _sanitizeString(data):
 	if isinstance(data,str):
-		data=html2text.html2text(data,"lxml")
+		data=html2text.html2text(data)#,"lxml")
+		data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		data=data.replace("&","and")
 		#data=data.replace("\n"," ")
-		data=data.replace("<","*")
-		data=data.replace(">","*")
+		#data=data.replace("<","*")
+		#data=data.replace(">","*")
 		data=data.replace("\\","*")
-		data=data.replace("<p><p>","<p>")
-		data=data.replace("*br*","\n")
-		data=data.replace("*p*"," ")
-		data=data.replace('<\p><\p>','<\p>')
+		#data=data.replace("<p><p>","<p>")
+		#data=data.replace("*br*","\n")
+		#data=data.replace("*p*"," ")
+		#data=data.replace('<\p><\p>','<\p>')
 		data=data.replace("''","'")
 		data=data.replace("'","''")
 	return(data)
@@ -116,15 +117,12 @@ def appstream_to_rebost(appstreamCatalogue):
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()
-		pkg['summary']=_sanitizeString(html2text.html2text(pkg['summary'],"lxml"))
-		pkg['summary']=html.escape(pkg['summary']).encode('ascii', 'xmlcharrefreplace').decode() 
+		pkg['summary']=_sanitizeString(pkg['summary'])
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
-			pkg['description']=_sanitizeString(html2text.html2text(pkg['description'],"lxml"))
-			pkg['description']=html.escape(pkg['description']).encode('ascii', 'xmlcharrefreplace').decode() 
-			pkg['description']=pkg['description'].replace("'","''")
+			pkg['description']=_sanitizeString(pkg['description'])
 		for icon in component.get_icons():
 			if icon.get_filename():
 				pkg['icon']=icon.get_filename()

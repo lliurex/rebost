@@ -266,9 +266,9 @@ class appimageHelper():
 		#Uncomment for remove bundle if not url 
 		#else:
 		#	rebostPkg['bundle'].pop('appimage',None)
-		rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-		rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
+		#rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+		#rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+		#rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
 		return (json.dumps(rebostPkg))
 
 	def _get_releases(self,baseUrl):

@@ -98,19 +98,16 @@ class sqlHelper():
 						rebostPkg=json.loads(dataTmp)
 				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
 				state=rebostHelper.get_epi_status(script)
-				sw=False
 				if state!=rebostPkg['state'].get(bundle,''):
 					rebostPkg['state'].update({bundle:state})
-					sw=True
-				if sw:
-					rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-					rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-					rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-					row=(pkg,rebostPkg)
 					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
 					cursor.execute(query)
 					db.commit()
 			#Get state from packages
+			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
 		self.close_connection(db)
 		return(rows)

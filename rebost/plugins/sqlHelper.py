@@ -98,19 +98,16 @@ class sqlHelper():
 						rebostPkg=json.loads(dataTmp)
 				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
 				state=rebostHelper.get_epi_status(script)
-				sw=False
 				if state!=rebostPkg['state'].get(bundle,''):
 					rebostPkg['state'].update({bundle:state})
-					sw=True
-				if sw:
-					rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-					rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-					rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-					row=(pkg,rebostPkg)
 					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
 					cursor.execute(query)
 					db.commit()
 			#Get state from packages
+			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
 		self.close_connection(db)
 		return(rows)
@@ -183,9 +180,9 @@ class sqlHelper():
 				for data in cursor.fetchall():
 					(pkgname,value)=data
 					json_value=json.loads(value)
-					json_value['description']=rebostHelper._sanitizeString(json_value['description'])
-					json_value['summary']=rebostHelper._sanitizeString(json_value['summary'])
-					json_value['name']=rebostHelper._sanitizeString(json_value['name'])
+					#json_value['description']=rebostHelper._sanitizeString(json_value['description'])
+					#json_value['summary']=rebostHelper._sanitizeString(json_value['summary'])
+					#json_value['name']=rebostHelper._sanitizeString(json_value['name'])
 					value=str(json.dumps(json_value))
 					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,pkgname)
 					row=main_cursor.execute(query).fetchone()
@@ -203,9 +200,9 @@ class sqlHelper():
 							elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
 								if len(item)>len(json_main_value.get(key,'')):
 									json_main_value[key]=item
-						json_main_value['description']=rebostHelper._sanitizeString(json_main_value['description'])
-						json_main_value['summary']=rebostHelper._sanitizeString(json_main_value['summary'])
-						json_main_value['name']=rebostHelper._sanitizeString(json_main_value['name'])
+						#json_main_value['description']=rebostHelper._sanitizeString(json_main_value['description'])
+						#json_main_value['summary']=rebostHelper._sanitizeString(json_main_value['summary'])
+						#json_main_value['name']=rebostHelper._sanitizeString(json_main_value['name'])
 
 						value=str(json.dumps(json_main_value))
 						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(main_tmp_table,value,pkgname)

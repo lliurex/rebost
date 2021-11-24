@@ -53,46 +53,69 @@ class packageKit():
 		action="load"
 		self._debug("Getting pkg list")
 		pkgList=self.pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
-		self._debug("End Getting pkg list")
 		semaphore = threading.BoundedSemaphore(value=20)
 		thList=[]
-		for pkg in pkgList.get_package_array():
+		pkgIdArray=[]
+		pkgArray=pkgList.get_package_array()
+		for pkg in pkgArray:
 			if pkg.get_arch() not in ['amd64','all']:
 				continue
-			th=threading.Thread(target=self._th_generateRebostPkg,args=(pkg,semaphore,))
-			th.start()
-			thList.append(th)
-		for th in thList:
-			th.join()
-		self._debug("PKG loaded")
+			pkgIdArray.append(pkg.get_id())
+		pkgCount=len(pkgIdArray)
+		total=5000
+		processed=0
+		while processed<pkgCount:
+			pkgDetails=self.pkcon.get_details(pkgIdArray[processed:total], None, self._load_callback, None)
+			for pkg in pkgDetails.get_details_array():
+				th=threading.Thread(target=self._th_generateRebostPkg,args=(pkg,semaphore,))
+				th.start()
+				thList.append(th)
+			for th in thList:
+				th.join()
+			processed=total
+			total+=4000
+			if total>pkgCount:
+				total=pkgCount
+		self._debug("End Getting pkg list")
 		pkgList=[]
 		while not self.queue.empty():
 			pkgList.append(self.queue.get())
+		self._debug("PKG loaded")
 		rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.db')
 		self._debug("SQL loaded")
 	
+	def _getCategories(self,pkg):
+		#Categories in apt are not full freedesktop standar
+		pkgProperties=self.pkcon.get_details((pkg['bundle']['package'],),None,self._load_callback,None)
+		for prop in pkgProperties.get_details_array():
+			pkgCategory=prop.get_group()
+			pkg['categories'].append(pkgCategory.to_string(pkgCategory))
+			break
+		return(pkg)
+
 	def _th_generateRebostPkg(self,pkg,semaphore):
 		semaphore.acquire()
-		if pkg.get_arch() not in ['amd64','all']:
-			semaphore.release()
-			return
-
 		rebostPkg=rebostHelper.rebostPkg()
-		rebostPkg['name']=pkg.get_name().strip()
-		rebostPkg['pkgname']=pkg.get_name().strip()
-		rebostPkg['id']="org.packagekit.%s"%pkg.get_name().strip()
-		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		rebostPkg['description']=rebostPkg['summary']
+		pkgId=pkg.get_package_id()
+		rebostPkg['name']=pkgId.split(";")[0]
+		rebostPkg['pkgname']=rebostPkg['name']
+		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
+		rebostPkg['summary']=pkg.get_summary()
+		rebostPkg['description']=pkg.get_description()
 		#rebostPkg['version']="package-{}".format(pkg.get_version())
-		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
-		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}
-		if 'installed' in pkg.get_id():
+		rebostPkg['versions']={"package":"{}".format(pkgId.split(";")[1])}
+		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
+		if 'installed' in pkgId:
 			rebostPkg['state']={"package":"0"}
 		else:
 			rebostPkg['state']={"package":"1"}
+		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()))
+		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
+		rebostPkg['homepage']=pkg.get_url()
+		rebostPkg['license']=pkg.get_license()
 		self.queue.put(rebostPkg)
 		semaphore.release()
+	#def _th_generateRebostPkg
 
 	def _load_callback(self,*args):
 		return

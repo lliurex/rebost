@@ -266,9 +266,9 @@ class appimageHelper():
 		#Uncomment for remove bundle if not url 
 		#else:
 		#	rebostPkg['bundle'].pop('appimage',None)
-		rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-		rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-		rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
+		#rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+		#rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+		#rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
 		return (json.dumps(rebostPkg))
 
 	def _get_releases(self,baseUrl):
@@ -290,30 +290,33 @@ class appimageHelper():
 		if (url_source or releases_page) and not baseUrl.lower().endswith(".appimage"):
 			self._debug("base Url: {}".format(baseUrl))
 			content=''
-			with urllib.request.urlopen(baseUrl) as f:
-				try:
-					content=f.read().decode('utf-8')
-				except:
-					self._debug("UTF-8 failed")
-					pass
-				soup=BeautifulSoup(content,"html.parser")
-				package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
+			try:
+				with urllib.request.urlopen(baseUrl) as f:
+					try:
+						content=f.read().decode('utf-8')
+					except:
+						self._debug("UTF-8 failed")
+						pass
+					soup=BeautifulSoup(content,"html.parser")
+					package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
 
-				for package_data in package_a:
-					if url_source=="opensuse":
-						package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
-					else:
-						package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
-					package_link=package_data['href']
-					#self._debug("Link: {}".format(package_link))
-					#self._debug("Rel: {}".format(releases_page))
-					#self._debug("Source: {}".format(url_source))
-					if releases_page or url_source:
-						package_link=releases_page+package_link
-						self._debug("Link: {}".format(package_link))
-						#if baseUrl in package_link:
-						if package_link.lower().endswith(".appimage"):
-							releases.append(package_link)
+					for package_data in package_a:
+						if url_source=="opensuse":
+							package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
+						else:
+							package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
+						package_link=package_data['href']
+						#self._debug("Link: {}".format(package_link))
+						#self._debug("Rel: {}".format(releases_page))
+						#self._debug("Source: {}".format(url_source))
+						if releases_page or url_source:
+							package_link=releases_page+package_link
+							self._debug("Link: {}".format(package_link))
+							#if baseUrl in package_link:
+							if package_link.lower().endswith(".appimage"):
+								releases.append(package_link)
+			except:
+				self._debug("App not found at {}".format(baseUrl))
 		if releases==[]:
 			releases=[baseUrl]
 		self._debug(releases)

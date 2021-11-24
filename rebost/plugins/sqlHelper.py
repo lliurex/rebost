@@ -49,7 +49,7 @@ class sqlHelper():
 		if action=='search':
 			rs=self._searchPackage(parms)
 		if action=='list':
-			rs=self._listPackages(parms)
+			rs=self._listPackages(parms,extraParms)
 		if action=='show':
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
@@ -124,13 +124,16 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
-	def _listPackages(self,category=''):
+	def _listPackages(self,category='',limit=0):
 		self._debug("Type: {}".format(type(category)))
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
-		query="SELECT * FROM {} WHERE data LIKE '%categories%{}%' ORDER BY pkg".format(table,str(category))
+		fetch=''
+		if limit:
+			fetch="LIMIT {}".format(limit)
+		query="SELECT * FROM {0} WHERE data LIKE '%categories%{1}%' ORDER BY pkg {2}".format(table,str(category),fetch)
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()

@@ -68,6 +68,13 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='si', out_signature='s')
+	def search_by_category_limit(self,category,limit):
+		action='list'
+		ret=self.rebost.execute(action,category,limit)
+		return (ret)
+	
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
 	def show(self,pkg,user=''):
 		action='show'

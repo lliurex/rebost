@@ -110,48 +110,12 @@ class packageKit():
 		else:
 			rebostPkg['state']={"package":"1"}
 		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()))
+		rebostPkg['size']={"package":"{}".pkg.get_size()}
+		rebostPkg['homepage']=pkg.get_url()
+		rebostPkg['license']=pkg.get_license()
 		self.queue.put(rebostPkg)
 		semaphore.release()
-
-	def _th_generateRebostPkg2(self,pkg,semaphore):
-		semaphore.acquire()
-		rebostPkg['name']=pkg.get_name().strip()
-		rebostPkg['pkgname']=pkg.get_name().strip()
-		rebostPkg['id']="org.packagekit.%s"%pkg.get_name().strip()
-		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		rebostPkg['description']=rebostPkg['summary']
-		#rebostPkg['version']="package-{}".format(pkg.get_version())
-		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
-		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}
-		if 'installed' in pkg.get_id():
-			rebostPkg['state']={"package":"0"}
-		else:
-			rebostPkg['state']={"package":"1"}
-		rebostPkg=self._getCategories(rebostPkg)
-		self.queue.put(rebostPkg)
-		semaphore.release()
-		if pkg.get_arch() not in ['amd64','all']:
-			semaphore.release()
-			return
-
-		rebostPkg=rebostHelper.rebostPkg()
-		rebostPkg['name']=pkg.get_name().strip()
-		rebostPkg['pkgname']=pkg.get_name().strip()
-		rebostPkg['id']="org.packagekit.%s"%pkg.get_name().strip()
-		rebostPkg['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-		rebostPkg['summary']=html.escape(pkg.get_summary()).encode('ascii', 'xmlcharrefreplace').decode() 
-		rebostPkg['description']=rebostPkg['summary']
-		#rebostPkg['version']="package-{}".format(pkg.get_version())
-		rebostPkg['versions']={"package":"{}".format(pkg.get_version())}
-		rebostPkg['bundle']={"package":"{}".format(pkg.get_id())}
-		if 'installed' in pkg.get_id():
-			rebostPkg['state']={"package":"0"}
-		else:
-			rebostPkg['state']={"package":"1"}
-		rebostPkg=self._getCategories(rebostPkg)
-		self.queue.put(rebostPkg)
-		semaphore.release()
+	#def _th_generateRebostPkg
 
 	def _load_callback(self,*args):
 		return

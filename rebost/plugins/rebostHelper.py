@@ -41,8 +41,8 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower()
-		rebostPkg['summary']=_sanitizeString(html2text.html2text(rebostPkg['summary'],"lxml"))
-		rebostPkg['description']=_sanitizeString(html2text.html2text(rebostPkg['description'],"lxml"))
+		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
+		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
 		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))
 		try:
 			cursor.execute(query)
@@ -77,11 +77,12 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	db.close()
 #def rebostPkgList_to_sqlite
 
-def _sanitizeString(data):
+def _sanitizeString(data,scape=False):
 	if isinstance(data,str):
 		data=html2text.html2text(data)#,"lxml")
-		data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		data=data.replace("&","and")
+		if scape:
+			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		#data=data.replace("\n"," ")
 		#data=data.replace("<","*")
 		#data=data.replace(">","*")
@@ -92,6 +93,7 @@ def _sanitizeString(data):
 		#data=data.replace('<\p><\p>','<\p>')
 		data=data.replace("''","'")
 		data=data.replace("'","''")
+		data.rstrip()
 	return(data)
 #def _sanitizeString
 
@@ -100,8 +102,8 @@ def appstream_to_rebost(appstreamCatalogue):
 	for component in appstreamCatalogue.get_apps():
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=component.get_name().lower().strip()
-		pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
+		pkg['name']=_sanitizeString(component.get_name().lower().strip(),scape=True)
+		#pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
@@ -117,12 +119,12 @@ def appstream_to_rebost(appstreamCatalogue):
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()
-		pkg['summary']=_sanitizeString(pkg['summary'])
+		pkg['summary']=_sanitizeString(pkg['summary'],scape=True)
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
-			pkg['description']=_sanitizeString(pkg['description'])
+			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		for icon in component.get_icons():
 			if icon.get_filename():
 				pkg['icon']=icon.get_filename()

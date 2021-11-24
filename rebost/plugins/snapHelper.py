@@ -80,6 +80,10 @@ class snapHelper():
 		if pkg.get_icon():
 			appinfo['icon']=pkg.get_icon()
 		appinfo['versions']={"snap":"{}".format(pkg.get_version())}
+		appinfo['size']={"snap":"{}".format(pkg.get_download_size())}
+		if pkg.get_media():
+			for media in pkg.get_media():
+				appinfo['screenshots'].append(media.get_url())
 		#if pkg.get_screenshots():
 		#if 'screenshots' in appimage.keys():
 		#	appinfo['thumbnails']=appimage['screenshots']

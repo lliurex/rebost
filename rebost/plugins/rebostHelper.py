@@ -139,6 +139,11 @@ def appstream_to_rebost(appstreamCatalogue):
 				for release in component.get_releases():
 					versionArray.append(release.get_version())
 				pkg['versions']={'flatpak':versionArray[-1]}
+		pkg['license']=component.get_project_license()
+		for scr in component.get_screenshots():
+			for img in scr.get_images():
+				pkg['screenshots'].append(img.get_url())
+				break
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)

@@ -110,7 +110,7 @@ class packageKit():
 		else:
 			rebostPkg['state']={"package":"1"}
 		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()))
-		rebostPkg['size']={"package":"{}".pkg.get_size()}
+		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
 		rebostPkg['homepage']=pkg.get_url()
 		rebostPkg['license']=pkg.get_license()
 		self.queue.put(rebostPkg)

@@ -62,7 +62,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
-	name=rebostPkg.get('pkgname','').strip().lower()
+	name=rebostPkg.get('pkgname','').rstrip().lower()
 	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'])
 	rebostPkg['description']=_sanitizeString(rebostPkg['description'])
 	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))
@@ -81,8 +81,6 @@ def _sanitizeString(data,scape=False):
 	if isinstance(data,str):
 		data=html2text.html2text(data)#,"lxml")
 		data=data.replace("&","and")
-		if scape:
-			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		#data=data.replace("\n"," ")
 		#data=data.replace("<","*")
 		#data=data.replace(">","*")
@@ -91,9 +89,11 @@ def _sanitizeString(data,scape=False):
 		#data=data.replace("*br*","\n")
 		#data=data.replace("*p*"," ")
 		#data=data.replace('<\p><\p>','<\p>')
-		data=data.replace("''","'")
-		data=data.replace("'","''")
+		#data=data.replace("''","'")
+		#data=data.replace("'","''")
 		data.rstrip()
+		if scape:
+			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 	return(data)
 #def _sanitizeString
 

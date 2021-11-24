@@ -1,4 +1,4 @@
-rebost (0.2.5) focal; urgency=medium
+rebost (0.2.6) focal; urgency=medium
 
   * Add polkit rules for installing with GUI
   * Full integration with lliurex-store
@@ -7,6 +7,7 @@ rebost (0.2.5) focal; urgency=medium
   * Screenshots get loaded from all bundles
   * Packagekit loads all info from packages
   * Search by categories (experimental)
+  * Set limit for search related apps 
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Nov 2021 11:41:35 +0100
 

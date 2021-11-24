@@ -131,9 +131,11 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
 		fetch=''
+		order="ORDER BY pkg"
 		if limit:
 			fetch="LIMIT {}".format(limit)
-		query="SELECT * FROM {0} WHERE data LIKE '%categories%{1}%' ORDER BY pkg {2}".format(table,str(category),fetch)
+			order="ORDER by RANDOM()"
+		query="SELECT * FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()

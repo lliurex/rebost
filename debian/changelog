@@ -1,9 +1,11 @@
-rebost (0.2.4) focal; urgency=medium
+rebost (0.2.5) focal; urgency=medium
 
   * Add polkit rules for installing with GUI
   * Full integration with lliurex-store
   * Flatpak initialize working on first launch
   * Appimage catalogue loads full info
+  * Screenshots get loaded from all bundles
+  * Packagekit loads all info from packages
   * Search by categories (experimental)
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Nov 2021 11:41:35 +0100

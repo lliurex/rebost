@@ -1,6 +1,6 @@
 [Unit]
 Description=Brings up rebost DBus
-After=network.target
+After=network.target snapd.service
 
 [Service]
 Type=simple

@@ -238,6 +238,8 @@ elif action=='show':
 			print(_printShow(json.loads(res)))
 elif action=='install':
 	for res in result:
+		if isinstance(res,str):
+			res=json.loads(res)
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
 		#print(_printInstall(res))
@@ -245,6 +247,8 @@ elif action=='install':
 		print("{} {}".format(status,actionArgs))
 elif action=='remove':
 	for res in result:
+		if isinstance(res,str):
+			res=json.loads(res)
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
 		status=_getResult(pid)

@@ -41,6 +41,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
+		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
 		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))

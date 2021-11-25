@@ -40,7 +40,8 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
-		name=rebostPkg.get('pkgname','').strip().lower()
+		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
+		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
 		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))
@@ -62,7 +63,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
-	name=rebostPkg.get('pkgname','').rstrip().lower()
+	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
 	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'])
 	rebostPkg['description']=_sanitizeString(rebostPkg['description'])
 	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))

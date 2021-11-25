@@ -76,7 +76,7 @@ class sqlHelper():
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
-		query="SELECT * FROM {} WHERE pkg LIKE '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
+		query="SELECT * FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rowsTmp=cursor.fetchall()
@@ -182,16 +182,62 @@ class sqlHelper():
 				(db,cursor)=self.enable_connection(f)
 				query="SELECT * FROM {}".format(table)
 				cursor.execute(query)
+				offset=0
+				limit=0
+				step=2000
+				allData=cursor.fetchall()
+				count=len(allData)
+				while limit<count:
+					limit+=step
+					if limit>count:
+						limit=count
+					self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
+					query=[]
+					for data in allData[offset:limit]:
+						(pkgname,value)=data
+						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
+						row=main_cursor.execute(fetchquery).fetchone()
+						if row:
+							json_value=json.loads(value)
+							(main_key,main_data)=row
+							json_main_value=json.loads(main_data).copy()
+							for key,item in json_value.items():
+								if not key in json_main_value.keys():
+									json_main_value[key]=item
+								elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
+									json_main_value[key].update(item)
+								elif isinstance(item,list) and isinstance(json_main_value.get(key,''),list):
+									json_main_value[key].extend(item)
+									json_main_value[key] = list(set(json_main_value[key]))
+								elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
+									if len(item)>len(json_main_value.get(key,'')):
+										json_main_value[key]=item
+							value=str(json.dumps(json_main_value))
+						query.append((pkgname,value))
+					queryMany="INSERT or REPLACE INTO {} VALUES (?,?)".format(main_tmp_table)
+					try:
+						main_cursor.executemany(queryMany,query)
+					except Exception as e:
+						self._debug(e)
+						self._debug(query)
+					offset=limit+1
+					if offset>count:
+						offset=count
+					main_db.commit()
+				self.close_connection(db)
+
+				'''	
 				for data in cursor.fetchall():
 					(pkgname,value)=data
-					json_value=json.loads(value)
-					#json_value['description']=rebostHelper._sanitizeString(json_value['description'])
-					#json_value['summary']=rebostHelper._sanitizeString(json_value['summary'])
-					#json_value['name']=rebostHelper._sanitizeString(json_value['name'])
-					value=str(json.dumps(json_value))
+					#json_value=json.loads(value)
+					##json_value['description']=rebostHelper._sanitizeString(json_value['description'])
+					##json_value['summary']=rebostHelper._sanitizeString(json_value['summary'])
+					##json_value['name']=rebostHelper._sanitizeString(json_value['name'])
+					#value=str(json.dumps(json_value))
 					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,pkgname)
 					row=main_cursor.execute(query).fetchone()
 					if row:
+						json_value=json.loads(value)
 						(main_key,main_data)=row
 						json_main_value=json.loads(main_data).copy()
 						for key,item in json_value.items():
@@ -221,6 +267,7 @@ class sqlHelper():
 						self._debug(query)
 				main_db.commit()
 				self.close_connection(db)
+				'''
 		main_db.close()
 		#Copy tmp to definitive
 		self._debug("Copying main table")

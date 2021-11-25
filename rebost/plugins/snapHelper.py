@@ -20,12 +20,12 @@ class snapHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=1
-		self.snap_client=Snapd.Client()
-		try:
-			self.snap_client.connect_sync(None)
-		except Exception as e:
-			self.enabled=True
-			self._debug("Disabling snap %s"%e)
+#		self.snap_client=Snapd.Client()
+#		try:
+#			self.snap_client.connect_sync(None)
+#		except Exception as e:
+#			self.enabled=True
+#			self._debug("Disabling snap %s"%e)
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -58,11 +58,13 @@ class snapHelper():
 		rebostPkgList=[]
 		sections=[]
 		try:
-			sections=self.snap_client.get_sections_sync()
+			#sections=self.snap_client.get_sections_sync()
+			sections=Snapd.Client().get_sections_sync()
 		except Exception as e:
 			self._debug(e)
 		for section in sections:
-			apps,curr=self.snap_client.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			#apps,curr=self.snap_client.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			apps,curr=Snapd.Client().find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 			for pkg in apps:
 				rebostPkg=self._process_snap_json(pkg,section)
 				rebostPkgList.append(rebostPkg)
@@ -100,7 +102,8 @@ class snapHelper():
 		#				appinfo['homepage']=author['url']
 		state="available"
 		try:
-			pkg=self.snap_client.list_one_sync(pkg.get_name())
+			#pkg=self.snap_client.list_one_sync(pkg.get_name())
+			pkg=Snapd.Client().list_one_sync(pkg.get_name())
 			state='0'
 			pkgs=[pkg]
 		except:

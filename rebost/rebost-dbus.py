@@ -30,6 +30,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='sss', out_signature='s')
 	def install(self,pkg,bundle,user=''):
 		action='install'
+		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 
@@ -37,6 +38,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='sss', out_signature='s')
 	def test(self,pkg,bundle,user=''):
 		action='test'
+		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 
@@ -51,6 +53,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='s', out_signature='s')
 	def search(self,pkgname):
 		action='search'
+		pkgname=pkgname.lower()
 		ret=self.rebost.execute(action,pkgname)
 		return (ret)
 	
@@ -78,6 +81,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='ss', out_signature='s')
 	def show(self,pkg,user=''):
 		action='show'
+		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,user)
 		return (ret)
 	
@@ -85,6 +89,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='sss', out_signature='s')
 	def remove(self,pkg,bundle,user=''):
 		action='remove'
+		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 	

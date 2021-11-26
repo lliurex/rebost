@@ -168,11 +168,15 @@ class rebostPrcMan():
 			if len(bundles)>0:
 				self.failProc+=1
 				if not (bundle and bundle in bundles):
-					rebostpkg=''
 					if bundle:
+						rebostpkg=''
 						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}, only as {}'.format(bundle," ".join(list(bundles.keys())))})]
 					else:
-						rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+						if len(bundles)>1:
+							rebostpkg=''
+							rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+						else:
+							bundle=list(bundles.keys())[0]
 			else:
 				rebostpkg=''
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}'.format(bundles)})]

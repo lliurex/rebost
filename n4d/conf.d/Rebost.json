@@ -1,8 +1,8 @@
 {
     "SETUP": {
         "type": "python",
-        "path": "LliurexStore.py",
-        "class": "LliurexStore"
+        "path": "Rebost.py",
+        "class": "Rebost"
     },
     "METHODS": {
         "install_epi": {
@@ -19,7 +19,7 @@
                 "teachers"
             ]
         },
-        "remote-install": {
+        "remote_install": {
             "allowed_groups": [
                 "sudo",
                 "admins",

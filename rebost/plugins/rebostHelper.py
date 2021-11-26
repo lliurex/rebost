@@ -150,13 +150,17 @@ def appstream_to_rebost(appstreamCatalogue):
 	return(rebostPkgList)
 #def appstream_to_rebost
 
-def generate_epi_for_rebostpkg(rebostpkg,bundle,user=''):
+def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	#_debug("Generating EPI for:\n{}".format(rebostpkg))
-	_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
-	epijson=_generate_epi_json(rebostpkg,bundle)
-	episcript=_generate_epi_sh(rebostpkg,bundle,user)
+	if remote==False:
+		_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		epijson=_generate_epi_json(rebostpkg,bundle)
+	else:
+		_debug("Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		epijson=''
+	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote)
 	return(epijson,episcript)
 	
 def _generate_epi_json(rebostpkg,bundle):
@@ -186,12 +190,12 @@ def _generate_epi_json(rebostpkg,bundle):
 			retCode=1
 	return(epiJson)
 
-def _generate_epi_sh(rebostpkg,bundle,user=''):
+def _generate_epi_sh(rebostpkg,bundle,user='',remote=False):
 	tmpDir="/tmp"
 	epiScript="{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
-	if not os.path.isfile(epiScript):
+	if not (os.path.isfile(epiScript) and remote==False):
 		try:
-			_make_epi_script(rebostpkg,epiScript,bundle,user)
+			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
 		except Exception as e:
 			_debug("%s"%e)
 			retCode=1
@@ -200,7 +204,7 @@ def _generate_epi_sh(rebostpkg,bundle,user=''):
 	return(epiScript)
 #def _generate_epi_sh
 
-def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
+def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 	_debug("Generating script for:\n{} - {}".format(rebostpkg,bundle))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
@@ -214,6 +218,14 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
 		f.write("\t\t\tINSTALLED=1\n")
 		f.write("\t\tfi\n")
 		f.write("}\n")
+
+		if remote:
+			f.write("function installPackage()\n{")
+			f.write("\t\t{}\n".format(commands.get('installCmd')))
+			for command in commands.get('installCmdLine',[]):
+				f.write("\t\t{}\n".format(command))
+			f.write("}\n")
+
 		f.write("ACTION=\"$1\"\n")
 		f.write("case $ACTION in\n")
 		f.write("\tremove)\n")
@@ -240,6 +252,9 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user=''):
 		f.write("\t\techo \"Installing...\"\n")
 		f.write("\t\t;;\n")
 		f.write("esac\n")
+		if remote==True:
+			f.write("\ninstallPackage\n")
+
 		f.write("exit 0\n")
 #def _make_epi_script
 
@@ -268,26 +283,19 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
 		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
+		destdir="/opt/appimages"
 		if user:
-			installCmdLine.append("mv /tmp/{}.appimage /home/{}/.local/bin/".format(rebostpkg['pkgname'],user))
-			installCmdLine.append("chown {}:{} /home/{}/.local/bin/{}.appimage".format(user,user,user,rebostpkg['pkgname']))
-			installCmdLine.append("chmod +x /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname']))
-			removeCmd="rm /home/{}/.local/bin/{}.appimage".format(user,rebostpkg['pkgname'])
-			statusTestLine=("TEST=$( ls /home/{}/.local/bin/{}.appimage  1>/dev/null 2>&1 && echo 'installed')".format(user,rebostpkg['pkgname']))
-		else:
-			destdir="/opt/appimages"
-			if user:
-				destdir=os.path.join("/home",user,".local/bin")
-			if os.path.exists(destdir)==False:
-				os.makedirs(destdir)
-			if os.path.exists(os.path.join("/home",user,"/Appimages"))==False:
-				os.symlink(destdir,os.path.join("/home",user,"/Appimages"))
-			destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
-			installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
-			installCmdLine.append("chmod +x {}".format(destPath))
+			destdir=os.path.join("/home",user,".local/bin")
+		installCmdLine.append("mkdir -p {}".format(destdir))
+		installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
+		destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
+		installCmdLine.append("chmod +x {}".format(destPath))
+		if user:
 			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
-			removeCmd="rm {}".format(destPath)
-			statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+			installCmdLine.append("ln -s {0} /home/{1}/Appimages".format(destdir,user))
+		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+		removeCmd="rm {}".format(destPath)
+		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

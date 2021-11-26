@@ -7,12 +7,23 @@
     "METHODS": {
         "install_epi": {
             "allowed_groups": [
-                "anonymous"
+                "sudo",
+                "admins",
+                "teachers"
             ]
         },
         "remove_epi": {
             "allowed_groups": [
-                "anonymous"
+                "sudo",
+                "admins",
+                "teachers"
+            ]
+        },
+        "remote-install": {
+            "allowed_groups": [
+                "sudo",
+                "admins",
+                "teachers"
             ]
         }
 	}

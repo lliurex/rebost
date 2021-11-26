@@ -278,6 +278,10 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 			destdir="/opt/appimages"
 			if user:
 				destdir=os.path.join("/home",user,".local/bin")
+			if os.path.exists(destdir)==False:
+				os.makedirs(destdir)
+			if os.path.exists(os.path.join("/home",user,"/Appimages"))==False:
+				os.symlink(destdir,os.path.join("/home",user,"/Appimages"))
 			destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
 			installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
 			installCmdLine.append("chmod +x {}".format(destPath))

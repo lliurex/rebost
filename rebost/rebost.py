@@ -22,15 +22,16 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
-def _printInstall(result):
-	if "-1" in result.keys():
-		msg="Package {} it's available from different sources. Specify one to proceed\n".format(actionArgs[0])
-		msg+="Package {} available as {}".format(actionArgs[0],list(result["-1"].keys()))
-	else:
+def _printInstall(result,pid):
+	status=_getResult(pid)
+	if status!='unknown' or str(status).isnumeric()==False:
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
-		msg=("Package {} {}".format(pkg,result.get('status','unknown')))
+		msg=("Package {0} {1}{2}{3}".format(pkg,color.UNDERLINE,status,color.END))
+	else:
+		print("status: {}".format(status))
+		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs,result.get('msg',''))
 	return(msg)
 
 def _printSearch(result):
@@ -92,45 +93,6 @@ def _printShow(result):
 	msg+=f"{result['description']}"
 	return(msg)
 
-def printResults(proc=0):
-	res=rebost.getResults(proc)
-	print(res)
-	for procId,procInfo in res.items():
-		if 'result' in procInfo.keys():
-			if procInfo['result']:
-				try:
-					for result in json.loads(procInfo['result']):
-						msg=''
-						if action=='search':
-							msg=_printSearch(result)
-						elif action=='show':
-							msg=_printShow(result)
-						elif action=='list':
-							msg=_printSearch(result)
-						elif action=='install' or action=='remove':
-							if result.get('error',''):
-								msg="%s %s %s: %s\n"%(action,result['name'],result['description'],result['errormsg'])
-							else:
-								msg="%s %s: %s\n"%(action,result['name'],result['description'])
-						else:
-							print(result)
-						print(msg)
-				except Exception as e:
-					print()
-					print("Results couldn't be processed: %s"%e)
-					print(procInfo['result'])
-			else:
-				print(procInfo)
-				print("Process error. %s failed"%(action.capitalize()))
-		else:
-			print("NO RESULTDATA")
-		sys.exit(0)
-#def printResults
-
-def _loadStore():
-	rebost.execute("load")
-#def _loadStore
-
 def _processArgs(*args):
 	action=args[0]
 	actionArgs=[]
@@ -138,7 +100,6 @@ def _processArgs(*args):
 		if len(action)>2:
 			actionArgs=args[0][2:]
 		action=args[0][1]
-
 	actionArgs=":".join(actionArgs)
 	return(action,actionArgs)	
 
@@ -206,28 +167,44 @@ def _getResult(pid):
 			except Exception as e:
 				print(data)
 				print(e)
-
 			if status=='0':
-				result="Installed"
+				result="installed"
 			elif status=='1':
-				result="Uninstalled"
+				result="removed"
 			elif status=='-1':
-				result="An {}error{} ocurred when attempting to {}".format(color.RED,color.END,action)
+				result="an {}error{} ocurred when attempting to {}".format(color.RED,color.END,action)
 			else:
-				result="Unknown status {}".format(status)
-
+				result="unknown status {}".format(status)
 	return(result)
+
+def showHelp():
+	if "help" not in action:
+		print("Unknown option {}".format(action))
+	print("Usage:")
+	print("\trebost action query format(optional)")
+	print("\trebost search|show|install|remove pkgname [format]")
+	print()
+	print("s | search: Searchs packages using pkgname as query")
+	print("show: Shows info related to one package")
+	print("i | install: Install one package. If package comes from many formats one must be specified")
+	print("r | remove: Remove one package. If package comes from many formats one must be specified")
+	print()
+	print("Examples:")
+	print("\t*Install firefox-esr as appimage: rebost install firefox-esr appimage")
+	print("\t*Remove chromium snap: rebost remove chromium")
+	print("\t*Show info related to zero-center: rebost show zero-center")
+	print("\t*Search for packages containing \"prin\": rebost search prin")
 
 rebost=rebostClient.RebostClient(user=os.getenv('USER'))
 #Set cli mode
 rebost.execute('enableGui','false')
-#_loadStore()
 (action,actionArgs)=_processArgs(sys.argv)
+action=action.replace("-","")
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
 result=json.loads(rebost.execute(action,actionArgs))
 	
-if action=='search':
+if action=='search' or action=='s':
 	for res in result:
 		print(_printSearch(json.loads(res)))
 elif action=='show':
@@ -236,52 +213,16 @@ elif action=='show':
 			print(_printShow(res))
 		else:
 			print(_printShow(json.loads(res)))
-elif action=='install':
+elif action in ["install","i","remove","r"]:
 	for res in result:
 		if isinstance(res,str):
 			res=json.loads(res)
 		pid=res.get('pid','-10')
 		_waitProcess(pid)
-		#print(_printInstall(res))
-		status=_getResult(pid)
-		print("{} {}".format(status,actionArgs))
-elif action=='remove':
-	for res in result:
-		if isinstance(res,str):
-			res=json.loads(res)
-		pid=res.get('pid','-10')
-		_waitProcess(pid)
-		status=_getResult(pid)
-		print("{} {}".format(status,actionArgs))
+		print(_printInstall(res,pid))
 elif action=='test':
 	print(result)
+else:
+	showHelp()
 
 sys.exit(0)
-sw=True
-while sw:
-	sw=False
-	if not procList:
-		time.sleep(0.5)
-		continue
-	for procId in procList:
-		try:
-			res=rebost.getProgress(procId)
-		except Exception as e:
-			print("Error connecting to D-Bus")
-			print(e)
-			break
-		if res:
-			for proc,procInfo in res.items():
-				try:
-					print("%s) %s %s %s"%(proc,procInfo['action']," ".join(actionArgs),procInfo['progress']),end="\r")
-					if procInfo['progress']>=100:
-						print("                                                            ",end="\r")
-						printResults(procId)
-					else:
-						sw=True
-				except Exception as e:
-					print("Error %s: %s"%(proc,e))
-				time.sleep(0.2)
-		else:
-			print("Failed to %s %s: Plugin disabled"%(action,actionArgs))
-		time.sleep(0.5)

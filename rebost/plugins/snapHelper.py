@@ -13,13 +13,14 @@ wrap=Gio.SimpleAsyncResult()
 
 class snapHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=1
+		#Not required in focal
 #		self.snap_client=Snapd.Client()
 #		try:
 #			self.snap_client.connect_sync(None)

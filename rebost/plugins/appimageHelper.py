@@ -21,7 +21,7 @@ import html
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="appimage"

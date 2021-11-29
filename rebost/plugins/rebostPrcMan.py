@@ -11,7 +11,7 @@ import random
 
 class rebostPrcMan():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.rebost=None
 		self.actions=["remote","test","install","remove","progress"]
 		self.packagekind="*"

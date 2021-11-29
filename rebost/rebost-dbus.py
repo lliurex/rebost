@@ -27,11 +27,11 @@ class rebostDbusMethods(dbus.service.Object):
 		return ("")
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def install(self,pkg,bundle,user=''):
+						 in_signature='ssss', out_signature='s')
+	def install(self,pkg,bundle,user='',n4dkey=''):
 		action='install'
 		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user)
+		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
@@ -43,11 +43,11 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def remote_install(self,pkg,bundle):
+						 in_signature='sss', out_signature='s')
+	def remote_install(self,pkg,bundle,n4dkey=''):
 		action='remote'
 		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle)
+		ret=self.rebost.execute(action,pkg,bundle,n4dkey=n4dkey)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
@@ -94,11 +94,11 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def remove(self,pkg,bundle,user=''):
+						 in_signature='ssss', out_signature='s')
+	def remove(self,pkg,bundle,user='',n4dkey=''):
 		action='remove'
 		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user)
+		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",

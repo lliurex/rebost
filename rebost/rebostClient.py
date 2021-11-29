@@ -5,14 +5,18 @@ import signal
 import ast
 import dbus,dbus.exceptions
 import logging
+import getpass
 
 class RebostClient():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.user=''
+		self.n4dkey=''
 		if kwargs:
 			self.user=kwargs.get('user','')
+		if self.user=='':
+			self.user=getpass.getuser()
 			#self._debug("Selected user: {}".format(self.user))
 		self.rebost=None
 
@@ -34,6 +38,8 @@ class RebostClient():
 			sys.exit(1)
 	
 	def execute(self,action,args='',extraParms=''):
+		if self.n4dkey=='':
+			self.n4dkey=self._getN4dKey()
 		self._connect()
 		procId=0
 		if isinstance(args,str):
@@ -51,7 +57,7 @@ class RebostClient():
 						package=package.replace("-","_")
 
 					if action=='install':
-						procId=self.rebost.install(package,extraParms,self.user)
+						procId=self.rebost.install(package,extraParms,self.user,self.n4dkey)
 					elif action=='search':
 						procId=self.rebost.search(package)
 					elif action=='list':
@@ -59,7 +65,7 @@ class RebostClient():
 					elif action=='show':
 						procId=self.rebost.show(package,self.user)
 					if action=='remove':
-						procId=self.rebost.remove(package,extraParms,self.user)
+						procId=self.rebost.remove(package,extraParms,self.user,self.n4dkey)
 					if action=='enableGui':
 						if arg.lower()=="true":
 							arg=True
@@ -125,3 +131,12 @@ class RebostClient():
 	
 	def getPlugins(self):
 		pass
+	
+	def _getN4dKey(self):
+		n4dkey=''
+		try:
+			with open('/etc/n4d/key') as file_data:
+				n4dkey = file_data.readlines()[0].strip()
+		except:
+			pass
+		return(n4dkey)

@@ -1,4 +1,4 @@
 Rebost is a software management system for LliureX.
 
-Its main purpose is to bring a unified engine for software-related operations through N4d.
+Its main purpose is to bring a unified engine for software-related operations accessible from dbus
 

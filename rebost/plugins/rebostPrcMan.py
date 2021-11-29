@@ -28,7 +28,7 @@ class rebostPrcMan():
 			self.appimageDir="/opt/appimages"
 		self.priority=100
 		self.gui=False
-		self.n4d=n4d()
+		self.n4d=n4d(username=self.user)
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -43,17 +43,19 @@ class rebostPrcMan():
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
 		user=''
+		n4dkey=''
 		if kwargs:
 			user=kwargs.get('user','')
+			n4dkey=kwargs.get('n4dkey','')
 		if action=='progress':
 			rs=self._getProgress()
 		if action=='insert':
 			rs=self._insertProcess()
 		if action in ['remove','install','test','remote']:
 			if action=='remote':
-				rs=self._managePackage(parms,extraParms,action,user=user,remote=True)
+				rs=self._managePackage(parms,extraParms,action,user=user,remote=True,n4dkey=n4dkey)
 			else:
-				rs=self._managePackage(parms,extraParms,action,user=user)
+				rs=self._managePackage(parms,extraParms,action,user=user,n4dkey=n4dkey)
 		return(rs)
 	#def execute
 
@@ -152,7 +154,7 @@ class rebostPrcMan():
 		return('[{}]')
 	#def _insertProcess
 	
-	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False):
+	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):
 		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
 		rebostPkgList=[]
 		rebostpkg=''
@@ -196,40 +198,32 @@ class rebostPrcMan():
 					sure=False
 			#else:
 			if sure:
-				n4dkey=self._get_n4d_key()
 				remote=False
 				if action=="remote":
 					remote=True
+				self._debug("USER: {}".format(user))
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
-				#subprocess.run(['pkexec','epi-gtk',epifile])
 				if action!='test' and remote==False:
-					self._debug("Executing N4d query")
-					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui)
+					self._debug("Executing N4d query as user {}".format(user))
+					if n4dkey:
+						self.n4d.setCredentials(n4dkey=n4dkey)
+					usern="{}".format(user)
+					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
+					if isinstance(pid,dict):
+						pid=pid.get('status',-1)
+					print("PID: {}".format(pid))
 					rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
 				elif remote==True:
-					self.n4d.setCredentials(n4dkey=n4dkey)
+					if n4dkey:
+						self.n4d.setCredentials(n4dkey=n4dkey)
 					pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
-					#subprocess.run(["n4d-client","-k",n4dkey,"create-ticket"])
-					#subprocess.run(["n4d-client","-t","call","Rebost.remote_install",'["{0}","false"]'.format(episcript)])
 					#pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
 	#def _managePackage
-
-	def _get_n4d_key(self):
-		n4dkey=''
-		try:
-			with open('/etc/n4d/key') as file_data:
-				n4dkey = file_data.readlines()[0].strip()
-		except:
-			pass
-		#client=self.n4d._n4d_connect(ticket=n4dkey)
-		#self.n4d.n4dClient=client
-
-		return(n4dkey)
 
 def main():
 	obj=rebostPrcMan()

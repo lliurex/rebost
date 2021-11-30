@@ -24,13 +24,12 @@ class color:
 
 def _printInstall(result,pid):
 	status=_getResult(pid)
-	if status!='unknown' or str(status).isnumeric()==False:
+	if status.lower()!='unknown' and str(status).isnumeric()==False:
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
 		msg=("Package {0} {1}{2}{3}".format(pkg,color.UNDERLINE,status,color.END))
 	else:
-		print("status: {}".format(status))
 		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs,result.get('msg',''))
 	return(msg)
 

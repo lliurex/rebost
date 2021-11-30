@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil
+import os
 import logging
 import sqlHelper
 from appconfig.appConfigN4d import appConfigN4d as n4d
@@ -104,8 +104,6 @@ class rebostPrcMan():
 		#Fake a progress percentage (unimplemented).
 		#process running, update progress
 			if estimatedTime<step:
-				print("E.T.: {}".format(estimatedTime))
-				print("")
 				estimatedTime=step+10
 			seconds=int((step*estimatedTime)/100)
 			#print("Step seconds: {}".format(seconds))
@@ -123,9 +121,11 @@ class rebostPrcMan():
 	def _getEpiState(self,data):
 		#process finished, invoke epi status
 		action=data.get('status','')
+		episcript=data.get('episcript','')
+		epijson=episcript.replace("_script.sh",".epi")
 		if action=='install' or action=='remove':
-			self._debug("Select {} from {}".format(action,data.get('episcript','')))
-			if data.get('episcript',None):
+			self._debug("Select {} from {}".format(action,episcript))
+			if os.path.exists(episcript):
 				stdout=rebostHelper.get_epi_status(data.get('episcript'))
 				if action=='install' or action=='remove':
 					if stdout=="0":
@@ -138,6 +138,8 @@ class rebostPrcMan():
 							data['status']='1'
 						else:
 							data['status']='-1'
+			else:
+				data['status']='-1'
 		return data
 	
 	def _insertProcess(self,rebostPkgList):
@@ -154,11 +156,9 @@ class rebostPrcMan():
 		return('[{}]')
 	#def _insertProcess
 	
-	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):
-		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
-		rebostPkgList=[]
+	def _chk_pkg_format(self,pkgname,bundle):
 		rebostpkg=''
-		#1st search that there's a package in the desired format
+		rebostPkgList=[]
 		rows=self.sql.execute(action='show',parms=pkgname)
 		if rows and isinstance(rows,list):
 			(package,rebostpkg)=rows[0]
@@ -188,6 +188,13 @@ class rebostPrcMan():
 		else:
 			rebostpkg=''
 			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
+		return(rebostpkg,rebostPkgList)
+	#def _chk_pkg_format
+
+	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):
+		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
+		#1st search that there's a package in the desired format
+		(rebostpkg,rebostPkgList)=self._chk_pkg_format(pkgname,bundle)
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
 		#1st check if removing and if removing package doesn't removes meta
@@ -198,6 +205,7 @@ class rebostPrcMan():
 					sure=False
 			#else:
 			if sure:
+				usern="{}".format(user)
 				remote=False
 				if action=="remote":
 					remote=True
@@ -208,17 +216,15 @@ class rebostPrcMan():
 					self._debug("Executing N4d query as user {}".format(user))
 					if n4dkey:
 						self.n4d.setCredentials(n4dkey=n4dkey)
-					usern="{}".format(user)
 					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
 					if isinstance(pid,dict):
 						pid=pid.get('status',-1)
-					print("PID: {}".format(pid))
 					rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
 				elif remote==True:
 					if n4dkey:
 						self.n4d.setCredentials(n4dkey=n4dkey)
-					pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
+					pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
 					#pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
 
 		self._debug(rebostPkgList)

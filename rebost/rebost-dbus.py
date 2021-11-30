@@ -13,7 +13,7 @@ class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
-		self.dbg=True
+		self.dbg=False
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
 

@@ -213,12 +213,15 @@ elif action=='show':
 		else:
 			print(_printShow(json.loads(res)))
 elif action in ["install","i","remove","r"]:
-	for res in result:
-		if isinstance(res,str):
-			res=json.loads(res)
-		pid=res.get('pid','-10')
-		_waitProcess(pid)
-		print(_printInstall(res,pid))
+	if (isinstance(result,list)):
+		for res in result:
+			if isinstance(res,str):
+				res=json.loads(res)
+			pid=res.get('pid','-10')
+			_waitProcess(pid)
+			print(_printInstall(res,pid))
+	else:
+		print("User not allowed")
 elif action=='test':
 	print(result)
 else:

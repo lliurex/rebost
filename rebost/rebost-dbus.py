@@ -7,6 +7,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 import rebostCore as rebost
 import logging
+import getpass
 
 class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
@@ -43,11 +44,12 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def remote_install(self,pkg,bundle,n4dkey=''):
+						 in_signature='ss', out_signature='s')
+	def remote_install(self,pkg,bundle):
+		user=getpass.getuser()
 		action='remote'
 		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,n4dkey=n4dkey)
+		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
@@ -65,12 +67,6 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,pkgname)
 		return (ret)
 	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='i')
-	def listAll(self,fill):
-		action='list'
-		ret=self.rebost.execute(action,fill)
-		return (ret)
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def search_by_category(self,category):
@@ -116,27 +112,7 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='i')
-	def update(self):
-		action='update'
-		ret=self.rebost.update()
-		return (ret)
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='i')
-	def fullUpdate(self):
-		action='update'
-		ret=self.rebost.fullUpdate()
-		ret=self.rebost.update()
-		return (ret)
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='i')
-	def upgrade(self,args,extraParms):
-		action='upgrade'
-		ret=self.rebost.execute(action,args,extraParms)
-		return (ret)
-
+						 in_signature='', out_signature='s')
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def getEpiPkgStatus(self,epifile):

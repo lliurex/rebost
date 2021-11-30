@@ -1,0 +1,16 @@
+polkit.addRule(function(action, subject) {
+    if ((action.id == "net.lliurex.rebost.software-manager.launcher" &&
+        subject.active == true && subject.local == true) &&
+        (subject.isInGroup("sudo") || subject.isInGroup("Admins"))){
+            return polkit.Result.YES;
+    }
+
+    if ((action.id == "net.lliurex.rebost.software-manager.launcher" &&
+        subject.active == true ) &&
+        subject.isInGroup("teachers")){
+            return polkit.Result.AUTH_ADMIN;
+    }
+
+    return polkit.Result.NO;
+});
+

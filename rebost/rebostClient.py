@@ -17,7 +17,7 @@ class RebostClient():
 			self.user=kwargs.get('user','')
 		if self.user=='':
 			self.user=getpass.getuser()
-			#self._debug("Selected user: {}".format(self.user))
+#		self._debug("Selected user: {}".format(self.user))
 		self.rebost=None
 
 	def _debug(self,msg):

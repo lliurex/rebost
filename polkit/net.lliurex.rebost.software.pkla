@@ -4,5 +4,10 @@ Action=net.lliurex.rebost.software-manager.launcher
 ResultActive=yes
 ResultAny=yes
 ResultInactive=yes
-
+[Allow teachers to authenticate]
+Identity=unix-group:teachers;
+Action=net.lliurex.rebost.software-manager.launcher
+ResultActive=auth_self
+ResultAny=no
+ResultInactive=no
 

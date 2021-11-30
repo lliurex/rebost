@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,shutil
 import html2text
 import gi
 gi.require_version('AppStream', '1.0')
@@ -11,7 +11,7 @@ import logging
 import tempfile
 import subprocess
 
-DBG=False
+DBG=True
 
 def _debug(msg):
 	if DBG:
@@ -154,17 +154,18 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	#_debug("Generating EPI for:\n{}".format(rebostpkg))
+	tmpDir=tempfile.mkdtemp()
+	os.chmod(tmpDir,0o755)
 	if remote==False:
 		_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
-		epijson=_generate_epi_json(rebostpkg,bundle)
+		epijson=_generate_epi_json(rebostpkg,bundle,tmpDir=tmpDir)
 	else:
 		_debug("Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=''
-	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote)
+	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir)
 	return(epijson,episcript)
 	
-def _generate_epi_json(rebostpkg,bundle):
-	tmpDir="/tmp"
+def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 	epiJson="{}_{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not os.path.isfile(epiJson):
 		name=rebostpkg.get('name').strip()
@@ -190,8 +191,7 @@ def _generate_epi_json(rebostpkg,bundle):
 			retCode=1
 	return(epiJson)
 
-def _generate_epi_sh(rebostpkg,bundle,user='',remote=False):
-	tmpDir="/tmp"
+def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	epiScript="{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
 		try:
@@ -304,7 +304,26 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	return(commands)
 
 def get_epi_status(episcript):
-	proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	if os.path.exists(episcript)==True:
+		proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		epijson=episcript.replace("_script.sh",".epi")
+		tmpDir=os.path.dirname(episcript)
+		files=[]
+		save_del=False
+		if os.path.isdir(tmpDir)==True:
+			files=os.listdir(os.path.dirname(episcript))
+			save_del=True
+		_debug("Removing tmp dir {}".format(tmpDir))
+		for f in files:
+			if os.path.join(tmpDir,f) not in [episcript,epijson]:
+				_debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
+				save_del=False
+				break
+		if save_del:
+			try:
+				shutil.rmtree(tmpDir)
+			except Exception as e:
+				_debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 	return(proc.stdout.decode().strip())
 
 def check_remove_unsure(package):

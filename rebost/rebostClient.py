@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys
+import sys,os
 import json
 import signal
 import ast
@@ -17,6 +17,11 @@ class RebostClient():
 			self.user=kwargs.get('user','')
 		if self.user=='':
 			self.user=getpass.getuser()
+		if self.user=='root':
+		#check that there's no sudo
+			sudo_user=os.environ.get("SUDO_USER",'')
+			if sudo_user:
+				self.user=sudo_user
 #		self._debug("Selected user: {}".format(self.user))
 		self.rebost=None
 

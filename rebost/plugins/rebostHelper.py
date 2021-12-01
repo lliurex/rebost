@@ -306,24 +306,6 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 def get_epi_status(episcript):
 	if os.path.exists(episcript)==True:
 		proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		epijson=episcript.replace("_script.sh",".epi")
-		tmpDir=os.path.dirname(episcript)
-		files=[]
-		save_del=False
-		if os.path.isdir(tmpDir)==True:
-			files=os.listdir(os.path.dirname(episcript))
-			save_del=True
-		_debug("Removing tmp dir {}".format(tmpDir))
-		for f in files:
-			if os.path.join(tmpDir,f) not in [episcript,epijson]:
-				_debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
-				save_del=False
-				break
-		if save_del:
-			try:
-				shutil.rmtree(tmpDir)
-			except Exception as e:
-				_debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 	return(proc.stdout.decode().strip())
 
 def check_remove_unsure(package):

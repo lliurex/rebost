@@ -62,7 +62,7 @@ class Rebost:
 	def install_epi(self,epifile,gui):
 		if os.path.exists(epifile):
 			try:
-				p=subprocess.Popen([Rebost.EPI_CLI,"-u","install","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+				p=subprocess.Popen([Rebost.EPI_CLI,"-nc","-u","install","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 				return n4d.responses.build_successful_call_response(p.pid)
 			except Exception as e:
 				print(e)
@@ -73,7 +73,7 @@ class Rebost:
 	def remove_epi(self,epifile,gui):
 		if os.path.exists(epifile):
 		    try:
-		    	p=subprocess.Popen([Rebost.EPI_CLI,"-u","uninstall","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		    	p=subprocess.Popen([Rebost.EPI_CLI,"-nc","-u","uninstall","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		    	return n4d.responses.build_successful_call_response(p.pid)
 		    except Exception as e:
 		    	print(e)

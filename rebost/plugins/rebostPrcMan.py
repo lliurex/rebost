@@ -77,8 +77,8 @@ class rebostPrcMan():
 						fstat=os.path.join("/proc/",pid,"stat")
 						if os.path.isfile(fstat)==True:
 							with open(fstat,'r') as f:
-								if "Z" == f.readlines()[0].split(" ")[2]:
-
+								flines=f.readlines()
+								if "Z" == flines[0].split(" ")[2]:
 									dataTmp=self._getEpiState(data)
 									dataTmp['done']=1
 									data['status']=dataTmp.get('status',-1)
@@ -224,13 +224,13 @@ class rebostPrcMan():
 		else:
 			rebostpkg=''
 			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
-		return(rebostpkg,rebostPkgList)
+		return(rebostpkg,bundle,rebostPkgList)
 	#def _chk_pkg_format
 
 	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):
 		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
 		#1st search that there's a package in the desired format
-		(rebostpkg,rebostPkgList)=self._chk_pkg_format(pkgname,bundle)
+		(rebostpkg,bundle,rebostPkgList)=self._chk_pkg_format(pkgname,bundle)
 		if rebostpkg:
 		#Well, the package almost exists and the desired format is available so generate EPI files and return.
 		#1st check if removing and if removing package doesn't removes meta

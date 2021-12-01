@@ -173,7 +173,7 @@ class sqlHelper():
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
 		exclude=[self.main_tmp_table,self.main_table,os.path.join(self.wrkDir,"packagekit.db"),self.proc_table]
-		include=[os.path.join(self.wrkDir,"appimage.db"),os.path.join(self.wrkDir,"flatpak.db"),os.path.join(self.wrkDir,"snap.db")]
+		include=[os.path.join(self.wrkDir,"appimage.db"),os.path.join(self.wrkDir,"flatpak.db"),os.path.join(self.wrkDir,"snap.db"),os.path.join(self.wrkDir,"zomandos.db")]
 		self.copy_packagekit_sql()
 		for f in include:
 			if os.path.isfile(f) and f not in exclude:

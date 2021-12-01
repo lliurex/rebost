@@ -51,6 +51,8 @@ def _printSearch(result):
 				bundleStr+=f" {color.YELLOW}package{state}{color.END}"
 			if bundle=='flatpak':
 				bundleStr+=f" {color.BLUE}flatpak{state}{color.END}"
+			if bundle=='zomando':
+				bundleStr+=f" {color.GREEN}zomando{state}{color.END}"
 
 		msg=(f"{result['pkgname']} [{bundleStr} ] - {result['summary']}")
 		msg=msg.rstrip("\n")
@@ -72,6 +74,8 @@ def _printShow(result):
 			bundleStr+=f" {color.YELLOW}package{state}{color.END}"
 		if bundle=='flatpak':
 			bundleStr+=f" {color.BLUE}flatpak{state}{color.END}"
+		if bundle=='zomando':
+			bundleStr+=f" {color.GREEN}zomando{state}{color.END}"
 	msg+=f"Format:{bundleStr}\n"
 	versionStr=''
 	for version in sorted(result['versions'].keys()):

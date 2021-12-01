@@ -83,9 +83,8 @@ class rebostPrcMan():
 									dataTmp['done']=1
 									data['status']=dataTmp.get('status',-1)
 									query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
-									self._debug(query)
 									cursor.execute(query)
-									self._debug("ZOMBI")
+									self._debug("Z proc")
 					else:
 						dataTmp=self._getEpiState(data)
 						data['status']=dataTmp.get('status',-1)
@@ -106,7 +105,6 @@ class rebostPrcMan():
 					if os.path.isdir(tmpDir)==True:
 						files=os.listdir(os.path.dirname(episcript))
 						save_del=True
-					self._debug("Removing tmp dir {}".format(tmpDir))
 					for f in files:
 						if os.path.join(tmpDir,f) not in [episcript,epijson]:
 							self._debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
@@ -114,6 +112,7 @@ class rebostPrcMan():
 							break
 					if save_del:
 						try:
+							self._debug("Removing tmp dir {}".format(tmpDir))
 							shutil.rmtree(tmpDir)
 						except Exception as e:
 							self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
@@ -175,7 +174,6 @@ class rebostPrcMan():
 							data['status']='1'
 						else:
 							data['status']='-1'
-		self._debug(data)
 		return data
 	
 	def _insertProcess(self,rebostPkgList):

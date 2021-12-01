@@ -19,7 +19,7 @@ class flatpakHelper():
 		self._debug("Loaded")
 		self.enabled=True
 		self.packagekind="flatpak"
-		self.actions=["load","install","remove"]
+		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=1
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'

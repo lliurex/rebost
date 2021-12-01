@@ -24,7 +24,6 @@ class Rebost:
 			self._get_n4d_key()
 			core=n4dcore.Core.get_core()
 			remoteVar=self.core.get_variable("LLX_REMOTE_INSTALLER").get('return',{})
-			print(remoteVar)
 			if remoteVar:
 				#Send file to apache dir as expected by remote-installer, then update remote-installer
 				lines=subprocess.Popen(["LAGUAGE=en_EN; md5sum %s | awk '{print $1}'"%episcript],shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
@@ -63,7 +62,7 @@ class Rebost:
 	def install_epi(self,epifile,gui):
 		if os.path.exists(epifile):
 			try:
-				p=subprocess.Popen([Rebost.EPI_CLI,"-u","install","{}".format(epifile)])
+				p=subprocess.Popen([Rebost.EPI_CLI,"-u","install","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 				return n4d.responses.build_successful_call_response(p.pid)
 			except Exception as e:
 				print(e)
@@ -73,12 +72,12 @@ class Rebost:
 	
 	def remove_epi(self,epifile,gui):
 		if os.path.exists(epifile):
-			try:
-				p=subprocess.Popen([Rebost.EPI_CLI,"-u","uninstall","{}".format(epifile)])
-				return n4d.responses.build_successful_call_response(p.pid)
-			except Exception as e:
-				print(e)
-				return n4d.responses.build_failed_call_response(Rebost.STORE_REMOVE_ERROR,str(e))
+		    try:
+		    	p=subprocess.Popen([Rebost.EPI_CLI,"-u","uninstall","{}".format(epifile)],close_fds=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		    	return n4d.responses.build_successful_call_response(p.pid)
+		    except Exception as e:
+		    	print(e)
+		    	return n4d.responses.build_failed_call_response(Rebost.STORE_REMOVE_ERROR,str(e))
 		else:
 			return n4d.responses.build_failed_call_response(Rebost.STORE_FILE_ERROR,str(e))
 

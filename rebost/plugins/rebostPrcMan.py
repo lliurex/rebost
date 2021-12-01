@@ -74,6 +74,18 @@ class rebostPrcMan():
 				if not data.get('done',None):
 					if os.path.exists(os.path.join("/proc/",pid)):
 						progress=(pid,self._getFakePercent(data))
+						fstat=os.path.join("/proc/",pid,"stat")
+						if os.path.isfile(fstat)==True:
+							with open(fstat,'r') as f:
+								if "Z" == f.readlines()[0].split(" ")[2]:
+									dataTmp=self._getEpiState(data)
+									dataTmp['done']=1
+									query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
+									self._debug(query)
+									cursor.execute(query)
+									self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
+									progress=(pid,dataTmp)
+									self._debug("ZOMBI")
 					else:
 						dataTmp=self._getEpiState(data)
 						dataTmp['done']=1

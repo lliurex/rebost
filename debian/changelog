@@ -1,7 +1,8 @@
-rebost (0.3.6) focal; urgency=medium
+rebost (0.3.7) focal; urgency=medium
 
   * Add polkit rules for software management from GUI
   * Full integration with lliurex-store
+  * Full integration with EPI 
   * Flatpak initialize working on first launch
   * Appimage catalogue loads full info
   * Screenshots get loaded from all bundles

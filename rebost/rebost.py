@@ -163,6 +163,8 @@ def _getResult(pid):
 		if str(ppid)==str(pid):
 			try:
 				status=data.get('status',-2)
+				if isinstance(status,int):
+					status=str(status)
 			except Exception as e:
 				print(data)
 				print(e)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys,os
+import subprocess
 import json
 import signal
 import ast
@@ -62,7 +63,12 @@ class RebostClient():
 				#		package=package.replace("-","_")
 
 					if action=='install':
-						procId=self.rebost.install(package,extraParms,self.user,self.n4dkey)
+						if extraParms=="zomando":
+							zmdPath=os.path.join("/usr/share/zero-center/zmds","{}.zmd".format(package))
+							if os.path.isfile(zmdPath)==True:
+								procId=subprocess.run([zmdPath]).returncode
+						else:
+							procId=self.rebost.install(package,extraParms,self.user,self.n4dkey)
 					elif action=='search':
 						procId=self.rebost.search(package)
 					elif action=='list':
@@ -70,6 +76,8 @@ class RebostClient():
 					elif action=='show':
 						procId=self.rebost.show(package,self.user)
 					if action=='remove':
+						if extraParms=="zomando":
+							extraParms="package"
 						procId=self.rebost.remove(package,extraParms,self.user,self.n4dkey)
 					if action=='enableGui':
 						if arg.lower()=="true":

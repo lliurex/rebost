@@ -293,6 +293,7 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		if user:
 			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
 			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
+			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 		removeCmd="rm {}".format(destPath)
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))

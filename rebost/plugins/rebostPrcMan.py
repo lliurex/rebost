@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,shutil
 import logging
 import sqlHelper
 from appconfig.appConfigN4d import appConfigN4d as n4d
@@ -78,24 +78,49 @@ class rebostPrcMan():
 						if os.path.isfile(fstat)==True:
 							with open(fstat,'r') as f:
 								if "Z" == f.readlines()[0].split(" ")[2]:
+
 									dataTmp=self._getEpiState(data)
 									dataTmp['done']=1
+									data['status']=dataTmp.get('status',-1)
 									query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
 									self._debug(query)
 									cursor.execute(query)
-									self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
-									progress=(pid,dataTmp)
 									self._debug("ZOMBI")
 					else:
 						dataTmp=self._getEpiState(data)
+						data['status']=dataTmp.get('status',-1)
 						dataTmp['done']=1
 						query="UPDATE rebostPrc set data='{}' where pkg='{}'".format(str(json.dumps(dataTmp)),pid)
 						cursor.execute(query)
 						self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 						progress=(pid,dataTmp)
+
 				else:
-					if data.get('msg',''):
-						progress=(pid,data)
+					dataTmp=self._getEpiState(data)
+					self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
+					episcript=data.get('episcript','')
+					epijson=episcript.replace("_script.sh",".epi")
+					tmpDir=os.path.dirname(episcript)
+					files=[]
+					save_del=False
+					if os.path.isdir(tmpDir)==True:
+						files=os.listdir(os.path.dirname(episcript))
+						save_del=True
+					self._debug("Removing tmp dir {}".format(tmpDir))
+					for f in files:
+						if os.path.join(tmpDir,f) not in [episcript,epijson]:
+							self._debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
+							save_del=False
+							break
+					if save_del:
+						try:
+							shutil.rmtree(tmpDir)
+						except Exception as e:
+							self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
+			
+			else:
+				if data.get('msg',''):
+    					progress=(pid,data)
 			progressArray.append(progress)
 		self.sql.close_connection(db)
 		return(progressArray)
@@ -132,11 +157,11 @@ class rebostPrcMan():
 
 	def _getEpiState(self,data):
 		#process finished, invoke epi status
-		action=data.get('status','')
+		action=data.get('action','')
 		episcript=data.get('episcript','')
 		epijson=episcript.replace("_script.sh",".epi")
+
 		if action=='install' or action=='remove':
-			self._debug("Select {} from {}".format(action,episcript))
 			if os.path.exists(episcript):
 				stdout=rebostHelper.get_epi_status(data.get('episcript'))
 				if action=='install' or action=='remove':
@@ -150,15 +175,14 @@ class rebostPrcMan():
 							data['status']='1'
 						else:
 							data['status']='-1'
-			else:
-				data['status']='-1'
+		self._debug(data)
 		return data
 	
 	def _insertProcess(self,rebostPkgList):
 		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)
 		for rebostPkg in rebostPkgList:
 			(pkg,process)=rebostPkg
-			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({'episcript':process.get('script'),'status':process.get('status'),'bundle':process.get('bundle',''),'package':process.get('package',''),'time':int(time.time())})),process.get('pid'))
+			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({'episcript':process.get('script'),'status':process.get('status'),'bundle':process.get('bundle',''),'package':process.get('package',''),'action':process.get('action'),'time':int(time.time())})),process.get('pid'))
 			self._debug(query)
 			try:
 				cursor.execute(query)
@@ -231,7 +255,7 @@ class rebostPrcMan():
 					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
 					if isinstance(pid,dict):
 						pid=pid.get('status',-1)
-					rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
+					rebostPkgList=[(pkgname,{'package':pkgname,'action':action,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
 				elif remote==True:
 					if n4dkey:

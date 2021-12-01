@@ -58,8 +58,8 @@ class RebostClient():
 				else:
 					package=arg
 				try:
-					if "-" in package:
-						package=package.replace("-","_")
+				#	if "-" in package:
+				#		package=package.replace("-","_")
 
 					if action=='install':
 						procId=self.rebost.install(package,extraParms,self.user,self.n4dkey)

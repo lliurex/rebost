@@ -76,6 +76,8 @@ class RebostClient():
 					elif action=='show':
 						procId=self.rebost.show(package,self.user)
 					if action=='remove':
+						if extraParms=="zomando":
+							extraParms="package"
 						procId=self.rebost.remove(package,extraParms,self.user,self.n4dkey)
 					if action=='enableGui':
 						if arg.lower()=="true":

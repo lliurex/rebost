@@ -38,12 +38,16 @@ class Rebost():
 
 	def run(self):
 		self._autostartActions()
+		self._print("rebost operative")
 	#def run
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("rebost: %s"%str(msg))
+			logging.debug("rebost: %s"%str(msg))
 	#def _debug
+
+	def _print(self,msg):
+		logging.info("rebost: %s"%str(msg))
 	
 	def _setGuiEnabled(self,state):
 		self._debug("Gui mode: {}".format(state))
@@ -144,7 +148,7 @@ class Rebost():
 						try:
 							procList.append(self._execute(action,'','',plugin=plugin,th=True))
 						except Exception as e:
-							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+							self._print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			proc.join()
 		self._debug("postactions: {}".format(postactions))
@@ -155,7 +159,7 @@ class Rebost():
 					try:
 						self._execute(action,'','',plugin=plugin,th=True)
 					except Exception as e:
-							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+							self._print("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey=''):

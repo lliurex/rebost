@@ -19,7 +19,10 @@ class rebostDbusMethods(dbus.service.Object):
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("rebost-dbus: %s"%str(msg))
+			logging.debug("rebost-dbus: %s"%str(msg))
+
+	def _print(self,msg):
+		logging.info("rebost-dbus: %s"%str(msg))
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')

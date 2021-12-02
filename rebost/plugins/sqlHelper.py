@@ -65,7 +65,7 @@ class sqlHelper():
 		cursor=db.cursor()
 		fields=",".join(extraFields)
 		if fields:
-			fielfs=","+fields
+			fields=","+fields
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
 		cursor.execute(query)
 		return(db,cursor)

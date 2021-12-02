@@ -161,12 +161,12 @@ class sqlHelper():
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
-		query="SELECT * FROM {} WHERE pkg='{}';".format(table,pkgname)
+		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		for row in rows:
-			(pkg,dataContent,cat0,cat1,cat2)=row
+			(pkg,dataContent)=row
 			data=json.loads(dataContent)
 			data['state'][bundle]=state
 			#data['description']=rebostHelper._sanitizeString(data['description'])

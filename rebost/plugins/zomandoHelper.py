@@ -49,9 +49,9 @@ class zomandoHelper():
 		self._debug("Loading store")
 		rebostPkgList=[]
 		if os.path.isdir(self.zmdDir):
+			self._debug("Processing {}".format(self.zmdDir))
 			for f in os.listdir(self.zmdDir):
 				if f.endswith(".zmd"):
-					self._debug("Processing {}".format(f))
 					appName=os.path.basename(f).replace(".zmd","")
 					rebostPkg=rebostHelper.rebostPkg()
 					rebostPkg['name']=appName
@@ -66,9 +66,9 @@ class zomandoHelper():
 	def fillData(self,zmd,rebostPkg):
 		appName=os.path.basename(zmd).replace(".zmd",".app")
 		appPath=os.path.join(self.appDir,appName)
-		self._debug("Path: {}".format(appPath))
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
+		rebostPkg['categories'].append('Lliurex')
 		return(rebostPkg)
 
 	def _get_zomando_state(self,zmd):

@@ -37,7 +37,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
@@ -60,7 +60,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
 	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
@@ -297,6 +297,11 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 		removeCmd="rm {}".format(destPath)
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+	elif bundle=='zomando':
+		installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+		removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+		statusTestLine=("TEST=$(n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'].replace(".zmd","")))
+
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

@@ -94,7 +94,10 @@ class flatpakHelper():
 			for remote in flRemote:
 				srcDir=remote.get_appstream_dir().get_path()
 				self._debug("flatpak srcdir: {}".format(srcDir))
-				installer.update_appstream_sync(remote.get_name())
+				try:
+					installer.update_appstream_sync(remote.get_name())
+				except:
+					self._debug("Error reaching remote {}".format(remote)
 				self._debug("{} synced".format(srcDir))
 		return(srcDir,flInst)
 	#def _get_flatpak_metadata

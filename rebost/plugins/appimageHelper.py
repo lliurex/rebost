@@ -159,9 +159,7 @@ class appimageHelper():
 		appinfo['pkgname']=appimage['name'].lower().replace("_","-").strip()
 		appinfo['id']="io.appimage.{}".format(appimage['name'])
 		appinfo['name']=appimage['name'].strip()
-		appinfo['license']=appimage.get('license','unknown')
-		if not appinfo.get('license'):
-			appinfo['license']='unknown'
+		appinfo['license']=appimage.get('license','')
 
 		description=appimage.get('description','')
 		if description:

@@ -185,6 +185,8 @@ class sqlHelper():
 		main_db=sqlite3.connect(self.main_tmp_table)
 		main_tmp_table=os.path.basename(self.main_table.replace(".db",""))
 		main_cursor=main_db.cursor()
+		query="DROP TABLE IF EXISTS {}".format(main_tmp_table)
+		main_cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
 		exclude=[self.main_tmp_table,self.main_table,os.path.join(self.wrkDir,"packagekit.db"),self.proc_table]
@@ -195,12 +197,12 @@ class sqlHelper():
 				table=os.path.basename(f).replace(".db","")
 				self._debug("Accesing {}".format(f))
 				(db,cursor)=self.enable_connection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
-				query="SELECT * FROM {}".format(table)
+				query="SELECT pkg,data FROM {}".format(table)
 				cursor.execute(query)
+				allData=cursor.fetchall()
 				offset=0
 				limit=0
 				step=2000
-				allData=cursor.fetchall()
 				count=len(allData)
 				while limit<count:
 					limit+=step
@@ -212,7 +214,7 @@ class sqlHelper():
 					cat1=None
 					cat2=None
 					for data in allData[offset:limit]:
-						(pkgname,value,cat0,cat1,cat2)=data
+						(pkgname,value)=data
 						value=json.loads(value)
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
 						row=main_cursor.execute(fetchquery).fetchone()

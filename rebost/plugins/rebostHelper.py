@@ -37,7 +37,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table.replace('.db',''))
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table.replace('.db',''))
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
@@ -60,7 +60,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
 	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')

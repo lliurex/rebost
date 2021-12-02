@@ -63,7 +63,7 @@ class sqlHelper():
 		tableName=os.path.basename(table).replace(".db","")
 		db=sqlite3.connect(table)
 		cursor=db.cursor()
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(tableName)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(tableName)
 		cursor.execute(query)
 		return(db,cursor)
 	#def enable_connection
@@ -76,7 +76,7 @@ class sqlHelper():
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
-		query="SELECT * FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
+		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rowsTmp=cursor.fetchall()
@@ -116,7 +116,7 @@ class sqlHelper():
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enable_connection(self.main_table)
-		query="SELECT * FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
+		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -135,7 +135,8 @@ class sqlHelper():
 		if limit:
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
-		query="SELECT * FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
+		#query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
+		query="SELECT pkg,data FROM {0} WHERE cat0='{1}' or cat1='{1}' or cat2='{1}' {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -170,7 +171,7 @@ class sqlHelper():
 		main_db=sqlite3.connect(self.main_tmp_table)
 		main_tmp_table=os.path.basename(self.main_table.replace(".db",""))
 		main_cursor=main_db.cursor()
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(main_tmp_table)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
 		exclude=[self.main_tmp_table,self.main_table,os.path.join(self.wrkDir,"packagekit.db"),self.proc_table]
 		include=[os.path.join(self.wrkDir,"appimage.db"),os.path.join(self.wrkDir,"flatpak.db"),os.path.join(self.wrkDir,"snap.db"),os.path.join(self.wrkDir,"zomandos.db")]
@@ -193,15 +194,18 @@ class sqlHelper():
 						limit=count
 					self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
 					query=[]
+					cat0=None
+					cat1=None
+					cat2=None
 					for data in allData[offset:limit]:
-						(pkgname,value)=data
+						(pkgname,value,cat0,cat1,cat2)=data
+						value=json.loads(value)
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
 						row=main_cursor.execute(fetchquery).fetchone()
 						if row:
-							json_value=json.loads(value)
-							(main_key,main_data)=row
+							(main_key,main_data,cat0,cat1,cat2)=row
 							json_main_value=json.loads(main_data).copy()
-							for key,item in json_value.items():
+							for key,item in value.items():
 								if not key in json_main_value.keys():
 									json_main_value[key]=item
 								elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
@@ -212,9 +216,18 @@ class sqlHelper():
 								elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
 									if len(item)>len(json_main_value.get(key,'')):
 										json_main_value[key]=item
-							value=str(json.dumps(json_main_value))
-						query.append((pkgname,value))
-					queryMany="INSERT or REPLACE INTO {} VALUES (?,?)".format(main_tmp_table)
+											
+							value=json_main_value
+						if (cat0==None or cat1==None or cat2==None) and (len(value.get('categories',[]))>=1):
+							if cat0==None:
+								cat0=value.get('categories')[0]
+							elif cat1==None and len(value.get('categories'))>1:
+								cat1=value.get('categories')[1]
+							elif len(value.get('categories'))>2:
+								cat2=value.get('categories')[2]
+						value=str(json.dumps(value))
+						query.append([pkgname,value,cat0,cat1,cat2])
+					queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(main_tmp_table)
 					try:
 						main_cursor.executemany(queryMany,query)
 					except Exception as e:
@@ -283,10 +296,10 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT);".format(table)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
 		cursor.execute(query)
 		cursor.execute("ATTACH DATABASE '/usr/share/rebost/packagekit.db' AS pk;")
-		cursor.execute("INSERT INTO {} (pkg,data) SELECT * from pk.packagekit;".format(table))
+		cursor.execute("INSERT INTO {} (pkg,data,cat0,cat1,cat2) SELECT * from pk.packagekit;".format(table))
 		rebost_db.commit()
 		rebost_db.close()
 	#def copy_packagekit_sql

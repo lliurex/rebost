@@ -59,11 +59,14 @@ class sqlHelper():
 		return(rs)
 	#def execute
 
-	def enable_connection(self,table):
+	def enable_connection(self,table,extraFields=[]):
 		tableName=os.path.basename(table).replace(".db","")
 		db=sqlite3.connect(table)
 		cursor=db.cursor()
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(tableName)
+		fields=",".join(extraFields)
+		if fields:
+			fielfs=","+fields
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
 		cursor.execute(query)
 		return(db,cursor)
 	#def enable_connection
@@ -75,7 +78,7 @@ class sqlHelper():
 
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table)
+		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -115,7 +118,7 @@ class sqlHelper():
 
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table)
+		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -129,7 +132,7 @@ class sqlHelper():
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table)
+		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		fetch=''
 		order="ORDER BY pkg"
 		if isinstance(limit,int)==False:
@@ -157,13 +160,13 @@ class sqlHelper():
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table)
+		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT * FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		for row in rows:
-			(pkg,dataContent)=row
+			(pkg,dataContent,cat0,cat1,cat2)=row
 			data=json.loads(dataContent)
 			data['state'][bundle]=state
 			#data['description']=rebostHelper._sanitizeString(data['description'])
@@ -191,7 +194,7 @@ class sqlHelper():
 			if os.path.isfile(f) and f not in exclude:
 				table=os.path.basename(f).replace(".db","")
 				self._debug("Accesing {}".format(f))
-				(db,cursor)=self.enable_connection(f)
+				(db,cursor)=self.enable_connection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 				query="SELECT * FROM {}".format(table)
 				cursor.execute(query)
 				offset=0

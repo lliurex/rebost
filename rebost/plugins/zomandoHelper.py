@@ -21,6 +21,7 @@ class zomandoHelper():
 			self.user=kwargs.get('user','')
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
+		self.iconDir="/usr/share/banners/lliurex-neu/"
 		self.n4d=n4d.Client()
 #		self._loadStore()
 
@@ -68,7 +69,18 @@ class zomandoHelper():
 		appPath=os.path.join(self.appDir,appName)
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
+			with open(appPath,'r') as f:
+				for fline in f.readlines():
+					if fline.startswith("Icon"):
+						icon=fline.split("=")[-1].rstrip()
+						if len(icon.split("."))<2:
+							icon="{}.png".format(icon).rstrip()
+
+						rebostPkg['icon']=os.path.join(self.iconDir,icon)
+
 		rebostPkg['categories'].append('Lliurex')
+		rebostPkg['license']="GPL-3"
+		rebostPkg['homepage']="https://www.github.com/lliurex"
 		return(rebostPkg)
 
 	def _get_zomando_state(self,zmd):

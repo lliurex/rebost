@@ -53,7 +53,7 @@ class Rebost():
 		for plugin,pluginObject in self.plugins.items():
 			try:
 				if plugin!="rebostHelper":
-					pluginObject.setDebugEnabled()
+					pluginObject.setDebugEnabled(self.dbg)
 			except Exception as e:
 				print(e)
 	#def _setPluginDbg
@@ -193,8 +193,13 @@ class Rebost():
 		self._debug("Begin Sanitize store {}".format(int(time.time())))
 		for rebostpkg in appstore:
 			if isinstance(rebostpkg,tuple):
-				(pkg,app)=rebostpkg
-				store.append(app)
+				try:
+					(pkg,app)=rebostpkg
+					store.append(app)
+				except:
+					self._debug("Error sanitize")
+					self._debug(rebostpkg)
+					self._debug("Error sanitize")
 			else:
 				store.append(rebostpkg)
 		return((json.dumps(store)))

@@ -132,14 +132,25 @@ class sqlHelper():
 		(db,cursor)=self.enable_connection(self.main_table)
 		fetch=''
 		order="ORDER BY pkg"
-		if limit:
+		if isinstance(limit,int)==False:
+			limit=0
+		if limit>0:
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
 		#query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
-		query="SELECT pkg,data FROM {0} WHERE cat0='{1}' or cat1='{1}' or cat2='{1}' {2} {3}".format(table,str(category),order,fetch)
+		query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
+		if (len(rows)<limit) or (len(rows)==0):
+			if limit:
+				fetch="LIMIT {}".format(limit-len(rows))
+			#Try to get more results
+			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
+			cursor.execute(query)
+			moreRows=cursor.fetchall()
+			if moreRows:
+				rows.extend(moreRows)
 		self.close_connection(db)
 		return(rows)
 

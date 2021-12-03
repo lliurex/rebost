@@ -109,10 +109,12 @@ class packageKit():
 			rebostPkg['state']={"package":"0"}
 		else:
 			rebostPkg['state']={"package":"1"}
-		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()))
 		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
 		rebostPkg['homepage']=pkg.get_url()
 		rebostPkg['license']=pkg.get_license()
+		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
+		if ("zero-lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):
+			rebostPkg['categories'].append("Lliurex")
 		self.queue.put(rebostPkg)
 		semaphore.release()
 	#def _th_generateRebostPkg

@@ -11,7 +11,7 @@ import logging
 import tempfile
 import subprocess
 
-DBG=True
+DBG=False
 
 def _debug(msg):
 	if DBG:

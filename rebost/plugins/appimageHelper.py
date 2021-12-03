@@ -182,7 +182,9 @@ class appimageHelper():
 		else:
 			appinfo['summary']='Appimage of {}'.format(appinfo["name"])
 			appinfo['description']='Appimage of {}'.format(appinfo["name"])
-		appinfo['categories']=appimage.get('categories',"")
+		appinfo['categories']=appimage.get('categories',[])
+		if isinstance(appinfo['categories'],list)==False:	
+			appinfo['categories']=[]
 		icons=appimage.get('icons','')
 		appinfo['icon']=appimage.get('icon','')
 		if appinfo['icon']:# and download:

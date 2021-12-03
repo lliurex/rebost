@@ -37,14 +37,30 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table.replace('.db',''))
+	query="DROP TABLE IF EXISTS {}".format(table)
+	_debug(query)
+	cursor.execute(query)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+	_debug(query)
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
 		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
-		query="INSERT or REPLACE INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name.lower(),str(json.dumps(rebostPkg)))
+		categories=rebostPkg.get('categories',[""])
+		(cat0,cat1,cat2)=(None,None,None)
+		if len(categories)>2:
+			if isinstance(categories[2],str):
+				cat2=categories[2]
+		if len(categories)>1:
+			if isinstance(categories[1],str):
+				cat1=categories[1]
+		if len(categories)>0:
+			if isinstance(categories[0],str):
+				cat0=categories[0]
+
+		query="INSERT or REPLACE INTO {0} (pkg,data,cat0,cat1,cat2) VALUES ('{1}','{2}','{3}','{4}','{5}')".format(table,name.lower(),str(json.dumps(rebostPkg)),cat0,cat1,cat2)
 		try:
 			cursor.execute(query)
 		except Exception as e:

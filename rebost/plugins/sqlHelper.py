@@ -43,6 +43,10 @@ class sqlHelper():
 			logging.warning("sql: %s"%str(msg))
 	#def _debug
 
+	def _print(self,msg):
+		logging.warning("sql: %s"%str(msg))
+	#def _debug
+
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
 		rs='[{}]'
@@ -142,13 +146,10 @@ class sqlHelper():
 			order="ORDER by RANDOM()"
 		#query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
 		query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
-		self._debug(query)
+		self._print(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):
-			if limit:
-				fetch="LIMIT {}".format(limit-len(rows))
-			#Try to get more results
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
 			cursor.execute(query)
 			moreRows=cursor.fetchall()
@@ -234,13 +235,12 @@ class sqlHelper():
 										json_main_value[key]=item
 											
 							value=json_main_value
-						if (cat0==None or cat1==None or cat2==None) and (len(value.get('categories',[]))>=1):
-							if cat0==None:
-								cat0=value.get('categories')[0]
-							elif cat1==None and len(value.get('categories'))>1:
-								cat1=value.get('categories')[1]
-							elif len(value.get('categories'))>2:
-								cat2=value.get('categories')[2]
+						if (len(value.get('categories',[]))>=1):
+							cat0=value.get('categories')[0]
+							if len(value.get('categories'))>1:
+								cat1=value.get('categories')[-1]
+							if len(value.get('categories'))>2:
+								cat2=value.get('categories')[-2]
 						value=str(json.dumps(value))
 						query.append([pkgname,value,cat0,cat1,cat2])
 					queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(main_tmp_table)
@@ -301,7 +301,7 @@ class sqlHelper():
 		#Copy tmp to definitive
 		self._debug("Copying main table")
 		copyfile(self.main_tmp_table,self.main_table)
-		self._debug("Removing tmp file")
+		self._print("Removing tmp file")
 		os.remove(self.main_tmp_table)
 		return([])
 	#def consolidate_sql_tables

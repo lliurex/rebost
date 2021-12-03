@@ -191,9 +191,10 @@ class sqlHelper():
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(main_tmp_table)
 		main_cursor.execute(query)
 		exclude=[self.main_tmp_table,self.main_table,os.path.join(self.wrkDir,"packagekit.db"),self.proc_table]
-		include=[os.path.join(self.wrkDir,"appimage.db"),os.path.join(self.wrkDir,"flatpak.db"),os.path.join(self.wrkDir,"snap.db"),os.path.join(self.wrkDir,"zomandos.db")]
+		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		self.copy_packagekit_sql()
-		for f in include:
+		for fname in include:
+			f=os.path.join(self.wrkDir,fname)
 			if os.path.isfile(f) and f not in exclude:
 				table=os.path.basename(f).replace(".db","")
 				self._debug("Accesing {}".format(f))
@@ -235,6 +236,9 @@ class sqlHelper():
 										json_main_value[key]=item
 											
 							value=json_main_value
+						if value.get('bundle',{})=={}:
+							self._debug("DISCARD {}".format(pkgname))
+							continue
 						if (len(value.get('categories',[]))>=1):
 							cat0=value.get('categories')[0]
 							if len(value.get('categories'))>1:

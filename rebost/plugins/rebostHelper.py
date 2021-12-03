@@ -45,9 +45,12 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 	cursor.execute(query)
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
+		rebostPkg["name"]=rebostPkg.get('name','').strip()
 		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
+		if isinstance(rebostPkg['license'],list)==False:
+			rebostPkg['license']=""
 		categories=rebostPkg.get('categories',[""])
 		(cat0,cat1,cat2)=(None,None,None)
 		if len(categories)>2:
@@ -130,7 +133,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			elif len(candidateName)>2:
 				pkg['pkgname']=candidateName[-1]
 			elif len(candidateName)>1:
-				pkg['pkgname']=join('-').candidateName
+				pkg['pkgname']=('-').join(candidateName)
 			elif len(candidateName)>0:
 				pkg['pkgname']=candidateName[0]
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
@@ -148,6 +151,8 @@ def appstream_to_rebost(appstreamCatalogue):
 				break
 			if icon.get_url():
 				pkg['icon']=icon.get_url()
+				break
+
 		pkg['categories']=component.get_categories()
 		for i in component.get_bundles():
 			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:

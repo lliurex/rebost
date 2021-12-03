@@ -97,7 +97,7 @@ class flatpakHelper():
 				try:
 					installer.update_appstream_sync(remote.get_name())
 				except:
-					self._debug("Error reaching remote {}".format(remote)
+					self._debug("Error reaching remote {}".format(remote))
 				self._debug("{} synced".format(srcDir))
 		return(srcDir,flInst)
 	#def _get_flatpak_metadata

@@ -58,6 +58,13 @@ class appstreamHelper():
 		rebostPkgList=[]
 		sections=[]
 		progress=0
+		iconDir="/usr/share/rebost-data/icons"
+		storeFile=Gio.File.new_for_path("/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml")
+		if os.path.isfile(storeFile):
+			try:
+				store.from_file(storeFile,iconDir,None)
+			except e as Exception:
+				pass
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:
 			store.load(flag,None)
@@ -68,10 +75,12 @@ class appstreamHelper():
 	def _generate_store(self,store):
 		added=[]
 		rebostPkgList=[]
+		iconDb=self._populate_icon_db()
 		for pkg in store.get_apps():
 			idx=pkg.get_id()
 			#appstream has his own cache dir for icons so if present use it
 			icondefault=pkg.get_icon_default()
+			fname=None
 			if icondefault:
 				prefix=icondefault.get_prefix()
 				name=icondefault.get_name()
@@ -83,29 +92,20 @@ class appstreamHelper():
 					if os.path.isfile(icon128)==True:
 						if icondefault.get_kind()==appstream.IconKind.STOCK:
 							icondefault.convert_to_kind(appstream.IconKind.LOCAL)
-						icondefault.set_filename(icon64)
+						icondefault.set_filename(icon128)
 				else:
 					if icondefault.get_kind()==appstream.IconKind.STOCK:
 						icondefault.convert_to_kind(appstream.IconKind.LOCAL)
-					icondefault.set_filename(icon128)
-					
-				self._debug("P: {} -> {}".format(prefix,name))
-			else:
-				icon=self._get_app_icons(idx)
+					icondefault.set_filename(icon64)
+				fname=icondefault.get_filename()
+
+			if fname==None:
+				icon=self._get_app_icons(idx,iconDb)
 				if icon:
 					pkg.add_icon(icon)
+			else:
+				pkg.add_icon(icondefault)
 			add=False
-			#if not pkg.get_bundles():
-			#	bundle=appstream.Bundle()
-			#	bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))
-			#	bundle.set_kind(appstream.BundleKind.FLATPAK)
-			#	pkg.add_bundle(bundle)
-			#	add=True
-			#else:
-			#	for bundle in pkg.get_bundles():
-			#		bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))
-			#		bundle.set_kind(appstream.BundleKind.FLATPAK)
-			#		add=True
 			if add and pkg.get_id() not in added:
 				try:
 					if not (app.validate()):
@@ -135,25 +135,29 @@ class appstreamHelper():
 		return(state)
 	#def _get_state
 
-	def _get_app_icons(self,idx):
-		appstreamIconDir="/var/lib/app-info/icons"
+	def _populate_icon_db(self):
+		appstreamIconDirs=["/var/lib/app-info/icons","/usr/share/rebost/appstream"]
+		iconDb={}
+		for appstreamIconDir in appstreamIconDirs:
+			if os.path.isdir(appstreamIconDir)==True:
+				for iconDir in os.listdir(appstreamIconDir):
+					pathDir=os.path.join(appstreamIconDir,iconDir)
+					if os.path.isdir(pathDir)==True:
+						icon64=os.path.join(pathDir,"64x64")
+						icon128=os.path.join(pathDir,"128x128")
+						iconFiles=os.listdir(icon64)
+						iconDb[icon64]=iconFiles
+						iconFiles=os.listdir(icon128)
+						iconDb[icon128]=iconFiles
+		return(iconDb)
+
+	def _get_app_icons(self,idx,iconDb):
 		iconPath=''
 		icon=None
 		idx=os.path.basename(idx)
 		idx=idx.replace(".desktop","")
 		idx2=idx+"_"+idx+".png"
 		idx=idx+".png"
-		iconDb={}
-		if os.path.isdir(appstreamIconDir)==True:
-			for iconDir in os.listdir(appstreamIconDir):
-				pathDir=os.path.join(appstreamIconDir,iconDir)
-				if os.path.isdir(pathDir)==True:
-					icon64=os.path.join(pathDir,"64x64")
-					icon128=os.path.join(pathDir,"128x128")
-					iconFiles=os.listdir(icon64)
-					iconDb[icon64]=iconFiles
-					iconFiles=os.listdir(icon128)
-					iconDb[icon128]=iconFiles
 		for path,iconFiles in iconDb.items():
 			if idx in iconFiles: 
 				iconPath=os.path.join(path,"{}".format(idx))
@@ -167,11 +171,6 @@ class appstreamHelper():
 			icon.set_filename(iconPath)
 		return(icon)
 	#def _get_app_icons
-
-	def _init_flatpak_repo(self):
-		cmd=['/usr/bin/flatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub.flatpakrepo']
-		subprocess.run(cmd)
-	#def _init_flatpak_repo
 
 def main():
 	obj=appstreamHelper()

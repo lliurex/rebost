@@ -57,13 +57,13 @@ class sqlHelper():
 		if action=='show':
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
-			rs=self.consolidate_sql_tables()
+			rs=self.consolidateSqlTables()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		return(rs)
 	#def execute
 
-	def enable_connection(self,table,extraFields=[]):
+	def enableConnection(self,table,extraFields=[]):
 		tableName=os.path.basename(table).replace(".db","")
 		db=sqlite3.connect(table)
 		cursor=db.cursor()
@@ -73,16 +73,16 @@ class sqlHelper():
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
 		cursor.execute(query)
 		return(db,cursor)
-	#def enable_connection
+	#def enableConnection
 
-	def close_connection(self,db):
+	def closeConnection(self,db):
 		db.commit()
 		db.close()
-	#def close_connection
+	#def closeConnection
 
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -116,18 +116,18 @@ class sqlHelper():
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
 			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
-		self.close_connection(db)
+		self.closeConnection(db)
 		return(rows)
 	#def _showPackage
 
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
-		self.close_connection(db)
+		self.closeConnection(db)
 		return(rows)
 	#def _searchPackage
 
@@ -136,7 +136,7 @@ class sqlHelper():
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		fetch=''
 		order="ORDER BY pkg"
 		if isinstance(limit,int)==False:
@@ -155,13 +155,13 @@ class sqlHelper():
 			moreRows=cursor.fetchall()
 			if moreRows:
 				rows.extend(moreRows)
-		self.close_connection(db)
+		self.closeConnection(db)
 		return(rows)
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enable_connection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -177,31 +177,20 @@ class sqlHelper():
 			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
-		self.close_connection(db)
+		self.closeConnection(db)
 		return(rows)
 	#def _commitInstall
 
-	def consolidate_sql_tables(self):
+	def consolidateSqlTables(self):
 		self._debug("Merging data")
-		main_db=sqlite3.connect(self.main_tmp_table)
-		main_tmp_table=os.path.basename(self.main_table.replace(".db",""))
-		main_cursor=main_db.cursor()
-		query="DROP TABLE IF EXISTS {}".format(main_tmp_table)
-		main_cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(main_tmp_table)
-		main_cursor.execute(query)
-		exclude=[self.main_tmp_table,self.main_table,os.path.join(self.wrkDir,"packagekit.db"),self.proc_table]
+		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		main_tmp_table=os.path.basename(self.main_tmp_table).replace(".db","")
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
-		self.copy_packagekit_sql()
+		self.copyPackagekitSql()
 		for fname in include:
 			f=os.path.join(self.wrkDir,fname)
-			if os.path.isfile(f) and f not in exclude:
-				table=os.path.basename(f).replace(".db","")
-				self._debug("Accesing {}".format(f))
-				(db,cursor)=self.enable_connection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
-				query="SELECT pkg,data FROM {}".format(table)
-				cursor.execute(query)
-				allData=cursor.fetchall()
+			if os.path.isfile(f):
+				allData=self._getAllData(f)
 				offset=0
 				limit=0
 				step=2000
@@ -221,21 +210,7 @@ class sqlHelper():
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
 						row=main_cursor.execute(fetchquery).fetchone()
 						if row:
-							(main_key,main_data,cat0,cat1,cat2)=row
-							json_main_value=json.loads(main_data).copy()
-							for key,item in value.items():
-								if not key in json_main_value.keys():
-									json_main_value[key]=item
-								elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
-									json_main_value[key].update(item)
-								elif isinstance(item,list) and isinstance(json_main_value.get(key,''),list):
-									json_main_value[key].extend(item)
-									json_main_value[key] = list(set(json_main_value[key]))
-								elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
-									if len(item)>len(json_main_value.get(key,'')):
-										json_main_value[key]=item
-											
-							value=json_main_value
+							value=self._mergePackage(value,row)
 						if value.get('bundle',{})=={}:
 							self._debug("DISCARD {}".format(pkgname))
 							continue
@@ -257,60 +232,40 @@ class sqlHelper():
 					if offset>count:
 						offset=count
 					main_db.commit()
-				self.close_connection(db)
-
-				'''	
-				for data in cursor.fetchall():
-					(pkgname,value)=data
-					#json_value=json.loads(value)
-					##json_value['description']=rebostHelper._sanitizeString(json_value['description'])
-					##json_value['summary']=rebostHelper._sanitizeString(json_value['summary'])
-					##json_value['name']=rebostHelper._sanitizeString(json_value['name'])
-					#value=str(json.dumps(json_value))
-					query="SELECT * FROM {} WHERE pkg LIKE '{}'".format(main_tmp_table,pkgname)
-					row=main_cursor.execute(query).fetchone()
-					if row:
-						json_value=json.loads(value)
-						(main_key,main_data)=row
-						json_main_value=json.loads(main_data).copy()
-						for key,item in json_value.items():
-							if not key in json_main_value.keys():
-								json_main_value[key]=item
-							elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
-								json_main_value[key].update(item)
-							elif isinstance(item,list) and isinstance(json_main_value.get(key,''),list):
-								json_main_value[key].extend(item)
-								json_main_value[key] = list(set(json_main_value[key]))
-							elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
-								if len(item)>len(json_main_value.get(key,'')):
-									json_main_value[key]=item
-						#json_main_value['description']=rebostHelper._sanitizeString(json_main_value['description'])
-						#json_main_value['summary']=rebostHelper._sanitizeString(json_main_value['summary'])
-						#json_main_value['name']=rebostHelper._sanitizeString(json_main_value['name'])
-
-						value=str(json.dumps(json_main_value))
-						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(main_tmp_table,value,pkgname)
-					else:
-						query="INSERT INTO {} (pkg, data) VALUES ('{}', '{}');".format(main_tmp_table,pkgname,value,value)
-					#self._debug(query)
-					try:
-						main_cursor.execute(query)
-					except Exception as e:
-						self._debug(e)
-						self._debug(query)
-				main_db.commit()
-				self.close_connection(db)
-				'''
 		main_db.close()
-		#Copy tmp to definitive
-		self._debug("Copying main table")
-		copyfile(self.main_tmp_table,self.main_table)
-		self._print("Removing tmp file")
-		os.remove(self.main_tmp_table)
+		self._copyTmpDef()
 		return([])
-	#def consolidate_sql_tables
+	#def consolidateSqlTables
 
-	def copy_packagekit_sql(self):
+	def _getAllData(self,f):
+		table=os.path.basename(f).replace(".db","")
+		self._debug("Accesing {}".format(f))
+		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		query="SELECT pkg,data FROM {}".format(table)
+		cursor.execute(query)
+		allData=cursor.fetchall()
+		self.closeConnection(db)
+		return (allData)
+
+	def _mergePackage(self,value,row):
+		(main_key,main_data,cat0,cat1,cat2)=row
+		json_main_value=json.loads(main_data).copy()
+		for key,item in value.items():
+			if not key in json_main_value.keys():
+				json_main_value[key]=item
+			elif isinstance(item,dict) and isinstance(json_main_value.get(key,''),dict):
+				json_main_value[key].update(item)
+			elif isinstance(item,list) and isinstance(json_main_value.get(key,''),list):
+				json_main_value[key].extend(item)
+				json_main_value[key] = list(set(json_main_value[key]))
+			elif isinstance(item,str) and isinstance(json_main_value.get(key,None),str):
+				if len(item)>len(json_main_value.get(key,'')):
+					json_main_value[key]=item
+		return(json_main_value)
+
+
+
+	def copyPackagekitSql(self):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -322,7 +277,14 @@ class sqlHelper():
 		cursor.execute("INSERT INTO {} (pkg,data,cat0,cat1,cat2) SELECT * from pk.packagekit;".format(table))
 		rebost_db.commit()
 		rebost_db.close()
-	#def copy_packagekit_sql
+	#def copyPackagekitSql
+
+	def _copyTmpDef(self):
+		#Copy tmp to definitive
+		self._debug("Copying main table")
+		copyfile(self.main_tmp_table,self.main_table)
+		self._print("Removing tmp file")
+		os.remove(self.main_tmp_table)
 
 def main():
 	obj=sqlHelper()

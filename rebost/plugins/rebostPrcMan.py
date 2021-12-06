@@ -60,7 +60,7 @@ class rebostPrcMan():
 	#def execute
 
 	def _getProgress(self):
-		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)
+		(db,cursor)=self.sql.enableConnection(self.sql.proc_table)
 		query="SELECT * FROM rebostPrc;"
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -121,7 +121,7 @@ class rebostPrcMan():
 				if data.get('msg',''):
     					progress=(pid,data)
 			progressArray.append(progress)
-		self.sql.close_connection(db)
+		self.sql.closeConnection(db)
 		return(progressArray)
 	#def _getProgress
 
@@ -177,7 +177,7 @@ class rebostPrcMan():
 		return data
 	
 	def _insertProcess(self,rebostPkgList):
-		(db,cursor)=self.sql.enable_connection(self.sql.proc_table)
+		(db,cursor)=self.sql.enableConnection(self.sql.proc_table)
 		for rebostPkg in rebostPkgList:
 			(pkg,process)=rebostPkg
 			query="INSERT INTO rebostPrc (pkg,data) VALUES ('{}', '{}') ON CONFLICT(pkg) DO UPDATE SET pkg='{}';".format(process.get('pid'),str(json.dumps({'episcript':process.get('script'),'status':process.get('status'),'bundle':process.get('bundle',''),'package':process.get('package',''),'action':process.get('action'),'time':int(time.time())})),process.get('pid'))
@@ -186,7 +186,7 @@ class rebostPrcMan():
 				cursor.execute(query)
 			except Exception as e:
 				print("{}".format(e))
-		self.sql.close_connection(db)
+		self.sql.closeConnection(db)
 		return('[{}]')
 	#def _insertProcess
 	

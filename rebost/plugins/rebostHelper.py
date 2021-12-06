@@ -52,6 +52,12 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 		if isinstance(rebostPkg['license'],list)==False:
 			rebostPkg['license']=""
 		categories=rebostPkg.get('categories',[""])
+		#fix LliureX category:
+		if 'LliureX' in categories:
+			idx=categories.index("LliureX")
+			categories.pop(idx)
+			categories.insert(idx,"Lliurex")
+
 		(cat0,cat1,cat2)=(None,None,None)
 		if len(categories)>2:
 			if isinstance(categories[2],str):
@@ -146,12 +152,15 @@ def appstream_to_rebost(appstreamCatalogue):
 		else:
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		for icon in component.get_icons():
-			if icon.get_filename():
-				pkg['icon']=icon.get_filename()
+			fname=icon.get_filename()
+			if fname:
+				pkg['icon']=fname
 				break
-			if icon.get_url():
-				pkg['icon']=icon.get_url()
-				break
+			url=icon.get_url()
+			if url:
+				if url.startswith("http"):
+					pkg['icon']=url
+					break
 
 		pkg['categories']=component.get_categories()
 		for i in component.get_bundles():

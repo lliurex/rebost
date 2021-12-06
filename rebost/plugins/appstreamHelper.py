@@ -59,11 +59,13 @@ class appstreamHelper():
 		sections=[]
 		progress=0
 		iconDir="/usr/share/rebost-data/icons"
-		storeFile=Gio.File.new_for_path("/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml")
-		if os.path.isfile(storeFile):
+		storeYml="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+		if os.path.isfile(storeYml):
+			storeFile=Gio.File.new_for_path(storeYml)
 			try:
 				store.from_file(storeFile,iconDir,None)
 			except e as Exception:
+				print(e)
 				pass
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:

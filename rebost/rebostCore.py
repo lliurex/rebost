@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
 		self.gui=False
@@ -159,7 +159,7 @@ class Rebost():
 					try:
 						self._execute(action,'','',plugin=plugin,th=True)
 					except Exception as e:
-							self._print("Error launching {} from {}: {}".format(action,plugin,e))
+						self._print("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey=''):
@@ -184,11 +184,11 @@ class Rebost():
 		#Generate the store with results and sanitize them
 		if not isinstance(rebostPkgList,list):
 			rebostPkgList=[rebostPkgList]
-		store=self._sanitizeStore(rebostPkgList,package)
+		store=self._sanitizeStore(rebostPkgList)
 		return(store)
 	#def execute
 			
-	def _sanitizeStore(self,appstore,package=None):
+	def _sanitizeStore(self,appstore):
 		self._debug("Sanitize store {}".format(int(time.time())))
 		store=[]
 		unorder_store=[]
@@ -199,13 +199,17 @@ class Rebost():
 			if isinstance(rebostpkg,tuple):
 				try:
 					(pkg,app)=rebostpkg
-					store.append(app)
 				except:
 					self._debug("Error sanitize")
 					self._debug(rebostpkg)
+					continue
 					self._debug("Error sanitize")
 			else:
-				store.append(rebostpkg)
+				app=rebostpkg
+			self._debug(json.loads(app)['icon'])
+			if json.loads(app)['icon'].startswith("http"):
+				self._debug(json.loads(app)['icon'])
+			store.append(app)
 		return((json.dumps(store)))
 	#def _sanitizeStore
 	
@@ -232,7 +236,6 @@ class Rebost():
 
 	def _executeAction(self,plugin,action,package,bundle='',th=True):
 		retval=1
-		procInfo=self.plugins['rebostHelper'].rebostProcess()
 		proc=None
 		self._debug("Launching {} from {} (th {})".format(action,plugin,th))
 		if th:
@@ -241,7 +244,8 @@ class Rebost():
 			proc=multiprocessing.Process(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
 		try:
 			proc.start()
-		except:
+		except Exception as e:
+			print(e)
 			retval=0
 		return(proc)
 	
@@ -260,21 +264,8 @@ class Rebost():
 	#def getProgress(self):
 
 	def update(self):
-		procInfo=self.plugins['rebostHelper'].rebostProcess()
-		procInfo['progressQ']=multiprocessing.Queue()
-		procInfo['resultQ']=multiprocessing.Queue()
-		self.store.clear()
-		proc=multiprocessing.Process(target=self._loadAppstream,args=([procInfo['progressQ'],procInfo['resultQ']]))
-		procInfo['proc']=proc
-		#return(self._launchCoreProcess(procInfo,"update"))
+		return
 	
 	def fullUpdate(self):
-		procInfo=self.plugins['rebostHelper'].rebostProcess()
-		procInfo['progressQ']=multiprocessing.Queue()
-		procInfo['resultQ']=multiprocessing.Queue()
-		self.store.clear()
-		self.run()
-		proc=multiprocessing.Process(target=self._loadAppstream,args=([procInfo['progressQ'],procInfo['resultQ']]))
-		procInfo['proc']=proc
-		return(self._launchCoreProcess(procInfo))
+		return
 

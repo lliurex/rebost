@@ -152,11 +152,15 @@ class sqlHelper():
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):
+			query="PRAGMA case_sensitive_like = 1"
+			cursor.execute(query)
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
 			cursor.execute(query)
 			moreRows=cursor.fetchall()
 			if moreRows:
 				rows.extend(moreRows)
+			query="PRAGMA case_sensitive_like = 0"
+			cursor.execute(query)
 		self.closeConnection(db)
 		return(rows)
 

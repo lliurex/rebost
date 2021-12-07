@@ -201,8 +201,8 @@ class sqlHelper():
 						limit=count
 					self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
 					query=[]
-					(cat0,cat1,cat2)=(None,None,None)
 					for data in allData[offset:limit]:
+						(cat0,cat1,cat2)=(None,None,None)
 						(pkgname,pkgdata)=data
 						pkgdataJson=json.loads(pkgdata)
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)

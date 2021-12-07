@@ -100,7 +100,6 @@ class zomandoHelper():
 		if isinstance(zmdVars,dict):
 			var=zmdVars.get(zmdName,{})
 		if (var.get('state',0)==1) or (os.path.isfile(zmd)):
-			self._debug(zmd)
 			state="0"
 		return state
 	#def _get_zomando_state(self,zmd):

@@ -51,7 +51,6 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
 		if isinstance(rebostPkg['license'],list)==False:
 			rebostPkg['license']=""
-		categories=rebostPkg.get('categories',[""])
 		if rebostPkg['icon'].startswith("http"):
 			iconName=rebostPkg['icon'].split("/")[-1]
 			iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
@@ -71,6 +70,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 				rebostPkg['icon']=iconPath128
 			elif os.path.isfile(iconPath2128):
 				rebostPkg['icon']=iconPath2128
+		categories=rebostPkg.get('categories',[])
 		if rebostPkg['icon']!='':
 			if 'lliurex' in categories:
 				idx=categories.index("lliurex")

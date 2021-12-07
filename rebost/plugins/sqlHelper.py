@@ -14,7 +14,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
@@ -211,13 +211,27 @@ class sqlHelper():
 							pkgdataJson=self._mergePackage(pkgdataJson,row).copy()
 						if pkgdataJson.get('bundle',{})=={}:
 							continue
-						if (len(pkgdataJson.get('categories',[]))>=1):
-							cat0=pkgdataJson.get('categories')[0]
-							if len(pkgdataJson.get('categories'))>1:
-								cat1=pkgdataJson.get('categories')[-1]
-							if len(pkgdataJson.get('categories'))>2:
-								cat2=pkgdataJson.get('categories')[-2]
-						if ("Lliurex" in pkgdataJson.get('categories',[])) and ("Lliurex" not in [cat0,cat1,cat2]):
+						categories=pkgdataJson.get('categories',[])
+						if "Lliurex" in categories:
+							idx=categories.index("Lliurex")
+	####					if pkgdataJson.get('icon','')=='':
+	####						self._debug(pkgdataJson.get('name'))
+	####						self._debug("Icon: {}".format(pkgdataJson.get('icon')))
+	####						pkgdataJson['categories'].pop(idx)	
+	####						self._debug(categories)
+	####					else:
+							if idx!=0:
+								pkgdataJson['categories'][0]=categories[idx]
+								pkgdataJson['categories'][idx]=categories[0]
+							categories=pkgdataJson.get('categories',[])
+							
+						if (len(categories)>=1):
+							cat0=categories[0]
+							if len(categories)>1:
+								cat1=categories[-1]
+							if len(categories)>2:
+								cat2=categories[-2]
+						if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
 							cat0="Lliurex"
 						pkgdata=str(json.dumps(pkgdataJson))
 						query.append([pkgname,pkgdata,cat0,cat1,cat2])

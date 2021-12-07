@@ -39,6 +39,9 @@ class rebostPrcMan():
 	def _debug(self,msg):
 		if self.dbg:
 			logging.warning("prcMan: %s"%str(msg))
+
+	def _print(self,msg):
+		logging.warning("prcMan: %s"%str(msg))
 	
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -98,24 +101,7 @@ class rebostPrcMan():
 					dataTmp=self._getEpiState(data)
 					self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 					episcript=data.get('episcript','')
-					epijson=episcript.replace("_script.sh",".epi")
-					tmpDir=os.path.dirname(episcript)
-					files=[]
-					save_del=False
-					if os.path.isdir(tmpDir)==True:
-						files=os.listdir(os.path.dirname(episcript))
-						save_del=True
-					for f in files:
-						if os.path.join(tmpDir,f) not in [episcript,epijson]:
-							self._debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
-							save_del=False
-							break
-					if save_del:
-						try:
-							self._debug("Removing tmp dir {}".format(tmpDir))
-							shutil.rmtree(tmpDir)
-						except Exception as e:
-							self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
+					self._removeTempDir(episcript)
 			
 			else:
 				if data.get('msg',''):
@@ -260,10 +246,31 @@ class rebostPrcMan():
 						self.n4d.setCredentials(n4dkey=n4dkey)
 					pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
 					#pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
+					self._removeTempDir(episcript)
 
 		self._debug(rebostPkgList)
 		return (rebostPkgList)
 	#def _managePackage
+
+	def _removeTempDir(self,tmpfile):
+			tmpDir=os.path.dirname(tmpfile)
+#			files=[]
+#			save_del=False
+#			if os.path.isdir(tmpDir)==True:
+#				files=os.listdir(os.path.dirname(tmpfile))
+#				save_del=True
+#			for f in files:
+#				if os.path.join(tmpDir,f) not in [episcript,epijson]:
+#					self._debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
+#					save_del=False
+#					break
+#			if save_del:
+			if os.path.isdir(tmpDir):
+				try:
+					self._print("Removing tmp dir {}".format(tmpDir))
+					shutil.rmtree(tmpDir)
+				except Exception as e:
+					self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 
 def main():
 	obj=rebostPrcMan()

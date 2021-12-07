@@ -11,7 +11,7 @@ import logging
 import tempfile
 import subprocess
 
-DBG=True
+DBG=False
 
 def _debug(msg):
 	if DBG:
@@ -373,9 +373,14 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	return(commands)
 
 def get_epi_status(episcript):
+	st=""
 	if os.path.exists(episcript)==True:
-		proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	return(proc.stdout.decode().strip())
+		try:
+			proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			st=proc.stdout.decode().strip()
+		except Exception as e:
+			_debug(e)
+	return(st)
 
 def check_remove_unsure(package):
 	sw=False

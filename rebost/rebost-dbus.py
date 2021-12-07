@@ -47,12 +47,11 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def remote_install(self,pkg,bundle):
-		user=getpass.getuser()
+						 in_signature='ssss', out_signature='s')
+	def remote_install(self,pkg,bundle,user='',n4dkey=''):
 		action='remote'
 		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user)
+		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",

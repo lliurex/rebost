@@ -1,4 +1,4 @@
-rebost (0.6.4) focal; urgency=medium
+rebost (0.6.5) focal; urgency=medium
 
   * Add polkit rules for software management from GUI
   * Full integration with lliurex-store

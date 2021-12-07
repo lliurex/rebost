@@ -93,12 +93,15 @@ class zomandoHelper():
 	def _get_zomando_state(self,zmd):
 		zmdVars=self.n4d.get_variable("ZEROCENTER")
 		zmdName=os.path.basename(zmd).replace(".zmd","")
+		if self.zmdDir not in zmd:
+			zmd=os.path.join(self.zmdDir,zmd)
 		state="1"
+		var={}
 		if isinstance(zmdVars,dict):
 			var=zmdVars.get(zmdName,{})
-			varstate=var.get('state',0)
-			if varstate==1:
-				state="0"
+		if (var.get('state',0)==1) or (os.path.isfile(zmd)):
+			self._debug(zmd)
+			state="0"
 		return state
 	#def _get_zomando_state(self,zmd):
 

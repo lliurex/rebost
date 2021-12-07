@@ -206,9 +206,6 @@ class Rebost():
 					self._debug("Error sanitize")
 			else:
 				app=rebostpkg
-			self._debug(json.loads(app)['icon'])
-			if json.loads(app)['icon'].startswith("http"):
-				self._debug(json.loads(app)['icon'])
 			store.append(app)
 		return((json.dumps(store)))
 	#def _sanitizeStore

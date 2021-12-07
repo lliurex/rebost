@@ -59,11 +59,13 @@ class appstreamHelper():
 		sections=[]
 		progress=0
 		iconDir="/usr/share/rebost-data/icons"
-		storeFile=Gio.File.new_for_path("/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml")
-		if os.path.isfile(storeFile):
+		storeYml="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+		if os.path.isfile(storeYml):
+			storeFile=Gio.File.new_for_path(storeYml)
 			try:
 				store.from_file(storeFile,iconDir,None)
 			except e as Exception:
+				print(e)
 				pass
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:
@@ -86,17 +88,25 @@ class appstreamHelper():
 				name=icondefault.get_name()
 				if not name or not prefix:
 					continue
+				if not name.endswith(".png"):
+					name=name+".png"
 				icon64=os.path.join(prefix,"64x64",name)
+				icon264=os.path.join(prefix,"64x64","{}_{}".format(pkg.get_pkgname_default(),name))
 				icon128=os.path.join(prefix,"128x128",name)
-				if os.path.isfile(icon64)==False:
-					if os.path.isfile(icon128)==True:
-						if icondefault.get_kind()==appstream.IconKind.STOCK:
-							icondefault.convert_to_kind(appstream.IconKind.LOCAL)
-						icondefault.set_filename(icon128)
-				else:
+				icon2128=os.path.join(prefix,"128x128","{}_{}".format(pkg.get_pkgname_default(),name))
+				defIcon=''
+				if os.path.isfile(icon64)==True:
+					defIcon=icon64
+				elif os.path.isfile(icon264)==True:
+					defIcon=icon264
+				if os.path.isfile(icon128)==True:
+					defIcon=icon128
+				if os.path.isfile(icon2128)==True:
+					defIcon=icon2128
+				if defIcon:
 					if icondefault.get_kind()==appstream.IconKind.STOCK:
 						icondefault.convert_to_kind(appstream.IconKind.LOCAL)
-					icondefault.set_filename(icon64)
+					icondefault.set_filename(defIcon)
 				fname=icondefault.get_filename()
 
 			if fname==None:

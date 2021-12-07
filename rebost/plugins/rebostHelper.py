@@ -11,7 +11,7 @@ import logging
 import tempfile
 import subprocess
 
-DBG=False
+DBG=True
 
 def _debug(msg):
 	if DBG:
@@ -52,11 +52,37 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 		if isinstance(rebostPkg['license'],list)==False:
 			rebostPkg['license']=""
 		categories=rebostPkg.get('categories',[""])
+		if rebostPkg['icon'].startswith("http"):
+			iconName=rebostPkg['icon'].split("/")[-1]
+			iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
+			if os.path.isfile(iconPath):
+				rebostPkg['icon']=iconPath
+		elif rebostPkg['icon']=='':
+			iconName=rebostPkg['pkgname']
+			iconPath=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName))
+			iconPath2=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName))
+			iconPath128=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName))
+			iconPath2128=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName))
+			if os.path.isfile(iconPath):
+				rebostPkg['icon']=iconPath
+			if os.path.isfile(iconPath2):
+				rebostPkg['icon']=iconPath2
+			elif os.path.isfile(iconPath128):
+				rebostPkg['icon']=iconPath128
+			elif os.path.isfile(iconPath2128):
+				rebostPkg['icon']=iconPath2128
 		#fix LliureX category:
-		if 'LliureX' in categories:
-			idx=categories.index("LliureX")
+		if ('LliureX' in categories) or ('Lliurex' in categories):
+			try:
+				idx=categories.index("LliureX")
+				categories.pop(idx)
+				categories.insert(idx,"Lliurex")
+			except:
+				pass
+			
+			idx=categories.index("Lliurex")
 			categories.pop(idx)
-			categories.insert(idx,"Lliurex")
+			categories.insert(0,"Lliurex")
 
 		(cat0,cat1,cat2)=(None,None,None)
 		if len(categories)>2:

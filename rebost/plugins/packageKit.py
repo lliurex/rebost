@@ -114,7 +114,7 @@ class packageKit():
 		rebostPkg['license']=pkg.get_license()
 		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
 		if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):
-			rebostPkg['categories'].append("Lliurex")
+			rebostPkg['categories'].append("lliurex")
 		self.queue.put(rebostPkg)
 		semaphore.release()
 	#def _th_generateRebostPkg

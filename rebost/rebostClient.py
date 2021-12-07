@@ -69,24 +69,26 @@ class RebostClient():
 								procId=subprocess.run([zmdPath]).returncode
 						else:
 							procId=self.rebost.install(package,extraParms,self.user,self.n4dkey)
+					elif action=='remove':
+						if extraParms=="zomando":
+							extraParms="package"
+						procId=self.rebost.remove(package,extraParms,self.user,self.n4dkey)
+					elif action=='test':
+						procId=self.rebost.test(package,extraParms,self.user)
+					elif action=='remote_install':
+						procId=self.rebost.remote_install(package,extraParms,self.user)
 					elif action=='search':
 						procId=self.rebost.search(package)
 					elif action=='list':
 						procId=self.rebost.search_by_category(package)
 					elif action=='show':
 						procId=self.rebost.show(package,self.user)
-					if action=='remove':
-						if extraParms=="zomando":
-							extraParms="package"
-						procId=self.rebost.remove(package,extraParms,self.user,self.n4dkey)
-					if action=='enableGui':
+					elif action=='enableGui':
 						if arg.lower()=="true":
 							arg=True
 						else:
 							arg=False
 						self.rebost.enableGui(arg)
-					if action=='test':
-						procId=self.rebost.test(package,extraParms,self.user)
 				except dbus.exceptions.DBusException as e:
 					procId=0
 					print("Dbus Error: %s"%e)

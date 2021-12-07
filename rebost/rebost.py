@@ -218,15 +218,19 @@ elif action=='show':
 			print(_printShow(res))
 		else:
 			print(_printShow(json.loads(res)))
-elif action in ["install","i","remove","r"]:
+elif action in ["install","i","remove","r","remote_install"]:
 	if (isinstance(result,list)):
 		for res in result:
 			if isinstance(res,str):
 				res=json.loads(res)
 			pid=res.get('pid','-10')
 			_waitProcess(pid)
-			print(_printInstall(res,pid))
+			if action=="remote_install":
+				print("Added to remote: {} {}".format(res.get('package'),res.get('bundle')))
+			else:
+				print(_printInstall(res,pid))
 	else:
+		print(result)
 		print("User not allowed")
 elif action=='test':
 	print(result)

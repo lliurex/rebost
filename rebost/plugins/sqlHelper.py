@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,shutil
 import gi
 from gi.repository import Gio
 import json
@@ -107,14 +107,21 @@ class sqlHelper():
 						cursor.execute(query)
 						db.commit()
 						rebostPkg=json.loads(dataTmp)
+				#Get state from epi
 				(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
 				state=rebostHelper.get_epi_status(script)
+				tmpDir=os.path.dirname(epi)
+				if os.path.isdir(tmpDir):
+					try:
+						shutil.rmtree(tmpDir)
+					except Exception as e:
+						self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
+
 				if state!=rebostPkg['state'].get(bundle,''):
 					rebostPkg['state'].update({bundle:state})
 					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
 					cursor.execute(query)
 					db.commit()
-			#Get state from packages
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])

@@ -113,6 +113,8 @@ class flatpakHelper():
 			if icon:
 				pkg.add_icon(icon)
 			add=False
+			if not pkg.get_categories():
+				pkg.add_category("Utility")
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()
 				bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))

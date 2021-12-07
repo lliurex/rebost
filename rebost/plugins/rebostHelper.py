@@ -71,6 +71,12 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 				rebostPkg['icon']=iconPath128
 			elif os.path.isfile(iconPath2128):
 				rebostPkg['icon']=iconPath2128
+		if rebostPkg['icon']!='':
+			if 'lliurex' in categories:
+				idx=categories.index("lliurex")
+				categories.pop(idx)
+				categories.insert(0,"Lliurex")
+
 		#fix LliureX category:
 		if ('LliureX' in categories) or ('Lliurex' in categories):
 			try:
@@ -81,8 +87,9 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 				pass
 			
 			idx=categories.index("Lliurex")
-			categories.pop(idx)
-			categories.insert(0,"Lliurex")
+			if idx!=0:
+				categories.pop(idx)
+				categories.insert(0,"Lliurex")
 
 		(cat0,cat1,cat2)=(None,None,None)
 		if len(categories)>2:

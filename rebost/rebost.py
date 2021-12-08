@@ -226,12 +226,14 @@ elif action in ["install","i","remove","r","remote_install"]:
 			pid=res.get('pid','-10')
 			_waitProcess(pid)
 			if action=="remote_install":
-				print("Added to remote: {} {}".format(res.get('package'),res.get('bundle')))
+				if res.get('bundle')==None:
+					print("{0} {1}not added{2}".format(res.get('package'),color.RED,color.END))
+				else:
+					print("Added to remote: {} {}".format(res.get('package'),res.get('bundle')))
 			else:
 				print(_printInstall(res,pid))
 	else:
-		print(result)
-		print("User not allowed")
+		print("Must be {}root{}".format(color.RED,color.END))
 elif action=='test':
 	print(result)
 else:

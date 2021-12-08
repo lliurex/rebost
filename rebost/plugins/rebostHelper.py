@@ -226,6 +226,8 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		_debug("Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=''
 		user=''
+	if user=='root':
+		user=''
 	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir)
 	return(epijson,episcript)
 	

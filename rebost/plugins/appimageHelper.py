@@ -251,7 +251,14 @@ class appimageHelper():
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])
 			if len(pkgname.split("-"))>1:
-				version=pkgname.split("-")[1]
+				version=""
+				for item in pkgname.split("-"):
+					if item.replace("_","").replace(".","").isalpha():
+						continue
+					version=item
+					break
+				if version=="":
+					version=pkgname.split("-")[1] 
 			elif len(pkgname.split("."))>1:
 				version=""
 				for i in pkgname.split("."):
@@ -316,13 +323,17 @@ class appimageHelper():
 							self._debug("Link: {}".format(package_link))
 							#if baseUrl in package_link:
 							if package_link.lower().endswith(".appimage"):
-								releases.append(package_link)
+								if url_source=="opensuse":
+									releases.append("https://download.opensuse.org{}".format(package_link))
+								else:
+									releases.append(package_link)
 			except:
 				self._debug("App not found at {}".format(baseUrl))
 		if releases==[]:
 			releases=[baseUrl]
 		self._debug(releases)
 		rel=''
+		releases.sort(reverse=True)
 		for release in releases:
 			if release.startswith("http"):
 				rel=release

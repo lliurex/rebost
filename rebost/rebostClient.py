@@ -90,11 +90,13 @@ class RebostClient():
 							arg=False
 						self.rebost.enableGui(arg)
 				except dbus.exceptions.DBusException as e:
+					desc=e.get_dbus_name()
+					if desc!="org.freedesktop.DBus.Error.AccessDenied":
+						print("Dbus Error: %s"%e)
 					procId=0
-					print("Dbus Error: %s"%e)
 				except Exception as e:
 					procId=0
-					print("Err: %s"%e)
+#					print("Err: %s"%e)
 				finally:
 					self.rebost=None
 		else:

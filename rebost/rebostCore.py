@@ -203,10 +203,11 @@ class Rebost():
 					self._debug("Error sanitize")
 					self._debug(rebostpkg)
 					continue
-					self._debug("Error sanitize")
 			else:
 				app=rebostpkg
-			store.append(app)
+			appJson=json.loads(app)
+			if appJson.get('name').startswith("lliurex-meta")==False:
+				store.append(app)
 		return((json.dumps(store)))
 	#def _sanitizeStore
 	

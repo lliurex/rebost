@@ -205,8 +205,11 @@ class Rebost():
 					continue
 			else:
 				app=rebostpkg
-			appJson=json.loads(app)
-			if appJson.get('name').startswith("lliurex-meta")==False:
+			if isinstance(app,str):
+				appJson=json.loads(app)
+				if appJson.get('name').startswith("lliurex-meta")==False:
+					store.append(app)
+			else:
 				store.append(app)
 		return((json.dumps(store)))
 	#def _sanitizeStore

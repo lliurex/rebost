@@ -140,6 +140,8 @@ def _sanitizeString(data,scape=False):
 	if isinstance(data,str):
 		data=html2text.html2text(data)#,"lxml")
 		data=data.replace("&","and")
+		data=data.replace("`","")
+		data=data.replace("´","")
 		#data=data.replace("\n"," ")
 		#data=data.replace("<","*")
 		#data=data.replace(">","*")

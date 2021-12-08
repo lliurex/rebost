@@ -2,7 +2,7 @@
 import os,shutil
 import logging
 import sqlHelper
-from appconfig.appConfigN4d import appConfigN4d as n4d
+from appconfig.appConfigN4d import appConfigN4d as n4dClient
 import json
 import rebostHelper
 import subprocess
@@ -28,7 +28,7 @@ class rebostPrcMan():
 			self.appimageDir="/opt/appimages"
 		self.priority=100
 		self.gui=False
-		self.n4d=n4d(username=self.user)
+		self.n4dClients={}
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -232,19 +232,26 @@ class rebostPrcMan():
 				self._debug("USER: {}".format(user))
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
+				if usern in self.n4dClients.keys():
+					n4d=self.n4dClients.get(usern)
+					self._print("Select n4d proxy")
+				else:
+					n4d=n4dClient(username=usern)
+					self.n4dClients.update({usern:n4d})
+					self._print("Add n4d proxy")
 				if action!='test' and remote==False:
 					self._debug("Executing N4d query as user {}".format(user))
 					if n4dkey:
-						self.n4d.setCredentials(n4dkey=n4dkey)
-					pid=self.n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
+						n4d.setCredentials(n4dkey=n4dkey)
+					pid=n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
 					if isinstance(pid,dict):
 						pid=pid.get('status',-1)
 					rebostPkgList=[(pkgname,{'package':pkgname,'action':action,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
 				elif remote==True:
 					if n4dkey:
-						self.n4d.setCredentials(n4dkey=n4dkey)
-					pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
+						n4d.setCredentials(n4dkey=n4dkey)
+					pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
 					#pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
 					self._removeTempDir(episcript)
 

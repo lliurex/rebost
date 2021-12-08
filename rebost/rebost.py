@@ -230,7 +230,6 @@ elif action in ["install","i","remove","r","remote_install"]:
 			else:
 				print(_printInstall(res,pid))
 	else:
-		print(result)
 		print("User not allowed")
 elif action=='test':
 	print(result)

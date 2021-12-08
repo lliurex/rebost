@@ -230,7 +230,7 @@ elif action in ["install","i","remove","r","remote_install"]:
 			else:
 				print(_printInstall(res,pid))
 	else:
-		print("User not allowed")
+		print("Must be {}root{}".format(color.RED,color.END))
 elif action=='test':
 	print(result)
 else:

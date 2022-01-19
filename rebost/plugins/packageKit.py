@@ -11,6 +11,7 @@ import html
 import os
 from queue import Queue
 from bs4 import BeautifulSoup
+import hashlib
 
 class packageKit():
 	def __init__(self,*args,**kwargs):
@@ -27,6 +28,8 @@ class packageKit():
 		self.result=''
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.pkcon=packagekit.Client()
+		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
+		self.aptCache="/var/cache/apt/pkgcache.bin"
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -51,38 +54,69 @@ class packageKit():
 
 	def _loadStore(self,*args):
 		action="load"
-		self._debug("Getting pkg list")
-		pkgList=self.pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
-		semaphore = threading.BoundedSemaphore(value=20)
-		thList=[]
-		pkgIdArray=[]
-		pkgArray=pkgList.get_package_array()
-		for pkg in pkgArray:
-			if pkg.get_arch() not in ['amd64','all']:
-				continue
-			pkgIdArray.append(pkg.get_id())
-		pkgCount=len(pkgIdArray)
-		total=5000
-		processed=0
-		while processed<pkgCount:
-			pkgDetails=self.pkcon.get_details(pkgIdArray[processed:total], None, self._load_callback, None)
-			for pkg in pkgDetails.get_details_array():
-				th=threading.Thread(target=self._th_generateRebostPkg,args=(pkg,semaphore,))
-				th.start()
-				thList.append(th)
-			for th in thList:
-				th.join()
-			processed=total
-			total+=4000
-			if total>pkgCount:
-				total=pkgCount
-		self._debug("End Getting pkg list")
-		pkgList=[]
-		while not self.queue.empty():
-			pkgList.append(self.queue.get())
-		self._debug("PKG loaded")
-		rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.db')
-		self._debug("SQL loaded")
+		update=self._chkNeedUpdate()
+		if update:
+			self._debug("Getting pkg list")
+			pkgList=self.pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+			semaphore = threading.BoundedSemaphore(value=20)
+			thList=[]
+			pkgIdArray=[]
+			pkgArray=pkgList.get_package_array()
+			for pkg in pkgArray:
+				if pkg.get_arch() not in ['amd64','all']:
+					continue
+				pkgIdArray.append(pkg.get_id())
+			pkgCount=len(pkgIdArray)
+			total=5000
+			processed=0
+			while processed<pkgCount:
+				pkgDetails=self.pkcon.get_details(pkgIdArray[processed:total], None, self._load_callback, None)
+				for pkg in pkgDetails.get_details_array():
+					th=threading.Thread(target=self._th_generateRebostPkg,args=(pkg,semaphore,))
+					th.start()
+					thList.append(th)
+				for th in thList:
+					th.join()
+				processed=total
+				total+=4000
+				if total>pkgCount:
+					total=pkgCount
+			self._debug("End Getting pkg list")
+			pkgList=[]
+			while not self.queue.empty():
+				pkgList.append(self.queue.get())
+			self._debug("PKG loaded")
+			rebostHelper.rebostPkgList_to_sqlite(pkgList,'packagekit.db')
+			with open(self.aptCache,'rb') as f:
+				faptContent=f.read()
+			aptMd5=hashlib.md5(faptContent).hexdigest()
+			with open(self.lastUpdate,'w') as f:
+				f.write(aptMd5)
+			self._debug("SQL loaded")
+		else:
+			self._debug("Skip update")
+	#def _loadStore
+
+	def _chkNeedUpdate(self):
+		update=True
+		aptMd5=""
+		lastUpdate=""
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+		else:
+			fcontent=""
+			with open(self.lastUpdate,'r') as f:
+				lastUpdate=f.read()
+			with open(self.aptCache,'rb') as f:
+				faptContent=f.read()
+			aptMd5=hashlib.md5(faptContent).hexdigest()
+			if aptMd5==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
+
+
 	
 	def _getCategories(self,pkg):
 		#Categories in apt are not full freedesktop standar

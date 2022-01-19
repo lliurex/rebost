@@ -30,6 +30,7 @@ class sqlHelper():
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
+		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -197,12 +198,23 @@ class sqlHelper():
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
 		main_tmp_table=os.path.basename(self.main_table).replace(".db","")
+		#Update?
+		update=self._chkNeedUpdate()
+		if update==False:
+			self._debug("Skip merge")
+			return([])
+		fupdate=open(self.lastUpdate,'w')
+		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
+			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
+			fupdate.write("packagekit.db:{}".format(fsize))
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		self.copyPackagekitSql()
 		for fname in include:
 			f=os.path.join(self.wrkDir,fname)
 			if os.path.isfile(f):
+				fsize=os.path.getsize(f)
+				fupdate.write("\n{0}:{1}".format(fname,fsize))
 				allData=self._getAllData(f)
 				(offset,limit,step)=(0,0,2000)
 				count=len(allData)
@@ -256,10 +268,36 @@ class sqlHelper():
 					if offset>count:
 						offset=count
 					main_db.commit()
+
+		fupdate.close()
 		self.closeConnection(main_db)
 		self._copyTmpDef()
 		return([])
 	#def consolidateSqlTables
+
+	def _chkNeedUpdate(self):
+		update=False
+		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+			update=True
+		else:
+			with open(self.lastUpdate,'r') as f:
+				fcontent=f.readlines()
+			for fname in include:
+				f=os.path.join(self.wrkDir,fname)
+				if os.path.isfile(f):
+					fsize=os.path.getsize(f)
+				for f in fcontent:
+					if fname in f:
+						fValues=f.split(":")
+						if fValues[-1].strip()!=str(fsize):
+							update=True
+							break
+				if update:
+						break
+		return(update)
 
 	def _getAllData(self,f):
 		allData=[]

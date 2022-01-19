@@ -13,7 +13,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class snapHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"
@@ -27,6 +27,7 @@ class snapHelper():
 #		except Exception as e:
 #			self.enabled=True
 #			self._debug("Disabling snap %s"%e)
+		self.lastUpdate="/usr/share/rebost/tmp/sn.lu"
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -47,17 +48,21 @@ class snapHelper():
 	def _loadStore(self):
 		action="load"
 		try:
-			rebostPkgList=self._get_snap_catalogue()
+			(rebostPkgList,update)=self._get_snap_catalogue()
 		except Exception as e:
 			raise
-		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
-		
-		self._debug("SQL loaded")
+		if update:
+			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
+			self._debug("SQL loaded")
+		else:
+			self._debug("Skip update")
 
 	def _get_snap_catalogue(self):
 		action="load"
 		rebostPkgList=[]
 		sections=[]
+		globalUpdate=False
+		update=False
 		try:
 			#sections=self.snap_client.get_sections_sync()
 			sections=Snapd.Client().get_sections_sync()
@@ -66,10 +71,33 @@ class snapHelper():
 		for section in sections:
 			#apps,curr=self.snap_client.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 			apps,curr=Snapd.Client().find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
-			for pkg in apps:
-				rebostPkg=self._process_snap_json(pkg,section)
-				rebostPkgList.append(rebostPkg)
-		return(rebostPkgList)
+			update=self._chkNeedUpdate(len(apps),section)
+			if update:
+				globalUpdate=True
+				for pkg in apps:
+					rebostPkg=self._process_snap_json(pkg,section)
+					rebostPkgList.append(rebostPkg)
+			updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
+			with open(updateFile,'w') as f:
+				f.write(str(len(apps)))
+		return(rebostPkgList,globalUpdate)
+
+	def _chkNeedUpdate(self,lenApps,section):
+		update=True
+		appMd5=""
+		lastUpdate=""
+		updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
+		if os.path.isfile(updateFile)==False:
+			if os.path.isdir(os.path.dirname(updateFile))==False:
+				os.makedirs(os.path.dirname(updateFile))
+		else:
+			fcontent=""
+			with open(updateFile,'r') as f:
+				lastUpdate=f.read()
+			if str(lenApps)==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
 
 	def _process_snap_json(self,pkg,section):
 		appinfo=rebostHelper.rebostPkg()

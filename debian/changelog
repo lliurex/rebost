@@ -1,3 +1,9 @@
+rebost (0.7.3.5) focal; urgency=medium
+
+  * Only update catalogue when needed
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Jan 2022 17:36:30 +0100
+
 rebost (0.7.3.4) focal; urgency=medium
 
   * Add polkit rules for software management from GUI

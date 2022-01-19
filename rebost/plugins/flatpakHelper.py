@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -23,6 +23,7 @@ class flatpakHelper():
 		self.autostartActions=["load"]
 		self.priority=1
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
+		self.lastUpdate="/usr/share/rebost/tmp/fp.lu"
 		#self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
@@ -46,10 +47,33 @@ class flatpakHelper():
 		action="load"
 		self._debug("Get apps")
 		store=self._get_flatpak_catalogue()
-		self._debug("Get rebostPkg")
-		rebostPkgList=rebostHelper.appstream_to_rebost(store)
-		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
-		self._debug("SQL loaded")
+		update=self._chkNeedUpdate(store)
+		if update:
+			self._debug("Get rebostPkg")
+			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
+			self._debug("SQL loaded")
+			storeMd5=str(store.get_size())
+			with open(self.lastUpdate,'w') as f:
+				f.write(storeMd5)
+		else:
+			self._debug("Skip update")
+
+	def _chkNeedUpdate(self,store):
+		update=True
+		lastUpdate=""
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+		else:
+			fcontent=""
+			with open(self.lastUpdate,'r') as f:
+				lastUpdate=f.read()
+			storeMd5=str(store.get_size())
+			if storeMd5==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
 
 	def _get_flatpak_catalogue(self):
 		action="load"

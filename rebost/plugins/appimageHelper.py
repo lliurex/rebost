@@ -18,6 +18,7 @@ import subprocess
 import logging
 from queue import Queue
 import html
+import hashlib
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
@@ -42,6 +43,7 @@ class appimageHelper():
 			os.makedirs(self.iconDir)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
+		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
 #		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
@@ -76,13 +78,39 @@ class appimageHelper():
 		self._debug("Loading store")
 		for repo_name,repo_info in self.repos.items():
 			appimageJson=self._fetch_repo(repo_info['url'])
-			if appimageJson and repo_info['type']=='json':
-				self._process_appimage_json(appimageJson,repo_name)
+			update=self._chkNeedUpdate(appimageJson,repo_name)
+			if update:
+				if appimageJson and repo_info['type']=='json':
+					self._process_appimage_json(appimageJson,repo_name)
+				else:
+					err=6
+					msg="Couldn't fetch %s"%repo_info['url']
 			else:
-				err=6
-				msg="Couldn't fetch %s"%repo_info['url']
+				self._debug("Skip update")
+			updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
+			appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
+			with open(updateFile,'w') as f:
+				f.write(appMd5)
 		return (err,msg)
 	
+	def _chkNeedUpdate(self,appimageJson,repo_name):
+		update=True
+		appMd5=""
+		lastUpdate=""
+		updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
+		if os.path.isfile(updateFile)==False:
+			if os.path.isdir(os.path.dirname(updateFile))==False:
+				os.makedirs(os.path.dirname(updateFile))
+		else:
+			fcontent=""
+			with open(updateFile,'r') as f:
+				lastUpdate=f.read()
+			appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
+			if appMd5==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
+
 	def _fetch_repo(self,repo):
 		self._debug("Fetching {}".format(repo))
 		content=''

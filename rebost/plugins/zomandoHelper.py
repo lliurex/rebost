@@ -86,7 +86,7 @@ class zomandoHelper():
 		rebostPkg['categories'].append('Lliurex')
 		rebostPkg['license']="GPL-3"
 		rebostPkg['homepage']="https://www.github.com/lliurex"
-		rebostPkg['bundle'].update({'zomando':zmd})
+		rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
 		return(rebostPkg)
 	#def fillData
 

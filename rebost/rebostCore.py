@@ -19,7 +19,7 @@ class Rebost():
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
 		self.gui=False
-		self.propagateDbg=False
+		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")

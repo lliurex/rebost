@@ -1,6 +1,7 @@
-rebost (0.7.4) focal; urgency=medium
+rebost (0.7.4.1) focal; urgency=medium
 
   * Only update catalogue when needed
+  * Fix detection of installed zomandos
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Jan 2022 17:36:30 +0100
 

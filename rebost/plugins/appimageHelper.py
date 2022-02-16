@@ -18,6 +18,7 @@ import subprocess
 import logging
 from queue import Queue
 import html
+import html2text
 import hashlib
 
 class appimageHelper():
@@ -44,7 +45,6 @@ class appimageHelper():
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
 		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
-#		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -136,10 +136,9 @@ class appimageHelper():
 			random_applist = list(applist)
 			random.shuffle(random_applist)
 			semaphore = threading.BoundedSemaphore(value=maxconnections)
-			for appimage in applist:
-				#rebostPkg=self._process_appimage(appimage,search)
-				#if rebostPkg:
-					#applist.append(rebostPkg)
+			#for appimage in applist:
+			while applist:
+				appimage=applist.pop(0)
 				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
 				th.start()
 				thlist.append(th)
@@ -147,9 +146,8 @@ class appimageHelper():
 				th.join()
 		self._debug("PKG loaded")
 		pkgList=[]
-		while not self.queue.empty():
-			rebostPkg=self.queue.get()
-			pkgList.append(rebostPkg)
+		while self.queue.empty()==False:
+			pkgList.append(self.queue.get())
 		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.db')
 		self._debug("SQL loaded")
 		return(applist)
@@ -161,9 +159,7 @@ class appimageHelper():
 			if appimage['links']:
 				add=True
 				if search:
-					if search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower():
-						pass
-					else:
+					if (search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower())==False:
 						add=False
 				if add:
 					appinfo=self.load_json_appinfo(appimage)
@@ -196,17 +192,15 @@ class appimageHelper():
 			if isinstance(description,dict):
 				for lang in description.keys():
 					appinfo['description']=description
-					desc=".".join(description.split(".")[0:2])
-					desc=" ".join(desc.split(" ")[0:8])
-					desc=BeautifulSoup(desc,"html.parser").get_text()
-					#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
+					summary=".".join(description.split(".")[0:2])
+					summary=" ".join(summary.split(" ")[0:8])
+					summary=html2text.html2text(summary)
 			else:
 				appinfo['description']=description
-				desc=".".join(appinfo['description'].split(".")[0:2])
-				desc=" ".join(desc.split(" ")[0:8])
-				desc=BeautifulSoup(desc,"html.parser").get_text()
-				#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
-			appinfo['summary']=desc
+				summary=".".join(appinfo['description'].split(".")[0:2])
+				summary=" ".join(summary.split(" ")[0:8])
+				summary=html2text.html2text(summary)
+			appinfo['summary']=summary
 		else:
 			appinfo['summary']='Appimage of {}'.format(appinfo["name"])
 			appinfo['description']='Appimage of {}'.format(appinfo["name"])
@@ -218,13 +212,8 @@ class appimageHelper():
 		if appinfo['icon']:# and download:
 			if not appinfo['icon'].startswith("http"):
 				appinfo['icon']="https://appimage.github.io/database/{}".format(appinfo['icon'])
-			#appinfo['icon']=self._download_file(appimage['icon'],appimage['name'],self.iconDir)
 		elif icons:
 			#self._debug("Loading icon %s"%appimage['icons'])
- #			if  download:
-				#self._debug("Loading icon %s"%appimage['icons'][0])
-#				appinfo['icon']=self._download_file(appimage['icons'][0],appimage['name'],self.iconDir)
-#			else:
 			appinfo['icon']="https://appimage.github.io/database/{}".format(icons[0])
 				#appinfo['icon']=icons[0]
 		appinfo['screenshots']=appimage.get('screenshots',[])
@@ -235,7 +224,8 @@ class appimageHelper():
 			appinfo["screenshots"]=scrArray
 		links=appimage.get('links')
 		installerurl=''
-		for link in links:
+		while links:
+			link=links.pop(0)
 			if link.get('url') and link.get('type','')=='Download' and download:
 				installerUrl=self._get_releases(link['url'])
 				if installerUrl.split('/')>2:
@@ -249,8 +239,6 @@ class appimageHelper():
 				appinfo['versions']['appimage']="**"
 		state="available"
 		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(appinfo['pkgname']))):
-			state='0'
-		if state==0:
 			appinfo['state']['appimage']=0
 		else:
 			appinfo['state']['appimage']=1

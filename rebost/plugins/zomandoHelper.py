@@ -70,6 +70,7 @@ class zomandoHelper():
 		appPath=os.path.join(self.appDir,appName)
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
+			(icon,cat)=("","")
 			with open(appPath,'r') as f:
 				for fline in f.readlines():
 					if fline.startswith("Icon"):
@@ -82,6 +83,8 @@ class zomandoHelper():
 						cat=fline.split("=")[-1].rstrip()
 						if cat!='Category':
 							rebostPkg['categories'].append(cat)
+					if icon and cat:
+						break
 
 		rebostPkg['categories'].append('Lliurex')
 		rebostPkg['license']="GPL-3"

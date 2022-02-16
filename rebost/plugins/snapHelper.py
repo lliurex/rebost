@@ -7,7 +7,8 @@ from gi.repository import Snapd
 import json
 import rebostHelper
 import logging
-from bs4 import BeautifulSoup
+import html2text
+#from bs4 import BeautifulSoup
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -20,14 +21,8 @@ class snapHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=1
-		#Not required in focal
-#		self.snap_client=Snapd.Client()
-#		try:
-#			self.snap_client.connect_sync(None)
-#		except Exception as e:
-#			self.enabled=True
-#			self._debug("Disabling snap %s"%e)
 		self.lastUpdate="/usr/share/rebost/tmp/sn.lu"
+		self.snap=Snapd.Client()
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -61,26 +56,25 @@ class snapHelper():
 		action="load"
 		rebostPkgList=[]
 		sections=[]
-		globalUpdate=False
 		update=False
 		try:
-			#sections=self.snap_client.get_sections_sync()
-			sections=Snapd.Client().get_sections_sync()
+			sections=self.snap.get_sections_sync()
 		except Exception as e:
 			self._debug(e)
+		processed=[]
 		for section in sections:
-			#apps,curr=self.snap_client.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
-			apps,curr=Snapd.Client().find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
-			update=self._chkNeedUpdate(len(apps),section)
-			if update:
-				globalUpdate=True
-				for pkg in apps:
-					rebostPkg=self._process_snap_json(pkg,section)
-					rebostPkgList.append(rebostPkg)
-			updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
-			with open(updateFile,'w') as f:
-				f.write(str(len(apps)))
-		return(rebostPkgList,globalUpdate)
+			apps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			if self._chkNeedUpdate(len(apps),section):
+				updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
+				with open(updateFile,'w') as f:
+					f.write(str(len(apps)))
+				update=True
+				while apps:
+					pkg=apps.pop(0)
+					if pkg.get_name() not in processed:
+						processed.append(pkg.get_name())
+						rebostPkgList.append(self._process_snap_json(pkg,section))
+		return(rebostPkgList,update)
 
 	def _chkNeedUpdate(self,lenApps,section):
 		update=True
@@ -100,48 +94,42 @@ class snapHelper():
 	#def _chkNeedUpdate
 
 	def _process_snap_json(self,pkg,section):
-		appinfo=rebostHelper.rebostPkg()
-		appinfo['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
-		appinfo['name']=pkg.get_name()
-		appinfo['pkgname']=pkg.get_name().lower().replace("_","-")
-		appinfo['summary']=BeautifulSoup(pkg.get_summary(),"html.parser").get_text().replace("'","''")
-		appinfo['description']=BeautifulSoup(pkg.get_description(),"html.parser").get_text().replace("'","''")
-		#appinfo['categories']=['Snap']
-		appinfo['kind']=5
+		rebostPkg=rebostHelper.rebostPkg()
+		rebostPkg['id']="io.snapcraft.{}".format(pkg.get_name().replace("-","_"))
+		rebostPkg['name']=pkg.get_name()
+		rebostPkg['pkgname']=pkg.get_name().lower().replace("_","-")
+		rebostPkg['summary']=html2text.html2text(pkg.get_summary())
+		rebostPkg['description']=html2text.html2text(pkg.get_description())
+		#rebostPkg['categories']=['Snap']
+		rebostPkg['kind']=5
 		if pkg.get_icon():
-			appinfo['icon']=pkg.get_icon()
-		appinfo['versions']={"snap":"{}".format(pkg.get_version())}
-		appinfo['size']={"snap":"{}".format(pkg.get_download_size())}
+			rebostPkg['icon']=pkg.get_icon()
+		rebostPkg['versions']={"snap":"{}".format(pkg.get_version())}
+		rebostPkg['size']={"snap":"{}".format(pkg.get_download_size())}
 		if pkg.get_media():
 			for media in pkg.get_media():
-				appinfo['screenshots'].append(media.get_url())
+				rebostPkg['screenshots'].append(media.get_url())
 		#if pkg.get_screenshots():
 		#if 'screenshots' in appimage.keys():
-		#	appinfo['thumbnails']=appimage['screenshots']
+		#	rebostPkg['thumbnails']=appimage['screenshots']
 		#if 'links' in appimage.keys():
 		#	if appimage['links']:
 		#		for link in appimage['links']:
 		#			if 'url' in link.keys() and link['type']=='Download':
-		#				appinfo['installerUrl']=link['url']
+		#				rebostPkg['installerUrl']=link['url']
 		#if 'authors' in appimage.keys():
 		#	if appimage['authors']:
 		#		for author in appimage['authors']:
 		#			if 'url' in author.keys():
 		#				#self._debug("Author: %s"%author['url'])
-		#				appinfo['homepage']=author['url']
-		state="available"
-		try:
-			#pkg=self.snap_client.list_one_sync(pkg.get_name())
-			pkg=Snapd.Client().list_one_sync(pkg.get_name())
+		#				rebostPkg['homepage']=author['url']
+		state='1'
+		if pkg.get_install_date():
 			state='0'
-			pkgs=[pkg]
-		except:
-			state='1'
-		appinfo['state']={"snap":"{}".format(state)}
-		#appinfo['bundle'].update({'snap':"{};amd64;{}".format(pkg.get_id(),state)})
-		appinfo['bundle'].update({'snap':"{}".format(pkg.get_name())})
-		appinfo['categories']=self._get_categories(section)
-		return appinfo	
+		rebostPkg['state']={"snap":"{}".format(state)}
+		rebostPkg['bundle'].update({'snap':"{}".format(pkg.get_name())})
+		rebostPkg['categories']=self._get_categories(section)
+		return rebostPkg
 
 	def _get_categories(self,section):
 		categories=[]

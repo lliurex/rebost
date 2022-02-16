@@ -10,8 +10,9 @@ import html
 import logging
 import tempfile
 import subprocess
+import time
 
-DBG=False
+DBG=True
 
 def _debug(msg):
 	if DBG:
@@ -29,20 +30,23 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':'','banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 
-def rebostPkgList_to_sqlite(rebostPkgList,table):
+def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
-	if os.path.isfile(tablePath):
-		os.remove(tablePath)
+	if drop:
+		if os.path.isfile(tablePath):
+			os.remove(tablePath)
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="DROP TABLE IF EXISTS {}".format(table)
-	_debug(query)
-	cursor.execute(query)
+	if drop:
+		query="DROP TABLE IF EXISTS {}".format(table)
+		_debug(query)
+		cursor.execute(query)
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
 	_debug(query)
 	cursor.execute(query)
+	query=[]
 	for rebostPkg in rebostPkgList:
 		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
 		rebostPkg["name"]=rebostPkg.get('name','').strip()
@@ -64,52 +68,44 @@ def rebostPkgList_to_sqlite(rebostPkgList,table):
 			iconPath2128=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName))
 			if os.path.isfile(iconPath):
 				rebostPkg['icon']=iconPath
-			if os.path.isfile(iconPath2):
+			elif os.path.isfile(iconPath2):
 				rebostPkg['icon']=iconPath2
 			elif os.path.isfile(iconPath128):
 				rebostPkg['icon']=iconPath128
 			elif os.path.isfile(iconPath2128):
 				rebostPkg['icon']=iconPath2128
-		categories=rebostPkg.get('categories',[])
-		if rebostPkg['icon']!='':
-			if 'lliurex' in categories:
-				idx=categories.index("lliurex")
-				categories.pop(idx)
-				categories.insert(0,"Lliurex")
-
 		#fix LliureX category:
-		if ('LliureX' in categories) or ('Lliurex' in categories):
+		categories=rebostPkg.get('categories',[])
+		if ('LliureX' in categories) or ('Lliurex' in categories) or ("lliurex" in categories):
 			try:
 				idx=categories.index("LliureX")
-				categories.pop(idx)
-				categories.insert(idx,"Lliurex")
 			except:
-				pass
-			
-			idx=categories.index("Lliurex")
-			if idx!=0:
+				try:
+					idx=categories.index("lliurex")
+				except:
+					idx=categories.index("Lliurex")
+			if idx>0:
 				categories.pop(idx)
 				categories.insert(0,"Lliurex")
-
-		(cat0,cat1,cat2)=(None,None,None)
-		if len(categories)>2:
-			if isinstance(categories[2],str):
-				cat2=categories[2]
-		if len(categories)>1:
-			if isinstance(categories[1],str):
-				cat1=categories[1]
-		if len(categories)>0:
-			if isinstance(categories[0],str):
-				cat0=categories[0]
-
-		query="INSERT or REPLACE INTO {0} (pkg,data,cat0,cat1,cat2) VALUES ('{1}','{2}','{3}','{4}','{5}')".format(table,name.lower(),str(json.dumps(rebostPkg)),cat0,cat1,cat2)
+		while len(categories)<3:
+			categories.append(None)
+		(cat0,cat1,cat2)=categories[0:3]
+		if name=="firefox":
+			print(rebostPkg)
+		query.append([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
+	
+	if query:
+		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
-			cursor.execute(query)
+			_debug("INSERTING {} for {}".format(len(query),table))
+			cursor.executemany(queryMany,query)
 		except Exception as e:
-			print(query)
-			print(e)
-	db.commit()
+			_debug(e)
+#			_debug(query)
+		db.commit()
 	db.close()
+	cursor=None
+	return()
 #def rebostPkgList_to_sqlite
 
 def rebostPkg_to_sqlite(rebostPkg,table):

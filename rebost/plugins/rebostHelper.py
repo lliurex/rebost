@@ -43,57 +43,13 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True):
 		query="DROP TABLE IF EXISTS {}".format(table)
 		_debug(query)
 		cursor.execute(query)
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
-	_debug(query)
-	cursor.execute(query)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+		_debug(query)
+		cursor.execute(query)
 	query=[]
-	for rebostPkg in rebostPkgList:
-		name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
-		rebostPkg["name"]=rebostPkg.get('name','').strip()
-		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
-		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
-		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
-		if isinstance(rebostPkg['license'],list)==False:
-			rebostPkg['license']=""
-		if rebostPkg['icon'].startswith("http"):
-			iconName=rebostPkg['icon'].split("/")[-1]
-			iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
-			if os.path.isfile(iconPath):
-				rebostPkg['icon']=iconPath
-		elif rebostPkg['icon']=='':
-			iconName=rebostPkg['pkgname']
-			iconPath=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName))
-			iconPath2=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName))
-			iconPath128=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName))
-			iconPath2128=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName))
-			if os.path.isfile(iconPath):
-				rebostPkg['icon']=iconPath
-			elif os.path.isfile(iconPath2):
-				rebostPkg['icon']=iconPath2
-			elif os.path.isfile(iconPath128):
-				rebostPkg['icon']=iconPath128
-			elif os.path.isfile(iconPath2128):
-				rebostPkg['icon']=iconPath2128
-		#fix LliureX category:
-		categories=rebostPkg.get('categories',[])
-		if ('LliureX' in categories) or ('Lliurex' in categories) or ("lliurex" in categories):
-			try:
-				idx=categories.index("LliureX")
-			except:
-				try:
-					idx=categories.index("lliurex")
-				except:
-					idx=categories.index("Lliurex")
-			if idx>0:
-				categories.pop(idx)
-				categories.insert(0,"Lliurex")
-		while len(categories)<3:
-			categories.append(None)
-		(cat0,cat1,cat2)=categories[0:3]
-		if name=="firefox":
-			print(rebostPkg)
-		query.append([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
-	
+	while rebostPkgList:
+		rebostPkg=rebostPkgList.pop(0)
+		query.append(_rebostPkg_fill_data(rebostPkg))
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
@@ -117,20 +73,57 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	#print(query)
 	cursor.execute(query)
-	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
-	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'])
-	rebostPkg['description']=_sanitizeString(rebostPkg['description'])
-	query="INSERT INTO {} (pkg,data) VALUES ('{}','{}')".format(table,name,str(json.dumps(rebostPkg)))
-	#print(query)
-	try:
-		cursor.execute(query)
-	except sqlite3.OperationalError as e:
-		if "locked" in e:
-			time.sleep(0.1)
-			cursor.execute(query)
-	db.commit()
+	query=_rebostPkg_fill_data(rebostPkg)
+	if query:
+		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
+		try:
+			_debug("INSERTING {} for {}".format(len(query),table))
+			cursor.executemany(queryMany,query)
+		except sqlite3.OperationalError as e:
+			if "locked" in e:
+				time.sleep(0.1)
+				cursor.executemany(queryMany,query)
+		db.commit()
 	db.close()
 #def rebostPkgList_to_sqlite
+
+def _rebostPkg_fill_data(rebostPkg):
+	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
+	rebostPkg["name"]=rebostPkg.get('name','').strip()
+	rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
+	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
+	rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
+	if isinstance(rebostPkg['license'],list)==False:
+		rebostPkg['license']=""
+	if rebostPkg['icon'].startswith("http"):
+		iconName=rebostPkg['icon'].split("/")[-1]
+		iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
+		if os.path.isfile(iconPath):
+			rebostPkg['icon']=iconPath
+	elif rebostPkg['icon']=='':
+		iconName=rebostPkg['pkgname']
+		iconPaths=[]
+		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName)))
+		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
+		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
+		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
+		while iconPaths:
+			iconPath=iconPaths.pop(0)
+			if os.path.isfile(iconPath):
+				rebostPkg['icon']=iconPath
+	#fix LliureX category:
+	categories=rebostPkg.get('categories',[])
+	while len(categories)<3:
+		categories.append("")
+	lliurex=list(filter(lambda x: 'lliurex' in str(x).lower(), categories))
+	if lliurex:
+		idx=categories.index(lliurex.pop())
+		if idx>0:
+			categories.pop(idx)
+			categories.insert(0,"Lliurex")
+	(cat0,cat1,cat2)=categories[0:3]
+	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
+#def _rebostPkg_fill_data
 
 def _sanitizeString(data,scape=False):
 	if isinstance(data,str):
@@ -156,7 +149,9 @@ def _sanitizeString(data,scape=False):
 
 def appstream_to_rebost(appstreamCatalogue):
 	rebostPkgList=[]
-	for component in appstreamCatalogue.get_apps():
+	catalogue=appstreamCatalogue.get_apps()
+	while catalogue:
+		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
 		pkg['name']=_sanitizeString(component.get_name().lower().strip(),scape=True)

@@ -50,6 +50,9 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True):
 	while rebostPkgList:
 		rebostPkg=rebostPkgList.pop(0)
 		query.append(_rebostPkg_fill_data(rebostPkg))
+		#take breath
+		if len(rebostPkgList)%4==0:
+			time.sleep(0.0002)
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
@@ -88,8 +91,8 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 #def rebostPkgList_to_sqlite
 
 def _rebostPkg_fill_data(rebostPkg):
-	name=rebostPkg.get('pkgname','').strip().lower().replace('.','_')
-	rebostPkg["name"]=rebostPkg.get('name','').strip()
+	name=rebostPkg.get('name','').strip().lower().replace('.','_')
+	rebostPkg["name"]=name.strip()
 	rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 	rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
@@ -111,6 +114,7 @@ def _rebostPkg_fill_data(rebostPkg):
 			iconPath=iconPaths.pop(0)
 			if os.path.isfile(iconPath):
 				rebostPkg['icon']=iconPath
+				break
 	#fix LliureX category:
 	categories=rebostPkg.get('categories',[])
 	while len(categories)<3:
@@ -131,7 +135,7 @@ def _sanitizeString(data,scape=False):
 		data=data.replace("&","and")
 		data=data.replace("`","")
 		data=data.replace("´","")
-		#data=data.replace("\n"," ")
+		data=data.replace("\n"," ")
 		#data=data.replace("<","*")
 		#data=data.replace(">","*")
 		data=data.replace("\\","*")
@@ -154,7 +158,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=_sanitizeString(component.get_name().lower().strip(),scape=True)
+		name=component.get_name().lower().strip()
+		pkg['name']=_sanitizeString(name,scape=True)
 		#pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()

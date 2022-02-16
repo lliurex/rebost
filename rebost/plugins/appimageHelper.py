@@ -143,7 +143,7 @@ class appimageHelper():
 				th.start()
 				thlist.append(th)
 			for th in thlist:
-				th.join()
+				th.join(1)
 		self._debug("PKG loaded")
 		pkgList=[]
 		while self.queue.empty()==False:
@@ -179,49 +179,45 @@ class appimageHelper():
 		#def _th_process_appimage
 
 	def load_json_appinfo(self,appimage,download=False):
-		appinfo=rebostHelper.rebostPkg()
-		appinfo['pkgname']=appimage['name'].lower().replace("_","-").strip()
-		appinfo['id']="io.appimage.{}".format(appimage['name'])
-		appinfo['name']=appimage['name'].strip()
-		appinfo['license']=appimage.get('license','')
-		if not appinfo.get('license'):
-			appinfo['license']=''
-
+		rebostpkg=rebostHelper.rebostPkg()
+		rebostpkg['name']=appimage['name'].strip()
+		rebostpkg['pkgname']=rebostpkg['name'].lower().replace("_","-")
+		rebostpkg['id']="io.appimage.{}".format(rebostpkg['name'])
+		rebostpkg['license']=appimage.get('license','')
+		if not rebostpkg.get('license'):
+			rebostpkg['license']=''
 		description=appimage.get('description','')
 		if description:
 			if isinstance(description,dict):
 				for lang in description.keys():
-					appinfo['description']=description
-					summary=".".join(description.split(".")[0:2])
-					summary=" ".join(summary.split(" ")[0:8])
-					summary=html2text.html2text(summary)
+					rebostpkg['description']=description
 			else:
-				appinfo['description']=description
-				summary=".".join(appinfo['description'].split(".")[0:2])
-				summary=" ".join(summary.split(" ")[0:8])
-				summary=html2text.html2text(summary)
-			appinfo['summary']=summary
+				rebostpkg['description']=description
+			summary=".".join(description.split(".")[0:2])
+			summary=" ".join(summary.split(" ")[0:8])
+			summary=html2text.html2text(summary)
+			rebostpkg['summary']=summary
 		else:
-			appinfo['summary']='Appimage of {}'.format(appinfo["name"])
-			appinfo['description']='Appimage of {}'.format(appinfo["name"])
-		appinfo['categories']=appimage.get('categories',[])
-		if isinstance(appinfo['categories'],list)==False:	
-			appinfo['categories']=[]
+			rebostpkg['summary']='Appimage of {}'.format(rebostpkg["name"])
+			rebostpkg['description']='Appimage of {}'.format(rebostpkg["name"])
+		rebostpkg['categories']=appimage.get('categories',[])
+		if isinstance(rebostpkg['categories'],list)==False:	
+			rebostpkg['categories']=[]
 		icons=appimage.get('icons','')
-		appinfo['icon']=appimage.get('icon','')
-		if appinfo['icon']:# and download:
-			if not appinfo['icon'].startswith("http"):
-				appinfo['icon']="https://appimage.github.io/database/{}".format(appinfo['icon'])
+		rebostpkg['icon']=appimage.get('icon','')
+		if rebostpkg['icon']:# and download:
+			if not rebostpkg['icon'].startswith("http"):
+				rebostpkg['icon']="https://appimage.github.io/database/{}".format(rebostpkg['icon'])
 		elif icons:
 			#self._debug("Loading icon %s"%appimage['icons'])
-			appinfo['icon']="https://appimage.github.io/database/{}".format(icons[0])
+			rebostpkg['icon']="https://appimage.github.io/database/{}".format(icons[0])
 				#appinfo['icon']=icons[0]
-		appinfo['screenshots']=appimage.get('screenshots',[])
-		if appinfo['screenshots']:
+		rebostpkg['screenshots']=appimage.get('screenshots',[])
+		if rebostpkg['screenshots']:
 			scrArray=[]
-			for scr in appinfo['screenshots']:
+			for scr in rebostpkg['screenshots']:
 				scrArray.append("https://appimage.github.io/database/{}".format(scr))
-			appinfo["screenshots"]=scrArray
+			rebostpkg["screenshots"]=scrArray
 		links=appimage.get('links')
 		installerurl=''
 		while links:
@@ -230,27 +226,27 @@ class appimageHelper():
 				installerUrl=self._get_releases(link['url'])
 				if installerUrl.split('/')>2:
 					version=installerUrl.split('/')[-2]
-					appinfo['versions']['appimage']="{}".format(version)
+					rebostpkg['versions']['appimage']="{}".format(version)
 				else:
-					appinfo['versions']['appimage']="**"
+					rebostpkg['versions']['appimage']="**"
 			elif download==False:
 				installerUrl=link['url']
 			else:
-				appinfo['versions']['appimage']="**"
+				rebostpkg['versions']['appimage']="**"
 		state="available"
-		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(appinfo['pkgname']))):
-			appinfo['state']['appimage']=0
+		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(rebostpkg['pkgname']))):
+			rebostpkg['state']['appimage']=0
 		else:
-			appinfo['state']['appimage']=1
-		appinfo['bundle'].update({'appimage':"{}".format(installerUrl)})
+			rebostpkg['state']['appimage']=1
+		rebostpkg['bundle'].update({'appimage':"{}".format(installerUrl)})
 		appimage['authors']=appimage.get('authors','')
 		for author in appimage['authors']:
 			if author.get('url',''):
 				#self._debug("Author: %s"%author['url'])
-				appinfo['homepage']=author['url']
+				rebostpkg['homepage']=author['url']
 		if not appimage['authors']:
-			appinfo['homepage']='/'.join(appinfo['installerUrl'].split('/')[0:-1])
-		return (appinfo)
+			rebostpkg['homepage']='/'.join(rebostpkg['installerUrl'].split('/')[0:-1])
+		return (rebostpkg)
 	#def load_json_appinfo
 
 	def fillData(self,rebostPkg):

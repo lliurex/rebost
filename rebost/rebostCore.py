@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
 		self.gui=False
@@ -138,6 +138,7 @@ class Rebost():
 				actionDict[priority]=newDict.copy()
 			if postactions:
 				postactionDict[plugin]=postactions
+		print(actionDict)
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
 		actionList.sort(reverse=False)
@@ -146,11 +147,13 @@ class Rebost():
 			for plugin,actions in actionDict[priority].items():
 					for action in actions:
 						try:
-							procList.append(self._execute(action,'','',plugin=plugin,th=True))
+							procList.append(self._execute(action,'','',plugin=plugin,th=False))
 						except Exception as e:
 							self._print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
-			proc.join()
+			#if isinstance(proc,threading.Thread):
+			if isinstance(proc,multiprocessing.Process):
+				proc.join()
 		self._debug("postactions: {}".format(postactions))
 		if postactionDict:
 			self._debug("Launching postactions")

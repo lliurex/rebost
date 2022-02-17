@@ -181,7 +181,7 @@ class appimageHelper():
 	def load_json_appinfo(self,appimage,download=False):
 		rebostpkg=rebostHelper.rebostPkg()
 		rebostpkg['name']=appimage['name'].strip()
-		rebostpkg['pkgname']=rebostpkg['name'].lower().replace("_","-")
+		rebostpkg['pkgname']=rebostpkg['name'].lower()#.replace("_","-")
 		rebostpkg['id']="io.appimage.{}".format(rebostpkg['name'])
 		rebostpkg['license']=appimage.get('license','')
 		if not rebostpkg.get('license'):

@@ -91,12 +91,15 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 #def rebostPkgList_to_sqlite
 
 def _rebostPkg_fill_data(rebostPkg,sanitize=True):
-	name=rebostPkg.get('name','').strip().lower().replace('.','_')
-	rebostPkg["name"]=name.strip()
-	rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 	if isinstance(rebostPkg['license'],list)==False:
 		rebostPkg['license']=""
+	categories=rebostPkg.get('categories',[])
+	categories.extend(["","",""])
+	name=rebostPkg.get('name','')
 	if sanitize:
+		name=rebostPkg.get('name','').strip().lower().replace('.','_')
+		rebostPkg["name"]=name.strip()
+		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
 		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
 		if rebostPkg['icon'].startswith("http"):
@@ -116,16 +119,13 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 				if os.path.isfile(iconPath):
 					rebostPkg['icon']=iconPath
 					break
-	#fix LliureX category:
-	categories=rebostPkg.get('categories',[])
-	while len(categories)<3:
-		categories.append("")
-	lliurex=list(filter(lambda x: 'lliurex' in str(x).lower(), categories))
-	if lliurex:
-		idx=categories.index(lliurex.pop())
-		if idx>0:
-			categories.pop(idx)
-			categories.insert(0,"Lliurex")
+		#fix LliureX category:
+		lliurex=list(filter(lambda cat: 'lliurex' in str(cat).lower(), categories))
+		if lliurex:
+			idx=categories.index(lliurex.pop())
+			if idx>0:
+				categories.pop(idx)
+				categories.insert(0,"Lliurex")
 	(cat0,cat1,cat2)=categories[0:3]
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
 #def _rebostPkg_fill_data
@@ -159,8 +159,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		name=component.get_name().lower().strip()
-		pkg['name']=_sanitizeString(name,scape=True)
+		pkg['name']=pkg['id'].split(".")[-1].lower().strip()
+		#pkg['name']=_sanitizeString(name,scape=True)
 		#pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()

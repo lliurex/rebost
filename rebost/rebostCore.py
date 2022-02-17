@@ -151,8 +151,9 @@ class Rebost():
 						except Exception as e:
 							self._print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
-			#if isinstance(proc,threading.Thread):
-			if isinstance(proc,multiprocessing.Process):
+			if isinstance(proc,threading.Thread):
+				proc.join()
+			elif isinstance(proc,multiprocessing.Process):
 				proc.join()
 		self._debug("postactions: {}".format(postactions))
 		if postactionDict:

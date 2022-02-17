@@ -30,7 +30,7 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':'','banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 
-def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True):
+def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
 	if drop:
@@ -49,7 +49,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True):
 	query=[]
 	while rebostPkgList:
 		rebostPkg=rebostPkgList.pop(0)
-		query.append(_rebostPkg_fill_data(rebostPkg))
+		query.append(_rebostPkg_fill_data(rebostPkg,sanitize))
 		#take breath
 		if len(rebostPkgList)%4==0:
 			time.sleep(0.0002)
@@ -90,41 +90,42 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	db.close()
 #def rebostPkgList_to_sqlite
 
-def _rebostPkg_fill_data(rebostPkg):
-	name=rebostPkg.get('name','').strip().lower().replace('.','_')
-	rebostPkg["name"]=name.strip()
-	rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
-	rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
-	rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
+def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	if isinstance(rebostPkg['license'],list)==False:
 		rebostPkg['license']=""
-	if rebostPkg['icon'].startswith("http"):
-		iconName=rebostPkg['icon'].split("/")[-1]
-		iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
-		if os.path.isfile(iconPath):
-			rebostPkg['icon']=iconPath
-	elif rebostPkg['icon']=='':
-		iconName=rebostPkg['pkgname']
-		iconPaths=[]
-		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName)))
-		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
-		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
-		iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
-		while iconPaths:
-			iconPath=iconPaths.pop(0)
+	categories=rebostPkg.get('categories',[])
+	categories.extend(["","",""])
+	name=rebostPkg.get('name','')
+	if sanitize:
+		name=rebostPkg.get('name','').strip().lower().replace('.','_')
+		rebostPkg["name"]=name.strip()
+		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
+		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
+		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
+		if rebostPkg['icon'].startswith("http"):
+			iconName=rebostPkg['icon'].split("/")[-1]
+			iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
 			if os.path.isfile(iconPath):
 				rebostPkg['icon']=iconPath
-				break
-	#fix LliureX category:
-	categories=rebostPkg.get('categories',[])
-	while len(categories)<3:
-		categories.append("")
-	lliurex=list(filter(lambda x: 'lliurex' in str(x).lower(), categories))
-	if lliurex:
-		idx=categories.index(lliurex.pop())
-		if idx>0:
-			categories.pop(idx)
-			categories.insert(0,"Lliurex")
+		elif rebostPkg['icon']=='':
+			iconName=rebostPkg['pkgname']
+			iconPaths=[]
+			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName)))
+			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
+			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
+			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
+			while iconPaths:
+				iconPath=iconPaths.pop(0)
+				if os.path.isfile(iconPath):
+					rebostPkg['icon']=iconPath
+					break
+		#fix LliureX category:
+		lliurex=list(filter(lambda cat: 'lliurex' in str(cat).lower(), categories))
+		if lliurex:
+			idx=categories.index(lliurex.pop())
+			if idx>0:
+				categories.pop(idx)
+				categories.insert(0,"Lliurex")
 	(cat0,cat1,cat2)=categories[0:3]
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
 #def _rebostPkg_fill_data
@@ -158,8 +159,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		name=component.get_name().lower().strip()
-		pkg['name']=_sanitizeString(name,scape=True)
+		pkg['name']=pkg['id'].split(".")[-1].lower().strip()
+		#pkg['name']=_sanitizeString(name,scape=True)
 		#pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()

@@ -8,8 +8,6 @@ import rebostHelper
 import logging
 import html
 import os
-from queue import Queue
-from bs4 import BeautifulSoup
 import hashlib
 import time
 
@@ -54,36 +52,49 @@ class packageKit():
 		if update:
 			self._debug("Getting pkg list")
 			pkcon=packagekit.Client()
-			pkgList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+			pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+			pkgList=[]
+			pkgDetails=[]
 			self._debug("End Getting pkg list")
-			pkgArray=pkgList.get_package_array()
-			pkgCount=len(pkgArray)
+			#pkgArray=pkgList.get_package_array()
+			pkgCount=0#len(pkList)
 			inc=5200
 			total=inc
 			processed=0
 			self._debug("Total packages {}".format(pkgCount))
 			rebostHelper.rebostPkgList_to_sqlite([],'packagekit.db',drop=True)
+			pkgSack=pkList.get_package_sack()
+			pkgIds=pkgSack.get_ids()
+			pkgCount=len(pkgIds)
 			while processed<pkgCount:
 				pkgList=[]
 				self._debug("Processing pkg list {}".format(processed))
 				pkgIdArray=[]
-				selected=pkgArray[processed:total]
-				while selected:
-					pkg=selected.pop(0)
-					if (pkg.get_arch()=='amd64' or pkg.get_arch()=='all')==False:
-						continue
-					pkgIdArray.append(pkg.get_id())
-				if pkgIdArray:
-					pkcon=packagekit.Client()
-					pkDetails=pkcon.get_details(pkgIdArray, None, self._load_callback, None)
-					pkgDetails=pkDetails.get_details_array()
-					rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkg(pkgDetails),'packagekit.db',drop=False)
+				selected=pkgIds[processed:total]
+				####  REM WIP ON OPTIMIZATION
+				# Calls to packagekit are too expensive so it's needed to replace them
+				# Apparently we need a get_details call for retrieving categories
+				# Perhaps it's possible to use pkg.group property but isn't working
+				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
+				#pkgList.extend(self._generateRebostPkgList(pkDetails))
 				self._debug("End processing pkg list")
 				processed=total
 				total+=inc
 				if total>pkgCount:
 					total=pkgCount
-				time.sleep(0.09)
+				self._debug("Sending to SQL")
+				rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkgList(pkDetails),'packagekit.db',drop=False,sanitize=False)
+				time.sleep(0.001)
+
+		####for pkg in pkgSack:
+		####	pkgDetails.append(pkg.get_id())
+		####	if len(pkgDetails)>=inc:
+		####		pkDetails=pkcon.get_details(pkgDetails, None, self._load_callback, None)
+		####	#pkgDetails=pkDetails.get_details_array()
+		####		#for pkgD in pkDetails.get_details_array():
+		####		#	print(".")
+		####		pkgList.extend(pkDetails.get_details_array())
+		####		pkDetails=[]
 			self._debug("PKG loaded")
 			with open(self.aptCache,'rb') as f:
 				faptContent=f.read()
@@ -115,11 +126,36 @@ class packageKit():
 		return(update)
 	#def _chkNeedUpdate
 
-	def _generateRebostPkg(self,pkgList):
+	def _generateRebostPkg(self,pkg):
+		rebostPkg=rebostHelper.rebostPkg()
+		pkgId=pkg.get_package_id()
+		rebostPkg['name']=pkgId.split(";")[0]
+		rebostPkg['pkgname']=rebostPkg['name']
+		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
+		rebostPkg['summary']=pkg.get_summary()
+		rebostPkg['description']=pkg.get_description()
+		#rebostPkg['version']="package-{}".format(pkg.get_version())
+		rebostPkg['versions']={"package":"{}".format(pkgId.split(";")[1])}
+		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
+		if 'installed' in pkgId:
+			rebostPkg['state']={"package":"0"}
+		else:
+			rebostPkg['state']={"package":"1"}
+		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
+		rebostPkg['homepage']=pkg.get_url()
+		rebostPkg['license']=pkg.get_license()
+		rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
+		if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):
+			rebostPkg['categories'].insert(0,'Lliurex')
+			rebostPkg['categories'].extend(["",""])
+		return(rebostPkg)
+	#def _th_generateRebostPkg
+	def _generateRebostPkgList(self,pkgList):
 		rebostPkgList=[]
 		#for pkg in pkgList:
-		while pkgList:
-			pkg=pkgList.pop(0)
+		#while pkgList:
+		for pkg in pkgList.get_details_array():
+			#pkg=pkgList.pop(0)
 			rebostPkg=rebostHelper.rebostPkg()
 			pkgId=pkg.get_package_id()
 			rebostPkg['name']=pkgId.split(";")[0]

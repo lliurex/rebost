@@ -1,6 +1,6 @@
 [Unit]
 Description=Brings up rebost DBus
-After=network.target snapd.service
+After=snapd.service n4d.service
 
 [Service]
 Type=simple
@@ -12,4 +12,4 @@ StartLimitInterval=200
 StartLimitBurst=5
 
 [Install]
-WantedBy=network-online.target
+WantedBy=default.target

@@ -12,7 +12,7 @@ import tempfile
 import subprocess
 import time
 
-DBG=True
+DBG=False
 
 def _debug(msg):
 	if DBG:

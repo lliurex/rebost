@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
 		self.gui=False
@@ -138,7 +138,6 @@ class Rebost():
 				actionDict[priority]=newDict.copy()
 			if postactions:
 				postactionDict[plugin]=postactions
-		print(actionDict)
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
 		actionList.sort(reverse=False)

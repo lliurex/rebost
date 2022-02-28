@@ -165,15 +165,16 @@ def appstream_to_rebost(appstreamCatalogue):
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
-			candidateName=component.get_id().split(".")
-			if len(candidateName)>3:
-				pkg['pkgname']='-'.join(candidateName[2:])
-			elif len(candidateName)>2:
-				pkg['pkgname']=candidateName[-1]
-			elif len(candidateName)>1:
-				pkg['pkgname']=('-').join(candidateName)
-			elif len(candidateName)>0:
-				pkg['pkgname']=candidateName[0]
+			pkg['pkgname']=pkg['name']
+		####candidateName=component.get_id().split(".")
+		####if len(candidateName)>3:
+		####	pkg['pkgname']='-'.join(candidateName[2:])
+		####elif len(candidateName)>2:
+		####	pkg['pkgname']=candidateName[-1]
+		####elif len(candidateName)>1:
+		####	pkg['pkgname']=('-').join(candidateName)
+		####elif len(candidateName)>0:
+		####	pkg['pkgname']=candidateName[0]
 		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()

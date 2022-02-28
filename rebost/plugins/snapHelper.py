@@ -95,7 +95,7 @@ class snapHelper():
 
 	def _process_snap_json(self,pkg,section):
 		rebostPkg=rebostHelper.rebostPkg()
-		rebostPkg['id']="io.snapcraft.{}".format(pkg.get_name()#.replace("-","_"))
+		rebostPkg['id']="io.snapcraft.{}".format(pkg.get_name())
 		rebostPkg['name']=pkg.get_name()
 		rebostPkg['pkgname']=pkg.get_name().lower()#.replace("_","-")
 		rebostPkg['summary']=html2text.html2text(pkg.get_summary())

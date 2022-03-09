@@ -1,4 +1,6 @@
 rebost/* /usr/share/rebost
+extras/apt.conf.d/* /etc/apt/apt.conf.d
+extras/bash_completion.d/* /etc/bash_completion.d/
 n4d/conf.d/* /etc/n4d/conf.d
 n4d/python-plugins/* /usr/share/n4d/python-plugins
 dbus/* /etc/dbus-1

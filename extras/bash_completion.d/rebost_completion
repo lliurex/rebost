@@ -8,9 +8,6 @@ _store_completion() {
 		VALUES=($(compgen -W "search show install remove help" -- ${CUR}))
 	else
 		case ${CUR} in
-			-*)
-				VALUES=($(compgen -W "search show install remove help" -- ${CUR}))
-				;;
 			''|*)
 				[ -e $INFO_FILE ] || return
 				case ${PRE} in
@@ -18,7 +15,7 @@ _store_completion() {
 						VALUES=($(compgen -W "$(cat $INFO_FILE)" -- ${CUR}))
 						;;
 					*)
-						VALUES=()
+						VALUES=($(compgen -W "search show install remove help" -- ${CUR}))
 						;;
 				esac
 				;;

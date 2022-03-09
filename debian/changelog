@@ -1,9 +1,10 @@
-rebost (0.8.2.3) focal; urgency=medium
+rebost (0.8.2.4) focal; urgency=medium
 
   * General improvements
   * Systemd unit moved from multiuser to default target
   * Fix pkgname for appstream data when there's no default pkgname
   * Try/Except when updating app status
+  * Add bash completion and apt update hook
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 16 Feb 2022 15:55:39 +0100
 

@@ -121,7 +121,10 @@ class sqlHelper():
 				if state!=rebostPkg['state'].get(bundle,''):
 					rebostPkg['state'].update({bundle:state})
 					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
-					cursor.execute(query)
+					try:
+						cursor.execute(query)
+					except:
+						print("Query error line 127: {}".format(query))
 					db.commit()
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])

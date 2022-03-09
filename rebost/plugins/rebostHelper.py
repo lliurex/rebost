@@ -375,7 +375,7 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	return(commands)
 
 def get_epi_status(episcript):
-	st=""
+	st="0"
 	if os.path.exists(episcript)==True:
 		try:
 			proc=subprocess.run([episcript,'getStatus'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)

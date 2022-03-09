@@ -280,8 +280,23 @@ class sqlHelper():
 		fupdate.close()
 		self.closeConnection(main_db)
 		self._copyTmpDef()
+		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
+
+	def _generateCompletion(self):
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		query="SELECT pkg FROM {};".format(table)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		completionFile="/usr/share/rebost/tmp/bash_completion"
+		if os.path.isdir(os.path.dirname(completionFile)):
+			with open(completionFile,'w') as f:
+				for row in rows:
+					f.write("{}\n".format(row[0]))
+		self.closeConnection(db)
+
 
 	def _chkNeedUpdate(self):
 		update=False

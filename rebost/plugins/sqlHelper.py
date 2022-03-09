@@ -58,6 +58,7 @@ class sqlHelper():
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
 			rs=self.consolidateSqlTables()
+			self._generateCompletion()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		return(rs)
@@ -282,6 +283,19 @@ class sqlHelper():
 		self._copyTmpDef()
 		return([])
 	#def consolidateSqlTables
+
+	def _generateCompletion(self):
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		query="SELECT pkg FROM {};".format(table)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		completionFile="/usr/share/rebost/tmp/bash_completion"
+		with open(completionFile,'w') as f:
+			for row in rows:
+				f.write("{}\n".format(row[0]))
+		self.closeConnection(db)
+
 
 	def _chkNeedUpdate(self):
 		update=False

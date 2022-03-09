@@ -100,12 +100,16 @@ class sqlHelper():
 			#Update state for bundles as they can be installed outside rebost
 			for bundle in bundles.keys():
 				if bundle=='appimage':
-					app=bundles.get('appimage','')
-					if not app.lower().endswith(".appimage") and app!='':
+					app=bundles.get(bundle,'')
+					if not app.lower().endswith(".{}".format(bundle)) and app!='':
 						dataTmp=self.appimage.fillData(data)
 						row=(pkg,dataTmp)
 						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
-						cursor.execute(query)
+						try:
+							cursor.execute(query)
+						except:
+							print("Query error upgrading appimage: {}".format(query))
+							
 						db.commit()
 						rebostPkg=json.loads(dataTmp)
 				#Get state from epi
@@ -124,7 +128,7 @@ class sqlHelper():
 					try:
 						cursor.execute(query)
 					except:
-						print("Query error line 127: {}".format(query))
+						print("Query error updating state: {}".format(query))
 					db.commit()
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
@@ -174,6 +178,7 @@ class sqlHelper():
 			cursor.execute(query)
 		self.closeConnection(db)
 		return(rows)
+	#def _listPackages
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))

@@ -58,7 +58,6 @@ class sqlHelper():
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
 			rs=self.consolidateSqlTables()
-			self._generateCompletion()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		return(rs)
@@ -281,6 +280,7 @@ class sqlHelper():
 		fupdate.close()
 		self.closeConnection(main_db)
 		self._copyTmpDef()
+		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
 
@@ -291,9 +291,10 @@ class sqlHelper():
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		completionFile="/usr/share/rebost/tmp/bash_completion"
-		with open(completionFile,'w') as f:
-			for row in rows:
-				f.write("{}\n".format(row[0]))
+		if os.path.isdir(os.path.dirname(completionFile)):
+			with open(completionFile,'w') as f:
+				for row in rows:
+					f.write("{}\n".format(row[0]))
 		self.closeConnection(db)
 
 

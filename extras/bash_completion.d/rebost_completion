@@ -12,7 +12,7 @@ _store_completion() {
 				[ -e $INFO_FILE ] || return
 				case ${PRE} in
 					'show' | 'install' | 'remove')
-						VALUES=($(compgen -W "$(cat $INFO_FILE)" -- ${CUR}))
+						VALUES=($(compgen -C cat $INFO_FILE -- ${CUR}))
 						;;
 					*)
 						VALUES=($(compgen -W "search show install remove help" -- ${CUR}))

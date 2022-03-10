@@ -190,7 +190,7 @@ def showHelp():
 	print("\trebost search|show|install|remove pkgname [format]")
 	print()
 	print("s | search: Searchs packages using pkgname as query")
-	print("show: Shows info related to one package")
+	print("sh | show: Shows info related to one package")
 	print("i | install: Install one package. If package comes from many formats one must be specified")
 	print("r | remove: Remove one package. If package comes from many formats one must be specified")
 	print()
@@ -216,6 +216,8 @@ elif action=="i":
 	action="install"
 elif action=="r":
 	action="remove"
+elif action=="sh":
+	action="show"
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search' or action=='s':

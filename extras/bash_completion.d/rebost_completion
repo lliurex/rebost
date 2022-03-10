@@ -1,4 +1,6 @@
 #!/bin/bash
+INFO_FILE=/usr/share/rebost/tmp/bash_completion
+
 _store_completion() {
 	CUR="${COMP_WORDS[COMP_CWORD]}"
 	PRE="${COMP_WORDS[COMP_CWORD-1]}"
@@ -12,7 +14,8 @@ _store_completion() {
 				[ -e $INFO_FILE ] || return
 				case ${PRE} in
 					'show' | 'install' | 'remove')
-						VALUES=($(compgen -C cat $INFO_FILE -- ${CUR}))
+						CONTENT=$(cat $INFO_FILE 2>/dev/null)
+						VALUES=($(compgen -W "$CONTENT" -- ${CUR}))
 						;;
 					*)
 						VALUES=($(compgen -W "search show install remove help" -- ${CUR}))
@@ -23,5 +26,4 @@ _store_completion() {
 	fi
 	COMPREPLY=("${VALUES[@]}")
 }
-INFO_FILE=/usr/share/rebost/tmp/bash_completion
 complete -F _store_completion rebost

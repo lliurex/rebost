@@ -13,7 +13,7 @@ _store_completion() {
 			''|*)
 				[ -e $INFO_FILE ] || return
 				case ${PRE} in
-					'show' | 'install' | 'remove')
+					'sh' | 'show' | 'i' | 'install' | 'r' | 'remove')
 						CONTENT=$(cat $INFO_FILE 2>/dev/null)
 						VALUES=($(compgen -W "$CONTENT" -- ${CUR}))
 						;;

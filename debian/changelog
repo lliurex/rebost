@@ -1,4 +1,4 @@
-rebost (0.8.2.4.1) focal; urgency=medium
+rebost (0.8.2.4.2) focal; urgency=medium
 
   * General improvements
   * Systemd unit moved from multiuser to default target

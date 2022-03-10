@@ -199,14 +199,23 @@ def showHelp():
 	print("\t*Remove chromium snap: rebost remove chromium")
 	print("\t*Show info related to zero-center: rebost show zero-center")
 	print("\t*Search for packages containing \"prin\": rebost search prin")
+	sys.exit(0)
 
 rebost=rebostClient.RebostClient(user=os.getenv('USER'))
 #Set cli mode
 rebost.execute('enableGui','false')
+if len(sys.argv)==1:
+	showHelp()
 (action,actionArgs)=_processArgs(sys.argv)
 action=action.replace("-","")
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
+if action=="s":
+	action="search"
+elif action=="i":
+	action="install"
+elif action=="r":
+	action="remove"
 result=json.loads(rebost.execute(action,actionArgs))
 	
 if action=='search' or action=='s':

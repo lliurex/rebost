@@ -217,7 +217,9 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	#_debug("Generating EPI for:\n{}".format(rebostpkg))
-	tmpDir=tempfile.mkdtemp()
+	if os.path.isdir("/tmp/rebost")==False:
+		os.makedirs("/tmp/rebost")
+	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:
 		_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
@@ -257,7 +259,7 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 	return(epiJson)
 
 def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
-	epiScript="{}_{}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
+	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
 		try:
 			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
@@ -270,7 +272,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
-	_debug("Generating script for:\n{} - {}".format(rebostpkg,bundle))
+	_debug("Generating script for:\n{0} - {1}".format(rebostpkg,bundle))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:

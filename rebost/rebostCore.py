@@ -259,6 +259,8 @@ class Rebost():
 		if os.path.isfile(epifile):
 			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
 			stdout=proc.stdout.decode().strip()
+		else:
+			stdout="23"
 		return (stdout)
 	#def getEpiPkgStatus
 

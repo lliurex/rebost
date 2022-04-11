@@ -239,7 +239,7 @@ class sqlHelper():
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
 						row=main_cursor.execute(fetchquery).fetchone()
 						if row:
-							pkgdataJson=self._mergePackage(pkgdataJson,row).copy()
+							pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
 						if pkgdataJson.get('bundle',{})=={}:
 							continue
 						categories=pkgdataJson.get('categories',[])
@@ -333,7 +333,7 @@ class sqlHelper():
 		self.closeConnection(db)
 		return (allData)
 
-	def _mergePackage(self,pkgdataJson,row):
+	def _mergePackage(self,pkgdataJson,row,fname):
 		(pkg,data,cat0,cat1,cat2)=row
 		mergepkgdataJson=json.loads(data)
 		for key,item in pkgdataJson.items():
@@ -345,7 +345,9 @@ class sqlHelper():
 				mergepkgdataJson[key].extend(item)
 				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if len(item)>len(mergepkgdataJson.get(key,'')):
+				if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))>0):
+					mergepkgdataJson[key]=item
+				elif len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
 

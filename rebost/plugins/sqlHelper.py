@@ -196,6 +196,9 @@ class sqlHelper():
 			#data['summary']=rebostHelper._sanitizeString(data['summary'])
 			#data['name']=rebostHelper._sanitizeString(data['name'])
 			dataContent=str(json.dumps(data))
+			#Ensure all single quotes are duplicated or sql will fail
+			dataContent=dataContent.replace("''","'")
+			dataContent=dataContent.replace("'","''")
 			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
 		#self._debug(query)
 		cursor.execute(query)

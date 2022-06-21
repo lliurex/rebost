@@ -79,6 +79,8 @@ class RebostClient():
 						procId=self.rebost.remote_install(package,extraParms,self.user)
 					elif action=='search':
 						procId=self.rebost.search(package)
+					elif action=='getCategories':
+						procId=self.rebost.getCategories()
 					elif action=='list':
 						procId=self.rebost.search_by_category(package)
 					elif action=='show':

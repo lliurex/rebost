@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,sys
 import gi
 from gi.repository import Gio
 gi.require_version ('Flatpak', '1.0')
@@ -166,12 +166,18 @@ class flatpakHelper():
 		state="available"
 		for installer in flInst:
 			installed=False
+			fname=pkg.get_id_filename()
+			flistName=fname.split("/")
+			if len(flistName)>1:
+				fname=fname.split("/")[1]
 			try:
-				installed=installer.get_installed_ref(0,pkg.get_name())
-			except:
+				#installed=installer.get_installed_ref(0,pkg.get_name())
+				installed=installer.get_installed_ref(0,fname)
+			except Exception as e:
 				try:
-					installed=installer.get_installed_ref(1,pkg.get_name())
-				except:
+					#installed=installer.get_installed_ref(1,pkg.get_name())
+					installed=installer.get_installed_ref(1,fname)
+				except Exception as e:
 					pass
 			if installed:
 				state="installed"

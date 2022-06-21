@@ -18,13 +18,14 @@ class sqlHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","list",'commitInstall']
+		self.actions=["show","search","load","list",'commitInstall','getCategories']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
 		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
+		self.categories_table=os.path.join(self.wrkDir,"categories.db")
 		self.proc_table=os.path.join(self.wrkDir,"rebostPrc.db")
 		self.main_tmp_table=os.path.join(self.wrkDir,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
@@ -60,10 +61,12 @@ class sqlHelper():
 			rs=self.consolidateSqlTables()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
+		if action=='getCategories':
+			rs=self._getCategories()
 		return(rs)
 	#def execute
 
-	def enableConnection(self,table,extraFields=[],tableName=''):
+	def enableConnection(self,table,extraFields=[],tableName='',onlyExtraFields=False):
 		if tableName=='':
 			tableName=os.path.basename(table).replace(".db","")
 		elif tableName.endswith('.db'):
@@ -73,9 +76,12 @@ class sqlHelper():
 		db=sqlite3.connect(table)
 		cursor=db.cursor()
 		fields=",".join(extraFields)
-		if fields:
-			fields=","+fields
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
+		if onlyExtraFields==False:
+			if fields:
+				fields=","+fields
+			query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
+		else:
+			query="CREATE TABLE IF NOT EXISTS {} ({});".format(tableName,fields)
 		cursor.execute(query)
 		return(db,cursor)
 	#def enableConnection
@@ -84,6 +90,16 @@ class sqlHelper():
 		db.commit()
 		db.close()
 	#def closeConnection
+
+	def _getCategories(self):
+		table=os.path.basename(self.categories_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		query="SELECT * FROM {} ORDER BY category;".format(table)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		self.closeConnection(db)
+		return(rows)
+	#def _searchPackage
 
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -220,6 +236,11 @@ class sqlHelper():
 			fupdate.write("packagekit.db:{}".format(fsize))
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		#Categories
+		categories_table=os.path.basename(self.categories_table).replace(".db","")
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		allCategories=[]
+		#Begin merge
 		self.copyPackagekitSql()
 		for fname in include:
 			f=os.path.join(self.wrkDir,fname)
@@ -246,6 +267,8 @@ class sqlHelper():
 						if pkgdataJson.get('bundle',{})=={}:
 							continue
 						categories=pkgdataJson.get('categories',[])
+						allCategories.extend(categories)
+						allCategories=list(set(allCategories))
 						if "Lliurex" in categories:
 							idx=categories.index("Lliurex")
 	####					if pkgdataJson.get('icon','')=='':
@@ -279,9 +302,20 @@ class sqlHelper():
 					if offset>count:
 						offset=count
 					main_db.commit()
-
 		fupdate.close()
 		self.closeConnection(main_db)
+		if allCategories:
+			self._debug("Populating categories")
+			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
+			try:
+				for cat in allCategories:
+					if cat!='' and isinstance(cat,str):
+						cat=cat.capitalize().strip()
+						cursor_cat.execute(queryCategories,(cat,))
+			except Exception as e:
+				self._debug(e)
+			self._debug(query)
+		self.closeConnection(db_cat)
 		self._copyTmpDef()
 		self._generateCompletion()
 		return([])
@@ -299,7 +333,7 @@ class sqlHelper():
 				for row in rows:
 					f.write("{}\n".format(row[0]))
 		self.closeConnection(db)
-
+	#def _generateCompletion
 
 	def _chkNeedUpdate(self):
 		update=False
@@ -324,6 +358,7 @@ class sqlHelper():
 				if update:
 						break
 		return(update)
+	#def _chkNeedUpdate
 
 	def _getAllData(self,f):
 		allData=[]
@@ -335,6 +370,7 @@ class sqlHelper():
 		allData=cursor.fetchall()
 		self.closeConnection(db)
 		return (allData)
+	#def _getAllData
 
 	def _mergePackage(self,pkgdataJson,row,fname):
 		(pkg,data,cat0,cat1,cat2)=row
@@ -353,6 +389,7 @@ class sqlHelper():
 				elif len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
+	#def _mergePackage
 
 	def copyPackagekitSql(self):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
@@ -374,6 +411,7 @@ class sqlHelper():
 		copyfile(self.main_tmp_table,self.main_table)
 		self._print("Removing tmp file")
 		os.remove(self.main_tmp_table)
+	#def _copyTmpDef
 
 def main():
 	obj=sqlHelper()

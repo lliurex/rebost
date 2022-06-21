@@ -185,9 +185,15 @@ class Rebost():
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey))
 		#Generate the store with results and sanitize them
-		if not isinstance(rebostPkgList,list):
-			rebostPkgList=[rebostPkgList]
-		store=self._sanitizeStore(rebostPkgList)
+		if action!='getCategories':
+			if not isinstance(rebostPkgList,list):
+				rebostPkgList=[rebostPkgList]
+			store=self._sanitizeStore(rebostPkgList)
+		else:
+			catList=[]
+			for cat in rebostPkgList:
+				catList.append(cat[0])
+			store=json.dumps(catList)
 		return(store)
 	#def execute
 			

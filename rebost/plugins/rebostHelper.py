@@ -265,6 +265,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
 		except Exception as e:
 			_debug("%s"%e)
+			print("ERROR {}".format(e))
 			retCode=1
 		if os.path.isfile(epiScript):
 			os.chmod(epiScript,0o755)
@@ -361,8 +362,9 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
 			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
 			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
+			installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} {2} {3} /home/{4}/.local/share/applications/{0}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],destPath,user))
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
-		removeCmd="rm {}".format(destPath)
+		removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}.desktop".format(destPath,user,rebostpkg['pkgname'])
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	elif bundle=='zomando':
 		installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))

@@ -148,6 +148,10 @@ class packageKit():
 		if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):
 			rebostPkg['categories'].insert(0,'Lliurex')
 			rebostPkg['categories'].extend(["",""])
+		if os.path.isfile(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(rebostPkg['name']))):
+			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(rebostPkg['name']))
+		elif os.path.isfile(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))):
+			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))
 		return(rebostPkg)
 	#def _th_generateRebostPkg
 	def _generateRebostPkgList(self,pkgList):

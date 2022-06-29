@@ -1,7 +1,8 @@
-rebost (0.9) focal; urgency=medium
+rebost (0.9.1) focal; urgency=medium
 
   * Add support for categories
   * Fix flatpak get installed state
+  * Fix desktop files for appimages
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 21 Jun 2022 11:19:00 +0200
 

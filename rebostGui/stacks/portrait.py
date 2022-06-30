@@ -34,11 +34,11 @@ class QPushButtonRebostApp(QPushButton):
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
 		elif img=='':
-			img=QtGui.QIcon.fromTheme('application-x-executable')
-			icn=img.pixmap(128,128)
+			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn=icn2.pixmap(128,128)
 		if icn:
 			self.icon.setPixmap(icn.scaled(128,128))
-		if img.startswith('http'):
+		elif img.startswith('http'):
 			self.scr=appconfigControls.loadScreenShot(img)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)

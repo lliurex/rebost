@@ -6,7 +6,7 @@ from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QEvent,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
-from . import rebostClient
+from rebost import store 
 import json
 import random
 import gettext
@@ -29,12 +29,17 @@ class QPushButtonRebostApp(QPushButton):
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
 		img=self.app.get('icon','')
-		self.scr=appconfigControls.loadScreenShot(img)
 		self.icon=QLabel()
+		icn=''
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
+		elif img=='':
+			icn=QtGui.QIcon.fromTheme('application-x-desktop')
+			icn=icn.pixmap(128,128)
+		if icn:
 			self.icon.setPixmap(icn.scaled(128,128))
-		elif img.startswith('http'):
+		if img.startswith('http'):
+			self.scr=appconfigControls.loadScreenShot(img)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
 		self.label=QLabel(text)
@@ -71,7 +76,7 @@ class portrait(confStack):
 		self.appsLoaded=0
 		self.enabled=True
 		self.defaultRepos={}
-		self.rc=rebostClient.RebostClient()
+		self.rc=store.client()
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'

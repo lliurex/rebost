@@ -362,7 +362,7 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
 			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
 			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
-			installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} {2} {3} /home/{4}/.local/share/applications/{0}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],destPath,user))
+			installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{0} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user))
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 		removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}.desktop".format(destPath,user,rebostpkg['pkgname'])
 		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))

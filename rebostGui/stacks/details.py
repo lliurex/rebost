@@ -6,7 +6,7 @@ from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
-from . import rebostClient
+from rebost import store
 import subprocess
 import json
 import random
@@ -58,7 +58,7 @@ class details(confStack):
 		self.index=3
 		self.visible=False
 		self.enabled=True
-		self.rc=rebostClient.RebostClient()
+		self.rc=store.client()
 		self.changed=[]
 		self.level='user'
 		self.config={}

@@ -34,8 +34,13 @@ class QLabelRebostApp(QLabel):
 	def loadImg(self,app):
 		img=app.get('icon','')
 		self.scr=appconfigControls.loadScreenShot(img)
+		icn=''
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
+		elif img=='':
+			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn=icn2.pixmap(128,128)
+		if icn:
 			self.setPixmap(icn.scaled(128,128))
 		elif img.startswith('http'):
 			self.scr.start()

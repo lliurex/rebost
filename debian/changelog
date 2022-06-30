@@ -1,8 +1,9 @@
-rebost (0.9.1) lliurex22; urgency=medium
+rebost (0.9.2) lliurex22; urgency=medium
 
   * Add support for categories
   * Fix flatpak get installed state
   * Fix desktop files for appimages
+  * Add gui package
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 21 Jun 2022 11:19:00 +0200
 

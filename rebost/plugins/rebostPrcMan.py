@@ -275,7 +275,7 @@ class rebostPrcMan():
 			if os.path.isdir(tmpDir):
 				try:
 					self._print("Removing tmp dir {}".format(tmpDir))
-					#shutil.rmtree(tmpDir)
+					shutil.rmtree(tmpDir)
 				except Exception as e:
 					self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 

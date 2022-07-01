@@ -84,8 +84,10 @@ class portrait(confStack):
 	#def __init__
 
 	def _load_screen(self):
+		self.config=self.getConfig()
 		self.box=QGridLayout()
 		self.apps=json.loads(self.rc.execute('list'))
+		self._shuffleApps()
 		self.setLayout(self.box)
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
@@ -108,8 +110,7 @@ class portrait(confStack):
 		self.table.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
 		self.table.horizontalHeader().setSectionResizeMode(2,QHeaderView.Stretch)
 		self.table.verticalScrollBar().valueChanged.connect(self._getMoreData)
-		self.table.setRowCount(0)
-		self.table.setRowCount(1)
+		self.resetScreen()
 		self.box.addWidget(self.table,1,0,1,2)
 		btnSettings=QPushButton()
 		icn=QtGui.QIcon.fromTheme("settings-configure")
@@ -117,6 +118,9 @@ class portrait(confStack):
 		btnSettings.clicked.connect(self._gotoSettings)
 		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
 	#def _load_screen
+
+	def _shuffleApps(self):
+		random.shuffle(self.apps)
 
 	def _searchApps(self):
 		txt=self.searchBox.text()

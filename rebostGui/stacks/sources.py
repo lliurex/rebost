@@ -15,7 +15,7 @@ QString=type("")
 
 i18n={
 	"CONFIG":_("Sources"),
-	"DESCRIPTION":_("Show sotware sources"),
+	"DESCRIPTION":_("Show software sources"),
 	"MENUDESCRIPTION":_("Configure software sources"),
 	"TOOLTIP":_(""),
 	"RELOAD":_("Reload catalogues")
@@ -34,12 +34,13 @@ class sources(confStack):
 		self.visible=False
 		self.rc=rebostClient.RebostClient()
 		self.changed=[]
-		self.level='user'
 		self.config={}
 		self.app={}
 	#def __init__
 
 	def _load_screen(self):
+		self.config=self.getConfig()
+		print(self.config)
 		self.box=QGridLayout()
 		icn=QtGui.QIcon.fromTheme("go-previous")
 		self.btnBack=QPushButton()
@@ -78,5 +79,10 @@ class sources(confStack):
 		pass
 
 	def writeConfig(self):
+		self.saveChanges('config','user',level='user')
+		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
+			key=wdg.text().split(" ")[0].lower()
+			data=wdg.isChecked()
+			self.saveChanges(key,data,level=self.level)
 		return
 

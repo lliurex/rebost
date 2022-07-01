@@ -4,7 +4,7 @@
 #export DH_VERBOSE = 1
 
 %:
-	dh $@ --with-llxsrc,i18n,zero
+	dh $@ --with llxsrc,i18n,zero
 
 
 # If you need to rebuild the Sphinx documentation

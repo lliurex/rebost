@@ -93,7 +93,11 @@ class portrait(confStack):
 		self.cmbCategories.activated.connect(self._loadCategory)
 		catList=json.loads(self.rc.execute('getCategories'))
 		self.cmbCategories.addItem(i18n.get('ALL'))
+		seenCats={}
 		for cat in catList:
+			if cat.lower() in seenCats.keys():
+				continue
+			seenCats[cat.lower()]=cat
 			self.cmbCategories.addItem(cat)#.capitalize())
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
 		self.searchBox=appconfigControls.QSearchBox()

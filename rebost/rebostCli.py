@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import rebostClient
+#import rebostClient
+from rebost import store
 import json
 import os,sys
 import subprocess
@@ -113,7 +114,7 @@ def _waitProcess(pid):
 	inc=1
 	data={}
 	done=None
-	for proc in rebost.getResults():
+	for proc in rebostClient.getResults():
 		(ppid,pdata)=proc
 		if str(ppid)==str(pid):
 			if isinstance(pdata,str):
@@ -141,7 +142,7 @@ def _waitProcess(pid):
 				inc*=-1
 			time.sleep(0.1)
 			cont+=(inc)
-			for proc in rebost.getResults():
+			for proc in rebostClient.getResults():
 				(ppid,pdata)=proc
 				if str(ppid)==str(pid):
 					if isinstance(pdata,str):
@@ -160,7 +161,7 @@ def _waitProcess(pid):
 def _getResult(pid):
 	status='Unknown'
 	result=status
-	for proc in rebost.getResults():
+	for proc in rebostClient.getResults():
 		(ppid,data)=proc
 		if isinstance(data,str):
 			data=json.loads(data)
@@ -201,9 +202,9 @@ def showHelp():
 	print("\t*Search for packages containing \"prin\": rebost search prin")
 	sys.exit(0)
 
-rebost=rebostClient.RebostClient(user=os.getenv('USER'))
+rebostClient=store.client()#.RebostClient(user=os.getenv('USER'))
 #Set cli mode
-rebost.execute('enableGui','false')
+rebostClient.execute('enableGui','false')
 if len(sys.argv)==1:
 	showHelp()
 (action,actionArgs)=_processArgs(sys.argv)
@@ -218,7 +219,7 @@ elif action=="r":
 	action="remove"
 elif action=="sh":
 	action="show"
-result=json.loads(rebost.execute(action,actionArgs))
+result=json.loads(rebostClient.execute(action,actionArgs))
 	
 if action=='search' or action=='s':
 	for res in result:

@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.plugins=""
 		self.gui=False
@@ -44,6 +44,7 @@ class Rebost():
 	def _debug(self,msg):
 		if self.dbg:
 			logging.debug("rebost: %s"%str(msg))
+			print("rebost: %s"%str(msg))
 	#def _debug
 
 	def _print(self,msg):
@@ -220,6 +221,7 @@ class Rebost():
 					store.append(app)
 			else:
 				store.append(app)
+		self._debug("End sanitize")
 		return((json.dumps(store)))
 	#def _sanitizeStore
 	

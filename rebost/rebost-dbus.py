@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import zlib
 import time
 import signal
 import dbus,dbus.service,dbus.exceptions
@@ -13,13 +14,14 @@ class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
-		self.dbg=False
+		self.dbg=True
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
 
 	def _debug(self,msg):
 		if self.dbg:
 			logging.debug("rebost-dbus: %s"%str(msg))
+			print("rebost-dbus: %s"%str(msg))
 
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
@@ -66,29 +68,32 @@ class rebostDbusMethods(dbus.service.Object):
 	def getCategories(self):
 		action='getCategories'
 		ret=self.rebost.execute(action)
-		print(ret)
 		return (ret)
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
+						 in_signature='s', out_signature='ay')
 	def search(self,pkgname):
 		action='search'
 		pkgname=pkgname.lower()
 		ret=self.rebost.execute(action,pkgname)
+		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
+						 in_signature='s', out_signature='ay')
 	def search_by_category(self,category):
 		action='list'
+		self._debug("Getting all apps")
 		ret=self.rebost.execute(action,category)
+		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='si', out_signature='s')
+						 in_signature='si', out_signature='ay')
 	def search_by_category_limit(self,category,limit):
 		action='list'
 		ret=self.rebost.execute(action,category,limit)
+		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
 	
 	@dbus.service.method("net.lliurex.rebost",

@@ -30,7 +30,7 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='b', out_signature='s')
 	def enableGui(self,enable):
 		ret=self.rebost._setGuiEnabled(enable)
-		return ("")
+		return (str(ret))
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ssss', out_signature='s')

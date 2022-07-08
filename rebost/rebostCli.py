@@ -204,7 +204,7 @@ def showHelp():
 
 rebostClient=store.client()#.RebostClient(user=os.getenv('USER'))
 #Set cli mode
-rebostClient.execute('enableGui','false')
+rebostClient.enableGui('false')
 if len(sys.argv)==1:
 	showHelp()
 (action,actionArgs)=_processArgs(sys.argv)

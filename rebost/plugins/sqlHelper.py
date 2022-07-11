@@ -310,7 +310,8 @@ class sqlHelper():
 			try:
 				for cat in allCategories:
 					if cat!='' and isinstance(cat,str):
-						cat=cat.capitalize().strip()
+						#cat=cat.capitalize().strip()
+						cat=cat.strip()
 						cursor_cat.execute(queryCategories,(cat,))
 			except Exception as e:
 				self._debug(e)

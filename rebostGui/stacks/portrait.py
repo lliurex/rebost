@@ -3,7 +3,7 @@ import sys
 import os
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QComboBox,QLineEdit
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSignalMapper,QSize,QEvent,Signal
+from PySide2.QtCore import Qt,QSignalMapper,QSize,QEvent,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
 from rebost import store 
@@ -92,13 +92,23 @@ class portrait(confStack):
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
 		catList=json.loads(self.rc.execute('getCategories'))
+		print(catList)
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
 		for cat in catList:
 			if cat.lower() in seenCats.keys():
-				continue
+				if cat==cat.lower():
+					continue
 			seenCats[cat.lower()]=cat
-			self.cmbCategories.addItem(cat)#.capitalize())
+#			cat=cat.capitalize()
+#			idx=0
+#			if cat[idx].isdigit()==True:
+#				while idx<len(cat):
+#					if cat[idx].isdigit()==False:
+#						cat=cat[:idx]+cat[idx:idx+1].upper()+cat[idx+1:]
+#						break
+#					idx+=1
+			self.cmbCategories.addItem(cat)
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
@@ -127,6 +137,8 @@ class portrait(confStack):
 		random.shuffle(self.apps)
 
 	def _searchApps(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
 		txt=self.searchBox.text()
 		self.resetScreen()
 		if len(txt)==0:
@@ -137,11 +149,9 @@ class portrait(confStack):
 			self.updateScreen()
 	#def _searchApps
 
-	def _gotoSettings(self):
-		self.stack.gotoStack(idx=2,parms="")
-	#def _gotoSettings
-
 	def _loadCategory(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
 		self.searchBox.setText("")
 		self.resetScreen()
 		cat=self.cmbCategories.currentText()
@@ -192,12 +202,22 @@ class portrait(confStack):
 	#def _loadData
 
 	def _loadDetails(self,*args):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
 		self.stack.gotoStack(idx=3,parms=args)
 	#def _loadDetails
+
+	def _gotoSettings(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		self.stack.gotoStack(idx=2,parms="")
+	#def _gotoSettings
 
 	def updateScreen(self):
 		self._loadData(self.appsLoaded,self.appsToLoad)
 		self.table.show()
+		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.setCursor(cursor)
 	#def _udpate_screen
 
 	def resetScreen(self):

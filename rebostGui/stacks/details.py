@@ -25,6 +25,7 @@ i18n={
 	"REMOVE":_("Remove")
 	}
 	
+
 class QLabelRebostApp(QLabel):
 	clicked=Signal("PyObject")
 	def __init__(self,parent=None):
@@ -106,6 +107,7 @@ class details(confStack):
 		self.btnImage.clicked.connect(self._installImage)
 		self.box.addWidget(self.btnImage,6,0,1,1,Qt.AlignTop)
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
+		self.btnZomando.clicked.connect(self._runZomando)
 		self.box.addWidget(self.btnZomando,7,0,1,1,Qt.AlignTop)
 		self.btnZomando.setVisible(False)
 		self.btnApt.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
@@ -120,36 +122,46 @@ class details(confStack):
 	#def _load_screen
 
 	def _installApt(self):
-		pkg=self.app.get('name').replace(' ','')
-		res=self.rc.execute('test',"{}:package".format(pkg))
-		res=json.loads(res)[0]
-		subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
-		self.updateScreen()
+		self._genericEpiInstall("package")
 	#def _installApt
 
 	def _installFlat(self):
-		pkg=self.app.get('name').replace(' ','')
-		res=self.rc.execute('test',"{}:flatpak".format(pkg))
-		res=json.loads(res)[0]
-		subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
-		self.updateScreen()
+		self._genericEpiInstall("flatpak")
 	#def _installFlat
 
 	def _installSnap(self):
-		pkg=self.app.get('name').replace(' ','')
-		res=self.rc.execute('test',"{}:snap".format(pkg))
-		res=json.loads(res)[0]
-		subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
-		self.updateScreen()
+		self._genericEpiInstall("snap")
 	#def _installSnap
 
 	def _installImage(self):
-		pkg=self.app.get('name').replace(' ','')
-		res=self.rc.execute('test',"{}:appimage".format(pkg))
-		res=json.loads(res)[0]
-		subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
-		self.updateScreen()
+		self._genericEpiInstall("appimage")
 	#def _installImage
+
+	def _runZomando(self):
+		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
+		if os.path.isfile(zmdPath):
+			subprocess.run(["pkexec",zmdPath])
+
+	def _genericEpiInstall(self,bundle):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		pkg=self.app.get('name').replace(' ','')
+		res=self.rc.testInstall("{}".format(pkg),"{}".format(bundle))
+		res=json.loads(res)[0]
+		epi=res.get('epi')
+		if epi==None:
+			self.showMsg("{}".format(res.get('msg','Unknown Error')))
+		else:
+			subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
+			self.app=json.loads(self.rc.showApp(self.app.get('name')))[0]
+			if isinstance(self.app,str):
+				try:
+					self.app=json.loads(self.app)
+				except Exception as e:
+					print(e)
+					self.app={}
+		self.updateScreen()
+	#def _genericEpiInstall
 
 	def setParms(self,*args):
 		self.app=args[0][0]
@@ -157,8 +169,8 @@ class details(confStack):
 	def updateScreen(self):
 		self._initScreen()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
-		#icn=QtGui.QPixmap.fromImage(self.app.get('icon',''))
-		#self.lblIcon.setPixmap(icn.scaled(128,128))
+		icn=QtGui.QPixmap.fromImage(self.app.get('icon',''))
+		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))
 		self.lblDesc.setText(self.app.get('description'))
@@ -194,6 +206,8 @@ class details(confStack):
 	#def _udpate_screen
 
 	def _initScreen(self):
+		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.setCursor(cursor)
 		self.Screenshot.clear()
 		self.btnSnap.setText("{} snap".format(i18n.get("INSTALL")))
 		self.btnImage.setText("{} appimage".format(i18n.get("INSTALL")))
@@ -207,8 +221,9 @@ class details(confStack):
 		self.lblSummary.setFixedWidth(self.height())
 		self.lblDesc.setFixedWidth(self.height())
 		self.lblDesc.setFixedHeight(self.height()/2)
-		self.app=json.loads(self.rc.execute('show',self.app.get('name')))[0]
-		self.app=json.loads(self.app)
+		#App is an argument from portrait. 
+		#This call ensures all app data is loaded but it may take 1-2 seconds
+		#self.app=json.loads(self.rc.execute('show',self.app.get('name')))[0]
 		self.app['name']=self.app['name'].replace(" ","")
 	#def _initScreen
 

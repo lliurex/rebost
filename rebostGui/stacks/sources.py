@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 import sys
-import os,subprocess
+import os,subprocess,time
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
-from . import rebostClient
+from rebost import store
 import json
 import random
 import gettext
@@ -18,7 +18,8 @@ i18n={
 	"DESCRIPTION":_("Show software sources"),
 	"MENUDESCRIPTION":_("Configure software sources"),
 	"TOOLTIP":_(""),
-	"RELOAD":_("Reload catalogues")
+	"RELOAD":_("Reload catalogues"),
+	"RESTARTFAILED":_("Service could not be reloaded. Check credentials")
 	}
 
 class sources(confStack):
@@ -32,15 +33,15 @@ class sources(confStack):
 		self.index=2
 		self.enabled=True
 		self.visible=False
-		self.rc=rebostClient.RebostClient()
+		self.rc=store.client()
 		self.changed=[]
 		self.config={}
 		self.app={}
+		self.level='system'
 	#def __init__
 
 	def _load_screen(self):
 		self.config=self.getConfig()
-		print(self.config)
 		self.box=QGridLayout()
 		icn=QtGui.QIcon.fromTheme("go-previous")
 		self.btnBack=QPushButton()
@@ -50,28 +51,49 @@ class sources(confStack):
 		self.btnBack.setFixedSize(QSize(64,64))
 		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
 		self.chkApt=QCheckBox("Apt source")
-		self.box.addWidget(self.chkApt,1,0,1,1,Qt.AlignCenter)
+		self.box.addWidget(self.chkApt,1,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.chkSnap=QCheckBox("Snap source")
-		self.box.addWidget(self.chkSnap,2,0,1,1,Qt.AlignCenter)
+		self.box.addWidget(self.chkSnap,2,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.chkFlatpak=QCheckBox("Flatpak source")
-		self.box.addWidget(self.chkFlatpak,3,0,1,1,Qt.AlignCenter)
+		self.box.addWidget(self.chkFlatpak,3,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.chkImage=QCheckBox("AppImage source")
-		self.box.addWidget(self.chkImage,4,0,1,1,Qt.AlignCenter)
+		self.box.addWidget(self.chkImage,4,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		btnReload=QPushButton(i18n.get("RELOAD"))
 		btnReload.clicked.connect(self._reloadCatalogue)
-		self.box.addWidget(btnReload,5,0,1,1,Qt.AlignCenter)
+		self.box.addWidget(btnReload,5,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.setLayout(self.box)
 	#def _load_screen
 
 	def _reloadCatalogue(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		if self.changes:
+			self.writeConfig()
 		cmd=["service","rebost","restart"]
-		subprocess.run(cmd)
+		res=subprocess.run(cmd)
+		if res.returncode:
+			self.showMsg(i18n.get("RESTARTFAILED"))
+		else:
+			time.sleep(5)
+		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.setCursor(cursor)
+		print(res)
 	#def _reloadCatalogue
 
 	def _return(self):
 		self.stack.gotoStack(idx=1,parms="")
 
 	def updateScreen(self):
+		print(self.config)
+		for key,value in self.config.get(self.level,{}).items():
+			if key=="apt":
+				self.chkApt.setChecked(value)
+			if key=="snap":
+				self.chkSnap.setChecked(value)
+			if key=="flatpak":
+				self.chkFlatpak.setChecked(value)
+			if key=="appimage":
+				self.chkImage.setChecked(value)
 		pass
 	#def _udpate_screen
 
@@ -79,7 +101,8 @@ class sources(confStack):
 		pass
 
 	def writeConfig(self):
-		self.saveChanges('config','user',level='user')
+		self.level="system"
+		self.saveChanges('config','system',level='system')
 		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
 			key=wdg.text().split(" ")[0].lower()
 			data=wdg.isChecked()

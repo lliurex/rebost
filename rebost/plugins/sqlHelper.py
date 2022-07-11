@@ -310,7 +310,8 @@ class sqlHelper():
 			try:
 				for cat in allCategories:
 					if cat!='' and isinstance(cat,str):
-						cat=cat.capitalize().strip()
+						#cat=cat.capitalize().strip()
+						cat=cat.strip()
 						cursor_cat.execute(queryCategories,(cat,))
 			except Exception as e:
 				self._debug(e)
@@ -347,6 +348,7 @@ class sqlHelper():
 				fcontent=f.readlines()
 			for fname in include:
 				f=os.path.join(self.wrkDir,fname)
+				fsize=0
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)
 				for f in fcontent:

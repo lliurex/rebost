@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import importlib
-import os
+import os,shutil
 import multiprocessing
 import threading
 import time
@@ -33,10 +33,12 @@ class Rebost():
 		self._loadPluginInfo()
 		if self.propagateDbg:
 			self._setPluginDbg()
+		self.cofig={}
 		#self._loadAppstream()
 		self.procId=1
 
 	def run(self):
+		self._readConfig()
 		self._autostartActions()
 		self._print("rebost operative")
 	#def run
@@ -122,6 +124,80 @@ class Rebost():
 				self.pluginInfo[plugin]=plugInfo
 		for plugin in delPlugins:
 			del(self.plugins[plugin])
+
+	def _readConfig(self):
+		cfgFile="/usr/share/rebost/store.json"
+		if os.path.isfile(cfgFile):
+			with open(cfgFile,'r') as f:
+				cfg=json.loads(f.read())
+			for key,value in cfg.items():
+				if value==True:
+					self._enable(key)
+				else:
+					if key=="snap":
+						del(self.pluginInfo["snapHelper"])
+					elif key=="flatpak":
+						del(self.pluginInfo["flatpakHelper"])
+					elif key=="apt":
+						del(self.pluginInfo["packageKit"])
+					elif key=="appimage":
+						del(self.pluginInfo["appimageHelper"])
+					self._disable(key)
+
+	def _enable(self,bundle):
+		swEnabled=True
+		tmpPath="/usr/share/rebost/tmp"
+		if os.path.isdir(tmpPath):
+			prefix=""
+			if bundle=="apt":
+				prefix="pk"
+				prefix2="as"
+			elif bundle=="snap":
+				prefix="sn"
+				prefix2="sn"
+			elif bundle=="flatpak":
+				prefix="fp"
+				prefix2="fp"
+			elif bundle=="appimage":
+				prefix="ai"
+				prefix2="ai"
+			if prefix:
+				for f in os.listdir(tmpPath):
+					if f.startswith(prefix) or f.startswith(prefix2):
+						swEnabled=False
+						break
+		if swEnabled==True:
+			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
+				os.remove(os.path.join(tmpPath,"sq.lu"))
+
+	def _disable(self,bundle):
+		tmpPath="/usr/share/rebost/tmp"
+		dbPath=os.path.join("/usr/share/rebost","{}.db".format(bundle.lower()))
+		if os.path.isfile(dbPath):
+			os.remove(dbPath)
+		swRemoved=False
+		if os.path.isdir(tmpPath):
+			prefix=""
+			if bundle=="apt":
+				prefix="pk"
+				prefix2="as"
+			elif bundle=="snap":
+				prefix="sn"
+				prefix2="sn"
+			elif bundle=="flatpak":
+				prefix="fp"
+				prefix2="fp"
+			elif bundle=="appimage":
+				prefix="ai"
+				prefix2="ai"
+			if prefix:
+				for f in os.listdir(tmpPath):
+					if f.startswith(prefix) or f.startswith(prefix2):
+						os.remove(os.path.join(tmpPath,f))
+						swRemoved=True
+		if swRemoved==True:
+			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
+				os.remove(os.path.join(tmpPath,"sq.lu"))
 
 	def _autostartActions(self):
 		actionDict={}

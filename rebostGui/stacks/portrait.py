@@ -92,13 +92,22 @@ class portrait(confStack):
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
 		catList=json.loads(self.rc.execute('getCategories'))
+		print(catList)
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
 		for cat in catList:
-			if cat.lower() in seenCats.keys():
-				continue
-			seenCats[cat.lower()]=cat
-			self.cmbCategories.addItem(cat)#.capitalize())
+#			if cat.lower() in seenCats.keys():
+#				continue
+#			seenCats[cat.lower()]=cat
+#			cat=cat.capitalize()
+#			idx=0
+#			if cat[idx].isdigit()==True:
+#				while idx<len(cat):
+#					if cat[idx].isdigit()==False:
+#						cat=cat[:idx]+cat[idx:idx+1].upper()+cat[idx+1:]
+#						break
+#					idx+=1
+			self.cmbCategories.addItem(cat)
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)

@@ -51,7 +51,7 @@ class Rebost():
 		logging.info("rebost: %s"%str(msg))
 	
 	def _setGuiEnabled(self,state):
-		self._debug("Gui mode: {}".format(state))
+		self._debug("Set gui mode: {}".format(state))
 		self.gui=state
 
 	def _setPluginDbg(self):

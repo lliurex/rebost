@@ -348,6 +348,7 @@ class sqlHelper():
 				fcontent=f.readlines()
 			for fname in include:
 				f=os.path.join(self.wrkDir,fname)
+				fsize=0
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)
 				for f in fcontent:

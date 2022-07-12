@@ -19,7 +19,7 @@ i18n={
 	"MENUDESCRIPTION":_("Configure software sources"),
 	"TOOLTIP":_(""),
 	"RELOAD":_("Reload catalogues"),
-	"CCACHE":_("Clear app caches"),
+	"CCACHE":_("Clear cache"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials")
 	}
 
@@ -52,19 +52,19 @@ class sources(confStack):
 		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
 		self.chkApt=QCheckBox("Apt source")
 		self.chkApt.setEnabled(False)
-		self.box.addWidget(self.chkApt,1,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
+		self.box.addWidget(self.chkApt,1,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkSnap=QCheckBox("Snap source")
-		self.box.addWidget(self.chkSnap,2,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
+		self.box.addWidget(self.chkSnap,2,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkFlatpak=QCheckBox("Flatpak source")
-		self.box.addWidget(self.chkFlatpak,3,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
+		self.box.addWidget(self.chkFlatpak,1,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkImage=QCheckBox("AppImage source")
-		self.box.addWidget(self.chkImage,4,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
+		self.box.addWidget(self.chkImage,2,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		btnReload=QPushButton(i18n.get("RELOAD"))
 		btnReload.clicked.connect(self._reloadCatalogue)
-		self.box.addWidget(btnReload,5,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
+		self.box.addWidget(btnReload,3,1,1,1,Qt.AlignRight|Qt.AlignCenter)
 		btnClear=QPushButton(i18n.get("CCACHE"))
 		btnClear.clicked.connect(self._clearCache)
-		self.box.addWidget(btnClear,5,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
+		self.box.addWidget(btnClear,3,2,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.setLayout(self.box)
 	#def _load_screen
 

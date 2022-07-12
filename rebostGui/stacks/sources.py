@@ -50,6 +50,7 @@ class sources(confStack):
 		self.btnBack.setFixedSize(QSize(64,64))
 		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
 		self.chkApt=QCheckBox("Apt source")
+		self.chkApt.setEnabled(False)
 		self.box.addWidget(self.chkApt,1,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		self.chkSnap=QCheckBox("Snap source")
 		self.box.addWidget(self.chkSnap,2,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
@@ -85,14 +86,14 @@ class sources(confStack):
 
 	def _return(self):
 		self.stack.gotoStack(idx=1,parms="1")
+	#def _return
 
 	def updateScreen(self):
 		self.changes=True
 		self.config=self.getConfig()
-		print(self.config)
 		for key,value in self.config.get(self.level,{}).items():
 			if key=="apt":
-				self.chkApt.setChecked(value)
+				self.chkApt.setChecked(True)
 			if key=="snap":
 				self.chkSnap.setChecked(value)
 			if key=="flatpak":

@@ -80,6 +80,7 @@ class portrait(confStack):
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'
+		self.oldSearch=""
 		self.config={}
 	#def __init__
 
@@ -92,7 +93,6 @@ class portrait(confStack):
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
 		catList=json.loads(self.rc.execute('getCategories'))
-		print(catList)
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
 		for cat in catList:
@@ -112,8 +112,9 @@ class portrait(confStack):
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
-		self.searchBox.editingFinished.connect(self._searchApps)
-		self.searchBox.clicked.connect(self._searchApps)
+		self.searchBox.returnPressed.connect(self._searchApps)
+		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
+		self.searchBox.clicked.connect(self._searchAppsBtn)
 		self.table=appconfigControls.QTableTouchWidget()
 		self.table.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.table.setColumnCount(3)
@@ -136,18 +137,39 @@ class portrait(confStack):
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
 
+	def _resetSearchBtnIcon(self):
+		txt=self.searchBox.text()
+		if txt==self.oldSearch:
+			icn=QtGui.QIcon.fromTheme("dialog-cancel")
+		else:
+			icn=QtGui.QIcon.fromTheme("search")
+		self.searchBox.btnSearch.setIcon(icn)
+
 	def _searchApps(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		txt=self.searchBox.text()
+		if txt==self.oldSearch:
+			self.searchBox.setText("")
+			txt=""
+		self.oldSearch=txt
 		self.resetScreen()
 		if len(txt)==0:
+			icn=QtGui.QIcon.fromTheme("search")
 			self.apps=json.loads(self.rc.execute('list'))
-			self.updateScreen()
 		else:
+			icn=QtGui.QIcon.fromTheme("dialog-cancel")
 			self.apps=json.loads(self.rc.execute('search',txt))
-			self.updateScreen()
+		self.searchBox.btnSearch.setIcon(icn)
+		self.updateScreen()
 	#def _searchApps
+
+	def _searchAppsBtn(self):
+		txt=self.searchBox.text()
+		if txt==self.oldSearch:
+			self.searchBox.setText("")
+			txt=""
+		self._searchApps()
 
 	def _loadCategory(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -224,6 +246,13 @@ class portrait(confStack):
 		self.table.setRowCount(0)
 		self.table.setRowCount(1)
 		self.appsLoaded=0
+
+	def setParms(self,*args):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		if len(args)>=1:
+			self.oldSearch=""
+			self._searchApps()
 
 	def _updateConfig(self,key):
 		pass

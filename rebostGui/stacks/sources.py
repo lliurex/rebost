@@ -41,7 +41,6 @@ class sources(confStack):
 	#def __init__
 
 	def _load_screen(self):
-		self.config=self.getConfig()
 		self.box=QGridLayout()
 		icn=QtGui.QIcon.fromTheme("go-previous")
 		self.btnBack=QPushButton()
@@ -71,19 +70,25 @@ class sources(confStack):
 			self.writeConfig()
 		cmd=["service","rebost","restart"]
 		res=subprocess.run(cmd)
-		if res.returncode:
+		if res.returncode!=0:
 			self.showMsg(i18n.get("RESTARTFAILED"))
 		else:
+			self.grabMouse()
+			cursor=QtGui.QCursor(Qt.WaitCursor)
+			self.setCursor(cursor)
 			time.sleep(5)
+			self.rc.searchApp("firefox")
+			self.releaseMouse()
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
-		print(res)
 	#def _reloadCatalogue
 
 	def _return(self):
-		self.stack.gotoStack(idx=1,parms="")
+		self.stack.gotoStack(idx=1,parms="1")
 
 	def updateScreen(self):
+		self.changes=True
+		self.config=self.getConfig()
 		print(self.config)
 		for key,value in self.config.get(self.level,{}).items():
 			if key=="apt":

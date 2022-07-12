@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import sys
-import os,subprocess,time
+import os,subprocess,time,shutil
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize
@@ -19,6 +19,7 @@ i18n={
 	"MENUDESCRIPTION":_("Configure software sources"),
 	"TOOLTIP":_(""),
 	"RELOAD":_("Reload catalogues"),
+	"CCACHE":_("Clear app caches"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials")
 	}
 
@@ -60,9 +61,20 @@ class sources(confStack):
 		self.box.addWidget(self.chkImage,4,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
 		btnReload=QPushButton(i18n.get("RELOAD"))
 		btnReload.clicked.connect(self._reloadCatalogue)
-		self.box.addWidget(btnReload,5,1,1,1,Qt.AlignLeft|Qt.AlignCenter)
+		self.box.addWidget(btnReload,5,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
+		btnClear=QPushButton(i18n.get("CCACHE"))
+		btnClear.clicked.connect(self._clearCache)
+		self.box.addWidget(btnClear,5,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.setLayout(self.box)
 	#def _load_screen
+
+	def _clearCache(self):
+		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
+		try:
+			shutil.rmtree(cacheDir)
+		except Exception as e:
+			print("Error removing {0}: {1}".format(cacheDir,e))
+	#def _clearCache
 
 	def _reloadCatalogue(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)

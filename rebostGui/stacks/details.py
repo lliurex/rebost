@@ -30,11 +30,12 @@ class QLabelRebostApp(QLabel):
 	clicked=Signal("PyObject")
 	def __init__(self,parent=None):
 		QLabel.__init__(self, parent)
+		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 	#def __init__
 
 	def loadImg(self,app):
 		img=app.get('icon','')
-		self.scr=appconfigControls.loadScreenShot(img)
+		self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 		icn=''
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
@@ -70,6 +71,7 @@ class details(confStack):
 		self.config={}
 		self.app={}
 		self.hideControlButtons()
+		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 	#def __init__
 
 	def _return(self):
@@ -117,6 +119,7 @@ class details(confStack):
 		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.lblDesc.setFixedSize(self.height(),self.height()/2)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
+		self.Screenshot.setCacheDir(self.cacheDir)
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
 		self.setLayout(self.box)
 	#def _load_screen

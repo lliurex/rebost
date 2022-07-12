@@ -25,6 +25,7 @@ class QPushButtonRebostApp(QPushButton):
 	clicked=Signal("PyObject")
 	def __init__(self,strapp,parent=None):
 		QPushButton.__init__(self, parent)
+		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
@@ -39,7 +40,7 @@ class QPushButtonRebostApp(QPushButton):
 		if icn:
 			self.icon.setPixmap(icn.scaled(128,128))
 		elif img.startswith('http'):
-			self.scr=appconfigControls.loadScreenShot(img)
+			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
 		self.label=QLabel(text)

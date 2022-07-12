@@ -147,6 +147,7 @@ class portrait(confStack):
 		self.searchBox.btnSearch.setIcon(icn)
 
 	def _searchApps(self):
+		self.cmbCategories.setCurrentText(i18n.get("ALL"))
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		txt=self.searchBox.text()

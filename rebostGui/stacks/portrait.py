@@ -112,7 +112,8 @@ class portrait(confStack):
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
-		self.searchBox.editingFinished.connect(self._searchApps)
+		self.searchBox.returnPressed.connect(self._searchApps)
+		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
 		self.searchBox.clicked.connect(self._searchAppsBtn)
 		self.table=appconfigControls.QTableTouchWidget()
 		self.table.setAttribute(Qt.WA_AcceptTouchEvents)
@@ -136,13 +137,21 @@ class portrait(confStack):
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
 
+	def _resetSearchBtnIcon(self):
+		txt=self.searchBox.text()
+		if txt==self.oldSearch:
+			icn=QtGui.QIcon.fromTheme("dialog-cancel")
+		else:
+			icn=QtGui.QIcon.fromTheme("search")
+		self.searchBox.btnSearch.setIcon(icn)
+
 	def _searchApps(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		txt=self.searchBox.text()
 		if txt==self.oldSearch:
-			return
-		self.searchBox.btnSearch.setFocus()
+			self.searchBox.setText("")
+			txt=""
 		self.oldSearch=txt
 		self.resetScreen()
 		if len(txt)==0:
@@ -242,10 +251,8 @@ class portrait(confStack):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		if len(args)>=1:
-			self.resetScreen()
-			self.apps=json.loads(self.rc.execute('list'))
-			self._shuffleApps()
-			self.updateScreen()
+			self.oldSearch=""
+			self._searchApps()
 
 	def _updateConfig(self,key):
 		pass

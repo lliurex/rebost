@@ -208,14 +208,18 @@ class details(confStack):
 				self.btnZomando.setVisible(True)
 		homepage=self.app.get('homepage','')
 		text=''
-		if homepage.endswith("/"):
-			homepage=homepage[0,len(homepage)-1]
 		if homepage:
-			text='<a href={0}>Homepage: {1}</a> '.format(homepage,homepage[0:30])
+			if homepage.endswith("/"):
+				homepage=homepage[0,len(homepage)-1]
+			desc=homepage
+			if len(homepage)>30:
+				desc="{}...".format(homepage[0:30])
+			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
 		license=self.app.get('license','')
 		if license:
 			text+="<strong>{}</strong>".format(license)
 		self.lblHomepage.setText(text)
+		self.lblHomepage.setToolTip("{}".format(homepage))
 		try:
 			for icn in self.app.get('screenshots',[]):
 				self.Screenshot.addImage(icn)

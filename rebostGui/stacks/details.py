@@ -113,6 +113,9 @@ class details(confStack):
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.box.addWidget(self.btnZomando,7,0,1,1,Qt.AlignTop)
 		self.btnZomando.setVisible(False)
+		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
+		self.lblHomepage.setOpenExternalLinks(True)
+		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignTop)
 		self.btnApt.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnFlat.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
@@ -203,6 +206,16 @@ class details(confStack):
 						self.btnApt.setText("{} package".format(i18n.get("REMOVE")))
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
+		homepage=self.app.get('homepage','')
+		text=''
+		if homepage.endswith("/"):
+			homepage=homepage[0,len(homepage)-1]
+		if homepage:
+			text='<a href={0}>Homepage: {1}</a> '.format(homepage,homepage[0:30])
+		license=self.app.get('license','')
+		if license:
+			text+="<strong>{}</strong>".format(license)
+		self.lblHomepage.setText(text)
 		try:
 			for icn in self.app.get('screenshots',[]):
 				self.Screenshot.addImage(icn)
@@ -224,6 +237,7 @@ class details(confStack):
 		self.btnImage.setEnabled(False)
 		self.btnZomando.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
+		self.lblHomepage.setText("")
 		#self.lblDesc.setFixedWidth(self.height())
 		#self.lblDesc.setFixedHeight(self.height()/2)
 		#App is an argument from portrait. 

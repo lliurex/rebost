@@ -109,6 +109,10 @@ class snapHelper():
 		if pkg.get_media():
 			for media in pkg.get_media():
 				rebostPkg['screenshots'].append(media.get_url())
+		rebostPkg['homepage']="{}".format(pkg.get_website())
+		if rebostPkg['homepage'].lower()=="none":
+			rebostPkg['homepage']=""
+		rebostPkg['license']="{}".format(pkg.get_license())
 		#if pkg.get_screenshots():
 		#if 'screenshots' in appimage.keys():
 		#	rebostPkg['thumbnails']=appimage['screenshots']

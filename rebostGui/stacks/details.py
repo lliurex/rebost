@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QHBoxLayout
+from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QHBoxLayout,QSizePolicy
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -94,6 +94,7 @@ class details(confStack):
 		self.lblSummary.setWordWrap(True)
 		self.box.addWidget(self.lblSummary,1,1,1,1,Qt.AlignTop)
 		self.lblDesc=appconfigControls.QScrollLabel()
+		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
 		self.box.addWidget(self.lblDesc,2,1,6,1,Qt.AlignTop|Qt.AlignLeft)
 		self.btnApt=QPushButton("{} package".format(i18n.get("INSTALL")))
@@ -117,7 +118,7 @@ class details(confStack):
 		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		self.lblDesc.setFixedSize(self.height(),self.height()/2)
+		#self.lblDesc.setFixedSize(self.height(),self.height()/2)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
 #		self.Screenshot.setCacheDir(self.cacheDir)
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
@@ -177,7 +178,8 @@ class details(confStack):
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))
 		self.lblDesc.setText(self.app.get('description'))
-		self.lblDesc.setFixedSize(self.height(),self.height()/2)
+		self.lblDesc.setFixedWidth(self.height())#,self.height()/2)
+		self.lblDesc.setFixedHeight(self.height()/3)#,self.height()/2)
 		for bundle,name in self.app.get('bundle',{}).items():
 			if bundle=="snap":
 				self.btnSnap.setEnabled(True)
@@ -222,8 +224,8 @@ class details(confStack):
 		self.btnImage.setEnabled(False)
 		self.btnZomando.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
-		self.lblDesc.setFixedWidth(self.height())
-		self.lblDesc.setFixedHeight(self.height()/2)
+		#self.lblDesc.setFixedWidth(self.height())
+		#self.lblDesc.setFixedHeight(self.height()/2)
 		#App is an argument from portrait. 
 		#This call ensures all app data is loaded but it may take 1-2 seconds
 		#self.app=json.loads(self.rc.execute('show',self.app.get('name')))[0]

@@ -140,6 +140,20 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.getProgress()
 		return (ret)
 	
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getInstalledApps(self):
+		action='list'
+		ret=self.rebost.execute(action,installed=True)
+#		ret = zlib.compress(ret.encode(),level=1)
+		return (ret)
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getUpgradableApps(self):
+		action='list'
+		ret=self.rebost.execute(action,installed=True,upgradable=True)
+		return (ret)
 	
 	def getPlugins(self):
 		pass

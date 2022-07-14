@@ -181,10 +181,7 @@ class sqlHelper():
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
 		if upgradable or installed:
-			if installed:
-				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"1\"%}}' {2} {3}".format(table,str(category),order,fetch)
-			else:
-				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		cursor.execute(query)

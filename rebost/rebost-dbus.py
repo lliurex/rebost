@@ -165,7 +165,8 @@ class rebostDbusMethods(dbus.service.Object):
 			versions=pkg.get('versions',{})
 			for bundle,state in states.items():
 				if state=="0":
-					if installed.get(bundle,0)!=versions.get(bundle,0):
+					installed=installed.get(bundle,0)
+					if ((installed!=versions.get(bundle,0)) and (installed!=0)):
 						filterData.append(strpkg)
 		ret=json.dumps(filterData)
 		return (ret)

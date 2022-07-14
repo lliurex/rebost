@@ -213,6 +213,10 @@ class sqlHelper():
 			(pkg,dataContent)=row
 			data=json.loads(dataContent)
 			data['state'][bundle]=state
+			release=data['versions'].get(bundle,0)
+			if isinstance(data['installed'],str):
+				data['installed']={}
+			data['installed'][bundle]=release
 			#data['description']=rebostHelper._sanitizeString(data['description'])
 			#data['summary']=rebostHelper._sanitizeString(data['summary'])
 			#data['name']=rebostHelper._sanitizeString(data['name'])
@@ -295,6 +299,12 @@ class sqlHelper():
 								cat2=categories[-2]
 						if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
 							cat0="Lliurex"
+						if isinstance(pkgdataJson['versions'],str):
+							states=pkgdataJson.get('state')
+							pkgdataJson['installed']={}
+							for bun,state in states.items():
+								if state=="0":
+									pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
 						pkgdata=str(json.dumps(pkgdataJson))
 						query.append([pkgname,pkgdata,cat0,cat1,cat2])
 					queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(main_tmp_table)

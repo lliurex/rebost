@@ -183,27 +183,32 @@ class details(confStack):
 		self.lblDesc.setText(self.app.get('description'))
 		self.lblDesc.setFixedWidth(self.height())#,self.height()/2)
 		self.lblDesc.setFixedHeight(self.height()/3)#,self.height()/2)
+		versions=self.app.get('versions',{})
 		for bundle,name in self.app.get('bundle',{}).items():
 			if bundle=="snap":
 				self.btnSnap.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="snap" and state=='0':
 						self.btnSnap.setText("{} snap".format(i18n.get("REMOVE")))
+						self.btnSnap.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="flatpak":
 				self.btnFlat.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="flatpak" and state=='0':
 						self.btnFlat.setText("{} flatpak".format(i18n.get("REMOVE")))
+						self.btnFlat.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="appimage":
 				self.btnImage.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="appimage" and state=='0':
 						self.btnImage.setText("{} appimage".format(i18n.get("REMOVE")))
+						self.btnImage.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="package":
 				self.btnApt.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="package" and state=='0':
 						self.btnApt.setText("{} package".format(i18n.get("REMOVE")))
+						self.btnApt.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
 		homepage=self.app.get('homepage','')
@@ -236,9 +241,13 @@ class details(confStack):
 		self.btnApt.setText("{} package".format(i18n.get("INSTALL")))
 		self.btnFlat.setText("{} flatpak".format(i18n.get("INSTALL")))
 		self.btnApt.setEnabled(False)
+		self.btnApt.setToolTip("")
 		self.btnFlat.setEnabled(False)
+		self.btnFlat.setToolTip("")
 		self.btnSnap.setEnabled(False)
+		self.btnSnap.setToolTip("")
 		self.btnImage.setEnabled(False)
+		self.btnImage.setToolTip("")
 		self.btnZomando.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
 		self.lblHomepage.setText("")

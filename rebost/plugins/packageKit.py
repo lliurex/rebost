@@ -53,6 +53,13 @@ class packageKit():
 			self._debug("Getting pkg list")
 			pkcon=packagekit.Client()
 			pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+			pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+			pkgUpdateSack=pkUpdates.get_package_sack()
+			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
+			pkgUpdateIds={}
+			for ids in pkgUpdateIdsArray:
+				name=ids.split(";")[0]
+				pkgUpdateIds[name]=ids.split(";")[1]
 			pkgList=[]
 			pkgDetails=[]
 			self._debug("End Getting pkg list")
@@ -83,7 +90,7 @@ class packageKit():
 				if total>pkgCount:
 					total=pkgCount
 				self._debug("Sending to SQL")
-				rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkgList(pkDetails),'packagekit.db',drop=False,sanitize=False)
+				rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkgList(pkDetails,pkgUpdateIds),'packagekit.db',drop=False,sanitize=False)
 				time.sleep(0.001)
 
 		####for pkg in pkgSack:
@@ -126,19 +133,23 @@ class packageKit():
 		return(update)
 	#def _chkNeedUpdate
 
-	def _generateRebostPkg(self,pkg):
+	def _generateRebostPkg(self,pkg,updateInfo):
 		rebostPkg=rebostHelper.rebostPkg()
 		pkgId=pkg.get_package_id()
-		rebostPkg['name']=pkgId.split(";")[0]
+		name=pkgId.split(";")[0]
+		version=pkgId.split(";")[1]
+		updateVersion=updateInfo.get(name,version)
+		rebostPkg['name']=name
 		rebostPkg['pkgname']=rebostPkg['name']
 		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
 		#rebostPkg['version']="package-{}".format(pkg.get_version())
-		rebostPkg['versions']={"package":"{}".format(pkgId.split(";")[1])}
+		rebostPkg['versions']={"package":"{}".format(updateVersion)}
 		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
 		if 'installed' in pkgId:
 			rebostPkg['state']={"package":"0"}
+			rebostPkg['installed']={"package":"{}".format(version)}
 		else:
 			rebostPkg['state']={"package":"1"}
 		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
@@ -154,7 +165,8 @@ class packageKit():
 			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))
 		return(rebostPkg)
 	#def _th_generateRebostPkg
-	def _generateRebostPkgList(self,pkgList):
+
+	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
 		#for pkg in pkgList:
 		#while pkgList:
@@ -162,16 +174,22 @@ class packageKit():
 			#pkg=pkgList.pop(0)
 			rebostPkg=rebostHelper.rebostPkg()
 			pkgId=pkg.get_package_id()
-			rebostPkg['name']=pkgId.split(";")[0]
+
+			name=pkgId.split(";")[0]
+			version=pkgId.split(";")[1]
+			updateVersion=updateInfo.get(name,version)
+
+			rebostPkg['name']=name
 			rebostPkg['pkgname']=rebostPkg['name']
 			rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 			rebostPkg['summary']=pkg.get_summary()
 			rebostPkg['description']=pkg.get_description()
 			#rebostPkg['version']="package-{}".format(pkg.get_version())
-			rebostPkg['versions']={"package":"{}".format(pkgId.split(";")[1])}
+			rebostPkg['versions']={"package":"{}".format(updateVersion)}
 			rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
 			if 'installed' in pkgId:
 				rebostPkg['state']={"package":"0"}
+				rebostPkg['installed']={"package":"{}".format(version)}
 			else:
 				rebostPkg['state']={"package":"1"}
 			rebostPkg['size']={"package":"{}".format(pkg.get_size())}

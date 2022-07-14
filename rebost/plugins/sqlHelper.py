@@ -54,7 +54,7 @@ class sqlHelper():
 		if action=='search':
 			rs=self._searchPackage(parms)
 		if action=='list':
-			rs=self._listPackages(parms,extraParms)
+			rs=self._listPackages(parms,extraParms,**kwargs)
 		if action=='show':
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
@@ -166,7 +166,9 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
-	def _listPackages(self,category='',limit=0):
+	def _listPackages(self,category='',limit=0,**kwargs):
+		installed=kwargs.get('installed',False)
+		upgradable=kwargs.get('upgradable',False)
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -178,8 +180,13 @@ class sqlHelper():
 		if limit>0:
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
-		#query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
-		query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+		if upgradable or installed:
+			if installed:
+				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"1\"%}}' {2} {3}".format(table,str(category),order,fetch)
+			else:
+				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+		else:
+			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):
@@ -195,6 +202,7 @@ class sqlHelper():
 		self.closeConnection(db)
 		return(rows)
 	#def _listPackages
+
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QHBoxLayout
+from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QHBoxLayout,QSizePolicy
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -94,6 +94,7 @@ class details(confStack):
 		self.lblSummary.setWordWrap(True)
 		self.box.addWidget(self.lblSummary,1,1,1,1,Qt.AlignTop)
 		self.lblDesc=appconfigControls.QScrollLabel()
+		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
 		self.box.addWidget(self.lblDesc,2,1,6,1,Qt.AlignTop|Qt.AlignLeft)
 		self.btnApt=QPushButton("{} package".format(i18n.get("INSTALL")))
@@ -112,12 +113,15 @@ class details(confStack):
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.box.addWidget(self.btnZomando,7,0,1,1,Qt.AlignTop)
 		self.btnZomando.setVisible(False)
+		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
+		self.lblHomepage.setOpenExternalLinks(True)
+		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignTop)
 		self.btnApt.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnFlat.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		self.lblDesc.setFixedSize(self.height(),self.height()/2)
+		#self.lblDesc.setFixedSize(self.height(),self.height()/2)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
 #		self.Screenshot.setCacheDir(self.cacheDir)
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
@@ -177,30 +181,50 @@ class details(confStack):
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))
 		self.lblDesc.setText(self.app.get('description'))
-		self.lblDesc.setFixedSize(self.height(),self.height()/2)
+		self.lblDesc.setFixedWidth(self.height())#,self.height()/2)
+		self.lblDesc.setFixedHeight(self.height()/3)#,self.height()/2)
+		versions=self.app.get('versions',{})
 		for bundle,name in self.app.get('bundle',{}).items():
 			if bundle=="snap":
 				self.btnSnap.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="snap" and state=='0':
 						self.btnSnap.setText("{} snap".format(i18n.get("REMOVE")))
+						self.btnSnap.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="flatpak":
 				self.btnFlat.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="flatpak" and state=='0':
 						self.btnFlat.setText("{} flatpak".format(i18n.get("REMOVE")))
+						self.btnFlat.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="appimage":
 				self.btnImage.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="appimage" and state=='0':
 						self.btnImage.setText("{} appimage".format(i18n.get("REMOVE")))
+						self.btnImage.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="package":
 				self.btnApt.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="package" and state=='0':
 						self.btnApt.setText("{} package".format(i18n.get("REMOVE")))
+						self.btnApt.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
+		homepage=self.app.get('homepage','')
+		text=''
+		if homepage:
+			if homepage.endswith("/"):
+				homepage=homepage[0,len(homepage)-1]
+			desc=homepage
+			if len(homepage)>30:
+				desc="{}...".format(homepage[0:30])
+			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
+		license=self.app.get('license','')
+		if license:
+			text+="<strong>{}</strong>".format(license)
+		self.lblHomepage.setText(text)
+		self.lblHomepage.setToolTip("{}".format(homepage))
 		try:
 			for icn in self.app.get('screenshots',[]):
 				self.Screenshot.addImage(icn)
@@ -217,13 +241,18 @@ class details(confStack):
 		self.btnApt.setText("{} package".format(i18n.get("INSTALL")))
 		self.btnFlat.setText("{} flatpak".format(i18n.get("INSTALL")))
 		self.btnApt.setEnabled(False)
+		self.btnApt.setToolTip("")
 		self.btnFlat.setEnabled(False)
+		self.btnFlat.setToolTip("")
 		self.btnSnap.setEnabled(False)
+		self.btnSnap.setToolTip("")
 		self.btnImage.setEnabled(False)
+		self.btnImage.setToolTip("")
 		self.btnZomando.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
-		self.lblDesc.setFixedWidth(self.height())
-		self.lblDesc.setFixedHeight(self.height()/2)
+		self.lblHomepage.setText("")
+		#self.lblDesc.setFixedWidth(self.height())
+		#self.lblDesc.setFixedHeight(self.height()/2)
 		#App is an argument from portrait. 
 		#This call ensures all app data is loaded but it may take 1-2 seconds
 		#self.app=json.loads(self.rc.execute('show',self.app.get('name')))[0]

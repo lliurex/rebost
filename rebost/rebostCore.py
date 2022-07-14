@@ -242,7 +242,7 @@ class Rebost():
 						self._print("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
-	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey=''):
+	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
 		rebostPkgList=[]
 		store=[]
 		self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,extraParms2))
@@ -260,7 +260,7 @@ class Rebost():
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
-			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey))
+			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
 		#Generate the store with results and sanitize them
 		if action!='getCategories':
 			if not isinstance(rebostPkgList,list):

@@ -110,7 +110,7 @@ class portrait(confStack):
 #						break
 #					idx+=1
 			self.cmbCategories.addItem(cat)
-		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.Alignment(0))
+		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)

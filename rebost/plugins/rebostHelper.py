@@ -202,6 +202,7 @@ def appstream_to_rebost(appstreamCatalogue):
 				versionArray=["0.0"]
 				for release in component.get_releases():
 					versionArray.append(release.get_version())
+					versionArray.sort()
 				pkg['versions']={'flatpak':versionArray[-1]}
 		pkg['license']=component.get_project_license()
 		for scr in component.get_screenshots():

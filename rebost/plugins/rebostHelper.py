@@ -209,8 +209,8 @@ def appstream_to_rebost(appstreamCatalogue):
 				pkg['screenshots'].append(img.get_url())
 				break
 		homepage=''
-		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP,appstream.UrlKind.SOURCE]:
-			homepage=component.get_url(kind)
+		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
+			homepage=component.get_url_item(kind)
 			if homepage:
 				break
 		pkg['homepage']=homepage

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import zlib
+import json
 import time
 import signal
 import dbus,dbus.service,dbus.exceptions
@@ -153,7 +154,22 @@ class rebostDbusMethods(dbus.service.Object):
 	def getUpgradableApps(self):
 		action='list'
 		ret=self.rebost.execute(action,installed=True,upgradable=True)
+		data=json.loads(ret)
+		filterData=[]
+		for strpkg in data:
+			pkg=json.loads(strpkg)
+			states=pkg.get('state',{})
+			installed=pkg.get('installed',{})
+			if isinstance(installed,str):
+				installed={}
+			versions=pkg.get('versions',{})
+			for bundle,state in states.items():
+				if state=="0":
+					if installed.get(bundle,0)!=versions.get(bundle,0):
+						filterData.append(strpkg)
+		ret=json.dumps(filterData)
 		return (ret)
+	#def getUpgradableApps(self):
 	
 	def getPlugins(self):
 		pass

@@ -27,7 +27,7 @@ def resultSet(*kwargs):
 	return(rs)
 
 def rebostPkg(*kwargs):
-	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':'','banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
+	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
@@ -356,15 +356,16 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		removeCmd="flatpak -y uninstall {}".format(rebostpkg['bundle']['flatpak'])
 		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
+		user=os.environ.get('USER')
 		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
 		destdir="/opt/appimages"
-		if user:
-			destdir=os.path.join("/home",user,".local/bin")
+		if user!='root' and user:
+			destdir=os.path.join("/home",user,".local","bin")
 		installCmdLine.append("mkdir -p {}".format(destdir))
 		installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
 		destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
 		installCmdLine.append("chmod +x {}".format(destPath))
-		if user:
+		if user!='root' and user:
 			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
 			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
 			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))

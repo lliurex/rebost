@@ -1,4 +1,4 @@
-rebost (0.9.7) lliurex22; urgency=medium
+rebost (0.9.7.1) lliurex22; urgency=medium
 
   * Add support for categories
   * Fix flatpak get installed state

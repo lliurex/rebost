@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import subprocess
 import zlib
 import json
 import time
@@ -172,6 +173,16 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	#def getUpgradableApps(self):
 	
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='b', out_signature='ay')
+	def update(self,force):
+		if force==True:
+			ret=self.rebost.forceUpdate()
+		cmd=["service","rebost","start"]
+		subprocess.run(cmd)
+#		ret = zlib.compress(ret.encode(),level=1)
+		return ()
+
 	def getPlugins(self):
 		pass
 	

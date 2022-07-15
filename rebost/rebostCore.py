@@ -353,6 +353,17 @@ class Rebost():
 		return(json.dumps(rs))
 	#def getProgress(self):
 
+	def forceUpdate(self):
+		rebostPath="/usr/share/rebost/"
+		rebostTmpPath="/usr/share/rebost/tmp"
+		for i in os.listdir(rebostTmpPath):
+			try:
+				os.remove(os.path.join(rebostTmpPath,i))
+			except Exception as e:
+				print(e)
+		return("Rebost will restart now")
+	#def getProgress(self):
+
 	def update(self):
 		return
 	

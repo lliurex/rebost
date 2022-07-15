@@ -81,17 +81,18 @@ class sources(confStack):
 		self.setCursor(cursor)
 		if self.changes:
 			self.writeConfig()
-		cmd=["service","rebost","restart"]
-		res=subprocess.run(cmd)
-		if res.returncode!=0:
-			self.showMsg(i18n.get("RESTARTFAILED"))
-		else:
-			self.grabMouse()
-			cursor=QtGui.QCursor(Qt.WaitCursor)
-			self.setCursor(cursor)
-			time.sleep(5)
-			self.rc.searchApp("firefox")
-			self.releaseMouse()
+		try:
+			self.rc.update(force=True)
+		except:
+			self.rc=store.client()
+			pass
+		#self.grabMouse()
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		self.setEnabled(False)
+		self.rc.searchApp("firefox")
+		#self.releaseMouse()
+		self.setEnabled(True)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def _reloadCatalogue

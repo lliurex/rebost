@@ -175,11 +175,9 @@ class rebostDbusMethods(dbus.service.Object):
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='ay')
-	def update(self,force):
-		if force==True:
-			ret=self.rebost.forceUpdate()
-		cmd=["service","rebost","start"]
-		subprocess.run(cmd)
+	def update(self,force=False):
+		if force:
+			ret=self.rebost.forceUpdate(force)
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
 

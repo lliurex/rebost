@@ -8,7 +8,7 @@ ExecStart=/usr/share/rebost/rebost-dbus.py
 Restart=always
 RestartSec=2
 RestartPreventExitStatus=0
-StartLimitInterval=200
+StartLimitInterval=60
 StartLimitBurst=5
 
 [Install]

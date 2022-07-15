@@ -1,3 +1,9 @@
+rebost (0.9.8) lliurex22; urgency=medium
+
+  * Implemented forced update
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 15 Jul 2022 10:19:18 +0200
+
 rebost (0.9.7.2) lliurex22; urgency=medium
 
   * Add support for categories

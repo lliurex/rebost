@@ -354,6 +354,8 @@ class Rebost():
 	#def getProgress(self):
 
 	def forceUpdate(self):
+		print("Rebost forcing update...")
+		self._debug("Rebost forcing update...")
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
 		for i in os.listdir(rebostTmpPath):
@@ -361,7 +363,11 @@ class Rebost():
 				os.remove(os.path.join(rebostTmpPath,i))
 			except Exception as e:
 				print(e)
-		return("Rebost will restart now")
+				self._debug(e)
+		print("Rebost will restart now")
+		cmd=["service","rebost","restart"]
+		subprocess.run(cmd)
+		return()
 	#def getProgress(self):
 
 	def update(self):

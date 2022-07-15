@@ -82,15 +82,15 @@ class appimageHelper():
 			if update:
 				if appimageJson and repo_info['type']=='json':
 					self._process_appimage_json(appimageJson,repo_name)
+					updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
+					appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
+					with open(updateFile,'w') as f:
+						f.write(appMd5)
 				else:
 					err=6
 					msg="Couldn't fetch %s"%repo_info['url']
 			else:
 				self._debug("Skip update")
-			updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
-			appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
-			with open(updateFile,'w') as f:
-				f.write(appMd5)
 		return (err,msg)
 	
 	def _chkNeedUpdate(self,appimageJson,repo_name):
@@ -116,10 +116,11 @@ class appimageHelper():
 		content=''
 		req=Request(repo, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req) as f:
+			with urllib.request.urlopen(req,timeout=10) as f:
 				content=(f.read().decode('utf-8'))
-		except:
-			print("Couldn't fetch %s"%repo)
+		except Exception as e:
+			print("Couldn't fetch {}".format(repo))
+			print("{}".format(e))
 		return(content)
 	#def _fetch_repo
 	

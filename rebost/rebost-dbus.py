@@ -176,10 +176,24 @@ class rebostDbusMethods(dbus.service.Object):
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='ay')
 	def update(self,force=False):
-		if force:
-			ret=self.rebost.forceUpdate(force)
+		self.rebost.forceUpdate(force)
+		ret=self.restart()
+
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='b')
+	def restart(self):
+		ret=True
+		self.rebost=None
+		self.rebost=rebost.Rebost()
+		try:
+			self.rebost.run()
+		except:
+			ret=False
+#		ret = zlib.compress(ret.encode(),level=1)
+		return (ret)
 
 	def getPlugins(self):
 		pass

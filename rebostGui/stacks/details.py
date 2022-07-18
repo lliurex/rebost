@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QHBoxLayout,QSizePolicy
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
+from PySide2.QtCore import Qt,QSize,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
 from rebost import store

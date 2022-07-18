@@ -1,6 +1,6 @@
-rebost (0.9.8.1) lliurex22; urgency=medium
+rebost (0.9.8.2) lliurex22; urgency=medium
 
-  * Implemented forced update
+  * Implemented daemon restart
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 15 Jul 2022 10:19:18 +0200
 

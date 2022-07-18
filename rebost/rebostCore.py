@@ -353,8 +353,7 @@ class Rebost():
 		return(json.dumps(rs))
 	#def getProgress(self):
 
-	def forceUpdate(self):
-		print("Rebost forcing update...")
+	def forceUpdate(self,force=False):
 		self._debug("Rebost forcing update...")
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
@@ -364,9 +363,8 @@ class Rebost():
 			except Exception as e:
 				print(e)
 				self._debug(e)
-		print("Rebost will restart now")
-		cmd=["service","rebost","restart"]
-		subprocess.run(cmd)
+		#cmd=["service","rebost","restart"]
+		#subprocess.run(cmd)
 		return()
 	#def getProgress(self):
 

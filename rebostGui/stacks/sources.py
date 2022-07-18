@@ -3,7 +3,7 @@ import sys
 import os,subprocess,time,shutil
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSignalMapper,QSize
+from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
 from rebost import store
@@ -22,6 +22,36 @@ i18n={
 	"CCACHE":_("Clear cache"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials")
 	}
+class reloadCatalogue(QThread):
+	active=Signal()
+	def __init__(self,rc,parent=None):
+		QThread.__init__(self,parent)
+		self.rc=rc
+
+	def run(self):
+		try:
+			self.rc.update(force=True)
+		except:
+			time.sleep(1)
+			self.rc.update(force=True)
+		self.active.emit()
+	#def _reloadCatalogue
+
+class setWaiting(QThread):
+	def __init__(self,widget,parent=None):
+		QThread.__init__(self,parent)
+		self.widget=widget
+
+	def run(self):
+		for wdg in self.widget.findChildren(QPushButton):
+			wdg.setEnabled(False)
+		QApplication.processEvents()
+		return(True)
+	
+	def stop(self):
+		for wdg in self.widget.findChildren(QPushButton):
+			wdg.setEnabled(True)
+	
 
 class sources(confStack):
 	def __init_stack__(self):
@@ -60,7 +90,7 @@ class sources(confStack):
 		self.chkImage=QCheckBox("AppImage source")
 		self.box.addWidget(self.chkImage,2,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		btnReload=QPushButton(i18n.get("RELOAD"))
-		btnReload.clicked.connect(self._reloadCatalogue)
+		btnReload.clicked.connect(self._reload)
 		self.box.addWidget(btnReload,3,1,1,1,Qt.AlignRight|Qt.AlignCenter)
 		btnClear=QPushButton(i18n.get("CCACHE"))
 		btnClear.clicked.connect(self._clearCache)
@@ -76,23 +106,41 @@ class sources(confStack):
 			print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
+
+	def _reload(self):
+		self.btnBack.clicked.connect(self.btnBack.text)
+		QApplication.processEvents()
+		self.btnBack.setEnabled(False)
+		QApplication.processEvents()
+		wait=setWaiting(self)
+		wait.run()
+		self._reloadCatalogue()
+		wait.stop()
+		#self.btnBack.clicked.connect(self._return)
+	#def _reload
+		
 	def _reloadCatalogue(self):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
+		reloadRebost=reloadCatalogue(self.rc)
 		if self.changes:
 			self.writeConfig()
-		try:
-			self.rc.update(force=True)
-		except:
-			self.rc=store.client()
-			pass
-		#self.grabMouse()
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.setEnabled(False)
-		self.rc.searchApp("firefox")
-		#self.releaseMouse()
-		self.setEnabled(True)
+		reloadRebost.active.connect(self._endReloadCatalogue)
+		reloadRebost.run()
+
+	def _endReloadCatalogue(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
+		self.rc=None
+		try:
+			self.rc=store.client()
+		except:
+			time.sleep(1)
+			try:
+				self.rc=store.client()
+			except:
+				print("UNKNOWN ERROR")
+		time.sleep(2)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def _reloadCatalogue

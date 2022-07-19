@@ -10,6 +10,7 @@ from rebost import store
 import subprocess
 import json
 import random
+import html
 import gettext
 import requests
 _ = gettext.gettext
@@ -180,7 +181,7 @@ class details(confStack):
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))
-		self.lblDesc.setText(self.app.get('description'))
+		self.lblDesc.setText(html.unescape(self.app.get('description')))
 		self.lblDesc.setFixedWidth(self.height())#,self.height()/2)
 		self.lblDesc.setFixedHeight(self.height()/3)#,self.height()/2)
 		versions=self.app.get('versions',{})

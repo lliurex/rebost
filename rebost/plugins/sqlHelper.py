@@ -147,6 +147,7 @@ class sqlHelper():
 						print("Query error updating state: {}".format(query))
 					db.commit()
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+			rebostPkg['description']=html.unescape(rebostPkg['description'])
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
 			row=(pkg,json.dumps(rebostPkg))

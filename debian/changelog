@@ -1,3 +1,9 @@
+rebost (0.9.9) lliurex22; urgency=medium
+
+  * Release candidate. Bugfix 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
+
 rebost (0.9.8.3) lliurex22; urgency=medium
 
   * Implemented daemon restart

@@ -3,11 +3,12 @@ import sys
 import os
 from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSize,Signal
+from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
 from rebost import store
 import subprocess
+from multiprocessing import Process
 import json
 import random
 import html
@@ -26,6 +27,29 @@ i18n={
 	"REMOVE":_("Remove")
 	}
 	
+class epiClass(QThread):
+	epiEnded=Signal("PyObject")
+	def __init__(self,parent=None):
+		QThread.__init__(self, parent)
+		self.app={}
+		self.args=''
+	#def __init__
+
+	def setArgs(self,app,args):
+		self.app=app
+		self.args=args
+	#def setArgs
+
+	def run(self):
+		launched=False
+		if self.app and self.args:
+			subprocess.run(self.args)
+			self.epiEnded.emit(self.app)
+			launched=True
+		return launched
+	#def run
+#class epiClass
+
 
 class QLabelRebostApp(QLabel):
 	clicked=Signal("PyObject")
@@ -48,6 +72,7 @@ class QLabelRebostApp(QLabel):
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
+	#def loadImg
 	
 	def load(self,*args):
 		img=args[0]
@@ -73,10 +98,12 @@ class details(confStack):
 		self.app={}
 		self.hideControlButtons()
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
+		self.epi=epiClass()
 	#def __init__
 
 	def _return(self):
 		self.stack.gotoStack(idx=1,parms="")
+	#def _return
 
 	def _load_screen(self):
 		self.box=QGridLayout()
@@ -149,6 +176,7 @@ class details(confStack):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
 		if os.path.isfile(zmdPath):
 			subprocess.run(["pkexec",zmdPath])
+	#def _runZomando
 
 	def _genericEpiInstall(self,bundle):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -160,19 +188,28 @@ class details(confStack):
 		if epi==None:
 			self.showMsg("{}".format(res.get('msg','Unknown Error')))
 		else:
-			subprocess.run(["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')])
-			self.app=json.loads(self.rc.showApp(self.app.get('name')))[0]
-			if isinstance(self.app,str):
-				try:
-					self.app=json.loads(self.app)
-				except Exception as e:
-					print(e)
-					self.app={}
-		self.updateScreen()
+			cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')]
+			self.epi.setArgs(self.app,cmd)
+			self.epi.epiEnded.connect(self._getEpiResults)
+			self.epi.start()
 	#def _genericEpiInstall
+	
+	def _getEpiResults(self,app):
+		if app.get('name','')!=self.app.get('name',''):
+			return
+		self.app=json.loads(self.rc.showApp(app.get('name','')))[0]
+		if isinstance(self.app,str):
+			try:
+				self.app=json.loads(self.app)
+			except Exception as e:
+				print(e)
+				self.app={}
+		self.updateScreen()
+	#def _getEpiResults
 
 	def setParms(self,*args):
 		self.app=args[0][0]
+	#def setParms
 
 	def updateScreen(self):
 		self._initScreen()
@@ -234,6 +271,15 @@ class details(confStack):
 	#def _udpate_screen
 
 	def _initScreen(self):
+		#Reload config if app has been epified
+		if self.app.get('name','')==self.epi.app.get('name',''):
+			self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]
+		if isinstance(self.app,str):
+			try:
+				self.app=json.loads(self.app)
+			except Exception as e:
+				print(e)
+				self.app={}
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 		self.Screenshot.clear()
@@ -252,11 +298,6 @@ class details(confStack):
 		self.btnZomando.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
 		self.lblHomepage.setText("")
-		#self.lblDesc.setFixedWidth(self.height())
-		#self.lblDesc.setFixedHeight(self.height()/2)
-		#App is an argument from portrait. 
-		#This call ensures all app data is loaded but it may take 1-2 seconds
-		#self.app=json.loads(self.rc.execute('show',self.app.get('name')))[0]
 		self.app['name']=self.app['name'].replace(" ","")
 	#def _initScreen
 

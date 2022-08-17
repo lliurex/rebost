@@ -1,6 +1,6 @@
 [Unit]
 Description=Brings up rebost DBus
-After=network.target snapd.service
+After=snapd.service n4d.service
 
 [Service]
 Type=simple
@@ -8,8 +8,8 @@ ExecStart=/usr/share/rebost/rebost-dbus.py
 Restart=always
 RestartSec=2
 RestartPreventExitStatus=0
-StartLimitInterval=200
+StartLimitInterval=60
 StartLimitBurst=5
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

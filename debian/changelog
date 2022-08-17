@@ -1,4 +1,47 @@
-rebost (0.7.0) focal; urgency=medium
+rebost (0.9.9.1) lliurex22; urgency=medium
+
+  * Release candidate. Bugfix 
+  * Separate thread for epi operations
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
+
+rebost (0.9.8.3) lliurex22; urgency=medium
+
+  * Implemented daemon restart
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 15 Jul 2022 10:19:18 +0200
+
+rebost (0.9.7.2) lliurex22; urgency=medium
+
+  * Add support for categories
+  * Fix flatpak get installed state
+  * Fix desktop files for appimages
+  * Add gui package
+  * Add desktop and metadata for gui
+  * use python module for clients
+  * Add list installed/upgradable methods (upgradable only for appimages/apt)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 21 Jun 2022 11:19:00 +0200
+
+rebost (0.8.3.1) focal; urgency=medium
+
+  * General improvements
+  * Systemd unit moved from multiuser to default target
+  * Fix pkgname for appstream data when there's no default pkgname
+  * Fix exception when updating app status fails
+  * Fix exception when there's single quotes on sql update 
+  * Add bash completion
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 16 Feb 2022 15:55:39 +0100
+
+rebost (0.7.4.1) focal; urgency=medium
+
+  * Only update catalogue when needed
+  * Fix detection of installed zomandos
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Jan 2022 17:36:30 +0100
+
+rebost (0.7.3.4) focal; urgency=medium
 
   * Add polkit rules for software management from GUI
   * Full integration with lliurex-store
@@ -17,6 +60,10 @@ rebost (0.7.0) focal; urgency=medium
   * zomando support
   * appstream support
   * icon cache
+  * Add remote_install to CLI
+  * Changes on n4d communication
+  * Improve appimage versioning
+  * Experimental blacklist
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Nov 2021 11:41:35 +0100
 

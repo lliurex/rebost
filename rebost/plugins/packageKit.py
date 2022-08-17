@@ -103,11 +103,14 @@ class packageKit():
 		####		pkgList.extend(pkDetails.get_details_array())
 		####		pkDetails=[]
 			self._debug("PKG loaded")
-			with open(self.aptCache,'rb') as f:
-				faptContent=f.read()
-			aptMd5=hashlib.md5(faptContent).hexdigest()
-			with open(self.lastUpdate,'w') as f:
-				f.write(aptMd5)
+			try:
+				with open(self.aptCache,'rb') as f:
+					faptContent=f.read()
+				aptMd5=hashlib.md5(faptContent).hexdigest()
+				with open(self.lastUpdate,'w') as f:
+					f.write(aptMd5)
+			except:
+				print("need update disabled")
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")
@@ -194,6 +197,8 @@ class packageKit():
 				rebostPkg['state']={"package":"1"}
 			rebostPkg['size']={"package":"{}".format(pkg.get_size())}
 			rebostPkg['homepage']=pkg.get_url()
+			if not isinstance(rebostPkg['homepage'],str):
+				rebostPkg['homepage']=''
 			rebostPkg['license']=pkg.get_license()
 			rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
 			if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):

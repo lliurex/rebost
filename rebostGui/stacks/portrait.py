@@ -59,9 +59,11 @@ class QPushButtonRebostApp(QPushButton):
 	
 	def activate(self):
 		self.clicked.emit(self.app)
+	#def activate
 
 	def mousePressEvent(self,*args):
 		self.clicked.emit(self.app)
+	#def mousePressEvent
 #class QPushButtonRebostApp
 
 class portrait(confStack):
@@ -88,8 +90,6 @@ class portrait(confStack):
 	def _load_screen(self):
 		self.config=self.getConfig()
 		self.box=QGridLayout()
-		self.apps=json.loads(self.rc.execute('list'))
-		self._shuffleApps()
 		self.setLayout(self.box)
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
@@ -97,19 +97,12 @@ class portrait(confStack):
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
 		for cat in catList:
-			if cat.lower() in seenCats.keys():
-				if cat==cat.lower():
-					continue
+			if cat in seenCats.keys():
+				continue
 			seenCats[cat.lower()]=cat
-#			cat=cat.capitalize()
-#			idx=0
-#			if cat[idx].isdigit()==True:
-#				while idx<len(cat):
-#					if cat[idx].isdigit()==False:
-#						cat=cat[:idx]+cat[idx:idx+1].upper()+cat[idx+1:]
-#						break
-#					idx+=1
 			self.cmbCategories.addItem(cat)
+		self.apps=self._getAppList()
+		self._shuffleApps()
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
@@ -135,8 +128,24 @@ class portrait(confStack):
 		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
 	#def _load_screen
 
+	def _getAppList(self,cat=''):
+		apps=[]
+		if cat!='':
+			apps=json.loads(self.rc.execute('list',cat))
+			self._debug("Loading cat {}".format(cat))
+		else:
+			categories=[self.cmbCategories.itemText(i) for i in range(self.cmbCategories.count())]
+			for cat in categories:
+				if cat.islower()==True:
+					continue
+				self._debug("Loading {}".format(cat))
+				apps.extend(json.loads(self.rc.execute('list',cat)))
+		return(apps)
+	#def _getAppList
+
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
+	#def _shuffleApps
 
 	def _resetSearchBtnIcon(self):
 		txt=self.searchBox.text()
@@ -145,6 +154,7 @@ class portrait(confStack):
 		else:
 			icn=QtGui.QIcon.fromTheme("search")
 		self.searchBox.btnSearch.setIcon(icn)
+	#def _resetSearchBtnIcon
 
 	def _searchApps(self):
 		self.cmbCategories.setCurrentText(i18n.get("ALL"))
@@ -158,7 +168,7 @@ class portrait(confStack):
 		self.resetScreen()
 		if len(txt)==0:
 			icn=QtGui.QIcon.fromTheme("search")
-			self.apps=json.loads(self.rc.execute('list'))
+			self.apps=self._getAppList()
 		else:
 			icn=QtGui.QIcon.fromTheme("dialog-cancel")
 			self.apps=json.loads(self.rc.execute('search',txt))
@@ -172,6 +182,7 @@ class portrait(confStack):
 			self.searchBox.setText("")
 			txt=""
 		self._searchApps()
+	#def _searchAppsBtn
 
 	def _loadCategory(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -181,7 +192,7 @@ class portrait(confStack):
 		cat=self.cmbCategories.currentText()
 		if cat==i18n.get("ALL"):
 			cat=""
-		self.apps=json.loads(self.rc.execute('list',cat))
+		self.apps=self._getAppList(cat)
 		self.updateScreen()
 	#def _loadCategory
 
@@ -218,7 +229,6 @@ class portrait(confStack):
 				span=rowspan
 				self.table.setRowCount(self.table.rowCount()+1)
 				col=0
-			#self.table.setCellWidget(row+1,1,desc)
 			self.appsLoaded+=1
 		if cont==0:
 			return
@@ -248,6 +258,7 @@ class portrait(confStack):
 		self.table.setRowCount(0)
 		self.table.setRowCount(1)
 		self.appsLoaded=0
+	#def resetScreen
 
 	def setParms(self,*args):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -255,6 +266,7 @@ class portrait(confStack):
 		if len(args)>=1:
 			self.oldSearch=""
 			self._searchApps()
+	#def setParms
 
 	def _updateConfig(self,key):
 		pass

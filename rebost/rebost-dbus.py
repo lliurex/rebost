@@ -85,7 +85,6 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='s', out_signature='ay')
 	def search_by_category(self,category):
 		action='list'
-		self._debug("Getting all apps")
 		ret=self.rebost.execute(action,category)
 		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)

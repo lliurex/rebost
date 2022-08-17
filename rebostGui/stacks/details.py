@@ -82,7 +82,7 @@ class QLabelRebostApp(QLabel):
 
 class details(confStack):
 	def __init_stack__(self):
-		self.dbg=True
+		self.dbg=False
 		self._debug("details load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
@@ -149,9 +149,7 @@ class details(confStack):
 		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		#self.lblDesc.setFixedSize(self.height(),self.height()/2)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
-#		self.Screenshot.setCacheDir(self.cacheDir)
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
 		self.setLayout(self.box)
 	#def _load_screen
@@ -215,6 +213,10 @@ class details(confStack):
 		self._initScreen()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
 		icn=QtGui.QPixmap.fromImage(self.app.get('icon',''))
+		if icn.depth()==0:
+		#something went wrong. Perhaps img it's gzipped
+			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn=icn2.pixmap(128,128)
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))
@@ -253,7 +255,7 @@ class details(confStack):
 		text=''
 		if homepage:
 			if homepage.endswith("/"):
-				homepage=homepage[0,len(homepage)-1]
+				homepage=homepage.rstrip("/")
 			desc=homepage
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])

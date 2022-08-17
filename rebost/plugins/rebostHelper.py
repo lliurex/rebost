@@ -341,13 +341,14 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-		installCmd="apt-get install -y {}".format(rebostpkg['pkgname'])
-		removeCmd="apt-get remove -y {}".format(rebostpkg['pkgname'])
+		installCmd="pkcon install -y {}".format(rebostpkg['pkgname'])
+		removeCmd="pkcon remove -y {}".format(rebostpkg['pkgname'])
 		removeCmdLine.append("TEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )")
+		removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 		removeCmdLine.append("exit 1")
 		removeCmdLine.append("fi")
-		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
+		statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	elif bundle=='snap':
 		installCmd="snap install {}".format(rebostpkg['bundle']['snap'])
 		removeCmd="snap remove {}".format(rebostpkg['bundle']['snap'])

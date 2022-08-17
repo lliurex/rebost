@@ -199,7 +199,6 @@ class packageKit():
 			rebostPkg['homepage']=pkg.get_url()
 			if not isinstance(rebostPkg['homepage'],str):
 				rebostPkg['homepage']=''
-
 			rebostPkg['license']=pkg.get_license()
 			rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
 			if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):

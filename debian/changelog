@@ -1,7 +1,8 @@
-rebost (0.9.9.1) lliurex22; urgency=medium
+rebost (0.9.9.2) lliurex22; urgency=medium
 
   * Release candidate. Bugfix 
   * Separate thread for epi operations
+  * Distro-agnostic implementation
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
 

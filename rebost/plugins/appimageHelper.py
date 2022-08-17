@@ -18,6 +18,8 @@ import subprocess
 import logging
 from queue import Queue
 import html
+import html2text
+import hashlib
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
@@ -42,7 +44,7 @@ class appimageHelper():
 			os.makedirs(self.iconDir)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
-#		self._loadStore()
+		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
@@ -76,22 +78,49 @@ class appimageHelper():
 		self._debug("Loading store")
 		for repo_name,repo_info in self.repos.items():
 			appimageJson=self._fetch_repo(repo_info['url'])
-			if appimageJson and repo_info['type']=='json':
-				self._process_appimage_json(appimageJson,repo_name)
+			update=self._chkNeedUpdate(appimageJson,repo_name)
+			if update:
+				if appimageJson and repo_info['type']=='json':
+					self._process_appimage_json(appimageJson,repo_name)
+					updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
+					appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
+					with open(updateFile,'w') as f:
+						f.write(appMd5)
+				else:
+					err=6
+					msg="Couldn't fetch %s"%repo_info['url']
 			else:
-				err=6
-				msg="Couldn't fetch %s"%repo_info['url']
+				self._debug("Skip update")
 		return (err,msg)
 	
+	def _chkNeedUpdate(self,appimageJson,repo_name):
+		update=True
+		appMd5=""
+		lastUpdate=""
+		updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
+		if os.path.isfile(updateFile)==False:
+			if os.path.isdir(os.path.dirname(updateFile))==False:
+				os.makedirs(os.path.dirname(updateFile))
+		else:
+			fcontent=""
+			with open(updateFile,'r') as f:
+				lastUpdate=f.read()
+			appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
+			if appMd5==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
+
 	def _fetch_repo(self,repo):
 		self._debug("Fetching {}".format(repo))
 		content=''
 		req=Request(repo, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req) as f:
+			with urllib.request.urlopen(req,timeout=10) as f:
 				content=(f.read().decode('utf-8'))
-		except:
-			print("Couldn't fetch %s"%repo)
+		except Exception as e:
+			print("Couldn't fetch {}".format(repo))
+			print("{}".format(e))
 		return(content)
 	#def _fetch_repo
 	
@@ -108,20 +137,18 @@ class appimageHelper():
 			random_applist = list(applist)
 			random.shuffle(random_applist)
 			semaphore = threading.BoundedSemaphore(value=maxconnections)
-			for appimage in applist:
-				#rebostPkg=self._process_appimage(appimage,search)
-				#if rebostPkg:
-					#applist.append(rebostPkg)
+			#for appimage in applist:
+			while applist:
+				appimage=applist.pop(0)
 				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
 				th.start()
 				thlist.append(th)
 			for th in thlist:
-				th.join()
+				th.join(1)
 		self._debug("PKG loaded")
 		pkgList=[]
-		while not self.queue.empty():
-			rebostPkg=self.queue.get()
-			pkgList.append(rebostPkg)
+		while self.queue.empty()==False:
+			pkgList.append(self.queue.get())
 		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.db')
 		self._debug("SQL loaded")
 		return(applist)
@@ -133,9 +160,7 @@ class appimageHelper():
 			if appimage['links']:
 				add=True
 				if search:
-					if search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower():
-						pass
-					else:
+					if (search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower())==False:
 						add=False
 				if add:
 					appinfo=self.load_json_appinfo(appimage)
@@ -155,86 +180,74 @@ class appimageHelper():
 		#def _th_process_appimage
 
 	def load_json_appinfo(self,appimage,download=False):
-		appinfo=rebostHelper.rebostPkg()
-		appinfo['pkgname']=appimage['name'].lower().replace("_","-").strip()
-		appinfo['id']="io.appimage.{}".format(appimage['name'])
-		appinfo['name']=appimage['name'].strip()
-		appinfo['license']=appimage.get('license','')
-		if not appinfo.get('license'):
-			appinfo['license']=''
-
+		rebostpkg=rebostHelper.rebostPkg()
+		rebostpkg['name']=appimage['name'].strip()
+		rebostpkg['pkgname']=rebostpkg['name'].lower()#.replace("_","-")
+		rebostpkg['id']="io.appimage.{}".format(rebostpkg['name'])
+		rebostpkg['license']=appimage.get('license','')
+		if not rebostpkg.get('license'):
+			rebostpkg['license']=''
 		description=appimage.get('description','')
 		if description:
 			if isinstance(description,dict):
 				for lang in description.keys():
-					appinfo['description']=description
-					desc=".".join(description.split(".")[0:2])
-					desc=" ".join(desc.split(" ")[0:8])
-					desc=BeautifulSoup(desc,"html.parser").get_text()
-					#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
+					rebostpkg['description']=description
 			else:
-				appinfo['description']=description
-				desc=".".join(appinfo['description'].split(".")[0:2])
-				desc=" ".join(desc.split(" ")[0:8])
-				desc=BeautifulSoup(desc,"html.parser").get_text()
-				#desc=html.escape(desc).encode('ascii', 'xmlcharrefreplace').decode() 
-			appinfo['summary']=desc
+				rebostpkg['description']=description
+			summary=".".join(description.split(".")[0:2])
+			summary=" ".join(summary.split(" ")[0:8])
+			summary=html2text.html2text(summary)
+			rebostpkg['summary']=summary
 		else:
-			appinfo['summary']='Appimage of {}'.format(appinfo["name"])
-			appinfo['description']='Appimage of {}'.format(appinfo["name"])
-		appinfo['categories']=appimage.get('categories',[])
-		if isinstance(appinfo['categories'],list)==False:	
-			appinfo['categories']=[]
+			rebostpkg['summary']='Appimage of {}'.format(rebostpkg["name"])
+			rebostpkg['description']='Appimage of {}'.format(rebostpkg["name"])
+		rebostpkg['categories']=appimage.get('categories',[])
+		if isinstance(rebostpkg['categories'],list)==False:	
+			rebostpkg['categories']=[]
 		icons=appimage.get('icons','')
-		appinfo['icon']=appimage.get('icon','')
-		if appinfo['icon']:# and download:
-			if not appinfo['icon'].startswith("http"):
-				appinfo['icon']="https://appimage.github.io/database/{}".format(appinfo['icon'])
-			#appinfo['icon']=self._download_file(appimage['icon'],appimage['name'],self.iconDir)
+		rebostpkg['icon']=appimage.get('icon','')
+		if rebostpkg['icon']:# and download:
+			if not rebostpkg['icon'].startswith("http"):
+				rebostpkg['icon']="https://appimage.github.io/database/{}".format(rebostpkg['icon'])
 		elif icons:
 			#self._debug("Loading icon %s"%appimage['icons'])
- #			if  download:
-				#self._debug("Loading icon %s"%appimage['icons'][0])
-#				appinfo['icon']=self._download_file(appimage['icons'][0],appimage['name'],self.iconDir)
-#			else:
-			appinfo['icon']="https://appimage.github.io/database/{}".format(icons[0])
+			rebostpkg['icon']="https://appimage.github.io/database/{}".format(icons[0])
 				#appinfo['icon']=icons[0]
-		appinfo['screenshots']=appimage.get('screenshots',[])
-		if appinfo['screenshots']:
+		rebostpkg['screenshots']=appimage.get('screenshots',[])
+		if rebostpkg['screenshots']:
 			scrArray=[]
-			for scr in appinfo['screenshots']:
+			for scr in rebostpkg['screenshots']:
 				scrArray.append("https://appimage.github.io/database/{}".format(scr))
-			appinfo["screenshots"]=scrArray
+			rebostpkg["screenshots"]=scrArray
 		links=appimage.get('links')
 		installerurl=''
-		for link in links:
+		while links:
+			link=links.pop(0)
 			if link.get('url') and link.get('type','')=='Download' and download:
 				installerUrl=self._get_releases(link['url'])
 				if installerUrl.split('/')>2:
 					version=installerUrl.split('/')[-2]
-					appinfo['versions']['appimage']="{}".format(version)
+					rebostpkg['versions']['appimage']="{}".format(version)
 				else:
-					appinfo['versions']['appimage']="**"
+					rebostpkg['versions']['appimage']="**"
 			elif download==False:
 				installerUrl=link['url']
 			else:
-				appinfo['versions']['appimage']="**"
+				rebostpkg['versions']['appimage']="**"
 		state="available"
-		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(appinfo['pkgname']))):
-			state='0'
-		if state==0:
-			appinfo['state']['appimage']=0
+		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(rebostpkg['pkgname']))):
+			rebostpkg['state']['appimage']=0
 		else:
-			appinfo['state']['appimage']=1
-		appinfo['bundle'].update({'appimage':"{}".format(installerUrl)})
+			rebostpkg['state']['appimage']=1
+		rebostpkg['bundle'].update({'appimage':"{}".format(installerUrl)})
 		appimage['authors']=appimage.get('authors','')
 		for author in appimage['authors']:
 			if author.get('url',''):
 				#self._debug("Author: %s"%author['url'])
-				appinfo['homepage']=author['url']
+				rebostpkg['homepage']=author['url']
 		if not appimage['authors']:
-			appinfo['homepage']='/'.join(appinfo['installerUrl'].split('/')[0:-1])
-		return (appinfo)
+			rebostpkg['homepage']='/'.join(rebostpkg['installerUrl'].split('/')[0:-1])
+		return (rebostpkg)
 	#def load_json_appinfo
 
 	def fillData(self,rebostPkg):
@@ -251,7 +264,14 @@ class appimageHelper():
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])
 			if len(pkgname.split("-"))>1:
-				version=pkgname.split("-")[1]
+				version=""
+				for item in pkgname.split("-"):
+					if item.replace("_","").replace(".","").isalpha():
+						continue
+					version=item
+					break
+				if version=="":
+					version=pkgname.split("-")[1] 
 			elif len(pkgname.split("."))>1:
 				version=""
 				for i in pkgname.split("."):
@@ -316,13 +336,17 @@ class appimageHelper():
 							self._debug("Link: {}".format(package_link))
 							#if baseUrl in package_link:
 							if package_link.lower().endswith(".appimage"):
-								releases.append(package_link)
+								if url_source=="opensuse":
+									releases.append("https://download.opensuse.org{}".format(package_link))
+								else:
+									releases.append(package_link)
 			except:
 				self._debug("App not found at {}".format(baseUrl))
 		if releases==[]:
 			releases=[baseUrl]
 		self._debug(releases)
 		rel=''
+		releases.sort(reverse=True)
 		for release in releases:
 			if release.startswith("http"):
 				rel=release

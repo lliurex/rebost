@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,sys
 import gi
 from gi.repository import Gio
 gi.require_version ('Flatpak', '1.0')
@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -23,6 +23,7 @@ class flatpakHelper():
 		self.autostartActions=["load"]
 		self.priority=1
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
+		self.lastUpdate="/usr/share/rebost/tmp/fp.lu"
 		#self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
@@ -46,10 +47,33 @@ class flatpakHelper():
 		action="load"
 		self._debug("Get apps")
 		store=self._get_flatpak_catalogue()
-		self._debug("Get rebostPkg")
-		rebostPkgList=rebostHelper.appstream_to_rebost(store)
-		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
-		self._debug("SQL loaded")
+		update=self._chkNeedUpdate(store)
+		if update:
+			self._debug("Get rebostPkg")
+			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
+			self._debug("SQL loaded")
+			storeMd5=str(store.get_size())
+			with open(self.lastUpdate,'w') as f:
+				f.write(storeMd5)
+		else:
+			self._debug("Skip update")
+
+	def _chkNeedUpdate(self,store):
+		update=True
+		lastUpdate=""
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+		else:
+			fcontent=""
+			with open(self.lastUpdate,'r') as f:
+				lastUpdate=f.read()
+			storeMd5=str(store.get_size())
+			if storeMd5==lastUpdate:
+				update=False
+		return(update)
+	#def _chkNeedUpdate
 
 	def _get_flatpak_catalogue(self):
 		action="load"
@@ -113,6 +137,8 @@ class flatpakHelper():
 			if icon:
 				pkg.add_icon(icon)
 			add=False
+			if not pkg.get_categories():
+				pkg.add_category("Utility")
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()
 				bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))
@@ -140,12 +166,18 @@ class flatpakHelper():
 		state="available"
 		for installer in flInst:
 			installed=False
+			fname=pkg.get_id_filename()
+			flistName=fname.split("/")
+			if len(flistName)>1:
+				fname=fname.split("/")[1]
 			try:
-				installed=installer.get_installed_ref(0,pkg.get_name())
-			except:
+				#installed=installer.get_installed_ref(0,pkg.get_name())
+				installed=installer.get_installed_ref(0,fname)
+			except Exception as e:
 				try:
-					installed=installer.get_installed_ref(1,pkg.get_name())
-				except:
+					#installed=installer.get_installed_ref(1,pkg.get_name())
+					installed=installer.get_installed_ref(1,fname)
+				except Exception as e:
 					pass
 			if installed:
 				state="installed"

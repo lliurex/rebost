@@ -18,18 +18,20 @@ class sqlHelper():
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","list",'commitInstall']
+		self.actions=["show","search","load","list",'commitInstall','getCategories']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
 		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
+		self.categories_table=os.path.join(self.wrkDir,"categories.db")
 		self.proc_table=os.path.join(self.wrkDir,"rebostPrc.db")
 		self.main_tmp_table=os.path.join(self.wrkDir,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
+		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -52,17 +54,19 @@ class sqlHelper():
 		if action=='search':
 			rs=self._searchPackage(parms)
 		if action=='list':
-			rs=self._listPackages(parms,extraParms)
+			rs=self._listPackages(parms,extraParms,**kwargs)
 		if action=='show':
 			rs=self._showPackage(parms,extraParms)
 		if action=='load':
 			rs=self.consolidateSqlTables()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
+		if action=='getCategories':
+			rs=self._getCategories()
 		return(rs)
 	#def execute
 
-	def enableConnection(self,table,extraFields=[],tableName=''):
+	def enableConnection(self,table,extraFields=[],tableName='',onlyExtraFields=False):
 		if tableName=='':
 			tableName=os.path.basename(table).replace(".db","")
 		elif tableName.endswith('.db'):
@@ -72,9 +76,12 @@ class sqlHelper():
 		db=sqlite3.connect(table)
 		cursor=db.cursor()
 		fields=",".join(extraFields)
-		if fields:
-			fields=","+fields
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
+		if onlyExtraFields==False:
+			if fields:
+				fields=","+fields
+			query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
+		else:
+			query="CREATE TABLE IF NOT EXISTS {} ({});".format(tableName,fields)
 		cursor.execute(query)
 		return(db,cursor)
 	#def enableConnection
@@ -83,6 +90,16 @@ class sqlHelper():
 		db.commit()
 		db.close()
 	#def closeConnection
+
+	def _getCategories(self):
+		table=os.path.basename(self.categories_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		query="SELECT * FROM {} ORDER BY category;".format(table)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		self.closeConnection(db)
+		return(rows)
+	#def _searchPackage
 
 	def _showPackage(self,pkgname,user=''):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -99,12 +116,16 @@ class sqlHelper():
 			#Update state for bundles as they can be installed outside rebost
 			for bundle in bundles.keys():
 				if bundle=='appimage':
-					app=bundles.get('appimage','')
-					if not app.lower().endswith(".appimage") and app!='':
+					app=bundles.get(bundle,'')
+					if not app.lower().endswith(".{}".format(bundle)) and app!='':
 						dataTmp=self.appimage.fillData(data)
 						row=(pkg,dataTmp)
 						query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
-						cursor.execute(query)
+						try:
+							cursor.execute(query)
+						except:
+							print("Query error upgrading appimage: {}".format(query))
+							
 						db.commit()
 						rebostPkg=json.loads(dataTmp)
 				#Get state from epi
@@ -120,9 +141,13 @@ class sqlHelper():
 				if state!=rebostPkg['state'].get(bundle,''):
 					rebostPkg['state'].update({bundle:state})
 					query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
-					cursor.execute(query)
+					try:
+						cursor.execute(query)
+					except:
+						print("Query error updating state: {}".format(query))
 					db.commit()
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
+			rebostPkg['description']=html.unescape(rebostPkg['description'])
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
 			row=(pkg,json.dumps(rebostPkg))
@@ -142,7 +167,9 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
-	def _listPackages(self,category='',limit=0):
+	def _listPackages(self,category='',limit=0,**kwargs):
+		installed=kwargs.get('installed',False)
+		upgradable=kwargs.get('upgradable',False)
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -154,8 +181,10 @@ class sqlHelper():
 		if limit>0:
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
-		#query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
-		query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+		if upgradable or installed:
+			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
+		else:
+			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):
@@ -170,6 +199,8 @@ class sqlHelper():
 			cursor.execute(query)
 		self.closeConnection(db)
 		return(rows)
+	#def _listPackages
+
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
@@ -183,10 +214,17 @@ class sqlHelper():
 			(pkg,dataContent)=row
 			data=json.loads(dataContent)
 			data['state'][bundle]=state
+			release=data['versions'].get(bundle,0)
+			if isinstance(data['installed'],str):
+				data['installed']={}
+			data['installed'][bundle]=release
 			#data['description']=rebostHelper._sanitizeString(data['description'])
 			#data['summary']=rebostHelper._sanitizeString(data['summary'])
 			#data['name']=rebostHelper._sanitizeString(data['name'])
 			dataContent=str(json.dumps(data))
+			#Ensure all single quotes are duplicated or sql will fail
+			dataContent=dataContent.replace("''","'")
+			dataContent=dataContent.replace("'","''")
 			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -197,12 +235,28 @@ class sqlHelper():
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
 		main_tmp_table=os.path.basename(self.main_table).replace(".db","")
+		#Update?
+		update=self._chkNeedUpdate()
+		if update==False:
+			self._debug("Skip merge")
+			return([])
+		fupdate=open(self.lastUpdate,'w')
+		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
+			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
+			fupdate.write("packagekit.db:{}".format(fsize))
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		#Categories
+		categories_table=os.path.basename(self.categories_table).replace(".db","")
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		allCategories=[]
+		#Begin merge
 		self.copyPackagekitSql()
 		for fname in include:
 			f=os.path.join(self.wrkDir,fname)
 			if os.path.isfile(f):
+				fsize=os.path.getsize(f)
+				fupdate.write("\n{0}:{1}".format(fname,fsize))
 				allData=self._getAllData(f)
 				(offset,limit,step)=(0,0,2000)
 				count=len(allData)
@@ -219,10 +273,12 @@ class sqlHelper():
 						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
 						row=main_cursor.execute(fetchquery).fetchone()
 						if row:
-							pkgdataJson=self._mergePackage(pkgdataJson,row).copy()
+							pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
 						if pkgdataJson.get('bundle',{})=={}:
 							continue
 						categories=pkgdataJson.get('categories',[])
+						allCategories.extend(categories)
+						allCategories=list(set(allCategories))
 						if "Lliurex" in categories:
 							idx=categories.index("Lliurex")
 	####					if pkgdataJson.get('icon','')=='':
@@ -244,6 +300,12 @@ class sqlHelper():
 								cat2=categories[-2]
 						if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
 							cat0="Lliurex"
+						if isinstance(pkgdataJson['versions'],str):
+							states=pkgdataJson.get('state')
+							pkgdataJson['installed']={}
+							for bun,state in states.items():
+								if state=="0":
+									pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
 						pkgdata=str(json.dumps(pkgdataJson))
 						query.append([pkgname,pkgdata,cat0,cat1,cat2])
 					queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(main_tmp_table)
@@ -256,10 +318,65 @@ class sqlHelper():
 					if offset>count:
 						offset=count
 					main_db.commit()
+		fupdate.close()
 		self.closeConnection(main_db)
+		if allCategories:
+			self._debug("Populating categories")
+			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
+			try:
+				for cat in allCategories:
+					if cat!='' and isinstance(cat,str):
+						#cat=cat.capitalize().strip()
+						cat=cat.strip()
+						cursor_cat.execute(queryCategories,(cat,))
+			except Exception as e:
+				self._debug(e)
+			self._debug(query)
+		self.closeConnection(db_cat)
 		self._copyTmpDef()
+		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
+
+	def _generateCompletion(self):
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		query="SELECT pkg FROM {};".format(table)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		completionFile="/usr/share/rebost/tmp/bash_completion"
+		if os.path.isdir(os.path.dirname(completionFile)):
+			with open(completionFile,'w') as f:
+				for row in rows:
+					f.write("{}\n".format(row[0]))
+		self.closeConnection(db)
+	#def _generateCompletion
+
+	def _chkNeedUpdate(self):
+		update=False
+		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+			update=True
+		else:
+			with open(self.lastUpdate,'r') as f:
+				fcontent=f.readlines()
+			for fname in include:
+				f=os.path.join(self.wrkDir,fname)
+				fsize=0
+				if os.path.isfile(f):
+					fsize=os.path.getsize(f)
+				for f in fcontent:
+					if fname in f:
+						fValues=f.split(":")
+						if fValues[-1].strip()!=str(fsize):
+							update=True
+							break
+				if update:
+						break
+		return(update)
+	#def _chkNeedUpdate
 
 	def _getAllData(self,f):
 		allData=[]
@@ -271,8 +388,9 @@ class sqlHelper():
 		allData=cursor.fetchall()
 		self.closeConnection(db)
 		return (allData)
+	#def _getAllData
 
-	def _mergePackage(self,pkgdataJson,row):
+	def _mergePackage(self,pkgdataJson,row,fname):
 		(pkg,data,cat0,cat1,cat2)=row
 		mergepkgdataJson=json.loads(data)
 		for key,item in pkgdataJson.items():
@@ -284,9 +402,12 @@ class sqlHelper():
 				mergepkgdataJson[key].extend(item)
 				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if len(item)>len(mergepkgdataJson.get(key,'')):
+				if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))>0):
+					mergepkgdataJson[key]=item
+				elif len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
+	#def _mergePackage
 
 	def copyPackagekitSql(self):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
@@ -308,6 +429,7 @@ class sqlHelper():
 		copyfile(self.main_tmp_table,self.main_table)
 		self._print("Removing tmp file")
 		os.remove(self.main_tmp_table)
+	#def _copyTmpDef
 
 def main():
 	obj=sqlHelper()

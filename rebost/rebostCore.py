@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import importlib
-import os
+import os,shutil
 import multiprocessing
 import threading
 import time
@@ -33,10 +33,12 @@ class Rebost():
 		self._loadPluginInfo()
 		if self.propagateDbg:
 			self._setPluginDbg()
+		self.cofig={}
 		#self._loadAppstream()
 		self.procId=1
 
 	def run(self):
+		self._readConfig()
 		self._autostartActions()
 		self._print("rebost operative")
 	#def run
@@ -44,13 +46,14 @@ class Rebost():
 	def _debug(self,msg):
 		if self.dbg:
 			logging.debug("rebost: %s"%str(msg))
+			print("rebost: %s"%str(msg))
 	#def _debug
 
 	def _print(self,msg):
 		logging.info("rebost: %s"%str(msg))
 	
 	def _setGuiEnabled(self,state):
-		self._debug("Gui mode: {}".format(state))
+		self._debug("Set gui mode: {}".format(state))
 		self.gui=state
 
 	def _setPluginDbg(self):
@@ -122,6 +125,80 @@ class Rebost():
 		for plugin in delPlugins:
 			del(self.plugins[plugin])
 
+	def _readConfig(self):
+		cfgFile="/usr/share/rebost/store.json"
+		if os.path.isfile(cfgFile):
+			with open(cfgFile,'r') as f:
+				cfg=json.loads(f.read())
+			for key,value in cfg.items():
+				if value==True:
+					self._enable(key)
+				else:
+					if key=="snap":
+						del(self.pluginInfo["snapHelper"])
+					elif key=="flatpak":
+						del(self.pluginInfo["flatpakHelper"])
+					elif key=="apt":
+						del(self.pluginInfo["packageKit"])
+					elif key=="appimage":
+						del(self.pluginInfo["appimageHelper"])
+					self._disable(key)
+
+	def _enable(self,bundle):
+		swEnabled=True
+		tmpPath="/usr/share/rebost/tmp"
+		if os.path.isdir(tmpPath):
+			prefix=""
+			if bundle=="apt":
+				prefix="pk"
+				prefix2="as"
+			elif bundle=="snap":
+				prefix="sn"
+				prefix2="sn"
+			elif bundle=="flatpak":
+				prefix="fp"
+				prefix2="fp"
+			elif bundle=="appimage":
+				prefix="ai"
+				prefix2="ai"
+			if prefix:
+				for f in os.listdir(tmpPath):
+					if f.startswith(prefix) or f.startswith(prefix2):
+						swEnabled=False
+						break
+		if swEnabled==True:
+			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
+				os.remove(os.path.join(tmpPath,"sq.lu"))
+
+	def _disable(self,bundle):
+		tmpPath="/usr/share/rebost/tmp"
+		dbPath=os.path.join("/usr/share/rebost","{}.db".format(bundle.lower()))
+		if os.path.isfile(dbPath):
+			os.remove(dbPath)
+		swRemoved=False
+		if os.path.isdir(tmpPath):
+			prefix=""
+			if bundle=="apt":
+				prefix="pk"
+				prefix2="as"
+			elif bundle=="snap":
+				prefix="sn"
+				prefix2="sn"
+			elif bundle=="flatpak":
+				prefix="fp"
+				prefix2="fp"
+			elif bundle=="appimage":
+				prefix="ai"
+				prefix2="ai"
+			if prefix:
+				for f in os.listdir(tmpPath):
+					if f.startswith(prefix) or f.startswith(prefix2):
+						os.remove(os.path.join(tmpPath,f))
+						swRemoved=True
+		if swRemoved==True:
+			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
+				os.remove(os.path.join(tmpPath,"sq.lu"))
+
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
@@ -146,11 +223,14 @@ class Rebost():
 			for plugin,actions in actionDict[priority].items():
 					for action in actions:
 						try:
-							procList.append(self._execute(action,'','',plugin=plugin,th=True))
+							procList.append(self._execute(action,'','',plugin=plugin,th=False))
 						except Exception as e:
 							self._print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
-			proc.join()
+			if isinstance(proc,threading.Thread):
+				proc.join()
+			elif isinstance(proc,multiprocessing.Process):
+				proc.join()
 		self._debug("postactions: {}".format(postactions))
 		if postactionDict:
 			self._debug("Launching postactions")
@@ -162,7 +242,7 @@ class Rebost():
 						self._print("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
-	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey=''):
+	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
 		rebostPkgList=[]
 		store=[]
 		self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,extraParms2))
@@ -180,11 +260,17 @@ class Rebost():
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
-			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey))
+			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
 		#Generate the store with results and sanitize them
-		if not isinstance(rebostPkgList,list):
-			rebostPkgList=[rebostPkgList]
-		store=self._sanitizeStore(rebostPkgList)
+		if action!='getCategories':
+			if not isinstance(rebostPkgList,list):
+				rebostPkgList=[rebostPkgList]
+			store=self._sanitizeStore(rebostPkgList)
+		else:
+			catList=[]
+			for cat in rebostPkgList:
+				catList.append(cat[0])
+			store=json.dumps(catList)
 		return(store)
 	#def execute
 			
@@ -203,10 +289,15 @@ class Rebost():
 					self._debug("Error sanitize")
 					self._debug(rebostpkg)
 					continue
-					self._debug("Error sanitize")
 			else:
 				app=rebostpkg
-			store.append(app)
+			if isinstance(app,str):
+				appJson=json.loads(app)
+				if appJson.get('name').startswith("lliurex-meta")==False:
+					store.append(app)
+			else:
+				store.append(app)
+		self._debug("End sanitize")
 		return((json.dumps(store)))
 	#def _sanitizeStore
 	
@@ -252,12 +343,29 @@ class Rebost():
 		if os.path.isfile(epifile):
 			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
 			stdout=proc.stdout.decode().strip()
+		else:
+			stdout="23"
 		return (stdout)
 	#def getEpiPkgStatus
 
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
+	#def getProgress(self):
+
+	def forceUpdate(self,force=False):
+		self._debug("Rebost forcing update...")
+		rebostPath="/usr/share/rebost/"
+		rebostTmpPath="/usr/share/rebost/tmp"
+		for i in os.listdir(rebostTmpPath):
+			try:
+				os.remove(os.path.join(rebostTmpPath,i))
+			except Exception as e:
+				print(e)
+				self._debug(e)
+		#cmd=["service","rebost","restart"]
+		#subprocess.run(cmd)
+		return()
 	#def getProgress(self):
 
 	def update(self):

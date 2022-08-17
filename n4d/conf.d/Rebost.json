@@ -23,6 +23,7 @@
             "allowed_groups": [
                 "sudo",
                 "admins",
+                "Admins",
                 "teachers"
             ]
         }

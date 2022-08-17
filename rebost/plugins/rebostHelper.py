@@ -341,15 +341,6 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-<<<<<<< HEAD
-		installCmd="apt-get install -y {}".format(rebostpkg['pkgname'])
-		removeCmd="apt-get remove -y {}".format(rebostpkg['pkgname'])
-		removeCmdLine.append("TEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )")
-		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
-		removeCmdLine.append("exit 1")
-		removeCmdLine.append("fi")
-		statusTestLine=("TEST=$( dpkg-query -s  {} 2> /dev/null| grep Status | cut -d \" \" -f 4 )".format(rebostpkg['pkgname']))
-=======
 		installCmd="pkcon install -y {}".format(rebostpkg['pkgname'])
 		removeCmd="pkcon remove -y {}".format(rebostpkg['pkgname'])
 		removeCmdLine.append("TEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )")
@@ -358,7 +349,6 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		removeCmdLine.append("exit 1")
 		removeCmdLine.append("fi")
 		statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
->>>>>>> devel
 	elif bundle=='snap':
 		installCmd="snap install {}".format(rebostpkg['bundle']['snap'])
 		removeCmd="snap remove {}".format(rebostpkg['bundle']['snap'])
@@ -409,7 +399,6 @@ def get_epi_status(episcript):
 
 def check_remove_unsure(package):
 	sw=False
-<<<<<<< HEAD
 	_debug("Checking if remove {} is unsure".format(package))
 	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -420,6 +409,4 @@ def check_remove_unsure(package):
 			break
 	_debug(proc.stdout)
 	_debug("Checked")
-=======
->>>>>>> devel
 	return(sw)

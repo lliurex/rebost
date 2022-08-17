@@ -251,11 +251,7 @@ class details(confStack):
 		text=''
 		if homepage:
 			if homepage.endswith("/"):
-<<<<<<< HEAD
-				homepage=homepage[0,len(homepage)-1]
-=======
 				homepage=homepage.rstrip("/")
->>>>>>> devel
 			desc=homepage
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])

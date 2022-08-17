@@ -1,0 +1,13 @@
+[/usr/share/rebost/helper/rebost-software-manager.sh]
+Identity=unix-group:admins;
+Action=net.lliurex.rebost.software-manager.launcher
+ResultActive=yes
+ResultAny=yes
+ResultInactive=yes
+[Allow teachers to authenticate]
+Identity=unix-group:teachers;unix-group:sudo;
+Action=net.lliurex.rebost.software-manager.launcher
+ResultActive=auth_self
+ResultAny=no
+ResultInactive=no
+

@@ -213,6 +213,10 @@ class details(confStack):
 		self._initScreen()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
 		icn=QtGui.QPixmap.fromImage(self.app.get('icon',''))
+		if icn.depth()==0:
+		#something went wrong. Perhaps img it's gzipped
+			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn=icn2.pixmap(128,128)
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary')))

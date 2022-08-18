@@ -229,7 +229,6 @@ class rebostPrcMan():
 				remote=False
 				if action=="remote":
 					remote=True
-				self._debug("USER: {}".format(user))
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				if usern in self.n4dClients.keys():

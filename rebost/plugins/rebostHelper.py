@@ -280,7 +280,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
-	_debug("Generating script for:\n{0} - {1}".format(rebostpkg,bundle))
+	_debug("Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
@@ -358,7 +358,7 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 		removeCmd="flatpak -y uninstall {}".format(rebostpkg['bundle']['flatpak'])
 		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
-		user=os.environ.get('USER')
+		#user=os.environ.get('USER')
 		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
 		destdir="/opt/appimages"
 		if user!='root' and user:

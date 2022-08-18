@@ -180,7 +180,8 @@ class details(confStack):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		pkg=self.app.get('name').replace(' ','')
-		res=self.rc.testInstall("{}".format(pkg),"{}".format(bundle))
+		user=os.environ.get('USER')
+		res=self.rc.testInstall("{}".format(pkg),"{}".format(bundle),user=user)
 		res=json.loads(res)[0]
 		epi=res.get('epi')
 		if epi==None:

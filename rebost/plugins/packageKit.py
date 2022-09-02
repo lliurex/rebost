@@ -21,20 +21,22 @@ class packageKit():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=0
-		self.progress={}
 		self.result=''
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
-		self.aptCache="/var/cache/apt/pkgcache.bin"
+		self.pkgDb="/usr/share/rebost/packagekit.db"
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
 			logging.warning("packagekit: %s"%str(msg))
+	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -42,20 +44,17 @@ class packageKit():
 		if action=='load':
 			self._loadStore()
 		return(rs)
-
-	def getStatus(self):
-		return (self.progress)
+	#def execute
 
 	def _loadStore(self,*args):
 		action="load"
-		update=self._chkNeedUpdate()
-		if update:
-			self._debug("Getting pkg list")
-			pkcon=packagekit.Client()
-			pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
-			pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
-			pkgUpdateSack=pkUpdates.get_package_sack()
-			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
+		self._debug("Getting pkg list")
+		pkcon=packagekit.Client()
+		pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		pkgUpdateSack=pkUpdates.get_package_sack()
+		pkgUpdateIdsArray=pkgUpdateSack.get_ids()
+		if self._chkNeedUpdate()==True:
 			pkgUpdateIds={}
 			for ids in pkgUpdateIdsArray:
 				name=ids.split(";")[0]
@@ -63,8 +62,7 @@ class packageKit():
 			pkgList=[]
 			pkgDetails=[]
 			self._debug("End Getting pkg list")
-			#pkgArray=pkgList.get_package_array()
-			pkgCount=0#len(pkList)
+			pkgCount=0
 			inc=5200
 			total=inc
 			processed=0
@@ -83,7 +81,6 @@ class packageKit():
 				# Apparently we need a get_details call for retrieving categories
 				# Perhaps it's possible to use pkg.group property but isn't working
 				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
-				#pkgList.extend(self._generateRebostPkgList(pkDetails))
 				self._debug("End processing pkg list")
 				processed=total
 				total+=inc
@@ -92,23 +89,14 @@ class packageKit():
 				self._debug("Sending to SQL")
 				rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkgList(pkDetails,pkgUpdateIds),'packagekit.db',drop=False,sanitize=False)
 				time.sleep(0.001)
-
-		####for pkg in pkgSack:
-		####	pkgDetails.append(pkg.get_id())
-		####	if len(pkgDetails)>=inc:
-		####		pkDetails=pkcon.get_details(pkgDetails, None, self._load_callback, None)
-		####	#pkgDetails=pkDetails.get_details_array()
-		####		#for pkgD in pkDetails.get_details_array():
-		####		#	print(".")
-		####		pkgList.extend(pkDetails.get_details_array())
-		####		pkDetails=[]
 			self._debug("PKG loaded")
 			try:
-				with open(self.aptCache,'rb') as f:
-					faptContent=f.read()
-				aptMd5=hashlib.md5(faptContent).hexdigest()
+				with open(self.pkDb,'rb') as f:
+					fpkContent=f.read()
+				pkMd5=""
+				pkMd5=hashlib.md5(fpkContent).hexdigest()
 				with open(self.lastUpdate,'w') as f:
-					f.write(aptMd5)
+					f.write(pkMd5)
 			except:
 				print("need update disabled")
 			self._debug("SQL loaded")
@@ -119,19 +107,16 @@ class packageKit():
 
 	def _chkNeedUpdate(self):
 		update=True
-		aptMd5=""
 		lastUpdate=""
-		if os.path.isfile(self.lastUpdate)==False:
-			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
-				os.makedirs(os.path.dirname(self.lastUpdate))
-		else:
+		if os.path.isfile(self.pkgDb)==True:
 			fcontent=""
 			with open(self.lastUpdate,'r') as f:
 				lastUpdate=f.read()
-			with open(self.aptCache,'rb') as f:
-				faptContent=f.read()
-			aptMd5=hashlib.md5(faptContent).hexdigest()
-			if aptMd5==lastUpdate:
+			with open(self.pkgDb,'rb') as f:
+				fpkContent=f.read()
+			pkMd5=""
+			pkMd5=hashlib.md5(fpkContent).hexdigest()
+			if pkMd5==lastUpdate:
 				update=False
 		return(update)
 	#def _chkNeedUpdate

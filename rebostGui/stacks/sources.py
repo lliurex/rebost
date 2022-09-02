@@ -22,11 +22,13 @@ i18n={
 	"CCACHE":_("Clear cache"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials")
 	}
+
 class reloadCatalogue(QThread):
 	active=Signal()
 	def __init__(self,rc,parent=None):
 		QThread.__init__(self,parent)
 		self.rc=rc
+	#def __init__
 
 	def run(self):
 		try:
@@ -35,27 +37,31 @@ class reloadCatalogue(QThread):
 			time.sleep(1)
 			self.rc.update(force=True)
 		self.active.emit()
-	#def _reloadCatalogue
+	#def run
+#class reloadCatalogue
 
 class setWaiting(QThread):
 	def __init__(self,widget,parent=None):
 		QThread.__init__(self,parent)
 		self.widget=widget
+	#def __init__
 
 	def run(self):
 		for wdg in self.widget.findChildren(QPushButton):
 			wdg.setEnabled(False)
 		QApplication.processEvents()
 		return(True)
+	#def run
 	
 	def stop(self):
 		for wdg in self.widget.findChildren(QPushButton):
 			wdg.setEnabled(True)
+	#def stop
+#class setWaiting
 	
-
 class sources(confStack):
 	def __init_stack__(self):
-		self.dbg=True
+		self.dbg=False
 		self._debug("details load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
@@ -80,12 +86,17 @@ class sources(confStack):
 		self.btnBack.setIconSize(QSize(48,48))
 		self.btnBack.setFixedSize(QSize(64,64))
 		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
-		self.chkApt=QCheckBox("Apt source")
+		self.chkApt=QCheckBox("Package repositories")
 		self.chkApt.setEnabled(False)
+		self.chkApt.setChecked(True)
 		self.box.addWidget(self.chkApt,1,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkSnap=QCheckBox("Snap source")
+		if shutil.which("snap")==None:
+			self.chkSnap.setEnabled(False)
 		self.box.addWidget(self.chkSnap,2,1,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkFlatpak=QCheckBox("Flatpak source")
+		if shutil.which("flatpak")==None:
+			self.chkFlatpak.setEnabled(False)
 		self.box.addWidget(self.chkFlatpak,1,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.chkImage=QCheckBox("AppImage source")
 		self.box.addWidget(self.chkImage,2,2,1,1,Qt.AlignCenter|Qt.AlignCenter)
@@ -106,7 +117,6 @@ class sources(confStack):
 			print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
-
 	def _reload(self):
 		self.btnBack.clicked.connect(self.btnBack.text)
 		QApplication.processEvents()
@@ -116,7 +126,6 @@ class sources(confStack):
 		wait.run()
 		self._reloadCatalogue()
 		wait.stop()
-		#self.btnBack.clicked.connect(self._return)
 	#def _reload
 		
 	def _reloadCatalogue(self):
@@ -127,6 +136,7 @@ class sources(confStack):
 		self.setCursor(cursor)
 		reloadRebost.active.connect(self._endReloadCatalogue)
 		reloadRebost.run()
+	#def _reloadCatalogue
 
 	def _endReloadCatalogue(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -161,7 +171,6 @@ class sources(confStack):
 				self.chkFlatpak.setChecked(value)
 			if key=="appimage":
 				self.chkImage.setChecked(value)
-		pass
 	#def _udpate_screen
 
 	def _updateConfig(self,key):
@@ -175,4 +184,5 @@ class sources(confStack):
 			data=wdg.isChecked()
 			self.saveChanges(key,data,level=self.level)
 		return
+	#def writeConfig
 

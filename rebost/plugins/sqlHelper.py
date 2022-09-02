@@ -184,7 +184,6 @@ class sqlHelper():
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
-		print(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):

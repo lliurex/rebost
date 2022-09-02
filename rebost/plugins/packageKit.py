@@ -25,7 +25,6 @@ class packageKit():
 		self.result=''
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
-		self.pkgDb="/usr/share/rebost/packagekit.db"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -57,9 +56,14 @@ class packageKit():
 		gioFile=Gio.file_new_tmp()
 		pkgSack.to_file(gioFile[0])
 		gPath=gioFile[0].get_path()
-		newMd5=self._getNewMd5(gPath)
 		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
+		updateFile=Gio.file_new_tmp()
+		pkgUpdateSack.to_file(updateFile[0])
+		updatePath=updateFile[0].get_path()
+		newMd5=self._getNewMd5(gPath,updatePath)
+		gioFile[0].delete()
+		updateFile[0].delete()
 		pkgUpdateIdsArray=pkgUpdateSack.get_ids()
 		if newMd5!='':
 			pkgUpdateIds={}
@@ -107,18 +111,22 @@ class packageKit():
 		return()
 	#def _loadStore
 
-	def _getNewMd5(self,gPath):
+	def _getNewMd5(self,gPath,updatePath=''):
 		gioMd5=''
 		if os.path.isfile(self.lastUpdate)==False:
 			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
 				os.makedirs(os.path.dirname(self.lastUpdate))
 		else:
+			updateContent=''
 			lastUpdate=""
 			with open(self.lastUpdate,'r') as f:
 				lastUpdate=f.read()
 			with open(gPath,'rb') as f:
 				gioContent=f.read()
-			gioMd5=hashlib.md5(gioContent).hexdigest()
+			if os.path.isfile(updatePath):
+				with open(updatePath,'rb') as f:
+					updateContent=f.read()
+			gioMd5=hashlib.md5(gioContent+updateContent).hexdigest()
 			if gioMd5==lastUpdate:
 				gioMd5=""
 		return(gioMd5)

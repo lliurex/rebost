@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import gi
+from gi.repository import Gio
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 import threading
@@ -51,10 +52,16 @@ class packageKit():
 		self._debug("Getting pkg list")
 		pkcon=packagekit.Client()
 		pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		pkgSack=pkList.get_package_sack()
+		#Needed for controlling updates
+		gioFile=Gio.file_new_tmp()
+		pkgSack.to_file(gioFile[0])
+		gPath=gioFile[0].get_path()
+		newMd5=self._getNewMd5(gPath)
 		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		pkgUpdateIdsArray=pkgUpdateSack.get_ids()
-		if self._chkNeedUpdate()==True:
+		if newMd5!='':
 			pkgUpdateIds={}
 			for ids in pkgUpdateIdsArray:
 				name=ids.split(";")[0]
@@ -68,7 +75,6 @@ class packageKit():
 			processed=0
 			self._debug("Total packages {}".format(pkgCount))
 			rebostHelper.rebostPkgList_to_sqlite([],'packagekit.db',drop=True)
-			pkgSack=pkList.get_package_sack()
 			pkgIds=pkgSack.get_ids()
 			pkgCount=len(pkgIds)
 			while processed<pkgCount:
@@ -91,35 +97,32 @@ class packageKit():
 				time.sleep(0.001)
 			self._debug("PKG loaded")
 			try:
-				with open(self.pkDb,'rb') as f:
-					fpkContent=f.read()
-				pkMd5=""
-				pkMd5=hashlib.md5(fpkContent).hexdigest()
 				with open(self.lastUpdate,'w') as f:
-					f.write(pkMd5)
+					f.write(newMd5)
 			except:
-				print("need update disabled")
+				print("chkNeedUpdate disabled")
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")
 		return()
 	#def _loadStore
 
-	def _chkNeedUpdate(self):
-		update=True
-		lastUpdate=""
-		if os.path.isfile(self.pkgDb)==True:
-			fcontent=""
+	def _getNewMd5(self,gPath):
+		gioMd5=''
+		if os.path.isfile(self.lastUpdate)==False:
+			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
+				os.makedirs(os.path.dirname(self.lastUpdate))
+		else:
+			lastUpdate=""
 			with open(self.lastUpdate,'r') as f:
 				lastUpdate=f.read()
-			with open(self.pkgDb,'rb') as f:
-				fpkContent=f.read()
-			pkMd5=""
-			pkMd5=hashlib.md5(fpkContent).hexdigest()
-			if pkMd5==lastUpdate:
-				update=False
-		return(update)
-	#def _chkNeedUpdate
+			with open(gPath,'rb') as f:
+				gioContent=f.read()
+			gioMd5=hashlib.md5(gioContent).hexdigest()
+			if gioMd5==lastUpdate:
+				gioMd5=""
+		return(gioMd5)
+	#def _getNewMd5
 
 	def _generateRebostPkg(self,pkg,updateInfo):
 		rebostPkg=rebostHelper.rebostPkg()
@@ -132,7 +135,6 @@ class packageKit():
 		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
-		#rebostPkg['version']="package-{}".format(pkg.get_version())
 		rebostPkg['versions']={"package":"{}".format(updateVersion)}
 		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
 		if 'installed' in pkgId:
@@ -156,23 +158,17 @@ class packageKit():
 
 	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
-		#for pkg in pkgList:
-		#while pkgList:
 		for pkg in pkgList.get_details_array():
-			#pkg=pkgList.pop(0)
 			rebostPkg=rebostHelper.rebostPkg()
 			pkgId=pkg.get_package_id()
-
 			name=pkgId.split(";")[0]
 			version=pkgId.split(";")[1]
 			updateVersion=updateInfo.get(name,version)
-
 			rebostPkg['name']=name
 			rebostPkg['pkgname']=rebostPkg['name']
 			rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 			rebostPkg['summary']=pkg.get_summary()
 			rebostPkg['description']=pkg.get_description()
-			#rebostPkg['version']="package-{}".format(pkg.get_version())
 			rebostPkg['versions']={"package":"{}".format(updateVersion)}
 			rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
 			if 'installed' in pkgId:

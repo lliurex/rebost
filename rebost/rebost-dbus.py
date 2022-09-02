@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 import sys
-import subprocess
 import zlib
 import json
-import time
-import signal
 import dbus,dbus.service,dbus.exceptions
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 import rebostCore as rebost
 import logging
-import getpass
 
 class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
@@ -19,20 +15,24 @@ class rebostDbusMethods(dbus.service.Object):
 		self.dbg=True
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
+	#def __init__
 
 	def _debug(self,msg):
 		if self.dbg:
 			logging.debug("rebost-dbus: %s"%str(msg))
 			print("rebost-dbus: %s"%str(msg))
+	#def _debug
 
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
+	#def _print
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')
 	def enableGui(self,enable):
 		ret=self.rebost._setGuiEnabled(enable)
 		return (str(ret))
+	#def enableGui
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ssss', out_signature='s')
@@ -41,6 +41,7 @@ class rebostDbusMethods(dbus.service.Object):
 		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
+	#def install
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='sss', out_signature='s')
@@ -49,6 +50,7 @@ class rebostDbusMethods(dbus.service.Object):
 		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user)
 		return (ret)
+	#def test
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ssss', out_signature='s')
@@ -57,6 +59,7 @@ class rebostDbusMethods(dbus.service.Object):
 		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
+	#def remote_install
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='i')
@@ -64,6 +67,7 @@ class rebostDbusMethods(dbus.service.Object):
 		action='load'
 		ret=self.rebost.execute(action)
 		return (ret)
+	#def load
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -71,6 +75,7 @@ class rebostDbusMethods(dbus.service.Object):
 		action='getCategories'
 		ret=self.rebost.execute(action)
 		return (ret)
+	#def getCategories
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='ay')
@@ -80,6 +85,7 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,pkgname)
 		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def search
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='ay')
@@ -88,6 +94,7 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,category)
 		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def search_by_category
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='si', out_signature='ay')
@@ -96,6 +103,7 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,category,limit)
 		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def search_by_category_limit
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ss', out_signature='s')
@@ -104,6 +112,7 @@ class rebostDbusMethods(dbus.service.Object):
 		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,user)
 		return (ret)
+	#def show
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ssss', out_signature='s')
@@ -112,6 +121,7 @@ class rebostDbusMethods(dbus.service.Object):
 		pkg=pkg.lower()
 		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
 		return (ret)
+	#def remove
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='sss', out_signature='s')
@@ -119,6 +129,7 @@ class rebostDbusMethods(dbus.service.Object):
 		action='commitInstall'
 		ret=self.rebost.execute(action,args,bundle,state)
 		return (ret)
+	#def commitInstall
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
@@ -126,6 +137,7 @@ class rebostDbusMethods(dbus.service.Object):
 		action='insert'
 		ret=self.rebost.execute(action,args)
 		return (ret)
+	#def addTransaction
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -134,12 +146,14 @@ class rebostDbusMethods(dbus.service.Object):
 	def getEpiPkgStatus(self,epifile):
 		ret=self.rebost.getEpiPkgStatus(epifile)
 		return (ret)
+	#def getEpiPkgStatus
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
 	def getResults(self):
 		ret=self.rebost.getProgress()
 		return (ret)
+	#def getResults
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -148,6 +162,7 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,installed=True)
 #		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def getInstalledApps
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -164,7 +179,7 @@ class rebostDbusMethods(dbus.service.Object):
 				installed={}
 			versions=pkg.get('versions',{})
 			for bundle,state in states.items():
-				if state=="0":
+				if state=="0" and bundle!="zomando":
 					installed=installed.get(bundle,0)
 					if ((installed!=versions.get(bundle,0)) and (installed!=0)):
 						filterData.append(strpkg)
@@ -177,9 +192,9 @@ class rebostDbusMethods(dbus.service.Object):
 	def update(self,force=False):
 		self.rebost.forceUpdate(force)
 		ret=self.restart()
-
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
+	#def update
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='b')
@@ -193,15 +208,17 @@ class rebostDbusMethods(dbus.service.Object):
 			ret=False
 #		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def restart(self):
 
 	def getPlugins(self):
 		pass
+#class rebostDbusMethods
 	
 
 class rebostDBus():
-	
 	def __init__(self): 
 		self._setDbus()
+	#def __init__
 
 	def _setDbus(self):
 		DBusGMainLoop(set_as_default=True)
@@ -225,5 +242,7 @@ class rebostDBus():
 			print("Unexpected exception occurred: '{}'".format(str(e)))
 		finally:
 			loop.quit()
+	#def _setDbus
+#class rebostDBus
 
 rebostDBus()

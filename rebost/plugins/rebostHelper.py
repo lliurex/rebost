@@ -17,18 +17,22 @@ DBG=False
 def _debug(msg):
 	if DBG:
 		logging.warning("rebostHelper: %s"%str(msg))
+#def _debug
 	
 def rebostProcess(*kwargs):
 	reb={'plugin':'','kind':'','progressQ':'','progress':'','resultQ':'','result':'','action':'','parm':'','proc':''}
 	return(reb)
+#def rebostProcess
 
 def resultSet(*kwargs):
 	rs={'id':'','name':'','title':'','msg':'','description':'','error':0,'errormsg':''}
 	return(rs)
+#def resultSet
 
 def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
+#def rebostPkg
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	wrkDir="/usr/share/rebost"
@@ -60,7 +64,6 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 			cursor.executemany(queryMany,query)
 		except Exception as e:
 			_debug(e)
-#			_debug(query)
 		db.commit()
 	db.close()
 	cursor=None
@@ -130,25 +133,19 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
 #def _rebostPkg_fill_data
 
-def _sanitizeString(data,scape=False):
+def _sanitizeString(data,scape=False,unescape=False):
 	if isinstance(data,str):
 		data=html2text.html2text(data)#,"lxml")
 		data=data.replace("&","and")
 		data=data.replace("`","")
 		data=data.replace("´","")
 		data=data.replace("\n"," ")
-		#data=data.replace("<","*")
-		#data=data.replace(">","*")
 		data=data.replace("\\","*")
-		#data=data.replace("<p><p>","<p>")
-		#data=data.replace("*br*","\n")
-		#data=data.replace("*p*"," ")
-		#data=data.replace('<\p><\p>','<\p>')
-		#data=data.replace("''","'")
-		#data=data.replace("'","''")
 		data.rstrip()
 		if scape:
 			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
+		if unescape:
+			data=html.unescape(data)
 	return(data)
 #def _sanitizeString
 
@@ -160,22 +157,10 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
 		pkg['name']=pkg['id'].split(".")[-1].lower().strip()
-		#pkg['name']=_sanitizeString(name,scape=True)
-		#pkg['name']=html.escape(pkg['name']).encode('ascii', 'xmlcharrefreplace').decode().strip()
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
 			pkg['pkgname']=pkg['name']
-		####candidateName=component.get_id().split(".")
-		####if len(candidateName)>3:
-		####	pkg['pkgname']='-'.join(candidateName[2:])
-		####elif len(candidateName)>2:
-		####	pkg['pkgname']=candidateName[-1]
-		####elif len(candidateName)>1:
-		####	pkg['pkgname']=('-').join(candidateName)
-		####elif len(candidateName)>0:
-		####	pkg['pkgname']=candidateName[0]
-		#print("{} - {}".format(pkg['name'],pkg['pkgname']))
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		pkg['summary']=component.get_comment()
 		pkg['summary']=_sanitizeString(pkg['summary'],scape=True)
@@ -239,6 +224,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		user=''
 	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir)
 	return(epijson,episcript)
+#def generate_epi_for_rebostpkg
 	
 def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 	epiJson="{}_{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
@@ -264,6 +250,7 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 			_debug("%s"%e)
 			retCode=1
 	return(epiJson)
+#def _generate_epi_json
 
 def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
@@ -343,7 +330,6 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	if bundle=='package':
 		installCmd="pkcon install -y {}".format(rebostpkg['pkgname'])
 		removeCmd="pkcon remove -y {}".format(rebostpkg['pkgname'])
-		removeCmdLine.append("TEST=$( dpkg-query -s  %s 2> /dev/null| grep Status | cut -d \" \" -f 4 )")
 		removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 		removeCmdLine.append("exit 1")
@@ -386,6 +372,7 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	commands['removeCmdLine']=removeCmdLine
 	commands['statusTestLine']=statusTestLine
 	return(commands)
+#def _get_bundle_commands
 
 def get_epi_status(episcript):
 	st="0"
@@ -396,6 +383,7 @@ def get_epi_status(episcript):
 		except Exception as e:
 			_debug(e)
 	return(st)
+#def get_epi_status
 
 def check_remove_unsure(package):
 	sw=False
@@ -410,3 +398,4 @@ def check_remove_unsure(package):
 	_debug(proc.stdout)
 	_debug("Checked")
 	return(sw)
+#def check_remove_unsure(package):

@@ -146,8 +146,7 @@ class sqlHelper():
 					except:
 						print("Query error updating state: {}".format(query))
 					db.commit()
-			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-			rebostPkg['description']=html.unescape(rebostPkg['description'])
+			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
 			row=(pkg,json.dumps(rebostPkg))
@@ -185,6 +184,7 @@ class sqlHelper():
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+		print(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):
@@ -218,9 +218,6 @@ class sqlHelper():
 			if isinstance(data['installed'],str):
 				data['installed']={}
 			data['installed'][bundle]=release
-			#data['description']=rebostHelper._sanitizeString(data['description'])
-			#data['summary']=rebostHelper._sanitizeString(data['summary'])
-			#data['name']=rebostHelper._sanitizeString(data['name'])
 			dataContent=str(json.dumps(data))
 			#Ensure all single quotes are duplicated or sql will fail
 			dataContent=dataContent.replace("''","'")
@@ -245,79 +242,17 @@ class sqlHelper():
 			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
 			fupdate.write("packagekit.db:{}".format(fsize))
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
-		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		#Categories
 		categories_table=os.path.basename(self.categories_table).replace(".db","")
 		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
-		allCategories=[]
 		#Begin merge
 		self.copyPackagekitSql()
+		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		allCategories=[]
 		for fname in include:
-			f=os.path.join(self.wrkDir,fname)
-			if os.path.isfile(f):
-				fsize=os.path.getsize(f)
-				fupdate.write("\n{0}:{1}".format(fname,fsize))
-				allData=self._getAllData(f)
-				(offset,limit,step)=(0,0,2000)
-				count=len(allData)
-				while limit<count:
-					limit+=step
-					if limit>count:
-						limit=count
-					self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
-					query=[]
-					for data in allData[offset:limit]:
-						(cat0,cat1,cat2)=(None,None,None)
-						(pkgname,pkgdata)=data
-						pkgdataJson=json.loads(pkgdata)
-						fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(main_tmp_table,pkgname)
-						row=main_cursor.execute(fetchquery).fetchone()
-						if row:
-							pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
-						if pkgdataJson.get('bundle',{})=={}:
-							continue
-						categories=pkgdataJson.get('categories',[])
-						allCategories.extend(categories)
-						allCategories=list(set(allCategories))
-						if "Lliurex" in categories:
-							idx=categories.index("Lliurex")
-	####					if pkgdataJson.get('icon','')=='':
-	####						self._debug(pkgdataJson.get('name'))
-	####						self._debug("Icon: {}".format(pkgdataJson.get('icon')))
-	####						pkgdataJson['categories'].pop(idx)	
-	####						self._debug(categories)
-	####					else:
-							if idx!=0:
-								pkgdataJson['categories'][0]=categories[idx]
-								pkgdataJson['categories'][idx]=categories[0]
-							categories=pkgdataJson.get('categories',[])
-							
-						if (len(categories)>=1):
-							cat0=categories[0]
-							if len(categories)>1:
-								cat1=categories[-1]
-							if len(categories)>2:
-								cat2=categories[-2]
-						if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
-							cat0="Lliurex"
-						if isinstance(pkgdataJson['versions'],str):
-							states=pkgdataJson.get('state')
-							pkgdataJson['installed']={}
-							for bun,state in states.items():
-								if state=="0":
-									pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
-						pkgdata=str(json.dumps(pkgdataJson))
-						query.append([pkgname,pkgdata,cat0,cat1,cat2])
-					queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(main_tmp_table)
-					try:
-						main_cursor.executemany(queryMany,query)
-					except Exception as e:
-						self._debug(e)
-						self._debug(query)
-					offset=limit+1
-					if offset>count:
-						offset=count
-					main_db.commit()
+			(count,categories)=self._processDatabase(fname,main_db,main_cursor,main_tmp_table,fupdate)
+			allCategories.extend(categories)
+			allCategories=list(set(allCategories))
 		fupdate.close()
 		self.closeConnection(main_db)
 		if allCategories:
@@ -331,12 +266,103 @@ class sqlHelper():
 						cursor_cat.execute(queryCategories,(cat,))
 			except Exception as e:
 				self._debug(e)
-			self._debug(query)
 		self.closeConnection(db_cat)
 		self._copyTmpDef()
 		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
+
+	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
+		allCategories=[]
+		retval=(0,[])
+		f=os.path.join(self.wrkDir,fname)
+		if os.path.isfile(f):
+			fsize=os.path.getsize(f)
+			fupdate.write("\n{0}:{1}".format(fname,fsize))
+			allData=self._getAllData(f)
+			(offset,limit,step)=(0,0,2000)
+			count=len(allData)
+			while limit<count:
+				limit+=step
+				if limit>count:
+					limit=count
+				self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
+				query=[]
+				for data in allData[offset:limit]:
+					processedPkg=self._addPkgToQuery(tmpdb,cursor,data,fname)
+					if processedPkg!=([],[]):
+						pkgData=processedPkg[0]
+						categories=processedPkg[1]
+						if len(categories)>0:
+							allCategories.extend(categories)
+							allCategories=list(set(allCategories))
+						query.append(pkgData)
+				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(tmpdb)
+				try:
+					cursor.executemany(queryMany,query)
+				except Exception as e:
+					self._debug(e)
+					self._debug(query)
+				offset=limit+1
+				if offset>count:
+					offset=count
+				db.commit()
+			retval=(count,allCategories)
+		return(retval)
+	#def _processDatabase
+
+	def _processCategories(self):
+		if allCategories:
+			self._debug("Populating categories")
+			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
+			try:
+				for cat in allCategories:
+					if cat!='' and isinstance(cat,str):
+						#cat=cat.capitalize().strip()
+						cat=cat.strip()
+						cursor_cat.execute(queryCategories,(cat,))
+			except Exception as e:
+				self._debug(e)
+			self._debug(query)
+		self.closeConnection(db_cat)
+	#def _processCategories
+
+	def _addPkgToQuery(self,table,cursor,data,fname):
+		(cat0,cat1,cat2)=(None,None,None)
+		retval=([],[])
+		(pkgname,pkgdata)=data
+		pkgdataJson=json.loads(pkgdata)
+		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
+		row=cursor.execute(fetchquery).fetchone()
+		if row:
+			pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
+		if pkgdataJson.get('bundle',{})!={}:
+			categories=pkgdataJson.get('categories',[])
+			if "Lliurex" in categories:
+				idx=categories.index("Lliurex")
+				if idx!=0:
+					pkgdataJson['categories'][0]=categories[idx]
+					pkgdataJson['categories'][idx]=categories[0]
+				categories=pkgdataJson.get('categories',[])
+				
+			if (len(categories)>=1):
+				cat0=categories[0]
+				if len(categories)>1:
+					cat1=categories[-1]
+				if len(categories)>2:
+					cat2=categories[-2]
+			if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
+				cat0="Lliurex"
+			if isinstance(pkgdataJson['versions'],str):
+				states=pkgdataJson.get('state')
+				pkgdataJson['installed']={}
+				for bun,state in states.items():
+					if state=="0":
+						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
+			pkgdata=str(json.dumps(pkgdataJson))
+			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
+		return(retval)
+	#def _addPkgToQuery
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")

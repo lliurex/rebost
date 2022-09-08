@@ -385,6 +385,19 @@ def get_epi_status(episcript):
 	return(st)
 #def get_epi_status
 
+def get_table_state(pkg,bundle):
+	tablePath="/usr/share/rebost/installed.db"
+	ret=[]
+	if os.path.isfile(tablePath):
+		db=sqlite3.connect(tablePath)
+		cursor=db.cursor()
+		query="Select * from installed where pkg='{0}' and bundle='{1}'".format(pkg,bundle)
+		cursor.execute(query)
+		ret=cursor.fetchall()
+		db.close()
+	return ret
+#def get_table_state
+
 def check_remove_unsure(package):
 	sw=False
 	_debug("Checking if remove {} is unsure".format(package))

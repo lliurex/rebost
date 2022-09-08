@@ -116,6 +116,7 @@ class packageKit():
 		if os.path.isfile(self.lastUpdate)==False:
 			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
 				os.makedirs(os.path.dirname(self.lastUpdate))
+			gioMd5="-1"
 		else:
 			updateContent=''
 			lastUpdate=""
@@ -129,6 +130,7 @@ class packageKit():
 			gioMd5=hashlib.md5(gioContent+updateContent).hexdigest()
 			if gioMd5==lastUpdate:
 				gioMd5=""
+			self._debug("Md5: {} {}".format(gioMd5,lastUpdate))
 		return(gioMd5)
 	#def _getNewMd5
 

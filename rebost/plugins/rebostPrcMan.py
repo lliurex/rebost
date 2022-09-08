@@ -96,12 +96,12 @@ class rebostPrcMan():
 						cursor.execute(query)
 						self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 						progress=(pid,dataTmp)
-
 				else:
-					dataTmp=self._getEpiState(data)
-					self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
 					episcript=data.get('episcript','')
-					self._removeTempDir(episcript)
+					if os.path.isfile(episcript):
+						dataTmp=self._getEpiState(data)
+						self.sql.execute(action='commitInstall',parms=dataTmp['package'],extraParms=dataTmp.get('bundle',"package"),extraParms2=dataTmp['status'])
+						self._removeTempDir(episcript)
 			
 			else:
 				if data.get('msg',''):
@@ -260,17 +260,6 @@ class rebostPrcMan():
 
 	def _removeTempDir(self,tmpfile):
 			tmpDir=os.path.dirname(tmpfile)
-#			files=[]
-#			save_del=False
-#			if os.path.isdir(tmpDir)==True:
-#				files=os.listdir(os.path.dirname(tmpfile))
-#				save_del=True
-#			for f in files:
-#				if os.path.join(tmpDir,f) not in [episcript,epijson]:
-#					self._debug("Remove not possible: {} not in {} nor {}".format(f,episcript,epijson))
-#					save_del=False
-#					break
-#			if save_del:
 			if os.path.isdir(tmpDir):
 				try:
 					self._print("Removing tmp dir {}".format(tmpDir))

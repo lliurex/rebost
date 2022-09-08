@@ -6,18 +6,13 @@ import urllib
 from urllib.request import Request
 from urllib.request import urlretrieve
 import random
-import time
-import datetime
 import gettext
 import threading
 import shutil
 from bs4 import BeautifulSoup
-import tempfile
 import rebostHelper
-import subprocess
 import logging
 from queue import Queue
-import html
 import html2text
 import hashlib
 
@@ -65,9 +60,10 @@ class appimageHelper():
 
 	def _loadStore(self):
 		action="load"
-		self._get_bundles_catalogue()
+		searchDirs=self._searchdirsForAppimages()
+		self._get_bundles_catalogue(searchDirs)
 	
-	def _get_bundles_catalogue(self):
+	def _get_bundles_catalogue(self,searchDirs=[]):
 		applist=[]
 		appdict={}
 		all_apps=[]
@@ -81,7 +77,7 @@ class appimageHelper():
 			update=self._chkNeedUpdate(appimageJson,repo_name)
 			if update:
 				if appimageJson and repo_info['type']=='json':
-					self._process_appimage_json(appimageJson,repo_name)
+					self._process_appimage_json(appimageJson,repo_name,searchDirs=searchDirs)
 					updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
 					appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()
 					with open(updateFile,'w') as f:
@@ -124,7 +120,7 @@ class appimageHelper():
 		return(content)
 	#def _fetch_repo
 	
-	def _process_appimage_json(self,data,search=''):
+	def _process_appimage_json(self,data,repo,searchDirs=[]):
 		appList=[]
 		thlist=[]
 		if data:
@@ -140,7 +136,7 @@ class appimageHelper():
 			#for appimage in applist:
 			while applist:
 				appimage=applist.pop(0)
-				th=threading.Thread(target=self._th_process_appimage,args=(appimage,semaphore))
+				th=threading.Thread(target=self._th_process_appimage,args=(appimage,searchDirs,semaphore))
 				th.start()
 				thlist.append(th)
 			for th in thlist:
@@ -154,32 +150,18 @@ class appimageHelper():
 		return(applist)
 	#_process_appimage_json
 	
-	def _process_appimage(self,appimage,search):
-		appinfo=None
-		if 'links' in appimage.keys():
-			if appimage['links']:
-				add=True
-				if search:
-					if (search.lower() in appimage.get('name','').lower() or search in appimage.get('description','').lower())==False:
-						add=False
-				if add:
-					appinfo=self.load_json_appinfo(appimage)
-			  #  rebostHelper.rebostPkgList_to_sqlite([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
-		return(appinfo)
-		#def _th_process_appimage
-
-	def _th_process_appimage(self,appimage,semaphore):
+	def _th_process_appimage(self,appimage,searchDirs,semaphore):
 		semaphore.acquire()
 		appinfo=None
 		if appimage.get('links'):
-			appinfo=self.load_json_appinfo(appimage)
+			appinfo=self.load_json_appinfo(appimage,searchDirs=searchDirs)
 		  #  rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
 			#rebostHelper.rebostPkg_to_sqlite(appinfo,'appimage.db')
 			self.queue.put(appinfo)
 		semaphore.release()
 		#def _th_process_appimage
 
-	def load_json_appinfo(self,appimage,download=False):
+	def load_json_appinfo(self,appimage,download=False,searchDirs=[]):
 		rebostpkg=rebostHelper.rebostPkg()
 		rebostpkg['name']=appimage['name'].strip()
 		rebostpkg['pkgname']=rebostpkg['name'].lower()#.replace("_","-")
@@ -221,9 +203,10 @@ class appimageHelper():
 			rebostpkg["screenshots"]=scrArray
 		links=appimage.get('links')
 		installerurl=''
+		version=""
 		while links:
 			link=links.pop(0)
-			if link.get('url') and link.get('type','')=='Download' and download:
+			if link.get('url') and link.get('type','').lower()=='download' and download:
 				installerUrl=self._get_releases(link['url'])
 				if installerUrl.split('/')>2:
 					version=installerUrl.split('/')[-2]
@@ -236,9 +219,22 @@ class appimageHelper():
 				rebostpkg['versions']['appimage']="**"
 		state="available"
 		if os.path.isfile(os.path.join(self.appimageDir,"{}.appimage".format(rebostpkg['pkgname']))):
-			rebostpkg['state']['appimage']=0
+			rebostpkg['state']['appimage']="0"
 		else:
-			rebostpkg['state']['appimage']=1
+			rebostpkg['state']['appimage']="1"
+			for userDir in searchDirs:
+				apps=[app.lower() for app in os.listdir(userDir)]
+				if "{}.appimage".format(rebostpkg['pkgname']) in apps:
+					rebostpkg['state']['appimage']="0"
+					break
+		if rebostpkg['state']['appimage']=="0":
+			rows=rebostHelper.get_table_state(rebostpkg['pkgname'],'appimage')
+			for row in rows:
+				if row[-1]=="0":
+					rebostpkg['installed']['appimage']=row[2]
+				elif row[-1]=="1":
+					rebostpkg['installed']['appimage']=""
+				
 		rebostpkg['bundle'].update({'appimage':"{}".format(installerUrl)})
 		appimage['authors']=appimage.get('authors','')
 		for author in appimage['authors']:
@@ -249,6 +245,20 @@ class appimageHelper():
 			rebostpkg['homepage']='/'.join(rebostpkg['installerUrl'].split('/')[0:-1])
 		return (rebostpkg)
 	#def load_json_appinfo
+
+	def _searchdirsForAppimages(self):
+		#Appimages could be installed on any home available
+		#In order to get installed status it's needed to scan users
+		searchDirs=[]
+		for user in os.listdir("/home"):
+			binDir=os.path.join("/home",user,".local/bin")
+			if os.path.isdir(binDir):
+				apps=[b.lower() for b in os.listdir(binDir)]
+				for app in apps:
+					if ".appimage" in app:
+						searchDirs.append(binDir)
+		return (searchDirs)
+	#def _searchdirsForAppimages
 
 	def fillData(self,rebostPkg):
 		try:

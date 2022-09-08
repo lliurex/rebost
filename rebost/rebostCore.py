@@ -329,7 +329,7 @@ class Rebost():
 		if th:
 			proc=threading.Thread(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
 		else:
-			proc=multiprocessing.Process(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
+			proc=multiprocessing.Process(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}),daemon=False)
 		try:
 			proc.start()
 		except Exception as e:

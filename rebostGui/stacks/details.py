@@ -168,7 +168,6 @@ class details(confStack):
 		self.btnFlat.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
 		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
 		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
-		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
 		self.setLayout(self.box)
@@ -193,7 +192,23 @@ class details(confStack):
 	def _runZomando(self):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
 		if os.path.isfile(zmdPath):
-			subprocess.run(["pkexec",zmdPath])
+			#Look if pkexec is needed
+			appPath=os.path.join("/usr/share/zero-center/applications",self.app.get('bundle',{}).get('zomando','')).replace(".zmd",".app")
+			cmd=[zmdPath]
+			if os.path.isfile(appPath):
+				with open (appPath,'r') as f:
+					flines=f.readlines()
+				for l in flines:
+					if "pkexec" in l:
+						cmd=["pkexec",zmdPath]
+						break
+			#subprocess.run(["pkexec",zmdPath])
+			try:
+				subprocess.run(cmd)
+			except Exception as e:
+				print(e)
+				self.showMsg(e)
+				
 	#def _runZomando
 
 	def _runCommand(self,bundle):

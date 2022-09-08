@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -23,7 +23,7 @@ i18n={
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
 	"INSTALL":_("Install"),
-	"RUN":_("Execute"),
+	"RUN":_("Launch\n"),
 	"REMOVE":_("Remove")
 	}
 	
@@ -137,17 +137,37 @@ class details(confStack):
 		self.btnImage=QPushButton("{} appimage".format(i18n.get("INSTALL")))
 		self.btnImage.clicked.connect(self._installImage)
 		self.box.addWidget(self.btnImage,6,0,1,1,Qt.AlignTop)
+		self.Launchers=QWidget()
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
-		self.box.addWidget(self.btnZomando,7,0,1,1,Qt.AlignTop)
 		self.btnZomando.setVisible(False)
+		self.btnPackageLaunch=QPushButton("{} package".format(i18n.get("RUN")))
+		self.btnPackageLaunch.clicked.connect(lambda x:self._runCommand("package"))
+		self.btnFlatpakLaunch=QPushButton("{} flatpak".format(i18n.get("RUN")))
+		self.btnFlatpakLaunch.clicked.connect(lambda x:self._runCommand("flatpak"))
+		self.btnSnapLaunch=QPushButton("{} snap".format(i18n.get("RUN")))
+		self.btnSnapLaunch.clicked.connect(lambda x:self._runCommand("snap"))
+		self.btnAppimageLaunch=QPushButton("{} appimage".format(i18n.get("RUN")))
+		self.btnAppimageLaunch.clicked.connect(lambda x:self._runCommand('appimage'))
+		self.btnPackageLaunch.setVisible(False)
+		self.btnFlatpakLaunch.setVisible(False)
+		self.btnSnapLaunch.setVisible(False)
+		self.btnAppimageLaunch.setVisible(False)
+		lay=QGridLayout()
+		lay.addWidget(self.btnZomando,1,0,1,1)
+		lay.addWidget(self.btnPackageLaunch,1,1,1,1)
+		lay.addWidget(self.btnFlatpakLaunch,1,2,1,1)
+		lay.addWidget(self.btnSnapLaunch,1,3,1,1)
+		lay.addWidget(self.btnAppimageLaunch,1,4,1,1)
+		self.Launchers.setLayout(lay)
+		self.box.addWidget(self.Launchers,6,1,1,1,Qt.AlignTop|Qt.AlignRight)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
-		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignTop)
-		self.btnApt.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		self.btnFlat.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
-		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
+		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignLeft)
+		self.btnApt.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
+		self.btnFlat.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
+		self.btnSnap.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
+		self.btnImage.setFixedSize(self.btnImage.sizeHint().width()+22, self.btnApt.sizeHint().height()+12)
 		self.btnZomando.setFixedSize(self.btnImage.sizeHint().width()+12, self.btnApt.sizeHint().height()+12)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
 		self.box.addWidget(self.Screenshot,8,0,1,2,Qt.AlignTop)
@@ -175,6 +195,19 @@ class details(confStack):
 		if os.path.isfile(zmdPath):
 			subprocess.run(["pkexec",zmdPath])
 	#def _runZomando
+
+	def _runCommand(self,bundle):
+		print(bundle)
+		if bundle=="package":
+			cmd=["gtk-launch",self.app.get("name",'')]
+		elif bundle=="flatpak":
+			cmd=["flatpak","run",self.app.get("bundle",{}).get("flatpak","")]
+		elif bundle=="snap":
+			cmd=["snap","run",self.app.get("bundle",{}).get("snap","")]
+		elif bundle=="appimage":
+			cmd=["gtk-launch",self.app.get("name",'')]
+		subprocess.run(cmd)
+	#def _runCommand
 
 	def _genericEpiInstall(self,bundle):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -232,24 +265,28 @@ class details(confStack):
 					if bun=="snap" and state=='0':
 						self.btnSnap.setText("{} snap".format(i18n.get("REMOVE")))
 						self.btnSnap.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
+						self.btnSnapLaunch.setVisible(True)
 			elif bundle=="flatpak":
 				self.btnFlat.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="flatpak" and state=='0':
 						self.btnFlat.setText("{} flatpak".format(i18n.get("REMOVE")))
 						self.btnFlat.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
+						self.btnFlatpakLaunch.setVisible(True)
 			elif bundle=="appimage":
 				self.btnImage.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="appimage" and state=='0':
 						self.btnImage.setText("{} appimage".format(i18n.get("REMOVE")))
 						self.btnImage.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
+						self.btnAppimageLaunch.setVisible(True)
 			elif bundle=="package":
 				self.btnApt.setEnabled(True)
 				for bun,state in self.app.get('state',{}).items():
 					if bun=="package" and state=='0':
 						self.btnApt.setText("{} package".format(i18n.get("REMOVE")))
 						self.btnApt.setToolTip("{}".format(versions.get(bun,self.app.get('name'))))
+						self.btnPackageLaunch.setVisible(True)
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
 		homepage=self.app.get('homepage','')
@@ -299,6 +336,10 @@ class details(confStack):
 		self.btnImage.setEnabled(False)
 		self.btnImage.setToolTip("")
 		self.btnZomando.setVisible(False)
+		self.btnPackageLaunch.setVisible(False)
+		self.btnFlatpakLaunch.setVisible(False)
+		self.btnSnapLaunch.setVisible(False)
+		self.btnAppimageLaunch.setVisible(False)
 		self.lblSummary.setFixedWidth(self.height())
 		self.lblHomepage.setText("")
 		self.app['name']=self.app['name'].replace(" ","")

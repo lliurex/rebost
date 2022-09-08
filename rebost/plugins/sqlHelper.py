@@ -25,6 +25,7 @@ class sqlHelper():
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
 		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
+		self.installed_table=os.path.join(self.wrkDir,"installed.db")
 		self.categories_table=os.path.join(self.wrkDir,"categories.db")
 		self.proc_table=os.path.join(self.wrkDir,"rebostPrc.db")
 		self.main_tmp_table=os.path.join(self.wrkDir,"tmpStore.db")
@@ -181,7 +182,7 @@ class sqlHelper():
 			fetch="LIMIT {}".format(limit)
 			order="ORDER by RANDOM()"
 		if upgradable or installed:
-			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) and data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
+			query="SELECT pkg,data FROM {0} WHERE data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		cursor.execute(query)
@@ -200,11 +201,11 @@ class sqlHelper():
 		return(rows)
 	#def _listPackages
 
-
 	def _commitInstall(self,pkgname,bundle='',state=0):
 		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
 		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -222,9 +223,12 @@ class sqlHelper():
 			dataContent=dataContent.replace("''","'")
 			dataContent=dataContent.replace("'","''")
 			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
+			queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
+			cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
 		#self._debug(query)
-		cursor.execute(query)
+			cursor.execute(query)
 		self.closeConnection(db)
+		self.closeConnection(dbInstalled)
 		return(rows)
 	#def _commitInstall
 
@@ -455,6 +459,12 @@ class sqlHelper():
 		self._print("Removing tmp file")
 		os.remove(self.main_tmp_table)
 	#def _copyTmpDef
+	
+	def getTableStatus(self,pkg,bundle):
+		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
+		query="Select * from installed where pkg={0} and bundle={1}".format(pkg,bundle)
+		ret=cursorInstalled.execute(query)
+		return ret
 
 def main():
 	obj=sqlHelper()

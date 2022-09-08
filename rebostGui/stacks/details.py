@@ -197,7 +197,6 @@ class details(confStack):
 	#def _runZomando
 
 	def _runCommand(self,bundle):
-		print(bundle)
 		if bundle=="package":
 			cmd=["gtk-launch",self.app.get("name",'')]
 		elif bundle=="flatpak":

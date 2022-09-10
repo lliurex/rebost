@@ -255,6 +255,8 @@ class details(confStack):
 
 	def setParms(self,*args):
 		self.app=args[0][0]
+		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.setCursor(cursor)
 	#def setParms
 
 	def updateScreen(self):

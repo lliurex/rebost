@@ -26,7 +26,6 @@ class zomandoHelper():
 #		self._loadStore()
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 

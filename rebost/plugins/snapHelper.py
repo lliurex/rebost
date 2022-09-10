@@ -25,7 +25,6 @@ class snapHelper():
 		self.snap=Snapd.Client()
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 

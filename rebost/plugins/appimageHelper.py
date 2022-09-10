@@ -42,7 +42,6 @@ class appimageHelper():
 		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 

@@ -28,7 +28,6 @@ class packageKit():
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 	#def setDebugEnabled

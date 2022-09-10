@@ -67,6 +67,7 @@ class zomandoHelper():
 	def fillData(self,zmd,rebostPkg):
 		appName=os.path.basename(zmd).replace(".zmd",".app")
 		appPath=os.path.join(self.appDir,appName)
+		rebostPkg['categories'].append("Zomando")
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
 			(icon,cat)=("","")
@@ -80,7 +81,7 @@ class zomandoHelper():
 						rebostPkg['icon']=os.path.join(self.iconDir,icon)
 					elif fline.startswith("Category"):
 						cat=fline.split("=")[-1].rstrip()
-						if cat!='Category':
+						if cat!='Category' and cat not in rebostPkg['categories']:
 							rebostPkg['categories'].append(cat)
 					if icon and cat:
 						break

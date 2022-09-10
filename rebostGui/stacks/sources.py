@@ -156,6 +156,8 @@ class sources(confStack):
 	#def _reloadCatalogue
 
 	def _return(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.setCursor(cursor)
 		self.stack.gotoStack(idx=1,parms="1")
 	#def _return
 

@@ -77,6 +77,7 @@ class portrait(confStack):
 		self.index=1
 		self.appsToLoad=50
 		self.appsLoaded=0
+		self.appsSeen=[]
 		self.enabled=True
 		self.defaultRepos={}
 		self.rc=store.client()
@@ -208,6 +209,10 @@ class portrait(confStack):
 		rowspan=random.randint(1,3)
 		span=rowspan
 		for strapp in apps:
+			jsonapp=json.loads(strapp)
+			if jsonapp.get('name','') in self.appsSeen:
+				continue
+			self.appsSeen.append(jsonapp.get('name',''))
 			row=self.table.rowCount()-1
 			btn=QPushButtonRebostApp(strapp)
 			btn.clicked.connect(self._loadDetails)
@@ -255,6 +260,7 @@ class portrait(confStack):
 		self.table.setRowCount(0)
 		self.table.setRowCount(1)
 		self.appsLoaded=0
+		self.appsSeen=[]
 	#def resetScreen
 
 	def setParms(self,*args):

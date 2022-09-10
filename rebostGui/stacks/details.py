@@ -255,6 +255,8 @@ class details(confStack):
 
 	def setParms(self,*args):
 		self.app=args[0][0]
+		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.setCursor(cursor)
 	#def setParms
 
 	def updateScreen(self):
@@ -303,6 +305,7 @@ class details(confStack):
 						self.btnPackageLaunch.setVisible(True)
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
+				self.btnPackageLaunch.setVisible(False)
 		homepage=self.app.get('homepage','')
 		text=''
 		if homepage:

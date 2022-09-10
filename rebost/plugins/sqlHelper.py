@@ -36,7 +36,6 @@ class sqlHelper():
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 	#def setDebugEnabled
@@ -184,7 +183,11 @@ class sqlHelper():
 		if upgradable or installed:
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
-			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+			if "," in category:
+				query="SELECT pkg,data FROM {0} WHERE cat0 in {1} OR cat1 in {1} OR cat2 in {1} {2} {3}".format(table,str(category),order,fetch)
+			else:
+				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
 		if (len(rows)<limit) or (len(rows)==0):

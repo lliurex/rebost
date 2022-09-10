@@ -31,7 +31,6 @@ class rebostPrcMan():
 		self.n4dClients={}
 
 	def setDebugEnabled(self,enable=True):
-		self._debug("Debug %s"%enable)
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
 	#def setDebugEnabled

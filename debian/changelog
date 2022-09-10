@@ -1,10 +1,12 @@
-rebost (0.9.9.6.1) lliurex22; urgency=medium
+rebost (0.9.9.7) lliurex22; urgency=medium
 
   * Release candidate. Bugfix 
   * Thread for epi operations
   * Distro-agnostic implementation
+  * Optimize performance
   * Appimage upgrades
   * GUI: Add launch buttons for installed apps
+  * GUI: Much faster execution. Fix duplicated categories
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
 

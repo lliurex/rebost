@@ -97,9 +97,10 @@ class portrait(confStack):
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
 		for cat in catList:
-			if cat in seenCats.keys():
+			#if cat.islower() it's a category from system without appstream info 
+			if cat in seenCats.keys() or cat.islower():
 				continue
-			seenCats[cat.lower()]=cat
+			seenCats[cat.capitalize()]=cat
 			self.cmbCategories.addItem(cat)
 		self.apps=self._getAppList()
 		self._shuffleApps()
@@ -131,15 +132,11 @@ class portrait(confStack):
 	def _getAppList(self,cat=''):
 		apps=[]
 		if cat!='':
-			apps=json.loads(self.rc.execute('list',cat))
+			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
 			self._debug("Loading cat {}".format(cat))
 		else:
-			categories=[self.cmbCategories.itemText(i) for i in range(self.cmbCategories.count())]
-			for cat in categories:
-				if cat.islower()==True:
-					continue
-				self._debug("Loading {}".format(cat))
-				apps.extend(json.loads(self.rc.execute('list',cat)))
+			categories=",".join(["\"{}\"".format(self.cmbCategories.itemText(i)) for i in range(self.cmbCategories.count())])
+			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
 		return(apps)
 	#def _getAppList
 

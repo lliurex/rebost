@@ -303,6 +303,7 @@ class details(confStack):
 						self.btnPackageLaunch.setVisible(True)
 			elif bundle=="zomando":
 				self.btnZomando.setVisible(True)
+				self.btnPackageLaunch.setVisible(False)
 		homepage=self.app.get('homepage','')
 		text=''
 		if homepage:

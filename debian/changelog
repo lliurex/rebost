@@ -1,4 +1,4 @@
-rebost (0.9.9.7.1) lliurex22; urgency=medium
+rebost (0.9.9.7.2) lliurex22; urgency=medium
 
   * Release candidate. Bugfix 
   * Thread for epi operations
@@ -7,6 +7,7 @@ rebost (0.9.9.7.1) lliurex22; urgency=medium
   * Appimage upgrades
   * GUI: Add launch buttons for installed apps/zomandos
   * GUI: Much faster execution. Fix duplicated search results
+  * Fix Appimage downloads from github
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
 

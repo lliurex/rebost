@@ -321,36 +321,40 @@ class appimageHelper():
 		if (url_source or releases_page) and not baseUrl.lower().endswith(".appimage"):
 			self._debug("base Url: {}".format(baseUrl))
 			content=''
+			baseContent=''
 			try:
 				with urllib.request.urlopen(baseUrl) as f:
-					try:
-						content=f.read().decode('utf-8')
-					except:
-						self._debug("UTF-8 failed")
-						pass
-					soup=BeautifulSoup(content,"html.parser")
-					package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
-
-					for package_data in package_a:
-						if url_source=="opensuse":
-							package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
-						else:
-							package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
-						package_link=package_data['href']
-						#self._debug("Link: {}".format(package_link))
-						#self._debug("Rel: {}".format(releases_page))
-						#self._debug("Source: {}".format(url_source))
-						if releases_page or url_source:
-							package_link=releases_page+package_link
-							self._debug("Link: {}".format(package_link))
-							#if baseUrl in package_link:
-							if package_link.lower().endswith(".appimage"):
-								if url_source=="opensuse":
-									releases.append("https://download.opensuse.org{}".format(package_link))
-								else:
-									releases.append(package_link)
-			except:
-				self._debug("App not found at {}".format(baseUrl))
+					baseContent=f.read().decode('utf-8')
+			except Exception as e:
+				self._debug("baseUrl UTF-8 failed")
+			if baseContent!='':
+				soup=BeautifulSoup(baseContent,"html.parser")
+				assetUrl=self._scrapExpandedAssets(soup)
+				try:
+					with urllib.request.urlopen(assetUrl) as g:
+						content=g.read().decode('utf-8')
+				except:
+					self._debug("assetUrl UTF-8 failed")
+				soup=BeautifulSoup(content,"html.parser")
+				package_a=soup.findAll('a', attrs={ "href" : re.compile(r'.*\.[aA]pp[iI]mage$')})
+				for package_data in package_a:
+					if url_source=="opensuse":
+						package_name=package_data.findAll('a', attrs={"class" : "mirrorbrain-btn"})
+					else:
+						package_name=package_data.findAll('strong', attrs={ "class" : "pl-1"})
+					package_link=package_data['href']
+					#self._debug("Link: {}".format(package_link))
+					#self._debug("Rel: {}".format(releases_page))
+					#self._debug("Source: {}".format(url_source))
+					if releases_page or url_source:
+						package_link=releases_page+package_link
+						self._debug("Link: {}".format(package_link))
+						#if baseUrl in package_link:
+						if package_link.lower().endswith(".appimage"):
+							if url_source=="opensuse":
+								releases.append("https://download.opensuse.org{}".format(package_link))
+							else:
+								releases.append(package_link)
 		if releases==[]:
 			releases=[baseUrl]
 		self._debug(releases)
@@ -362,6 +366,14 @@ class appimageHelper():
 				break
 		self._debug("Selected url: {}".format(rel))
 		return rel
+
+	def _scrapExpandedAssets(self,soup):
+		assetUrl=""
+		assets=soup.findAll('include-fragment', attrs={ "src" : re.compile(r'.*expanded_assets.*')})
+		if len(assets)>0:
+			assetUrl=assets[0]['src']
+		return(assetUrl)
+	#def _scrapExpandedAssets
 	
 	def _download_file(self,url,app_name,dest_dir):
 		#self._debug("Downloading to %s"%self.iconDir)

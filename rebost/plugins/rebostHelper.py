@@ -328,24 +328,24 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-		installCmd="pkcon install -y {}".format(rebostpkg['pkgname'])
-		removeCmd="pkcon remove -y {}".format(rebostpkg['pkgname'])
+		installCmd="pkcon install -y {} 2>&1".format(rebostpkg['pkgname'])
+		removeCmd="pkcon remove -y {} 2>&1".format(rebostpkg['pkgname'])
 		removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 		removeCmdLine.append("exit 1")
 		removeCmdLine.append("fi")
 		statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	elif bundle=='snap':
-		installCmd="snap install {}".format(rebostpkg['bundle']['snap'])
-		removeCmd="snap remove {}".format(rebostpkg['bundle']['snap'])
+		installCmd="snap install {} 2>&1".format(rebostpkg['bundle']['snap'])
+		removeCmd="snap remove {} 2>&1".format(rebostpkg['bundle']['snap'])
 		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
 	elif bundle=='flatpak':
-		installCmd="flatpak -y install {}".format(rebostpkg['bundle']['flatpak'])
-		removeCmd="flatpak -y uninstall {}".format(rebostpkg['bundle']['flatpak'])
+		installCmd="flatpak -y install {} 2>&1".format(rebostpkg['bundle']['flatpak'])
+		removeCmd="flatpak -y uninstall {} 2>&1".format(rebostpkg['bundle']['flatpak'])
 		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
 	elif bundle=='appimage':
 		#user=os.environ.get('USER')
-		installCmd="wget -O /tmp/{}.appimage {}".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
+		installCmd="wget -O /tmp/{}.appimage {} 2>&1".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
 		destdir="/opt/appimages"
 		if user!='root' and user:
 			destdir=os.path.join("/home",user,".local","bin")

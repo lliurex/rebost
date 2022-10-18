@@ -203,7 +203,11 @@ class flatpakHelper():
 
 	def _init_flatpak_repo(self):
 		cmd=['/usr/bin/flatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub.flatpakrepo']
-		subprocess.run(cmd)
+		try:
+			subprocess.run(cmd)
+		except Exception as e:
+			print(e)
+			print("Flatpak source disabled")
 	#def _init_flatpak_repo
 
 def main():

@@ -224,6 +224,7 @@ class details(confStack):
 	#def _runCommand
 
 	def _genericEpiInstall(self,bundle):
+		self.rc.enableGui(True)
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		pkg=self.app.get('name').replace(' ','')

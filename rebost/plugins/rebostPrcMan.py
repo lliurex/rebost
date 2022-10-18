@@ -6,12 +6,13 @@ from appconfig.appConfigN4d import appConfigN4d as n4dClient
 import json
 import rebostHelper
 import subprocess
+import multiprocessing
 import time
 import random
 
 class rebostPrcMan():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.rebost=None
 		self.actions=["remote","test","install","remove","progress"]
 		self.packagekind="*"
@@ -210,6 +211,36 @@ class rebostPrcMan():
 		return(rebostpkg,bundle,rebostPkgList)
 	#def _chk_pkg_format
 
+	def _mpManagePackage(self,action,epifile,username,procQ):
+		self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		if self.gui==True:
+			return
+			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
+		else:
+			cmd=["epic",action,"-nc","-u",epifile]
+			if action=="remove":
+				cmd=["epic","uninstall","-nc","-u",epifile]
+		self._debug(cmd)
+		proc=subprocess.Popen(cmd)
+		procQ.put(proc.pid)
+		while proc.poll()==None:
+			time.sleep(0.1)
+	#def _mpManagePackage
+
+	def _remoteInstall(self,usern,episcript):
+		if usern in self.n4dClients.keys():
+			n4d=self.n4dClients.get(usern)
+			self._print("Select n4d proxy")
+		else:
+			n4d=n4dClient(username=usern)
+			self.n4dClients.update({usern:n4d})
+			self._print("Add n4d proxy")
+		if n4dkey:
+			n4d.setCredentials(n4dkey=n4dkey)
+		pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
+		self._removeTempDir(episcript)
+	#def _remoteInstall
+
 	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):
 		self._debug("{} package {} as bundle {} for user {}".format(action,pkgname,bundle,user))
 		#1st search that there's a package in the desired format
@@ -222,38 +253,23 @@ class rebostPrcMan():
 				if rebostHelper.check_remove_unsure(pkgname):
 					rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} is a system package'.format(pkgname)})]
 					sure=False
-			#else:
 			if sure:
 				usern="{}".format(user)
-				remote=False
-				if action=="remote":
-					remote=True
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
-				if usern in self.n4dClients.keys():
-					n4d=self.n4dClients.get(usern)
-					self._print("Select n4d proxy")
-				else:
-					n4d=n4dClient(username=usern)
-					self.n4dClients.update({usern:n4d})
-					self._print("Add n4d proxy")
-				if action!='test' and remote==False:
-					self._debug("Executing N4d query as user {}".format(user))
-					if n4dkey:
-						n4d.setCredentials(n4dkey=n4dkey)
-					pid=n4d.n4dQuery("Rebost","{}_epi".format(action),epifile,self.gui,username=usern)
-					if isinstance(pid,dict):
-						pid=pid.get('status',-1)
+				if action=="remote":
+					self._remoteInstall(usern,episcript)
+				elif action!="test":
+					self._debug("Executing {0} query as user {1}".format(action,user))
+					procQ=multiprocessing.Queue()
+					proc=multiprocessing.Process(target=self._mpManagePackage,args=(action,epifile,usern,procQ,))
+					proc.start()
+					while procQ.empty():
+						time.sleep(0.01)
+					pid=procQ.get()
 					rebostPkgList=[(pkgname,{'package':pkgname,'action':action,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
-				elif remote==True:
-					if n4dkey:
-						n4d.setCredentials(n4dkey=n4dkey)
-					pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
-					#pid=self.n4d.n4dQuery("Rebost","remote_install",episcript,self.gui)
-					self._removeTempDir(episcript)
-
-		self._debug(rebostPkgList)
+					proc.terminate()
 		return (rebostPkgList)
 	#def _managePackage
 

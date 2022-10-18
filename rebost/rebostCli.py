@@ -5,7 +5,6 @@ import json
 import os,sys
 import subprocess
 import time 
-import multiprocessing as mp
 
 action=''
 actionArgs=[]
@@ -25,22 +24,14 @@ class color:
    END = '\033[0m'
 
 def _printInstall(result,pid):
-	if pid!=999999 and pid!=-999999:
-		status=_getResult(pid)
-	else:
-		if pid>0:
-			status="installed"
-		else:
-			status="removed"
+	status=_getResult(pid)
 	if status.lower()!='unknown' and str(status).isnumeric()==False:
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
 		msg=("Package {0} {1}{2}{3}".format(pkg,color.UNDERLINE,status,color.END))
 	else:
-		desc=result.get('msg','')
-		act=actionArgs.replace(":"," ")
-		msg="{0}Error:{1} {4} {2} {3}".format(color.RED,color.END,act,desc,fakeAction)
+		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs,result.get('msg',''))
 	return(msg)
 
 def _printSearch(result):
@@ -115,19 +106,6 @@ def _processArgs(*args):
 		action=args[0][1]
 	actionArgs=":".join(actionArgs)
 	return(action,actionArgs)	
-
-def _waitMultiprocess(description):
-	pos=1
-	inc=1
-	description=description.replace("_"," ")
-	while True:
-		pos=pos+inc
-		if pos>=len(description)-1 or pos<=1:
-			inc*=-1
-		print("{0} {1}                                      ".format(description[0:pos].capitalize(),description[pos:]),end="\r")
-		sys.stdout.flush()
-		time.sleep(0.2)
-#def _waitMultiprocess
 
 def _waitProcess(pid):
 	var='LliureX Store '
@@ -233,67 +211,16 @@ if len(sys.argv)==1:
 action=action.replace("-","")
 #procList=[rebost.execute(action,actionArgs)]
 #result=json.loads(str(rebost.execute(action,actionArgs)))
-fakeAction=""
 if action=="s":
 	action="search"
-elif action in ["i","install","r","remove"]:
-	if action=="i":
-		action="install"
-	elif action[0]=="r":
-		action="uninstall"
-	fakeAction=action
-	action="test"
-#elif action=="r":
-#	action="remove"
+elif action=="i":
+	action="install"
+elif action=="r":
+	action="remove"
 elif action=="sh":
 	action="show"
 result=json.loads(rebostClient.execute(action,actionArgs))
-if fakeAction=="install" or fakeAction=="uninstall":
-	for res in result:
-		zmd=res.get('epi','')
-		processing=os.path.basename(zmd).replace(".epi","")
-		if os.path.isfile(zmd)==True:
-			oldmsg=""
-			if fakeAction=="install":
-				pid=999999
-			else:
-				pid=-999999
-			mProc=mp.Process(target=_waitMultiprocess,args=(processing,))
-			mProc.start()
-			cmd=["epic",fakeAction,"-u",zmd]
-			proc=subprocess.Popen(cmd,close_fds=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-			while proc.poll()==None:
-				line=proc.stdout.readline().decode()
-				if "EPIC" in line or "availabled" in line or "*****" in line:
-					#print(line)
-					continue
-				msg=line.replace("[EPIC]:","").strip()
-				if msg.strip()!="":
-					if "error" in msg.lower() or "already" in msg.lower() or ("not" in msg.lower() and "note" not in msg.lower()):
-						pid=-1
-					if "complete" in msg.lower():
-						if fakeAction=="install":
-							pid=999999
-						else:
-							pid=-999999
-					if msg.startswith(oldmsg):
-						print(msg+"                           ",end="\r")
-					else:
-						print("\n{0}                           ".format(msg),end="\r")
-					mProc.terminate()
-				oldmsg=msg.split(" ")[0]
-				if oldmsg==msg:
-					oldmsg=msg.split("\t")[0]
-			mProc.terminate()
-			mProc.join()
-			#	print("{0}                                      ".format(processing.capitalize().replace("_"," ")),end="\r")
-			#	print("")
-			print("")
-			print(_printInstall(res,pid))
-			sys.exit(0)
-		print(_printInstall(res,-1))
-		sys.exit(1)
-
+	
 if action=='search' or action=='s':
 	for res in result:
 		print(_printSearch(json.loads(res)))

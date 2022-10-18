@@ -1,7 +1,8 @@
 #!/bin/bash
 #License GPL-3
 #Copyright 2021 LliureX Team
-/usr/sbin/epi-gtk -nc $1
+#Parms: $1 -> package; $2 -> cli/gui mode
+/usr/sbin/epi-gtk -nc $1 
 TMPDIR=$(dirname $1)
 #Check if what is told to remove is also what we want to remove
 ####if [ -e $1 ]

@@ -135,8 +135,10 @@ def _waitProcess(pid):
 					perc=data.get('status',0)
 					if isinstance(perc,str):
 						if perc.isnumeric():
-							percentage=int(perc)
-					elif isinstance(perc,int):
+							perc=int(perc)
+						else:
+							perc=0
+					if isinstance(perc,int):
 						percentage=perc
 					if percentage>0:
 						print('{} {} {}%'.format(var[0:cont],var[cont:],perc),end='\r')

@@ -11,7 +11,6 @@ import threading
 import shutil
 from bs4 import BeautifulSoup
 import rebostHelper
-import logging
 from queue import Queue
 import html2text
 import hashlib
@@ -40,14 +39,18 @@ class appimageHelper():
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
 		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
+	#def setDebugEnabled(self,enable=True):
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("appimage: %s"%str(msg))
+			dbg="appimage: {}".format(msg)
+			rebostHelper._debug(dbg)
+	 #def _debug
 	
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)

@@ -24,15 +24,18 @@ class flatpakHelper():
 		self.priority=1
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
 		self.lastUpdate="/usr/share/rebost/tmp/fp.lu"
-		#self._loadStore()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("flatpak: %s"%str(msg))
+			dbg="flatpak: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)

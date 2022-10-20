@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os,shutil
-import logging
 import sqlHelper
 from appconfig.appConfigN4d import appConfigN4d as n4dClient
 import json
@@ -30,19 +29,19 @@ class rebostPrcMan():
 		self.priority=100
 		self.gui=False
 		self.n4dClients={}
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("prcMan: %s"%str(msg))
+			dbg="prcMan: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug
 
-	def _print(self,msg):
-		logging.warning("prcMan: %s"%str(msg))
-	
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
 		user=''
@@ -230,11 +229,11 @@ class rebostPrcMan():
 	def _remoteInstall(self,usern,episcript):
 		if usern in self.n4dClients.keys():
 			n4d=self.n4dClients.get(usern)
-			self._print("Select n4d proxy")
+			self._debug("Select n4d proxy")
 		else:
 			n4d=n4dClient(username=usern)
 			self.n4dClients.update({usern:n4d})
-			self._print("Add n4d proxy")
+			self._debug("Add n4d proxy")
 		if n4dkey:
 			n4d.setCredentials(n4dkey=n4dkey)
 		pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
@@ -277,7 +276,7 @@ class rebostPrcMan():
 			tmpDir=os.path.dirname(tmpfile)
 			if os.path.isdir(tmpDir):
 				try:
-					self._print("Removing tmp dir {}".format(tmpDir))
+					self._debug("Removing tmp dir {}".format(tmpDir))
 					shutil.rmtree(tmpDir)
 				except Exception as e:
 					self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))

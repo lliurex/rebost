@@ -37,12 +37,13 @@ class sqlHelper():
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("sql: %s"%str(msg))
+			dbg="sql: {}".format(msg)
+			rebostHelper._debug(dbg)
 	#def _debug
 
 	def _print(self,msg):

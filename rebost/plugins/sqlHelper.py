@@ -38,6 +38,11 @@ class sqlHelper():
 		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
 
+	def _log(self,msg):
+		dbg="sql: {}".format(msg)
+		rebostHelper.logmsg(dbg)
+	#def _debug
+
 	def _debug(self,msg):
 		if self.dbg:
 			dbg="sql: {}".format(msg)
@@ -200,7 +205,8 @@ class sqlHelper():
 	#def _listPackages
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
-		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
+		#self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
+		self._log("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
@@ -456,6 +462,7 @@ class sqlHelper():
 		copyfile(self.main_tmp_table,self.main_table)
 		self._debug("Removing tmp file")
 		os.remove(self.main_tmp_table)
+		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	
 	def getTableStatus(self,pkg,bundle):

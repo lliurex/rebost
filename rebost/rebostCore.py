@@ -7,7 +7,6 @@ import threading
 import time
 import json
 import signal
-import logging
 import subprocess
 import gi
 gi.require_version('AppStreamGlib', '1.0')
@@ -15,11 +14,10 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
-		logging.basicConfig(format='%(message)s')
+		self.dbg=False
 		self.plugins=""
 		self.gui=False
-		self.propagateDbg=True
+		self.propagateDbg=False
 		self.cache="/tmp/.cache/rebost"
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -39,18 +37,19 @@ class Rebost():
 
 	def run(self):
 		self._readConfig()
+		self._log("Starting rebost")
 		self._autostartActions()
-		self._print("rebost operative")
+		self._log("Autostart ended. Populating data")
 	#def run
+
+	def _log(self,msg):
+		print("rebost: {}".format(msg))
+	#def _log
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.debug("rebost: %s"%str(msg))
-			print("rebost: %s"%str(msg))
+			print("rebost: {}".format(msg))
 	#def _debug
-
-	def _print(self,msg):
-		logging.info("rebost: %s"%str(msg))
 	
 	def _setGuiEnabled(self,state):
 		self._debug("Set gui mode: {}".format(state))
@@ -59,8 +58,7 @@ class Rebost():
 	def _setPluginDbg(self):
 		for plugin,pluginObject in self.plugins.items():
 			try:
-				if plugin!="rebostHelper":
-					pluginObject.setDebugEnabled(self.dbg)
+				pluginObject.setDebugEnabled(self.dbg)
 			except Exception as e:
 				print(e)
 	#def _setPluginDbg
@@ -225,7 +223,7 @@ class Rebost():
 						try:
 							procList.append(self._execute(action,'','',plugin=plugin,th=False))
 						except Exception as e:
-							self._print("Error launching {} from {}: {}".format(action,plugin,e))
+							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			if isinstance(proc,threading.Thread):
 				proc.join()
@@ -239,7 +237,7 @@ class Rebost():
 					try:
 						self._execute(action,'','',plugin=plugin,th=True)
 					except Exception as e:
-						self._print("Error launching {} from {}: {}".format(action,plugin,e))
+						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):

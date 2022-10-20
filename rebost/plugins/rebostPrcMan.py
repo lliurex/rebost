@@ -35,6 +35,11 @@ class rebostPrcMan():
 		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
 
+	def _log(self,msg):
+		dbg="prcMan: {}".format(msg)
+		rebostHelper.logmsg(dbg)
+	#def _log
+
 	def _debug(self,msg):
 		if self.dbg:
 			dbg="prcMan: {}".format(msg)
@@ -210,7 +215,8 @@ class rebostPrcMan():
 	#def _chk_pkg_format
 
 	def _mpManagePackage(self,action,epifile,username,procQ):
-		self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		#self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		self._log("Starting process for {0} {1} as {2}".format(action,epifile,username))
 		if self.gui==True:
 			return
 			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
@@ -218,7 +224,8 @@ class rebostPrcMan():
 			cmd=["epic",action,"-nc","-u",epifile]
 			if action=="remove":
 				cmd=["epic","uninstall","-nc","-u",epifile]
-		self._debug(cmd)
+		#self._debug(cmd)
+		self._log(cmd)
 		proc=subprocess.Popen(cmd)
 		procQ.put(proc.pid)
 		while proc.poll()==None:

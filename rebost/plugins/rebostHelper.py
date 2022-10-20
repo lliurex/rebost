@@ -12,12 +12,33 @@ import tempfile
 import subprocess
 import time
 
-DBG=True
-logging.basicConfig(format='%(message)s')
+DBG=False
+path="/var/log/rebost.log"
+fname = "rebost.log"
+logger = logging.getLogger(fname)
+formatter = logging.Formatter('%(asctime)s %(message)s')
+fh=logging.FileHandler(path)
+fh.setLevel(logging.INFO)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+def setDebugEnabled(dbg):
+	DBG=dbg
+	if DBG:
+		logger.setLevel(logging.DEBUG)
+	else:
+		logger.setLevel(logging.INFO)
+#def enableDbg
+
+setDebugEnabled(DBG)
+
+
+def logmsg(msg):
+	logger.info("{}".format(msg))
+#def logmsg(msg)
 
 def _debug(msg):
-	if DBG:
-		logging.warning("%s"%str(msg))
+	logger.debug("{}".format(msg))
 #def _debug
 	
 def rebostProcess(*kwargs):

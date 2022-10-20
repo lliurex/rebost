@@ -32,8 +32,8 @@ class zomandoHelper():
 
 	def _debug(self,msg):
 		if self.dbg:
-			dbg="zomando: %s".format(msg)
-			rebostHelper,_debug(dbg)
+			dbg="zomando: {}".format(msg)
+			rebostHelper._debug(dbg)
 	#def _debug(self,msg):
 	
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):

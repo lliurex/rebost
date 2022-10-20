@@ -12,7 +12,8 @@ import tempfile
 import subprocess
 import time
 
-DBG=False
+DBG=True
+logging.basicConfig(format='%(message)s')
 
 def _debug(msg):
 	if DBG:

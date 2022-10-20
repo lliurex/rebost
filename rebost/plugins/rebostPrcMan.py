@@ -16,7 +16,6 @@ class rebostPrcMan():
 		self.actions=["remote","test","install","remove","progress"]
 		self.packagekind="*"
 		self.enabled=True
-		logging.basicConfig(format='%(message)s')
 		self.sql=sqlHelper.sqlHelper()
 		self.failProc=0
 		if os.path.isfile(self.sql.proc_table):

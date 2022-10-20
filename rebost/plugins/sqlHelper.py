@@ -4,7 +4,6 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
-import logging
 import html
 import sqlite3
 import subprocess
@@ -15,7 +14,6 @@ import appimageHelper
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
-		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories']
@@ -44,10 +42,6 @@ class sqlHelper():
 		if self.dbg:
 			dbg="sql: {}".format(msg)
 			rebostHelper._debug(dbg)
-	#def _debug
-
-	def _print(self,msg):
-		logging.warning("sql: %s"%str(msg))
 	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
@@ -460,7 +454,7 @@ class sqlHelper():
 		#Copy tmp to definitive
 		self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
 		copyfile(self.main_tmp_table,self.main_table)
-		self._print("Removing tmp file")
+		self._debug("Removing tmp file")
 		os.remove(self.main_tmp_table)
 	#def _copyTmpDef
 	

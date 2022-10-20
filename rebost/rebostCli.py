@@ -123,6 +123,7 @@ def _waitProcess(pid):
 				data=pdata.copy()
 			break
 	if data:
+		perc=0
 		while done==None:
 			done=data.get('done')
 			print("{} {}".format(var[0:cont],var[cont:]),end='\r')
@@ -134,8 +135,10 @@ def _waitProcess(pid):
 					perc=data.get('status',0)
 					if isinstance(perc,str):
 						if perc.isnumeric():
-							percentage=int(perc)
-					elif isinstance(perc,int):
+							perc=int(perc)
+						else:
+							perc=0
+					if isinstance(perc,int):
 						percentage=perc
 					if percentage>0:
 						print('{} {} {}%'.format(var[0:cont],var[cont:],perc),end='\r')
@@ -150,10 +153,9 @@ def _waitProcess(pid):
 					elif isinstance(pdata,dict):
 						data=pdata.copy()
 					break
-		per=int(data.get('status',0))
-		while per<=100:
-			print('{} {} {}%'.format(var[0:cont],var[cont:],per),end='\r')
-			per+=1
+		while perc<=100:
+			print('{} {} {}%'.format(var[0:cont],var[cont:],perc),end='\r')
+			perc+=1
 			time.sleep(0.01)
 		time.sleep(0.2)
 	print("                                ",end='\r')

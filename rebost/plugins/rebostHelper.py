@@ -402,8 +402,11 @@ def check_remove_unsure(package):
 	sw=False
 	_debug("Checking if remove {} is unsure".format(package))
 	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	version=llx.stdout.decode().strip()
+	try:
+		llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		version=llx.stdout.decode().strip()
+	except:
+		version="desktop"
 	for depend in proc.stdout.decode().split("\n"):
 		if "lliurex-meta-{}".format(version) in depend:
 			sw=True

@@ -210,7 +210,7 @@ class rebostPrcMan():
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}'.format(bundles)})]
 		else:
 			rebostpkg=''
-			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
+			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'{0} for {1} not found'.format(bundle,pkgname)})]
 		return(rebostpkg,bundle,rebostPkgList)
 	#def _chk_pkg_format
 

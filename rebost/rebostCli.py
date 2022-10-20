@@ -29,9 +29,9 @@ def _printInstall(result,pid):
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
-		msg=("Package {0} {1}{2}{3}".format(pkg,color.UNDERLINE,status,color.END))
+		msg=("{0} {1}{2}{3}".format(actionArgs.replace(":"," "),color.UNDERLINE,status,color.END))
 	else:
-		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs,result.get('msg',''))
+		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs.replace(":"," "),result.get('msg',''))
 	return(msg)
 
 def _printSearch(result):

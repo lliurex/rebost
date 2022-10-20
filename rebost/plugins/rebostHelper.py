@@ -13,10 +13,32 @@ import subprocess
 import time
 
 DBG=False
+path="/var/log/rebost.log"
+fname = "rebost.log"
+logger = logging.getLogger(fname)
+formatter = logging.Formatter('%(asctime)s %(message)s')
+fh=logging.FileHandler(path)
+fh.setLevel(logging.INFO)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+def setDebugEnabled(dbg):
+	DBG=dbg
+	if DBG:
+		logger.setLevel(logging.DEBUG)
+	else:
+		logger.setLevel(logging.INFO)
+#def enableDbg
+
+setDebugEnabled(DBG)
+
+
+def logmsg(msg):
+	logger.info("{}".format(msg))
+#def logmsg(msg)
 
 def _debug(msg):
-	if DBG:
-		logging.warning("rebostHelper: %s"%str(msg))
+	logger.debug("{}".format(msg))
 #def _debug
 	
 def rebostProcess(*kwargs):
@@ -45,10 +67,10 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	cursor=db.cursor()
 	if drop:
 		query="DROP TABLE IF EXISTS {}".format(table)
-		_debug(query)
+		_debug("Helper: {}".format(query))
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
-		_debug(query)
+		_debug("Helper: {}".format(query))
 		cursor.execute(query)
 	query=[]
 	while rebostPkgList:
@@ -60,10 +82,10 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
-			_debug("INSERTING {} for {}".format(len(query),table))
+			_debug("Helper: INSERTING {} for {}".format(len(query),table))
 			cursor.executemany(queryMany,query)
 		except Exception as e:
-			_debug(e)
+			_debug("Helper: {}".format(e))
 		db.commit()
 	db.close()
 	cursor=None
@@ -83,7 +105,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
-			_debug("INSERTING {} for {}".format(len(query),table))
+			_debug("Helper: INSERTING {} for {}".format(len(query),table))
 			cursor.executemany(queryMany,query)
 		except sqlite3.OperationalError as e:
 			if "locked" in e:
@@ -214,10 +236,10 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:
-		_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		_debug("Helper: Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=_generate_epi_json(rebostpkg,bundle,tmpDir=tmpDir)
 	else:
-		_debug("Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		_debug("Helper: Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=''
 		user=''
 	if user=='root':
@@ -247,7 +269,7 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 			with open(epiJson,'w') as f:
 				json.dump(epiFile,f,indent=4)
 		except Exception as e:
-			_debug("%s"%e)
+			_debug("Helper {}".format(e))
 			retCode=1
 	return(epiJson)
 #def _generate_epi_json
@@ -258,7 +280,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 		try:
 			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
 		except Exception as e:
-			_debug("%s"%e)
+			_debug("Helper: {}".format(e))
 			print("ERROR {}".format(e))
 			retCode=1
 		if os.path.isfile(epiScript):
@@ -267,7 +289,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
-	_debug("Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
+	_debug("Helper: Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
@@ -400,7 +422,7 @@ def get_table_state(pkg,bundle):
 
 def check_remove_unsure(package):
 	sw=False
-	_debug("Checking if remove {} is unsure".format(package))
+	_debug("Helper: Checking if remove {} is unsure".format(package))
 	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	try:
 		llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -411,7 +433,7 @@ def check_remove_unsure(package):
 		if "lliurex-meta-{}".format(version) in depend:
 			sw=True
 			break
-	_debug(proc.stdout)
-	_debug("Checked")
+	_debug("Helper: {}".format(proc.stdout))
+	_debug("Helper: Checked")
 	return(sw)
 #def check_remove_unsure(package):

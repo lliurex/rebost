@@ -23,15 +23,18 @@ class zomandoHelper():
 		self.appDir="/usr/share/zero-center/applications"
 		self.iconDir="/usr/share/banners/lliurex-neu/"
 		self.n4d=n4d.Client()
-#		self._loadStore()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("zomando: %s"%str(msg))
+			dbg="zomando: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug(self,msg):
 	
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)

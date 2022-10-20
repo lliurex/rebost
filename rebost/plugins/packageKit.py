@@ -29,12 +29,13 @@ class packageKit():
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("packagekit: %s"%str(msg))
+			dbg="packagekit: {}".format(msg)
+			rebostHelper._debug(dbg)
 	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):

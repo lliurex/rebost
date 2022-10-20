@@ -23,17 +23,18 @@ class appstreamHelper():
 		self.wrkDir='/tmp/.cache/rebost/xml/appstream'
 		self.lastUpdate="/usr/share/rebost/tmp/as.lu"
 		#self._loadStore()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("appstream: %s"%str(msg))
-
-	def _print(self,msg):
-		logging.warning("appstream: %s"%str(msg))
+			dbg="appstream: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug(self,msg):
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)

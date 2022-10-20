@@ -32,7 +32,6 @@ class Rebost():
 		if self.propagateDbg:
 			self._setPluginDbg()
 		self.cofig={}
-		#self._loadAppstream()
 		self.procId=1
 
 	def run(self):
@@ -94,12 +93,14 @@ class Rebost():
 							self._debug("%s will set its status"%plugin)
 					else:
 						self._debug("Plugin disabled: %s"%plugin)
+	#def _loadPlugins
 
 	def _getPluginEnabled(self,pluginObject):
 		enabled=None
 		if 'enabled' in pluginObject.__dict__.keys():
 			enabled=pluginObject.enabled
 		return enabled
+	#def _getPluginEnabled
 
 	def _loadPluginInfo(self):
 		delPlugins=[]
@@ -122,6 +123,7 @@ class Rebost():
 				self.pluginInfo[plugin]=plugInfo
 		for plugin in delPlugins:
 			del(self.plugins[plugin])
+	#def _loadPluginInfo
 
 	def _readConfig(self):
 		cfgFile="/usr/share/rebost/store.json"
@@ -141,6 +143,7 @@ class Rebost():
 					elif key=="appimage":
 						del(self.pluginInfo["appimageHelper"])
 					self._disable(key)
+	#def _readConfig
 
 	def _enable(self,bundle):
 		swEnabled=True
@@ -167,6 +170,7 @@ class Rebost():
 		if swEnabled==True:
 			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
 				os.remove(os.path.join(tmpPath,"sq.lu"))
+	#def _enable
 
 	def _disable(self,bundle):
 		tmpPath="/usr/share/rebost/tmp"
@@ -196,6 +200,7 @@ class Rebost():
 		if swRemoved==True:
 			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
 				os.remove(os.path.join(tmpPath,"sq.lu"))
+	#def _disable
 
 	def _autostartActions(self):
 		actionDict={}
@@ -319,6 +324,7 @@ class Rebost():
 		else:
 			proc=None
 		return(proc)
+	#def _execute
 
 	def _executeAction(self,plugin,action,package,bundle='',th=True):
 		retval=1
@@ -334,6 +340,7 @@ class Rebost():
 			print(e)
 			retval=0
 		return(proc)
+	#def _executeAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -361,8 +368,6 @@ class Rebost():
 			except Exception as e:
 				print(e)
 				self._debug(e)
-		#cmd=["service","rebost","restart"]
-		#subprocess.run(cmd)
 		return()
 	#def getProgress(self):
 

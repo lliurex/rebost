@@ -9,7 +9,20 @@ import time
 action=''
 actionArgs=[]
 swLoad=False
+ERR=0
 
+class err:
+	privileges=130
+	notFound=120
+	transactionFailed=10
+	transactionProcessFailed=20
+	transactionUnknownStatus=30
+
+
+class i18n:
+	err="ocurred when attempting to"
+	an="an"
+	package="Package"
 
 class color:
    PURPLE = '\033[95m'
@@ -24,14 +37,33 @@ class color:
    END = '\033[0m'
 
 def _printInstall(result,pid):
+	global ERR
 	status=_getResult(pid)
 	if status.lower()!='unknown' and str(status).isnumeric()==False:
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
 		msg=("{0} {1}{2}{3}".format(actionArgs.replace(":"," "),color.UNDERLINE,status,color.END))
+		if status.startswith(color.RED):
+			ERR=err.transactionProcessFailed
+			msg+="\n\n"
+			msg+="{0}############################{1}\n\n".format(color.RED,color.END)
+			epiF=result.get('epi','/tmp/rebost/a/a.epi')
+			logD=os.path.dirname(os.path.dirname(epiF))
+			if os.path.isdir(logD)==False:
+				logD="/tmp/rebost"
+			logF=os.path.join(logD,os.path.basename(epiF).replace(".epi",".log"))
+			f=open(logF,'r')
+			lines=f.readlines()
+			for line in lines:
+				if ("EPI" in line or "****" in line or line.strip().startswith("- App"))==True:
+					continue
+				msg+="{}".format(line)
+			msg+="\n{0}############################{1}\n".format(color.RED,color.END)
+			f.close()
 	else:
 		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs.replace(":"," "),result.get('msg',''))
+		ERR=err.transactionFailed
 	return(msg)
 
 def _printSearch(result):
@@ -163,6 +195,7 @@ def _waitProcess(pid):
 def _getResult(pid):
 	status='Unknown'
 	result=status
+	global ERR
 	for proc in rebostClient.getResults():
 		(ppid,data)=proc
 		if isinstance(data,str):
@@ -180,8 +213,10 @@ def _getResult(pid):
 			elif status=='1':
 				result="removed"
 			elif status=='-1':
-				result="an {}error{} ocurred when attempting to {}".format(color.RED,color.END,action)
+				result="{0}ERROR{1} {2} {3}".format(color.RED,color.END,i18n.err,action)
+				ERR=err.transactionFailed
 			else:
+				ERR=err.transactionUnknownStatus
 				result="unknown status {}".format(status)
 	return(result)
 
@@ -232,6 +267,8 @@ elif action=='show':
 			print(_printShow(res))
 		else:
 			print(_printShow(json.loads(res)))
+	if not result:
+		ERR=err.notFound
 elif action in ["install","i","remove","r","remote_install"]:
 	if (isinstance(result,list)):
 		for res in result:
@@ -248,9 +285,10 @@ elif action in ["install","i","remove","r","remote_install"]:
 				print(_printInstall(res,pid))
 	else:
 		print("Must be {}root{}".format(color.RED,color.END))
+		ERR=err.privileges
 elif action=='test':
 	print(result)
 else:
 	showHelp()
 
-sys.exit(0)
+sys.exit(ERR)

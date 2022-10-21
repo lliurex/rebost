@@ -17,7 +17,7 @@ class Rebost():
 		self.dbg=False
 		self.plugins=""
 		self.gui=False
-		self.propagateDbg=False
+		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -43,6 +43,11 @@ class Rebost():
 
 	def _log(self,msg):
 		print("rebost: {}".format(msg))
+		try:
+			with open("/var/log/rebost.log","a") as f:
+				f.write("{}\n".format(msg))
+		except:
+			pass
 	#def _log
 
 	def _debug(self,msg):
@@ -79,7 +84,7 @@ class Rebost():
 						else:
 							pluginObject=imp
 					except Exception as e:
-						self._debug("Failed importing %s: %s"%(plugin,e))
+						self._log("Failed importing %s: %s"%(plugin,e))
 						continue
 					if "rebostHelper" in plugin:
 						enabled=True

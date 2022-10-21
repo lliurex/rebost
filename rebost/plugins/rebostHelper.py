@@ -99,7 +99,6 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
-	#print(query)
 	cursor.execute(query)
 	query=_rebostPkg_fill_data(rebostPkg)
 	if query:
@@ -230,7 +229,6 @@ def appstream_to_rebost(appstreamCatalogue):
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
-	#_debug("Generating EPI for:\n{}".format(rebostpkg))
 	if os.path.isdir("/tmp/rebost")==False:
 		os.makedirs("/tmp/rebost")
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
@@ -311,6 +309,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 			f.write("}\n")
 
 		f.write("ACTION=\"$1\"\n")
+		f.write("ERR=0\n")
 		f.write("case $ACTION in\n")
 		f.write("\tremove)\n")
 		f.write("\t\t{}\n".format(commands.get('removeCmd')))
@@ -339,7 +338,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 		if remote==True:
 			f.write("\ninstallPackage\n")
 
-		f.write("exit 0\n")
+		f.write("exit $ERR\n")
 #def _make_epi_script
 
 def _get_bundle_commands(bundle,rebostpkg,user=''):
@@ -350,44 +349,15 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-		installCmd="pkcon install -y {} 2>&1".format(rebostpkg['pkgname'])
-		removeCmd="pkcon remove -y {} 2>&1".format(rebostpkg['pkgname'])
-		removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
-		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
-		removeCmdLine.append("exit 1")
-		removeCmdLine.append("fi")
-		statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
 	elif bundle=='snap':
-		installCmd="snap install {} 2>&1".format(rebostpkg['bundle']['snap'])
-		removeCmd="snap remove {} 2>&1".format(rebostpkg['bundle']['snap'])
-		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_snap_commands(rebostpkg,user)
 	elif bundle=='flatpak':
-		installCmd="flatpak -y install {} 2>&1".format(rebostpkg['bundle']['flatpak'])
-		removeCmd="flatpak -y uninstall {} 2>&1".format(rebostpkg['bundle']['flatpak'])
-		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_flatpak_commands(rebostpkg,user)
 	elif bundle=='appimage':
-		#user=os.environ.get('USER')
-		installCmd="wget -O /tmp/{}.appimage {} 2>&1".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
-		destdir="/opt/appimages"
-		if user!='root' and user:
-			destdir=os.path.join("/home",user,".local","bin")
-		installCmdLine.append("mkdir -p {}".format(destdir))
-		installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
-		destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
-		installCmdLine.append("chmod +x {}".format(destPath))
-		if user!='root' and user:
-			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
-			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
-			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
-			installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{0} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user))
-		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
-		removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}.desktop".format(destPath,user,rebostpkg['pkgname'])
-		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
 	elif bundle=='zomando':
-		installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-		removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-		statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
-
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
@@ -395,6 +365,64 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	commands['statusTestLine']=statusTestLine
 	return(commands)
 #def _get_bundle_commands
+
+def _get_package_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
+	removeCmdLine.append("exit 1")
+	removeCmdLine.append("fi")
+	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_package_commands
+
+def _get_snap_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="snap install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
+	removeCmd="snap remove {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
+	statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_snap_commands
+
+def _get_flatpak_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="flatpak -y install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
+	removeCmd="flatpak -y uninstall {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
+	statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_flatpak_commands
+
+def _get_appimage_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	#user=os.environ.get('USER')
+	installCmd=""
+	installCmd="wget -O /tmp/{}.appimage {} 2>&1;ERR=$?".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
+	destdir="/opt/appimages"
+	if user!='root' and user:
+		destdir=os.path.join("/home",user,".local","bin")
+	installCmdLine.append("mkdir -p {}".format(destdir))
+	installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
+	destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
+	installCmdLine.append("chmod +x {}".format(destPath))
+	if user!='root' and user:
+		installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
+		installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
+		installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
+		installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{0} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user))
+	removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}.desktop;ERR=$?".format(destPath,user,rebostpkg['pkgname'])
+	statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_appimage_commands
+
+def _get_zomando_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_zomando_commands
 
 def get_epi_status(episcript):
 	st="0"

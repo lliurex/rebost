@@ -217,6 +217,11 @@ class rebostPrcMan():
 	def _mpManagePackage(self,action,epifile,username,procQ):
 		#self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
 		self._log("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		logDir=os.path.dirname(os.path.dirname(epifile))
+		if os.path.isdir(logDir)==False:
+			logDir="/tmp"
+		logFile=os.path.join(logDir,"{}".format(os.path.basename(epifile).replace(".epi",".log")))
+		self._log("Full process log at {}".format(logFile))
 		if self.gui==True:
 			return
 			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
@@ -226,10 +231,12 @@ class rebostPrcMan():
 				cmd=["epic","uninstall","-nc","-u",epifile]
 		#self._debug(cmd)
 		self._log(cmd)
-		proc=subprocess.Popen(cmd)
+		f=open(logFile,"a")
+		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True)
 		procQ.put(proc.pid)
 		while proc.poll()==None:
-			time.sleep(0.1)
+			time.sleep(0.01)
+		f.close()
 	#def _mpManagePackage
 
 	def _remoteInstall(self,usern,episcript):

@@ -11,6 +11,13 @@ actionArgs=[]
 swLoad=False
 ERR=0
 
+class err:
+	privileges=130
+	notFound=120
+	transactionFailed=10
+	transactionProcessFailed=20
+	transactionUnknownStatus=30
+
 
 class i18n:
 	err="ocurred when attempting to"
@@ -38,7 +45,7 @@ def _printInstall(result,pid):
 			pkg=pkg.split(";")[0]
 		msg=("{0} {1}{2}{3}".format(actionArgs.replace(":"," "),color.UNDERLINE,status,color.END))
 		if status.startswith(color.RED):
-			ERR=1
+			ERR=err.transactionProcessFailed
 			msg+="\n\n"
 			msg+="{0}############################{1}\n\n".format(color.RED,color.END)
 			epiF=result.get('epi','/tmp/rebost/a/a.epi')
@@ -56,7 +63,7 @@ def _printInstall(result,pid):
 			f.close()
 	else:
 		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs.replace(":"," "),result.get('msg',''))
-		ERR=2
+		ERR=err.transactionFailed
 	return(msg)
 
 def _printSearch(result):
@@ -188,6 +195,7 @@ def _waitProcess(pid):
 def _getResult(pid):
 	status='Unknown'
 	result=status
+	global ERR
 	for proc in rebostClient.getResults():
 		(ppid,data)=proc
 		if isinstance(data,str):
@@ -206,9 +214,9 @@ def _getResult(pid):
 				result="removed"
 			elif status=='-1':
 				result="{0}ERROR{1} {2} {3}".format(color.RED,color.END,i18n.err,action)
-				global ERR
-				ERR=2
+				ERR=err.transactionFailed
 			else:
+				ERR=err.transactionUnknownStatus
 				result="unknown status {}".format(status)
 	return(result)
 
@@ -259,6 +267,8 @@ elif action=='show':
 			print(_printShow(res))
 		else:
 			print(_printShow(json.loads(res)))
+	if not result:
+		ERR=err.notFound
 elif action in ["install","i","remove","r","remote_install"]:
 	if (isinstance(result,list)):
 		for res in result:
@@ -275,6 +285,7 @@ elif action in ["install","i","remove","r","remote_install"]:
 				print(_printInstall(res,pid))
 	else:
 		print("Must be {}root{}".format(color.RED,color.END))
+		ERR=err.privileges
 elif action=='test':
 	print(result)
 else:

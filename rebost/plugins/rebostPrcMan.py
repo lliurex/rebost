@@ -231,7 +231,7 @@ class rebostPrcMan():
 				cmd=["epic","uninstall","-nc","-u",epifile]
 		#self._debug(cmd)
 		self._log(cmd)
-		f=open(logFile,"a")
+		f=open(logFile,"w")
 		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True)
 		procQ.put(proc.pid)
 		while proc.poll()==None:

@@ -1,4 +1,4 @@
-rebost (0.9.9.8.4) lliurex22; urgency=medium
+rebost (0.9.9.8.5) lliurex22; urgency=medium
 
   * Release candidate 2. Bugfix 
   * N4d only for remote installs
@@ -7,6 +7,7 @@ rebost (0.9.9.8.4) lliurex22; urgency=medium
   * Embed epic for installations
   * Create log per transaction
   * GUI: Set return values for EPI
+  * WIP on upgrades
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 18 Oct 2022 18:33:55 +0200
 

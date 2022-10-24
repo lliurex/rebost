@@ -139,6 +139,7 @@ class packageKit():
 		pkgId=pkg.get_package_id()
 		name=pkgId.split(";")[0]
 		version=pkgId.split(";")[1]
+		origin=pkgId.split(";")[-1]
 		updateVersion=updateInfo.get(name,version)
 		rebostPkg['name']=name
 		rebostPkg['pkgname']=rebostPkg['name']
@@ -147,7 +148,8 @@ class packageKit():
 		rebostPkg['description']=pkg.get_description()
 		rebostPkg['versions']={"package":"{}".format(updateVersion)}
 		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
-		if 'installed' in pkgId:
+		#if 'installed' in pkgId:
+		if ':' in origin:
 			rebostPkg['state']={"package":"0"}
 			rebostPkg['installed']={"package":"{}".format(version)}
 		else:
@@ -173,6 +175,7 @@ class packageKit():
 			pkgId=pkg.get_package_id()
 			name=pkgId.split(";")[0]
 			version=pkgId.split(";")[1]
+			origin=pkgId.split(";")[-1]
 			updateVersion=updateInfo.get(name,version)
 			rebostPkg['name']=name
 			rebostPkg['pkgname']=rebostPkg['name']
@@ -181,7 +184,8 @@ class packageKit():
 			rebostPkg['description']=pkg.get_description()
 			rebostPkg['versions']={"package":"{}".format(updateVersion)}
 			rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
-			if 'installed' in pkgId:
+		#	if 'installed' in pkgId:
+			if ':' in origin:
 				rebostPkg['state']={"package":"0"}
 				rebostPkg['installed']={"package":"{}".format(version)}
 			else:

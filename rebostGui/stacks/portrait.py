@@ -240,7 +240,11 @@ class portrait(confStack):
 	def _loadDetails(self,*args):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=3,parms=args)
+		self.stack.gotoStack(idx=3,parms=(args))
+		#Refresh all pkg info
+	#	app=json.loads(self.rc.showApp(args[0].get('name','')))[0]
+	#	print(app)
+	#	self.stack.gotoStack(idx=3,parms=app)
 	#def _loadDetails
 
 	def _gotoSettings(self):

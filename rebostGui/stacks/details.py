@@ -272,11 +272,14 @@ class details(confStack):
 			if state=='0':
 				self.cmbRemove.setVisible(True)
 				self.cmbRemove.addItem("{0}".format(bundle.capitalize()))
+				self.cmbRemove.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
 				self.cmbOpen.setVisible(True)
 				self.cmbOpen.addItem("{0}".format(bundle.capitalize()))
 			else:
 				self.cmbInstall.setVisible(True)
 				self.cmbInstall.addItem("{0}".format(bundle.capitalize()))
+				tooltip=self.app.get('versions',{}).get(bundle,'')
+				self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
 
 		homepage=self.app.get('homepage','')
 		text=''

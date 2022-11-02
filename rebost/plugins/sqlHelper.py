@@ -243,6 +243,7 @@ class sqlHelper():
 		update=self._chkNeedUpdate()
 		if update==False:
 			self._debug("Skip merge")
+			self._log("Database ready. Rebost operative")
 			return([])
 		fupdate=open(self.lastUpdate,'w')
 		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
@@ -302,18 +303,18 @@ class sqlHelper():
 						categories=processedPkg[1]
 						if len(categories)>0:
 							allCategories.extend(categories)
-							allCategories=list(set(allCategories))
 						query.append(pkgData)
 				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
+					db.commit()
 				except Exception as e:
 					self._debug(e)
 					self._debug(query)
 				offset=limit+1
 				if offset>count:
 					offset=count
-				db.commit()
+			allCategories=list(set(allCategories))
 			retval=(count,allCategories)
 		return(retval)
 	#def _processDatabase
@@ -352,12 +353,11 @@ class sqlHelper():
 					pkgdataJson['categories'][idx]=categories[0]
 				categories=pkgdataJson.get('categories',[])
 				
-			if (len(categories)>=1):
-				cat0=categories[0]
-				if len(categories)>1:
-					cat1=categories[-1]
-				if len(categories)>2:
-					cat2=categories[-2]
+			while len(categories)<3:
+				categories.append("")
+			cat0=categories[0]
+			cat1=categories[-1]
+			cat2=categories[-2]
 			if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
 				cat0="Lliurex"
 			if isinstance(pkgdataJson['versions'],str):
@@ -407,7 +407,7 @@ class sqlHelper():
 							update=True
 							break
 				if update:
-						break
+					break
 		return(update)
 	#def _chkNeedUpdate
 

@@ -138,16 +138,13 @@ class details(confStack):
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.btnZomando.setVisible(False)
-		lay=QGridLayout()
-		lay.addWidget(self.btnZomando,1,0,1,1)
-		lay.addWidget(self.cmbOpen,2,0,1,1)
-		self.Launchers.setLayout(lay)
-		self.box.addWidget(self.Launchers,2,2,2,1,Qt.AlignTop|Qt.AlignRight)
+		self.box.addWidget(self.btnZomando,5,0,1,1)
+		self.box.addWidget(self.cmbOpen,5,0,1,1)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
 		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignLeft|Qt.AlignBottom)
 		self.Screenshot=appconfigControls.QScreenShotContainer()
-		self.box.addWidget(self.Screenshot,7,0,1,3,Qt.AlignTop)
+		self.box.addWidget(self.Screenshot,7,0,1,2,Qt.AlignTop)
 		self.setLayout(self.box)
 	#def _load_screen
 
@@ -258,10 +255,9 @@ class details(confStack):
 		self.cmbRemove.setVisible(False)
 		self.cmbOpen.setVisible(False)
 		self.cmbInstall.setVisible(False)
-		bundles=self.app.get('bundle',{}).keys()
+		bundles=list(self.app.get('bundle',{}).keys())
 		if "zomando" in bundles:
 			if "package" in bundles:
-
 				bundles.remove('package')
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
@@ -269,16 +265,17 @@ class details(confStack):
 				self.btnZomando.setVisible(True)
 				continue
 		#		self.btnPackageLaunch.setVisible(False)
+			tooltip=self.app.get('versions',{}).get(bundle,'')
 			if state=='0':
 				self.cmbRemove.setVisible(True)
 				self.cmbRemove.addItem("{0}".format(bundle.capitalize()))
-				self.cmbRemove.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
+				self.cmbRemove.setItemData(self.cmbRemove.count()-1,tooltip,Qt.ToolTipRole)
 				self.cmbOpen.setVisible(True)
 				self.cmbOpen.addItem("{0}".format(bundle.capitalize()))
+				self.cmbOpen.setItemData(self.cmbOpen.count()-1,tooltip,Qt.ToolTipRole)
 			else:
 				self.cmbInstall.setVisible(True)
 				self.cmbInstall.addItem("{0}".format(bundle.capitalize()))
-				tooltip=self.app.get('versions',{}).get(bundle,'')
 				self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
 
 		homepage=self.app.get('homepage','')
@@ -304,15 +301,8 @@ class details(confStack):
 
 	def _initScreen(self):
 		#Reload config if app has been epified
-		print(2)
 		if len(self.app)>0:
-			print(2)
-			print("---------------")
-			print(type(self.app))
-			print(self.epi.app)
-			print("---------------")
 			if self.app.get('name','')==self.epi.app.get('name',''):
-				print(7)
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]
 				except Exception as e:
@@ -323,7 +313,6 @@ class details(confStack):
 				except Exception as e:
 					print(e)
 					self.app={}
-		print(2)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 		self.Screenshot.clear()

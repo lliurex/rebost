@@ -21,6 +21,10 @@ fh=logging.FileHandler(path)
 fh.setLevel(logging.INFO)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+st=logging.StreamHandler()
+st.setLevel(logging.DEBUG)
+st.setFormatter(formatter)
+#logger.addHandler(st)
 
 def setDebugEnabled(dbg):
 	DBG=dbg
@@ -31,7 +35,6 @@ def setDebugEnabled(dbg):
 #def enableDbg
 
 setDebugEnabled(DBG)
-
 
 def logmsg(msg):
 	logger.info("{}".format(msg))
@@ -59,26 +62,39 @@ def rebostPkg(*kwargs):
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	drop=False
 	if drop:
 		if os.path.isfile(tablePath):
 			os.remove(tablePath)
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	if drop:
-		query="DROP TABLE IF EXISTS {}".format(table)
-		_debug("Helper: {}".format(query))
-		cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
-		_debug("Helper: {}".format(query))
-		cursor.execute(query)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+	_debug("Helper: {}".format(query))
+	cursor.execute(query)
 	query=[]
 	while rebostPkgList:
 		rebostPkg=rebostPkgList.pop(0)
-		query.append(_rebostPkg_fill_data(rebostPkg,sanitize))
+		values=[]
+		values=(_rebostPkg_fill_data(rebostPkg,sanitize))
+		pkgName=values[0]
+		pkgData=values[1]
+		queryTmp='SELECT data FROM {0} where pkg="{1}"'.format(table,pkgName)
+		cursor.execute(queryTmp)
+		row=cursor.fetchone()
+		if row!=None:
+			if len(row)>0:
+				if pkgData!=row[0]:
+					query.append(values)
+				#else:
+				#	_debug("Already inserted {}".format(pkgName))
+			else:
+				query.append(values)
+		else:
+			query.append(values)
 		#take breath
-		if len(rebostPkgList)%4==0:
-			time.sleep(0.0002)
+		#if len(rebostPkgList)%20==0:
+		#	time.sleep(0.001)
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
@@ -100,7 +116,8 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	cursor.execute(query)
-	query=_rebostPkg_fill_data(rebostPkg)
+	query=[]
+	query.append(_rebostPkg_fill_data(rebostPkg))
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
@@ -121,7 +138,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	categories.extend(["","",""])
 	name=rebostPkg.get('name','')
 	if sanitize:
-		name=rebostPkg.get('name','').strip().lower().replace('.','_')
+		name=rebostPkg.get('name','').strip().lower()
 		rebostPkg["name"]=name.strip()
 		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
@@ -435,6 +452,40 @@ def get_epi_status(episcript):
 			_debug(e)
 	return(st)
 #def get_epi_status
+
+def get_table_pkg(table,pkg):
+	tablePath=os.path.join("/usr/share/rebost/",table)
+	ret=[]
+	if os.path.isfile(tablePath):
+		tableName=table.replace(".db","").lower()
+		db=sqlite3.connect(tablePath)
+		cursor=db.cursor()
+		query="Select * from {0} where pkg='{1}'".format(tableName,pkg)
+		try:
+			cursor.execute(query)
+			ret=cursor.fetchall()
+		except:
+			pass
+		db.close()
+	return ret
+#def get_table_state
+
+def get_table_pkgarray(table,pkgarray):
+	tablePath=os.path.join("/usr/share/rebost/",table)
+	ret=[]
+	if os.path.isfile(tablePath):
+		tableName=table.replace(".db","").lower()
+		db=sqlite3.connect(tablePath)
+		cursor=db.cursor()
+		query="Select * from {0} where pkg in ({1})'".format(tableName,",".join(pkgarray))
+		try:
+			cursor.execute(query)
+			ret=cursor.fetchall()
+		except:
+			pass
+		db.close()
+	return ret
+#def get_table_state
 
 def get_table_state(pkg,bundle):
 	tablePath="/usr/share/rebost/installed.db"

@@ -143,7 +143,7 @@ class Rebost():
 						del(self.pluginInfo["snapHelper"])
 					elif key=="flatpak":
 						del(self.pluginInfo["flatpakHelper"])
-					elif key=="apt":
+					elif key=="apt" or key=="package":
 						del(self.pluginInfo["packageKit"])
 					elif key=="appimage":
 						del(self.pluginInfo["appimageHelper"])
@@ -151,11 +151,11 @@ class Rebost():
 	#def _readConfig
 
 	def _enable(self,bundle):
-		swEnabled=True
+		swEnabled=False
 		tmpPath="/usr/share/rebost/tmp"
 		if os.path.isdir(tmpPath):
 			prefix=""
-			if bundle=="apt":
+			if bundle=="apt" or bundle=="package":
 				prefix="pk"
 				prefix2="as"
 			elif bundle=="snap":
@@ -170,9 +170,9 @@ class Rebost():
 			if prefix:
 				for f in os.listdir(tmpPath):
 					if f.startswith(prefix) or f.startswith(prefix2):
-						swEnabled=False
+						swEnabled=True
 						break
-		if swEnabled==True:
+		if swEnabled==False:
 			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
 				os.remove(os.path.join(tmpPath,"sq.lu"))
 	#def _enable
@@ -185,7 +185,7 @@ class Rebost():
 		swRemoved=False
 		if os.path.isdir(tmpPath):
 			prefix=""
-			if bundle=="apt":
+			if bundle=="apt" or bundle=="package":
 				prefix="pk"
 				prefix2="as"
 			elif bundle=="snap":

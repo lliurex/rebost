@@ -95,9 +95,16 @@ class zomandoHelper():
 		rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
 		return(rebostPkg)
 	#def fillData
-
 	def _get_zomando_state(self,zmd):
-		zmdVars=self.n4d.get_variable("ZEROCENTER")
+		zmdVars={}
+		try:
+			zmdVars=self.n4d.get_variable("ZEROCENTER")
+		except:
+			time.sleep(1)
+			try:
+				zmdVars=self.n4d.get_variable("ZEROCENTER")
+			except:
+				print("N4D not reachable")
 		zmdName=os.path.basename(zmd).replace(".zmd","")
 		if self.zmdDir not in zmd:
 			zmd=os.path.join(self.zmdDir,zmd)

@@ -25,6 +25,7 @@ class packageKit():
 		self.result=''
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
+		self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -58,47 +59,24 @@ class packageKit():
 		gPath=gioFile[0].get_path()
 		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
-		updateFile=Gio.file_new_tmp()
-		pkgUpdateSack.to_file(updateFile[0])
-		updatePath=updateFile[0].get_path()
-		newMd5=self._getNewMd5(gPath,updatePath)
+		#updateFile=Gio.file_new_tmp()
+		#pkgUpdateSack.to_file(updateFile[0])
+		#updatePath=updateFile[0].get_path()
+		#newMd5=self._getNewMd5(gPath,updatePath)
+		newMd5=""
+		pkgIds=self._getChanges(gPath)
 		gioFile[0].delete()
-		updateFile[0].delete()
-		pkgUpdateIdsArray=pkgUpdateSack.get_ids()
-		if newMd5!='':
+		#updateFile[0].delete()
+		if (len(pkgIds)>0) or (pkgUpdateSack.get_size()>0):
 			pkgUpdateIds={}
-			for ids in pkgUpdateIdsArray:
-				name=ids.split(";")[0]
-				pkgUpdateIds[name]=ids.split(";")[1]
-			pkgList=[]
-			pkgDetails=[]
+			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
+			for pkgId in pkgUpdateIdsArray:
+				pkgInfo=pkgId.split(";")
+				pkgUpdateIds[pkgInfo[0]]={'release':pkgInfo[1],'origin':pkgInfo[-1]}
+				if pkgInfo[0]=="curl":
+					print(pkgUpdateIds["curl"])
 			self._debug("End Getting pkg list")
-			pkgCount=0
-			inc=5200
-			total=inc
-			processed=0
-			self._debug("Total packages {}".format(pkgCount))
-			rebostHelper.rebostPkgList_to_sqlite([],'packagekit.db',drop=True)
-			pkgIds=pkgSack.get_ids()
-			pkgCount=len(pkgIds)
-			while processed<pkgCount:
-				pkgList=[]
-				self._debug("Processing pkg list {}".format(processed))
-				pkgIdArray=[]
-				selected=pkgIds[processed:total]
-				####  REM WIP ON OPTIMIZATION
-				# Calls to packagekit are too expensive so it's needed to replace them
-				# Apparently we need a get_details call for retrieving categories
-				# Perhaps it's possible to use pkg.group property but isn't working
-				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
-				self._debug("End processing pkg list")
-				processed=total
-				total+=inc
-				if total>pkgCount:
-					total=pkgCount
-				self._debug("Sending to SQL")
-				rebostHelper.rebostPkgList_to_sqlite(self._generateRebostPkgList(pkDetails,pkgUpdateIds),'packagekit.db',drop=False,sanitize=False)
-				time.sleep(0.001)
+			self._processPackages(pkcon,pkgIds,pkgUpdateIds)
 			self._debug("PKG loaded")
 			try:
 				with open(self.lastUpdate,'w') as f:
@@ -111,49 +89,131 @@ class packageKit():
 		return()
 	#def _loadStore
 
-	def _getNewMd5(self,gPath,updatePath=''):
-		gioMd5=''
-		if os.path.isfile(self.lastUpdate)==False:
-			if os.path.isdir(os.path.dirname(self.lastUpdate))==False:
-				os.makedirs(os.path.dirname(self.lastUpdate))
-			gioMd5="-1"
+	def _getChanges(self,gPath):
+		#Compare old file with new file. Extract changes and update db
+		oldPkgList=[]
+		newPkgList=[]
+		if os.path.isfile(self.pkgFile)==True:
+			with open(self.pkgFile,'r') as f:
+				oldPkgList=f.readlines()
+		with open(gPath,'r') as f:
+			newPkgList=f.readlines()
+		pkgList= list(set(newPkgList)-set(oldPkgList))
+		with open(self.pkgFile,'w') as f:
+			f.writelines(newPkgList)
+		pkgIds=[]
+		for pkg in pkgList:
+			pkgArray=pkg.split('\t')
+			pkgIds.append(pkgArray[1])
+		return(pkgIds)
+	#def _getChanges
+
+	def _processPackages(self,pkcon,pkgIds,pkgUpdateIds):
+		#pkgSack=packagekit.PackageSack()
+		pkgList=[]
+		pkgDetails=[]
+		pkgCount=0
+		inc=5200
+		total=inc
+		processed=0
+		#rebostHelper.rebostPkgList_to_sqlite([],'packagekit.db',drop=True)
+		#pkgIds=pkgSack.get_ids()
+		#pkgIds.extend(pkgUpdateIds)
+		pkgCount=len(pkgIds)
+		self._debug("Total packages {}".format(pkgCount))
+		while processed<pkgCount:
+			self._debug("Processing pkg list {}".format(processed))
+			(selected,updateSelected)=self._processPkgList(pkgIds[processed:total])
+			####  REM WIP ON OPTIMIZATION
+			# Calls to packagekit are too expensive so it's needed to replace them
+			# Apparently we need a get_details call for retrieving categories
+			# Perhaps it's possible to use pkg.group property but isn't working
+			pkDetails=[]
+			if selected:
+				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
+				self._debug("Sending to SQL")
+				if pkDetails:
+					data=self._generateRebostPkgList(pkDetails,pkgUpdateIds)
+					rebostHelper.rebostPkgList_to_sqlite(data,'packagekit.db',drop=False,sanitize=False)
+			if updateSelected:
+				self._debug("Updating {} items".format(len(updateSelected)))
+#				rebostHelper.rebostPkgList_to_sqlite(updateSelected,"packagekit.db")
+			else:
+				self._debug("No updates detected")
+			self._debug("End processing pkg list")
+			processed=total
+			total+=inc
+			if total>pkgCount:
+				total=pkgCount
+			time.sleep(0.001)
+	#def _processPackages
+
+	def _processPkgList(self,pkgToProcess):
+		pkgList=[]
+		selected=[]
+		pkgDict={}
+		updateSelected=[]
+		if os.path.isfile("/usr/share/rebost/packagekit.db"):
+			for item in pkgToProcess:
+				#0->Name,1->Release,2->arch,3->origin
+				itemData=item.split(";")
+				if itemData[2]=="i386":
+					continue
+				pkgName=item.split(";")[0]
+				pkgDict[pkgName]=item
+			#Get rows for ids
+			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
+			for row in rows:
+				try:
+					rowData=json.loads(row[0][1])
+					rowPkg=json.loads(row[0][0])
+				except:
+					selected.append(item)
+					continue
+				del(pkgDict[rowPkg])
+				#Check if there's any change on state or version
+				swUpdate=False
+				if ":" in itemData[3] and rowData.get('state',{}).get('package',"1")!="0":
+					rowData["state"]={"package":"0"}
+					swUpdate=True
+				elif ":" not in itemData[3] and rowData.get('state',{}).get('package',"1")!="1":
+					rowData["state"]={"package":"1"}
+					swUpdate=True
+				if swUpdate:
+					updateSelected.append(rowData)
+			#Add non existent ids
+			for pkg,item in pkgDict.items():
+				selected.append(item)
+
 		else:
-			updateContent=''
-			lastUpdate=""
-			with open(self.lastUpdate,'r') as f:
-				lastUpdate=f.read()
-			with open(gPath,'rb') as f:
-				gioContent=f.read()
-			if os.path.isfile(updatePath):
-				with open(updatePath,'rb') as f:
-					updateContent=f.read()
-			gioMd5=hashlib.md5(gioContent+updateContent).hexdigest()
-			if gioMd5==lastUpdate:
-				gioMd5=""
-			self._debug("Md5: {} {}".format(gioMd5,lastUpdate))
-		return(gioMd5)
-	#def _getNewMd5
+			selected=pkgToProcess
+		return(selected,updateSelected)
+	#def _processPkgList
 
 	def _generateRebostPkg(self,pkg,updateInfo):
 		rebostPkg=rebostHelper.rebostPkg()
-		pkgId=pkg.get_package_id()
-		name=pkgId.split(";")[0]
-		version=pkgId.split(";")[1]
-		origin=pkgId.split(";")[-1]
-		updateVersion=updateInfo.get(name,version)
+		pkgId=pkg.get_package_id().split(";")
+		name=pkgId[0]
+		version=pkgId[1]
+		origin=pkgId[-1]
+		#updateVersion=updateInfo.get(name,version)
 		rebostPkg['name']=name
 		rebostPkg['pkgname']=rebostPkg['name']
 		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
+		#Updateversion now is a list. Must be a dict with name:version!!!!
+		updateVersion=updateInfo.get(name,{}).get('release',"{}".format(version))
 		rebostPkg['versions']={"package":"{}".format(updateVersion)}
+		#rebostPkg['versions']={"package":"{}".format(version)}
 		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
 		#if 'installed' in pkgId:
-		if ':' in origin:
+		if ":" in origin:
 			rebostPkg['state']={"package":"0"}
 			rebostPkg['installed']={"package":"{}".format(version)}
 		else:
 			rebostPkg['state']={"package":"1"}
+			rebostPkg['installed']={"package":""}
 		rebostPkg['size']={"package":"{}".format(pkg.get_size())}
 		rebostPkg['homepage']=pkg.get_url()
 		rebostPkg['license']=pkg.get_license()
@@ -171,34 +231,7 @@ class packageKit():
 	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
 		for pkg in pkgList.get_details_array():
-			rebostPkg=rebostHelper.rebostPkg()
-			pkgId=pkg.get_package_id()
-			name=pkgId.split(";")[0]
-			version=pkgId.split(";")[1]
-			origin=pkgId.split(";")[-1]
-			updateVersion=updateInfo.get(name,version)
-			rebostPkg['name']=name
-			rebostPkg['pkgname']=rebostPkg['name']
-			rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
-			rebostPkg['summary']=pkg.get_summary()
-			rebostPkg['description']=pkg.get_description()
-			rebostPkg['versions']={"package":"{}".format(updateVersion)}
-			rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
-		#	if 'installed' in pkgId:
-			if ':' in origin:
-				rebostPkg['state']={"package":"0"}
-				rebostPkg['installed']={"package":"{}".format(version)}
-			else:
-				rebostPkg['state']={"package":"1"}
-			rebostPkg['size']={"package":"{}".format(pkg.get_size())}
-			rebostPkg['homepage']=pkg.get_url()
-			if not isinstance(rebostPkg['homepage'],str):
-				rebostPkg['homepage']=''
-			rebostPkg['license']=pkg.get_license()
-			rebostPkg['categories'].append(pkg.get_group().to_string(pkg.get_group()).lower())
-			if ("lliurex" in rebostPkg['name'].lower() or ("lliurex" in rebostPkg['homepage'].lower())):
-				rebostPkg['categories'].insert(0,'Lliurex')
-			rebostPkgList.append(rebostPkg)
+			rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
 	#def _th_generateRebostPkg
 

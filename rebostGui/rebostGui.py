@@ -11,7 +11,7 @@ from appconfig import appconfigControls
 import gettext
 import time
 _ = gettext.gettext
-gettext.textdomain('lliurex-store')
+gettext.textdomain('rebostGui')
 
 app=QApplication(["Lliurex-Store"])
 config=appConfig("Lliurex Store",{'app':app})

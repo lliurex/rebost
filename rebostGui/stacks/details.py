@@ -220,15 +220,20 @@ class details(confStack):
 	#def _getEpiResults
 
 	def setParms(self,*args):
-		self.app=json.loads(args[0])
-		print(args[0])
-		print(type(args[0]))
-		if isinstance(self.app[0],str):
-			try:
-				self.app=json.loads(self.app[0])
-			except Exception as e:
-				print(e)
-		print(self.app)
+		swErr=False
+		try:
+			self.app=json.loads(args[0])
+		except:
+			swErr=True
+		if swErr==False:
+			if isinstance(self.app[0],str):
+				try:
+					self.app=json.loads(self.app[0])
+				except Exception as e:
+					swErr=True
+					print(e)
+		if swErr:
+			self.app={}
 		for bundle,name in (self.app.get('bundle',{}).items()):
 			if bundle=='package':
 				continue

@@ -59,22 +59,15 @@ class packageKit():
 		gPath=gioFile[0].get_path()
 		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
-		#updateFile=Gio.file_new_tmp()
-		#pkgUpdateSack.to_file(updateFile[0])
-		#updatePath=updateFile[0].get_path()
-		#newMd5=self._getNewMd5(gPath,updatePath)
 		newMd5=""
 		pkgIds=self._getChanges(gPath)
 		gioFile[0].delete()
-		#updateFile[0].delete()
 		if (len(pkgIds)>0) or (pkgUpdateSack.get_size()>0):
 			pkgUpdateIds={}
 			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
 			for pkgId in pkgUpdateIdsArray:
 				pkgInfo=pkgId.split(";")
 				pkgUpdateIds[pkgInfo[0]]={'release':pkgInfo[1],'origin':pkgInfo[-1]}
-				if pkgInfo[0]=="curl":
-					print(pkgUpdateIds["curl"])
 			self._debug("End Getting pkg list")
 			self._processPackages(pkcon,pkgIds,pkgUpdateIds)
 			self._debug("PKG loaded")
@@ -82,7 +75,7 @@ class packageKit():
 				with open(self.lastUpdate,'w') as f:
 					f.write(newMd5)
 			except:
-				print("chkNeedUpdate disabled")
+				print("Forcing update")
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")
@@ -109,16 +102,12 @@ class packageKit():
 	#def _getChanges
 
 	def _processPackages(self,pkcon,pkgIds,pkgUpdateIds):
-		#pkgSack=packagekit.PackageSack()
 		pkgList=[]
 		pkgDetails=[]
 		pkgCount=0
 		inc=5200
 		total=inc
 		processed=0
-		#rebostHelper.rebostPkgList_to_sqlite([],'packagekit.db',drop=True)
-		#pkgIds=pkgSack.get_ids()
-		#pkgIds.extend(pkgUpdateIds)
 		pkgCount=len(pkgIds)
 		self._debug("Total packages {}".format(pkgCount))
 		while processed<pkgCount:
@@ -137,7 +126,7 @@ class packageKit():
 					rebostHelper.rebostPkgList_to_sqlite(data,'packagekit.db',drop=False,sanitize=False)
 			if updateSelected:
 				self._debug("Updating {} items".format(len(updateSelected)))
-#				rebostHelper.rebostPkgList_to_sqlite(updateSelected,"packagekit.db")
+				rebostHelper.rebostPkgList_to_sqlite(updateSelected,"packagekit.db")
 			else:
 				self._debug("No updates detected")
 			self._debug("End processing pkg list")

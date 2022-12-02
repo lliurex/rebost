@@ -44,7 +44,10 @@ i18n={"ERR":_("ocurred when attempting to"),
 	"ROOT_MSG":_("Must be"),
 	"NOT":_("not"),
 	"FOUND":_("found"),
-	"FOR":_("for")
+	"FOR":_("for"),
+	"AVAILABLE":_("available"),
+	"AS":_("as"),
+	"ONLY":_("only")
 	}
 
 class err:
@@ -95,7 +98,8 @@ def _printInstall(result,pid):
 		rawmsg=result.get('msg','')
 		newmsg=""
 		for w in rawmsg[0:].split(" "):
-			newmsg+="{} ".format(i18n.get(w.upper,w))
+			print(w)
+			newmsg+="{} ".format(i18n.get(w.upper(),w))
 		newmsg=newmsg.lstrip()
 		if newmsg.startswith(i18n["FOR"]):
 			newmsg="{} {}".format(i18n["PACKAGE"],newmsg)

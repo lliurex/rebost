@@ -50,6 +50,7 @@ class appstreamHelper():
 		store=self._get_appstream_catalogue()
 		update=self._chkNeedUpdate(store)
 		if update:
+			store=self._generate_store(store)
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
@@ -95,7 +96,6 @@ class appstreamHelper():
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:
 			store.load(flag,None)
-		store=self._generate_store(store)
 		self._debug("End loading appstream metadata")
 		return(store)
 

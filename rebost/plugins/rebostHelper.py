@@ -194,7 +194,16 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=pkg['id'].split(".")[-1].lower().strip()
+		nameComponents=pkg['id'].split(".")
+		cont=len(nameComponents)-1
+		blacklist=["desktop","org","net","com"]
+		name=nameComponents[-1].lower()
+		while cont>=0:
+			if nameComponents[cont].lower() not in blacklist:
+				name=nameComponents[cont].lower()
+				break
+			cont-=1
+		pkg['name']=name
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:

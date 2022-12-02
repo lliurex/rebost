@@ -1,0 +1,156 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-12-02 10:38+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../rebost/rebostCli.py:17
+msgid "ocurred when attempting to"
+msgstr ""
+
+#: ../rebost/rebostCli.py:18
+msgid "an"
+msgstr ""
+
+#: ../rebost/rebostCli.py:19
+msgid "Package"
+msgstr ""
+
+#: ../rebost/rebostCli.py:20
+msgid "pkgname"
+msgstr ""
+
+#: ../rebost/rebostCli.py:21
+msgid "action"
+msgstr ""
+
+#: ../rebost/rebostCli.py:22
+msgid "install"
+msgstr ""
+
+#: ../rebost/rebostCli.py:23
+msgid "installed"
+msgstr ""
+
+#: ../rebost/rebostCli.py:24
+msgid "remove"
+msgstr ""
+
+#: ../rebost/rebostCli.py:25
+msgid "removed"
+msgstr ""
+
+#: ../rebost/rebostCli.py:26
+msgid "Versions"
+msgstr ""
+
+#: ../rebost/rebostCli.py:27
+msgid "Categories"
+msgstr ""
+
+#: ../rebost/rebostCli.py:28
+msgid "unknown"
+msgstr ""
+
+#: ../rebost/rebostCli.py:29
+msgid "unknown status"
+msgstr ""
+
+#: ../rebost/rebostCli.py:30
+msgid "Unknown option"
+msgstr ""
+
+#: ../rebost/rebostCli.py:31
+msgid "Usage"
+msgstr ""
+
+#: ../rebost/rebostCli.py:32
+msgid "query"
+msgstr ""
+
+#: ../rebost/rebostCli.py:33
+msgid "format"
+msgstr ""
+
+#: ../rebost/rebostCli.py:34
+msgid "optional"
+msgstr ""
+
+#: ../rebost/rebostCli.py:35
+msgid "Searchs packages using pkgname as query"
+msgstr ""
+
+#: ../rebost/rebostCli.py:36
+msgid "Shows info related to one package"
+msgstr ""
+
+#: ../rebost/rebostCli.py:37
+msgid ""
+"Install one package. If package comes from many formats one must be specified"
+msgstr ""
+
+#: ../rebost/rebostCli.py:38
+msgid ""
+"Remove one package. If package comes from many formats one must be specified"
+msgstr ""
+
+#: ../rebost/rebostCli.py:39
+msgid "Examples"
+msgstr ""
+
+#: ../rebost/rebostCli.py:40
+msgid "Install firefox-esr as appimage"
+msgstr ""
+
+#: ../rebost/rebostCli.py:41
+msgid "Remove chromium snap"
+msgstr ""
+
+#: ../rebost/rebostCli.py:42
+msgid "Show info related to"
+msgstr ""
+
+#: ../rebost/rebostCli.py:43
+msgid "Search for packages containing"
+msgstr ""
+
+#: ../rebost/rebostCli.py:44
+msgid "Must be"
+msgstr ""
+
+#: ../rebost/rebostCli.py:45
+msgid "not"
+msgstr ""
+
+#: ../rebost/rebostCli.py:46
+msgid "found"
+msgstr ""
+
+#: ../rebost/rebostCli.py:47
+msgid "for"
+msgstr ""
+
+#: ../rebost/rebostCli.py:48
+msgid "available"
+msgstr ""
+
+#: ../rebost/rebostCli.py:49
+msgid "as"
+msgstr ""
+
+#: ../rebost/rebostCli.py:50
+msgid "only"
+msgstr ""

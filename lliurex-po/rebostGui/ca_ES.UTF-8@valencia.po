@@ -1,0 +1,83 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-12-02 08:46+0100\n"
+"PO-Revision-Date: 2022-12-02 09:16+0100\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: ca\n"
+
+#: ../rebostGui/stacks/details.py:21
+msgid "Details"
+msgstr "Detalls"
+
+#: ../rebostGui/stacks/details.py:22
+msgid "Show application detail"
+msgstr "Mostra els detalls"
+
+#: ../rebostGui/stacks/details.py:23 ../rebostGui/stacks/portrait.py:19
+msgid "Navigate through all applications"
+msgstr "Mostra totes les aplicacions"
+
+#: ../rebostGui/stacks/details.py:25
+msgid "Install"
+msgstr "Instal·la"
+
+#: ../rebostGui/stacks/details.py:26
+msgid "Open"
+msgstr "Obri"
+
+#: ../rebostGui/stacks/details.py:27
+msgid "Remove"
+msgstr "Elimina"
+
+#: ../rebostGui/stacks/details.py:28
+msgid "Upgrade"
+msgstr "Actualitza"
+
+#: ../rebostGui/stacks/portrait.py:17
+msgid "Portrait"
+msgstr "Portada"
+
+#: ../rebostGui/stacks/portrait.py:18
+msgid "Show applications"
+msgstr "Mostra les aplicacions"
+
+#: ../rebostGui/stacks/portrait.py:21
+msgid "All"
+msgstr "Tot"
+
+#: ../rebostGui/stacks/sources.py:17
+msgid "Sources"
+msgstr "Origens"
+
+#: ../rebostGui/stacks/sources.py:18
+msgid "Show software sources"
+msgstr "Mostra els origens del programari"
+
+#: ../rebostGui/stacks/sources.py:19
+msgid "Configure software sources"
+msgstr "Configura els origens"
+
+#: ../rebostGui/stacks/sources.py:21
+msgid "Reload catalogues"
+msgstr "Carrega els catàlegs"
+
+#: ../rebostGui/stacks/sources.py:22
+msgid "Clear cache"
+msgstr "Neteja cau"
+
+#: ../rebostGui/stacks/sources.py:23
+msgid "Service could not be reloaded. Check credentials"
+msgstr "El servei no pot recarregar-se. Comprove les credencials"

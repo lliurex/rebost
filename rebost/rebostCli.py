@@ -5,11 +5,46 @@ import json
 import os,sys
 import subprocess
 import time 
+import gettext
+_ = gettext.gettext
+gettext.textdomain('rebost')
 
 action=''
 actionArgs=[]
 swLoad=False
 ERR=0
+
+i18n={"ERR":_("ocurred when attempting to"),
+	"AN":_("an"),
+	"PACKAGE":_("Package"),
+	"PACKAGE_NAME":_("pkgname"),
+	"ACTION":_("action"),
+	"INSTALL":_("install"),
+	"INSTALLED":_("installed"),
+	"REMOVE":_("remove"),
+	"REMOVED":_("removed"),
+	"VERSIONS":_("Versions"),
+	"CATEGORIES":_("Categories"),
+	"UNKNOWN":_("unknown"),
+	"UNKNOWN_STATUS":_("unknown status"),
+	"UNKNOWN_OPTION":_("Unknown option"),
+	"USAGE":_("Uso"),
+	"QUERY":_("query"),
+	"FORMAT":_("format"),
+	"OPTIONAL":_("optional"),
+	"SEARCH_HELP":_("Searchs packages using pkgname as query"),
+	"SHOW_HELP":_("Shows info related to one package"),
+	"INSTALL_HELP":_("Install one package. If package comes from many formats one must be specified"),
+	"REMOVE_HELP":_("Remove one package. If package comes from many formats one must be specified"),
+	"EXAMPLE":_("Examples"),
+	"INSTALL_EXAMPLE":_("Install firefox-esr as appimage"),
+	"REMOVE_EXAMPLE":_("Remove chromium snap"),
+	"SHOW_EXAMPLE":_("Show info related to"),
+	"SEARCH_EXAMPLE":_("Search for packages containing"),
+	"ROOT_MSG":_("Must be"),
+	"NOT_FOUND":_("not found"),
+	"FOR":_("for")
+	}
 
 class err:
 	privileges=130
@@ -17,12 +52,6 @@ class err:
 	transactionFailed=10
 	transactionProcessFailed=20
 	transactionUnknownStatus=30
-
-
-class i18n:
-	err="ocurred when attempting to"
-	an="an"
-	package="Package"
 
 class color:
    PURPLE = '\033[95m'
@@ -62,7 +91,14 @@ def _printInstall(result,pid):
 			msg+="\n{0}############################{1}\n".format(color.RED,color.END)
 			f.close()
 	else:
-		msg="{0}Error:{1} {2} {3}".format(color.RED,color.END,actionArgs.replace(":"," "),result.get('msg',''))
+		rawmsg=result.get('msg','')
+		newmsg=""
+		for w in rawmsg[0:].split(" "):
+			newmsg+="{} ".format(i18n.get(w.upper,w))
+		newmsg=newmsg.lstrip()
+		if newmsg.startswith(i18n["FOR"]):
+			newmsg="{} {}".format(i18n["PACKAGE"],newmsg)
+		msg="{0}Error:{1} {2}".format(color.RED,color.END,newmsg)
 		ERR=err.transactionFailed
 	return(msg)
 
@@ -209,35 +245,36 @@ def _getResult(pid):
 				print(data)
 				print(e)
 			if status=='0':
-				result="installed"
+				result=i18n["INSTALLED"].capitalize()
 			elif status=='1':
-				result="removed"
+				result=i18n["REMOVED"].capitalize()
 			elif status=='-1':
-				result="{0}ERROR{1} {2} {3}".format(color.RED,color.END,i18n.err,action)
+				result="{0}ERROR{1} {2} {3}".format(color.RED,color.END,i18n["ERR"],i18n.get(action,action))
 				ERR=err.transactionFailed
 			else:
 				ERR=err.transactionUnknownStatus
-				result="unknown status {}".format(status)
+				result="{0} {1}".format(i18n["UNKNOWN_STATUS"],i18n.get(status.upper(),status))
 	return(result)
 
 def showHelp():
 	if "help" not in action:
-		print("Unknown option {}".format(action))
-	print("Usage:")
-	print("\trebost action query format(optional)")
-	print("\trebost search|show|install|remove pkgname [format]")
+		print("{0} {1}".format(i18n["UNKNOWN_OPTION"],i18n.get(action.upper(),action)))
+	print(i18n["USAGE"])
+	print("\trebost {0} {1} {2}({3})".format(i18n["ACTION"],i18n["QUERY"],i18n["FORMAT"],i18n["OPTIONAL"]))
+	print("\trebost search|show|install|remove {0} ({1})".format(i18n["PACKAGE_NAME"],i18n["FORMAT"]))
 	print()
-	print("s | search: Searchs packages using pkgname as query")
-	print("sh | show: Shows info related to one package")
-	print("i | install: Install one package. If package comes from many formats one must be specified")
-	print("r | remove: Remove one package. If package comes from many formats one must be specified")
+	print("s | search: {}".format(i18n["SEARCH_HELP"]))
+	print("sh | show: {}".format(i18n["SHOW_HELP"]))
+	print("i | install: {}".format(i18n["INSTALL_HELP"]))
+	print("r | remove: {}".format(i18n["REMOVE_HELP"]))
 	print()
-	print("Examples:")
-	print("\t*Install firefox-esr as appimage: rebost install firefox-esr appimage")
-	print("\t*Remove chromium snap: rebost remove chromium")
-	print("\t*Show info related to zero-center: rebost show zero-center")
-	print("\t*Search for packages containing \"prin\": rebost search prin")
+	print("{}:".format(i18n["EXAMPLE"]))
+	print("\t*{}: rebost install firefox-esr appimage".format(i18n["INSTALL_EXAMPLE"]))
+	print("\t*{}: rebost remove chromium".format(i18n["REMOVE_EXAMPLE"]))
+	print("\t*{} zero-center: rebost show zero-center".format(i18n["SHOW_EXAMPLE"]))
+	print("\t*{} \"prin\": rebost search prin".format(i18n["SEARCH_EXAMPLE"]))
 	sys.exit(0)
+#def showHelp
 
 rebostClient=store.client()#.RebostClient(user=os.getenv('USER'))
 #Set cli mode
@@ -284,7 +321,7 @@ elif action in ["install","i","remove","r","remote_install"]:
 			else:
 				print(_printInstall(res,pid))
 	else:
-		print("Must be {}root{}".format(color.RED,color.END))
+		print("{0} {1}root{2}".format(i18n["ROOT_MSG"],color.RED,color.END))
 		ERR=err.privileges
 elif action=='test':
 	print(result)

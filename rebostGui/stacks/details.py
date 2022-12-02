@@ -83,7 +83,7 @@ class QLabelRebostApp(QLabel):
 
 class details(confStack):
 	def __init_stack__(self):
-		self.dbg=False
+		self.dbg=True
 		self._debug("details load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
@@ -220,12 +220,20 @@ class details(confStack):
 	#def _getEpiResults
 
 	def setParms(self,*args):
-		self.app=args[0][0]
-		if isinstance(self.app,str):
-			try:
-				self.app=json.loads(self.app)
-			except Exception as e:
-				print(e)
+		swErr=False
+		try:
+			self.app=json.loads(args[0])
+		except:
+			swErr=True
+		if swErr==False:
+			if isinstance(self.app[0],str):
+				try:
+					self.app=json.loads(self.app[0])
+				except Exception as e:
+					swErr=True
+					print(e)
+		if swErr:
+			self.app={}
 		for bundle,name in (self.app.get('bundle',{}).items()):
 			if bundle=='package':
 				continue
@@ -266,16 +274,25 @@ class details(confStack):
 				continue
 		#		self.btnPackageLaunch.setVisible(False)
 			tooltip=self.app.get('versions',{}).get(bundle,'')
+			tipInfo=tooltip
+			if len(tooltip)>8:
+				tipArray=tooltip.split(".")
+				count=0
+				while len(tipInfo)<8 or count>=len(tipArray):
+					tipInfo=".".join(tipArray[0:count])
+					count+=1
+				if len(tipInfo)>8:
+					tipInfo=tipInfo[0:8]
 			if state=='0':
 				self.cmbRemove.setVisible(True)
-				self.cmbRemove.addItem("{0}".format(bundle.capitalize()))
+				self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbRemove.setItemData(self.cmbRemove.count()-1,tooltip,Qt.ToolTipRole)
 				self.cmbOpen.setVisible(True)
-				self.cmbOpen.addItem("{0}".format(bundle.capitalize()))
+				self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbOpen.setItemData(self.cmbOpen.count()-1,tooltip,Qt.ToolTipRole)
 			else:
 				self.cmbInstall.setVisible(True)
-				self.cmbInstall.addItem("{0}".format(bundle.capitalize()))
+				self.cmbInstall.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
 
 		homepage=self.app.get('homepage','')

@@ -270,7 +270,12 @@ class appimageHelper():
 		bundle=rebostPkg['bundle'].get('appimage','')
 		self._debug("Base URL {}".format(bundle))
 		installerUrl=self._get_releases(bundle)
-		if len(installerUrl.split('/'))>2:
+		version=""
+		if "releases" in installerUrl:
+			splittedUrl=installerUrl.split('/')
+			if splittedUrl[-2].startswith("v"):
+				version=splittedUrl[-2].replace("v","")
+		elif len(splittedUrl)>2: 
 			self._debug("Installer {}".format(installerUrl))
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])
@@ -289,9 +294,9 @@ class appimageHelper():
 					if i.isnumeric():
 						version+="{}.".format(i)
 				version=version[:-1]
-			else:
-				version="0.1"
-			rebostPkg['versions'].update({'appimage':"{}".format(version)})
+		if version=="":
+			version="0.1"
+		rebostPkg['versions'].update({'appimage':"{}".format(version)})
 		if installerUrl:
 			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
 			if rebostPkg.get('icon','')!='' and not os.path.isfile(rebostPkg.get('icon')):

@@ -65,7 +65,11 @@ class snapHelper():
 			self._debug(e)
 		processed=[]
 		for section in sections:
-			apps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			try:
+				apps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			except Exception as e:
+				print(e)
+				break
 			if self._chkNeedUpdate(len(apps),section):
 				updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
 				with open(updateFile,'w') as f:

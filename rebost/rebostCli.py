@@ -98,7 +98,6 @@ def _printInstall(result,pid):
 		rawmsg=result.get('msg','')
 		newmsg=""
 		for w in rawmsg[0:].split(" "):
-			print(w)
 			newmsg+="{} ".format(i18n.get(w.upper(),w))
 		newmsg=newmsg.lstrip()
 		if newmsg.startswith(i18n["FOR"]):

@@ -28,7 +28,7 @@ i18n={"ERR":_("ocurred when attempting to"),
 	"UNKNOWN":_("unknown"),
 	"UNKNOWN_STATUS":_("unknown status"),
 	"UNKNOWN_OPTION":_("Unknown option"),
-	"USAGE":_("Uso"),
+	"USAGE":_("Usage"),
 	"QUERY":_("query"),
 	"FORMAT":_("format"),
 	"OPTIONAL":_("optional"),
@@ -42,7 +42,8 @@ i18n={"ERR":_("ocurred when attempting to"),
 	"SHOW_EXAMPLE":_("Show info related to"),
 	"SEARCH_EXAMPLE":_("Search for packages containing"),
 	"ROOT_MSG":_("Must be"),
-	"NOT_FOUND":_("not found"),
+	"NOT":_("not"),
+	"FOUND":_("found"),
 	"FOR":_("for")
 	}
 

@@ -97,8 +97,8 @@ class flatpakHelper():
 			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
-		self._debug("Formatting flatpak metadata")
-		store=self._generate_store(store,flInst,srcDir)
+		#self._debug("Formatting flatpak metadata")
+		#store=self._generate_store(store,flInst,srcDir)
 		self._debug("End loading flatpak metadata")
 		return(store)
 

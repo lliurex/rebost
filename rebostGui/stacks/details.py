@@ -277,10 +277,10 @@ class details(confStack):
 					tipInfo=tipInfo[0:8]
 			if state=='0':
 				self.cmbRemove.setVisible(True)
-				self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize()),tipInfo)
+				self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbRemove.setItemData(self.cmbRemove.count()-1,tooltip,Qt.ToolTipRole)
 				self.cmbOpen.setVisible(True)
-				self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize()),tipInfo)
+				self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbOpen.setItemData(self.cmbOpen.count()-1,tooltip,Qt.ToolTipRole)
 			else:
 				self.cmbInstall.setVisible(True)

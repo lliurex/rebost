@@ -147,7 +147,10 @@ class portrait(confStack):
 			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
 			self._debug("Loading cat {}".format(cat))
 		else:
-			categories=",".join(["\"{}\"".format(self.cmbCategories.itemText(i)) for i in range(self.cmbCategories.count())])
+			categories=[]
+			for i18ncat,cat in self.i18nCat.items():
+				categories.append("\"{}\"".format(cat))
+			categories=",".join(categories)
 			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
 		return(apps)
 	#def _getAppList

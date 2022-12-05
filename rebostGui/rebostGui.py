@@ -11,10 +11,9 @@ from appconfig import appconfigControls
 import gettext
 import time
 _ = gettext.gettext
-gettext.textdomain('rebostGui')
 
-app=QApplication(["Lliurex-Store"])
-config=appConfig("Lliurex Store",{'app':app})
+app=QApplication(["RebostGui"])
+config=appConfig("RebostGui",{'app':app})
 config.setWindowTitle("Lliurex Store")
 config.setRsrcPath("/usr/share/rebost/rsrc")
 config.setIcon('lliurexstore')

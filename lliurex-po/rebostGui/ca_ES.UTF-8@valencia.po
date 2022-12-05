@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-05 10:19+0100\n"
-"PO-Revision-Date: 2022-12-05 10:51+0100\n"
+"POT-Creation-Date: 2022-12-05 11:04+0100\n"
+"PO-Revision-Date: 2022-12-05 11:05+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -55,6 +55,10 @@ msgid "Show applications"
 msgstr "Mostra les aplicacions"
 
 #: ../rebostGui/stacks/portrait.py:21
+msgid "Search"
+msgstr "Cerca..."
+
+#: ../rebostGui/stacks/portrait.py:22
 msgid "All"
 msgstr "Tot"
 
@@ -188,7 +192,7 @@ msgid "ConsoleOnly"
 msgstr "Consola"
 
 msgid "Construction"
-msgstr "construccií"
+msgstr "Construció"
 
 msgid "ContactManagement"
 msgstr "Gestió de contactes"

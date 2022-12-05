@@ -98,13 +98,18 @@ class portrait(confStack):
 		catList=json.loads(self.rc.execute('getCategories'))
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
+		#Sort categories
+		translatedCategories=[]
 		for cat in catList:
-			#if cat.islower() it's a category from system without appstream info 
 			if cat in self.i18nCat.keys() or cat.islower():
 				continue
-			seenCats[cat.capitalize()]=cat
-			self.cmbCategories.addItem(_(cat))
+			translatedCategories.append(_(cat))
 			self.i18nCat[_(cat)]=cat
+		translatedCategories.sort()
+
+		for cat in translatedCategories:
+			#if cat.islower() it's a category from system without appstream info 
+			self.cmbCategories.addItem(cat)
 		self.apps=self._getAppList()
 		self._shuffleApps()
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)

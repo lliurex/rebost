@@ -12,7 +12,7 @@ import gettext
 import time
 _ = gettext.gettext
 
-app=QApplication(["RebostUi"])
+app=QApplication(["RebostGui"])
 config=appConfig("RebostGui",{'app':app})
 config.setWindowTitle("Lliurex Store")
 config.setRsrcPath("/usr/share/rebost/rsrc")

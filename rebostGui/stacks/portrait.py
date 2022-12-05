@@ -116,6 +116,7 @@ class portrait(confStack):
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
 		self.searchBox.setToolTip(i18n["SEARCH"])
+		self.searchBox.setPlaceholderText(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)

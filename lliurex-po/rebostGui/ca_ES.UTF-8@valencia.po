@@ -7,16 +7,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-02 08:46+0100\n"
-"PO-Revision-Date: 2022-12-02 09:16+0100\n"
+"POT-Creation-Date: 2022-12-05 10:19+0100\n"
+"PO-Revision-Date: 2022-12-05 10:51+0100\n"
+"Last-Translator: \n"
 "Language-Team: \n"
+"Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.3\n"
-"Last-Translator: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Language: ca\n"
 
 #: ../rebostGui/stacks/details.py:21
 msgid "Details"
@@ -81,3 +81,597 @@ msgstr "Neteja cau"
 #: ../rebostGui/stacks/sources.py:23
 msgid "Service could not be reloaded. Check credentials"
 msgstr "El servei no pot recarregar-se. Comprove les credencials"
+
+msgid "2DGraphics"
+msgstr "Gràfics 2D"
+
+msgid "3DGraphics"
+msgstr "Gràfics 3D"
+
+msgid "Accessibility"
+msgstr "Accesibilitat"
+
+msgid "ActionGame"
+msgstr "Jocs d'acció"
+
+msgid "Administration"
+msgstr "Administració"
+
+msgid "Adventure"
+msgstr "Aventura"
+
+msgid "AdventureGame"
+msgstr "Jocs d'aventura"
+
+msgid "Amusement"
+msgstr "Entreteniment"
+
+msgid "Animation"
+msgstr "Animació"
+
+msgid "Application"
+msgstr "Aplicació"
+
+msgid "ArcadeGame"
+msgstr "Jocs arcade"
+
+msgid "Archiving"
+msgstr "Compressió"
+
+msgid "Art"
+msgstr "Art"
+
+msgid "ArtificialIntelligence"
+msgstr "Inteligencia artificial"
+
+msgid "Astronomy"
+msgstr "Astronomía"
+
+msgid "Audio"
+msgstr "Só"
+
+msgid "AudioVideo"
+msgstr "Video i só"
+
+msgid "AudioVideoEditing"
+msgstr "Edició de só i video"
+
+msgid "Biology"
+msgstr "Biologia"
+
+msgid "BlocksGame"
+msgstr "Jocs de blocs"
+
+msgid "BoardGame"
+msgstr "Jocs de tauler"
+
+msgid "Building"
+msgstr "Construcció"
+
+msgid "Calculator"
+msgstr "Cálcul"
+
+msgid "Calendar"
+msgstr "Calendari"
+
+msgid "CardGame"
+msgstr "Jocs de cartes"
+
+msgid "Chart"
+msgstr "Gràfiques"
+
+msgid "Chat"
+msgstr "Xat"
+
+msgid "Chemistry"
+msgstr "Química"
+
+msgid "Clock"
+msgstr "Rellotge"
+
+msgid "Communication"
+msgstr "Comunicació"
+
+msgid "Communication & News"
+msgstr "Comunicació i noticies"
+
+msgid "Compression"
+msgstr "Compressió"
+
+msgid "ComputerScience"
+msgstr "Ciencia computacional"
+
+msgid "Configuration"
+msgstr "Configuració"
+
+msgid "ConsoleOnly"
+msgstr "Consola"
+
+msgid "Construction"
+msgstr "construccií"
+
+msgid "ContactManagement"
+msgstr "Gestió de contactes"
+
+msgid "Core"
+msgstr "Sistema"
+
+msgid "DataVisualization"
+msgstr "Visualització de dades"
+
+msgid "Database"
+msgstr "Bases de dades"
+
+msgid "Debugger"
+msgstr "Debug"
+
+msgid "DesktopSettings"
+msgstr "Configuració de l'escriptori"
+
+msgid "Developer Tools"
+msgstr "Eines de desenvolupament"
+
+msgid "Development"
+msgstr "Desenvolupament"
+
+msgid "Dictionary"
+msgstr "Diccionari"
+
+msgid "DiscBurning"
+msgstr "Grabació de discs"
+
+msgid "Documentation"
+msgstr "Documentació"
+
+msgid "Economy"
+msgstr "Economia"
+
+msgid "Education"
+msgstr "Educació"
+
+msgid "Electricity"
+msgstr "Electricitat"
+
+msgid "Electronics"
+msgstr "Electrónica"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Emulation"
+msgstr "Emulació"
+
+msgid "Emulator"
+msgstr "Emuladors"
+
+msgid "Engineering"
+msgstr "Enginyeria"
+
+msgid "FP"
+msgstr "FP"
+
+msgid "Fantasy"
+msgstr "Fantasia"
+
+msgid "Feed"
+msgstr "Orígen"
+
+msgid "Feeds"
+msgstr "Orígens"
+
+msgid "FileManager"
+msgstr "Gestió de fitxers"
+
+msgid "FileTools"
+msgstr "Eines de fitxers"
+
+msgid "FileTransfer"
+msgstr "Transferencia de fitxers"
+
+msgid "Filesystem"
+msgstr "Fitxers"
+
+msgid "Finance"
+msgstr "Finances"
+
+msgid "FlowChart"
+msgstr "Gràfiques"
+
+msgid "GNOME"
+msgstr "Gnome"
+
+msgid "GTK"
+msgstr "Gtk"
+
+msgid "GUIDesigner"
+msgstr "Disseny d'interficies"
+
+msgid "Game"
+msgstr "Joc"
+
+msgid "Games"
+msgstr "Jocs"
+
+msgid "Geography"
+msgstr "Geografia"
+
+msgid "Geology"
+msgstr "Geologia"
+
+msgid "Geoscience"
+msgstr "Geociencia"
+
+msgid "Graphics"
+msgstr "Gràfics"
+
+msgid "HamRadio"
+msgstr "Radio"
+
+msgid "HardwareSettings"
+msgstr "Maquinari"
+
+msgid "HexEditor"
+msgstr "Editor hexadecimal"
+
+msgid "Humanities"
+msgstr "Humanitats"
+
+msgid "IDE"
+msgstr "IDE"
+
+msgid "IRCClient"
+msgstr "IRC"
+
+msgid "ImageProcessing"
+msgstr "Procesament d'imatges"
+
+msgid "InstantMessaging"
+msgstr "Missatgeria instantànea"
+
+msgid "Internet"
+msgstr "Internet"
+
+msgid "Java"
+msgstr "Java"
+
+msgid "Jukebox"
+msgstr "Reproductors de música"
+
+msgid "KDE"
+msgstr "Kde"
+
+msgid "KidsGame"
+msgstr "Jocs infantils"
+
+msgid "Languages"
+msgstr "Idiomes"
+
+msgid "LearnToCode"
+msgstr "Lliçons de programació"
+
+msgid "Literature"
+msgstr "Literatura"
+
+msgid "LliureX-Administration"
+msgstr "Adinistració del LliureX"
+
+msgid "Lliurex"
+msgstr "LliureX"
+
+msgid "LogicGame"
+msgstr "Jocs de lògica"
+
+msgid "MMORPG"
+msgstr "MMORPG"
+
+msgid "Maps"
+msgstr "Mapes"
+
+msgid "Math"
+msgstr "Matemàtiques"
+
+msgid "Matrix"
+msgstr "Matrix"
+
+msgid "MedicalSoftware"
+msgstr "Programari mèdic"
+
+msgid "Midi"
+msgstr "Midi"
+
+msgid "Mixer"
+msgstr "Mescladors"
+
+msgid "Monitor"
+msgstr "Monitors"
+
+msgid "Motif"
+msgstr "Motif"
+
+msgid "Multimedia"
+msgstr "Multimèdia"
+
+msgid "Music"
+msgstr "Música"
+
+msgid "Network"
+msgstr "Xarxes"
+
+msgid "News"
+msgstr "Noticies"
+
+msgid "NumericalAnalysis"
+msgstr "Anàlisi numéric"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Office"
+msgstr "Oficina"
+
+msgid "P2P"
+msgstr "P2P"
+
+msgid "PackageManager"
+msgstr "Gestors de paquets"
+
+msgid "ParallelComputing"
+msgstr "Computació paralela"
+
+msgid "Photography"
+msgstr "Fotografia"
+
+msgid "Physics"
+msgstr "Física"
+
+msgid "Player"
+msgstr "Jugador"
+
+msgid "Players"
+msgstr "Jugadors"
+
+msgid "Presentation"
+msgstr "Presentacions"
+
+msgid "Printing"
+msgstr "Impressió"
+
+msgid "Productivity"
+msgstr "Productivitat"
+
+msgid "Profiling"
+msgstr "Perfils"
+
+msgid "ProjectManagement"
+msgstr "Gestió de projectes"
+
+msgid "Publishing"
+msgstr "Publicacions"
+
+msgid "QT"
+msgstr "Qt"
+
+msgid "Qt"
+msgstr "Qt"
+
+msgid "RasterGraphics"
+msgstr "Gràfics raster"
+
+msgid "Recorder"
+msgstr "Gravació"
+
+msgid "RemoteAccess"
+msgstr "Accés remot"
+
+msgid "RevisionControl"
+msgstr "Control de versions"
+
+msgid "Robotics"
+msgstr "Robótica"
+
+msgid "Role Playing"
+msgstr "Jocs de rol"
+
+msgid "RolePlaying"
+msgstr "Jocs de rol"
+
+msgid "Scanning"
+msgstr "Escaneig"
+
+msgid "Science"
+msgstr "Ciència"
+
+msgid "Security"
+msgstr "Seguretat"
+
+msgid "Sequencer"
+msgstr "Secuenciadors"
+
+msgid "Services"
+msgstr "Serveis"
+
+msgid "Settings"
+msgstr "Configuracions"
+
+msgid "Shooter"
+msgstr "Jocs de tirs"
+
+msgid "Simulation"
+msgstr "Sumulació"
+
+msgid "Software"
+msgstr "Programari"
+
+msgid "Spirituality"
+msgstr "Espiritualitat"
+
+msgid "Sports"
+msgstr "Esports"
+
+msgid "SportsGame"
+msgstr "Jocs d'esports"
+
+msgid "Spreadsheet"
+msgstr "Fulles de càlcul"
+
+msgid "Strategy"
+msgstr "Estrategia"
+
+msgid "StrategyGame"
+msgstr "Jocs d'estrategia"
+
+msgid "Support"
+msgstr "Ajuda"
+
+msgid "System"
+msgstr "Sistema"
+
+msgid "TV"
+msgstr "TV"
+
+msgid "Telephony"
+msgstr "Telefonia"
+
+msgid "TelephonyTools"
+msgstr "Eines de telefonia"
+
+msgid "TerminalEmulator"
+msgstr "Emuladors de terminal"
+
+msgid "TextEditor"
+msgstr "Editors de text"
+
+msgid "TextTools"
+msgstr "Eines de text"
+
+msgid "Translation"
+msgstr "Traducció"
+
+msgid "Tuner"
+msgstr "Sintonitzadors"
+
+msgid "Utilities"
+msgstr "Utilitats"
+
+msgid "Utility"
+msgstr "Utilitat"
+
+msgid "VectorGraphics"
+msgstr "Gràfics vectorials"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "VideoConference"
+msgstr "Videoconferencia"
+
+msgid "Viewer"
+msgstr "Visors"
+
+msgid "WebBrowser"
+msgstr "Fullejadors web"
+
+msgid "WebDevelopment"
+msgstr "Desenvolupament web"
+
+msgid "Webdevelopment"
+msgstr "Desenvolupament web"
+
+msgid "WordProcessor"
+msgstr "Processadors de text"
+
+msgid "X-CSuite"
+msgstr "X-CSuite"
+
+msgid "X-Tool"
+msgstr "X-Tool"
+
+msgid "XFCE"
+msgstr "Xfce"
+
+msgid "Zomando"
+msgstr "Zomandament"
+
+msgid "accessories"
+msgstr "accesoris"
+
+msgid "admin-tools"
+msgstr "eines d'administració"
+
+msgid "collections"
+msgstr "col·leccions"
+
+msgid "communication"
+msgstr "comunicacions"
+
+msgid "configuration"
+msgstr "configuració"
+
+msgid "desktop-gnome"
+msgstr "escriptori gnome"
+
+msgid "desktop-kde"
+msgstr "escriptori kde"
+
+msgid "desktop-other"
+msgstr "escriptori altres"
+
+msgid "desktop-xfce"
+msgstr "escriptori xfce"
+
+msgid "documentation"
+msgstr "documentació"
+
+msgid "education"
+msgstr "educació"
+
+msgid "electronics"
+msgstr "electrónica"
+
+msgid "fonts"
+msgstr "eines de lletres"
+
+msgid "games"
+msgstr "jocs"
+
+msgid "graphics"
+msgstr "gràfics"
+
+msgid "internet"
+msgstr "internet"
+
+msgid "legacy"
+msgstr "antics"
+
+msgid "multimedia"
+msgstr "multimèdia"
+
+msgid "network"
+msgstr "xarxa"
+
+msgid "other"
+msgstr "altres"
+
+msgid "programming"
+msgstr "programació"
+
+msgid "publishing"
+msgstr "publicació"
+
+msgid "resources"
+msgstr "eines"
+
+msgid "science"
+msgstr "ciència"
+
+msgid "servers"
+msgstr "servidors"
+
+msgid "software"
+msgstr "programari"
+
+msgid "system"
+msgstr "sustema"
+
+msgid "unknown"
+msgstr "desconegut"

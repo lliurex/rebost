@@ -102,11 +102,12 @@ class portrait(confStack):
 		#Sort categories
 		translatedCategories=[]
 		for cat in catList:
-			if cat in self.i18nCat.keys() or cat.islower():
+			if _(cat) in self.i18nCat.keys() or cat.islower():
 				continue
 			translatedCategories.append(_(cat))
 			self.i18nCat[_(cat)]=cat
 		translatedCategories.sort()
+
 
 		for cat in translatedCategories:
 			#if cat.islower() it's a category from system without appstream info 
@@ -146,7 +147,10 @@ class portrait(confStack):
 			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
 			self._debug("Loading cat {}".format(cat))
 		else:
-			categories=",".join(["\"{}\"".format(self.cmbCategories.itemText(i)) for i in range(self.cmbCategories.count())])
+			categories=[]
+			for i18ncat,cat in self.i18nCat.items():
+				categories.append("\"{}\"".format(cat))
+			categories=",".join(categories)
 			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
 		return(apps)
 	#def _getAppList

@@ -18,6 +18,7 @@ i18n={
 	"DESCRIPTION":_("Show applications"),
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
+	"SEARCH":_("Search"),
 	"ALL":_("All")
 	}
 
@@ -114,6 +115,7 @@ class portrait(confStack):
 		self._shuffleApps()
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
+		self.searchBox.setToolTip(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)

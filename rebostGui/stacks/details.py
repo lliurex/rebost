@@ -170,7 +170,7 @@ class details(confStack):
 	#def _runZomando
 
 	def _runApp(self):
-		bundle=self.cmbOpen.currentText().lower()
+		bundle=self.cmbOpen.currentText().lower().split(" ")[0]
 		if bundle=="package":
 			cmd=["gtk-launch",self.app.get("name",'')]
 		elif bundle=="flatpak":
@@ -184,7 +184,7 @@ class details(confStack):
 	#def _runApp
 
 	def _genericEpiInstall(self):
-		bundle=self.cmbInstall.currentText().lower()
+		bundle=self.cmbInstall.currentText().lower().split(" ")[0]
 		if bundle=="":
 			bundle=self.cmbRemove.currentText().lower()
 		self.rc.enableGui(True)

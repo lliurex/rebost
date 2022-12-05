@@ -102,11 +102,12 @@ class portrait(confStack):
 		#Sort categories
 		translatedCategories=[]
 		for cat in catList:
-			if cat in self.i18nCat.keys() or cat.islower():
+			if _(cat) in self.i18nCat.keys() or cat.islower():
 				continue
 			translatedCategories.append(_(cat))
 			self.i18nCat[_(cat)]=cat
 		translatedCategories.sort()
+
 
 		for cat in translatedCategories:
 			#if cat.islower() it's a category from system without appstream info 

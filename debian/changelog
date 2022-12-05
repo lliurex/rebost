@@ -1,4 +1,4 @@
-rebost (0.9.11) lliurex22; urgency=medium
+rebost (0.9.12) lliurex22; urgency=medium
 
   * Release candidate 3. Bugfix 
   * Improve packagekit performance

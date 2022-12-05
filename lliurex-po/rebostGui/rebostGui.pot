@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-02 10:38+0100\n"
+"POT-Creation-Date: 2022-12-05 09:33+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -82,3 +82,598 @@ msgstr ""
 #: ../rebostGui/stacks/sources.py:23
 msgid "Service could not be reloaded. Check credentials"
 msgstr ""
+
+msgid "2DGraphics"
+msgstr ""
+
+msgid "3DGraphics"
+msgstr ""
+
+msgid "Accessibility"
+msgstr ""
+
+msgid "ActionGame"
+msgstr ""
+
+msgid "Administration"
+msgstr ""
+
+msgid "Adventure"
+msgstr ""
+
+msgid "AdventureGame"
+msgstr ""
+
+msgid "Amusement"
+msgstr ""
+
+msgid "Animation"
+msgstr ""
+
+msgid "Application"
+msgstr ""
+
+msgid "ArcadeGame"
+msgstr ""
+
+msgid "Archiving"
+msgstr ""
+
+msgid "Art"
+msgstr ""
+
+msgid "ArtificialIntelligence"
+msgstr ""
+
+msgid "Astronomy"
+msgstr ""
+
+msgid "Audio"
+msgstr ""
+
+msgid "AudioVideo"
+msgstr ""
+
+msgid "AudioVideoEditing"
+msgstr ""
+
+msgid "Biology"
+msgstr ""
+
+msgid "BlocksGame"
+msgstr ""
+
+msgid "BoardGame"
+msgstr ""
+
+msgid "Building"
+msgstr ""
+
+msgid "Calculator"
+msgstr ""
+
+msgid "Calendar"
+msgstr ""
+
+msgid "CardGame"
+msgstr ""
+
+msgid "Chart"
+msgstr ""
+
+msgid "Chat"
+msgstr ""
+
+msgid "Chemistry"
+msgstr ""
+
+msgid "Clock"
+msgstr ""
+
+msgid "Communication"
+msgstr ""
+
+msgid "Communication & News"
+msgstr ""
+
+msgid "Compression"
+msgstr ""
+
+msgid "ComputerScience"
+msgstr ""
+
+msgid "Configuration"
+msgstr ""
+
+msgid "ConsoleOnly"
+msgstr ""
+
+msgid "Construction"
+msgstr ""
+
+msgid "ContactManagement"
+msgstr ""
+
+msgid "Core"
+msgstr ""
+
+msgid "DataVisualization"
+msgstr ""
+
+msgid "Database"
+msgstr ""
+
+msgid "Debugger"
+msgstr ""
+
+msgid "DesktopSettings"
+msgstr ""
+
+msgid "Developer Tools"
+msgstr ""
+
+msgid "Development"
+msgstr ""
+
+msgid "Dictionary"
+msgstr ""
+
+msgid "DiscBurning"
+msgstr ""
+
+msgid "Documentation"
+msgstr ""
+
+msgid "Economy"
+msgstr ""
+
+msgid "Education"
+msgstr ""
+
+msgid "Electricity"
+msgstr ""
+
+msgid "Electronics"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Emulation"
+msgstr ""
+
+msgid "Emulator"
+msgstr ""
+
+msgid "Engineering"
+msgstr ""
+
+msgid "FP"
+msgstr ""
+
+msgid "Fantasy"
+msgstr ""
+
+msgid "Feed"
+msgstr ""
+
+msgid "Feeds"
+msgstr ""
+
+msgid "FileManager"
+msgstr ""
+
+msgid "FileTools"
+msgstr ""
+
+msgid "FileTransfer"
+msgstr ""
+
+msgid "Filesystem"
+msgstr ""
+
+msgid "Finance"
+msgstr ""
+
+msgid "FlowChart"
+msgstr ""
+
+msgid "GNOME"
+msgstr ""
+
+msgid "GTK"
+msgstr ""
+
+msgid "GUIDesigner"
+msgstr ""
+
+msgid "Game"
+msgstr ""
+
+msgid "Games"
+msgstr ""
+
+msgid "Geography"
+msgstr ""
+
+msgid "Geology"
+msgstr ""
+
+msgid "Geoscience"
+msgstr ""
+
+msgid "Graphics"
+msgstr ""
+
+msgid "HamRadio"
+msgstr ""
+
+msgid "HardwareSettings"
+msgstr ""
+
+msgid "HexEditor"
+msgstr ""
+
+msgid "Humanities"
+msgstr ""
+
+msgid "IDE"
+msgstr ""
+
+msgid "IRCClient"
+msgstr ""
+
+msgid "ImageProcessing"
+msgstr ""
+
+msgid "InstantMessaging"
+msgstr ""
+
+msgid "Internet"
+msgstr ""
+
+msgid "Java"
+msgstr ""
+
+msgid "Jukebox"
+msgstr ""
+
+msgid "KDE"
+msgstr ""
+
+msgid "KidsGame"
+msgstr ""
+
+msgid "Languages"
+msgstr ""
+
+msgid "LearnToCode"
+msgstr ""
+
+msgid "Literature"
+msgstr ""
+
+msgid "LliureX-Administration"
+msgstr ""
+
+msgid "Lliurex"
+msgstr ""
+
+msgid "LogicGame"
+msgstr ""
+
+msgid "MMORPG"
+msgstr ""
+
+msgid "Maps"
+msgstr ""
+
+msgid "Math"
+msgstr ""
+
+msgid "Matrix"
+msgstr ""
+
+msgid "MedicalSoftware"
+msgstr ""
+
+msgid "Midi"
+msgstr ""
+
+msgid "Mixer"
+msgstr ""
+
+msgid "Monitor"
+msgstr ""
+
+msgid "Motif"
+msgstr ""
+
+msgid "Multimedia"
+msgstr ""
+
+msgid "Music"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "News"
+msgstr ""
+
+msgid "NumericalAnalysis"
+msgstr ""
+
+msgid "OCR"
+msgstr ""
+
+msgid "Office"
+msgstr ""
+
+msgid "P2P"
+msgstr ""
+
+msgid "PackageManager"
+msgstr ""
+
+msgid "ParallelComputing"
+msgstr ""
+
+msgid "Photography"
+msgstr ""
+
+msgid "Physics"
+msgstr ""
+
+msgid "Player"
+msgstr ""
+
+msgid "Players"
+msgstr ""
+
+msgid "Presentation"
+msgstr ""
+
+msgid "Printing"
+msgstr ""
+
+msgid "Productivity"
+msgstr ""
+
+msgid "Profiling"
+msgstr ""
+
+msgid "ProjectManagement"
+msgstr ""
+
+msgid "Publishing"
+msgstr ""
+
+msgid "QT"
+msgstr ""
+
+msgid "Qt"
+msgstr ""
+
+msgid "RasterGraphics"
+msgstr ""
+
+msgid "Recorder"
+msgstr ""
+
+msgid "RemoteAccess"
+msgstr ""
+
+msgid "RevisionControl"
+msgstr ""
+
+msgid "Robotics"
+msgstr ""
+
+msgid "Role Playing"
+msgstr ""
+
+msgid "RolePlaying"
+msgstr ""
+
+msgid "Scanning"
+msgstr ""
+
+msgid "Science"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+msgid "Sequencer"
+msgstr ""
+
+msgid "Services"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Shooter"
+msgstr ""
+
+msgid "Simulation"
+msgstr ""
+
+msgid "Software"
+msgstr ""
+
+msgid "Spirituality"
+msgstr ""
+
+msgid "Sports"
+msgstr ""
+
+msgid "SportsGame"
+msgstr ""
+
+msgid "Spreadsheet"
+msgstr ""
+
+msgid "Strategy"
+msgstr ""
+
+msgid "StrategyGame"
+msgstr ""
+
+msgid "Support"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "TV"
+msgstr ""
+
+msgid "Telephony"
+msgstr ""
+
+msgid "TelephonyTools"
+msgstr ""
+
+msgid "TerminalEmulator"
+msgstr ""
+
+msgid "TextEditor"
+msgstr ""
+
+msgid "TextTools"
+msgstr ""
+
+msgid "Translation"
+msgstr ""
+
+msgid "Tuner"
+msgstr ""
+
+msgid "Utilities"
+msgstr ""
+
+msgid "Utility"
+msgstr ""
+
+msgid "VectorGraphics"
+msgstr ""
+
+msgid "Video"
+msgstr ""
+
+msgid "VideoConference"
+msgstr ""
+
+msgid "Viewer"
+msgstr ""
+
+msgid "WebBrowser"
+msgstr ""
+
+msgid "WebDevelopment"
+msgstr ""
+
+msgid "Webdevelopment"
+msgstr ""
+
+msgid "WordProcessor"
+msgstr ""
+
+msgid "X-CSuite"
+msgstr ""
+
+msgid "X-Tool"
+msgstr ""
+
+msgid "XFCE"
+msgstr ""
+
+msgid "Zomando"
+msgstr ""
+
+msgid "accessories"
+msgstr ""
+
+msgid "admin-tools"
+msgstr ""
+
+msgid "collections"
+msgstr ""
+
+msgid "communication"
+msgstr ""
+
+msgid "configuration"
+msgstr ""
+
+msgid "desktop-gnome"
+msgstr ""
+
+msgid "desktop-kde"
+msgstr ""
+
+msgid "desktop-other"
+msgstr ""
+
+msgid "desktop-xfce"
+msgstr ""
+
+msgid "documentation"
+msgstr ""
+
+msgid "education"
+msgstr ""
+
+msgid "electronics"
+msgstr ""
+
+msgid "fonts"
+msgstr ""
+
+msgid "games"
+msgstr ""
+
+msgid "graphics"
+msgstr ""
+
+msgid "internet"
+msgstr ""
+
+msgid "legacy"
+msgstr ""
+
+msgid "multimedia"
+msgstr ""
+
+msgid "network"
+msgstr ""
+
+msgid "other"
+msgstr ""
+
+msgid "programming"
+msgstr ""
+
+msgid "publishing"
+msgstr ""
+
+msgid "resources"
+msgstr ""
+
+msgid "science"
+msgstr ""
+
+msgid "servers"
+msgstr ""
+
+msgid "software"
+msgstr ""
+
+msgid "system"
+msgstr ""
+
+msgid "unknown"
+msgstr ""
+

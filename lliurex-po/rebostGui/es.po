@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-02 08:46+0100\n"
-"PO-Revision-Date: 2022-12-02 08:49+0100\n"
+"POT-Creation-Date: 2022-12-05 09:33+0100\n"
+"PO-Revision-Date: 2022-12-05 09:50+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -77,3 +77,597 @@ msgstr "Limpiar caché"
 #: ../rebostGui/stacks/sources.py:23
 msgid "Service could not be reloaded. Check credentials"
 msgstr "No se puede recargar. Verifica credenciales"
+
+msgid "2DGraphics"
+msgstr "Gráficos 2D"
+
+msgid "3DGraphics"
+msgstr "Gráficos 3D"
+
+msgid "Accessibility"
+msgstr "Accesibilidad"
+
+msgid "ActionGame"
+msgstr "Juegos de acción"
+
+msgid "Administration"
+msgstr "Administración"
+
+msgid "Adventure"
+msgstr "Aventura"
+
+msgid "AdventureGame"
+msgstr "Juegos de aventura"
+
+msgid "Amusement"
+msgstr "Entretenimiento"
+
+msgid "Animation"
+msgstr "Animación"
+
+msgid "Application"
+msgstr "Aplicación"
+
+msgid "ArcadeGame"
+msgstr "Juegos Arcade"
+
+msgid "Archiving"
+msgstr "Compresión"
+
+msgid "Art"
+msgstr "Arte"
+
+msgid "ArtificialIntelligence"
+msgstr "Inteligencia Artificial"
+
+msgid "Astronomy"
+msgstr "Astronomía"
+
+msgid "Audio"
+msgstr "Sonido"
+
+msgid "AudioVideo"
+msgstr "Sonido y Video"
+
+msgid "AudioVideoEditing"
+msgstr "Edición de video y sonido"
+
+msgid "Biology"
+msgstr "Biología"
+
+msgid "BlocksGame"
+msgstr "Juegos de bloques"
+
+msgid "BoardGame"
+msgstr "Juegos de tablero"
+
+msgid "Building"
+msgstr "Construcciones"
+
+msgid "Calculator"
+msgstr "Calculadora"
+
+msgid "Calendar"
+msgstr "Calendario"
+
+msgid "CardGame"
+msgstr "Juego de cartas"
+
+msgid "Chart"
+msgstr "Gráficas"
+
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Chemistry"
+msgstr "Química"
+
+msgid "Clock"
+msgstr "Reloj"
+
+msgid "Communication"
+msgstr "Comunicación"
+
+msgid "Communication & News"
+msgstr "Comunicación y noticias"
+
+msgid "Compression"
+msgstr "Compresores"
+
+msgid "ComputerScience"
+msgstr "Ciencia computacional"
+
+msgid "Configuration"
+msgstr "Configuración"
+
+msgid "ConsoleOnly"
+msgstr "Consola"
+
+msgid "Construction"
+msgstr "Construcción"
+
+msgid "ContactManagement"
+msgstr "Contactos"
+
+msgid "Core"
+msgstr "Sistema"
+
+msgid "DataVisualization"
+msgstr "Datos"
+
+msgid "Database"
+msgstr "Base de datos"
+
+msgid "Debugger"
+msgstr "Debug"
+
+msgid "DesktopSettings"
+msgstr "Ajustes de escritorio"
+
+msgid "Developer Tools"
+msgstr "Herramientas de desarrollo"
+
+msgid "Development"
+msgstr "Desarrollo"
+
+msgid "Dictionary"
+msgstr "Diccionario"
+
+msgid "DiscBurning"
+msgstr "Grabación de discos"
+
+msgid "Documentation"
+msgstr "Documentación"
+
+msgid "Economy"
+msgstr "Economía"
+
+msgid "Education"
+msgstr "Educación"
+
+msgid "Electricity"
+msgstr "Electricidad"
+
+msgid "Electronics"
+msgstr "Electrónica"
+
+msgid "Email"
+msgstr "Correo"
+
+msgid "Emulation"
+msgstr "Simulación"
+
+msgid "Emulator"
+msgstr "Emuladores"
+
+msgid "Engineering"
+msgstr "Ingeniería"
+
+msgid "FP"
+msgstr "FP"
+
+msgid "Fantasy"
+msgstr "Fantasía"
+
+msgid "Feed"
+msgstr "Origen"
+
+msgid "Feeds"
+msgstr "Orígenes"
+
+msgid "FileManager"
+msgstr "Gestión de ficheros"
+
+msgid "FileTools"
+msgstr "Herrmientas"
+
+msgid "FileTransfer"
+msgstr "Transferencia de ficheros"
+
+msgid "Filesystem"
+msgstr "Ficheros"
+
+msgid "Finance"
+msgstr "Finanzas"
+
+msgid "FlowChart"
+msgstr "Gráficas"
+
+msgid "GNOME"
+msgstr "Gnome"
+
+msgid "GTK"
+msgstr "Gtk"
+
+msgid "GUIDesigner"
+msgstr "Diseño de interfaces"
+
+msgid "Game"
+msgstr "Juego"
+
+msgid "Games"
+msgstr "Juegos"
+
+msgid "Geography"
+msgstr "Geografía"
+
+msgid "Geology"
+msgstr "Geología"
+
+msgid "Geoscience"
+msgstr "Geociencia"
+
+msgid "Graphics"
+msgstr "Gráficos"
+
+msgid "HamRadio"
+msgstr "Radio"
+
+msgid "HardwareSettings"
+msgstr "Hardware"
+
+msgid "HexEditor"
+msgstr "Editores hexadecimales"
+
+msgid "Humanities"
+msgstr "Humanidades"
+
+msgid "IDE"
+msgstr "IDE"
+
+msgid "IRCClient"
+msgstr "IRC"
+
+msgid "ImageProcessing"
+msgstr "Procesamiento de imágenes"
+
+msgid "InstantMessaging"
+msgstr "Mensajería instantánea"
+
+msgid "Internet"
+msgstr "Internet"
+
+msgid "Java"
+msgstr "Java"
+
+msgid "Jukebox"
+msgstr "Reproductores de música"
+
+msgid "KDE"
+msgstr "Kde"
+
+msgid "KidsGame"
+msgstr "Juegos infantiles"
+
+msgid "Languages"
+msgstr "Idiomas"
+
+msgid "LearnToCode"
+msgstr "Aprender a programar"
+
+msgid "Literature"
+msgstr "Literatura"
+
+msgid "LliureX-Administration"
+msgstr "Administación LliureX"
+
+msgid "Lliurex"
+msgstr "LliureX"
+
+msgid "LogicGame"
+msgstr "Juegos de Lógica"
+
+msgid "MMORPG"
+msgstr "MMORPG"
+
+msgid "Maps"
+msgstr "Mapas"
+
+msgid "Math"
+msgstr "Matemáticas"
+
+msgid "Matrix"
+msgstr "Matrix"
+
+msgid "MedicalSoftware"
+msgstr "Software médico"
+
+msgid "Midi"
+msgstr "Midi"
+
+msgid "Mixer"
+msgstr "Mezcladores"
+
+msgid "Monitor"
+msgstr "Monitores"
+
+msgid "Motif"
+msgstr "Motif"
+
+msgid "Multimedia"
+msgstr "Multimédia"
+
+msgid "Music"
+msgstr "Música"
+
+msgid "Network"
+msgstr "Redes"
+
+msgid "News"
+msgstr "Noticias"
+
+msgid "NumericalAnalysis"
+msgstr "Análisis numérico"
+
+msgid "OCR"
+msgstr "OCR"
+
+msgid "Office"
+msgstr "Oficina"
+
+msgid "P2P"
+msgstr "P2P"
+
+msgid "PackageManager"
+msgstr "Gestión de paquetes"
+
+msgid "ParallelComputing"
+msgstr "Computación paralela"
+
+msgid "Photography"
+msgstr "Fotografía"
+
+msgid "Physics"
+msgstr "Física"
+
+msgid "Player"
+msgstr "Jugador"
+
+msgid "Players"
+msgstr "Jugadores"
+
+msgid "Presentation"
+msgstr "Presentaciones"
+
+msgid "Printing"
+msgstr "Impresión"
+
+msgid "Productivity"
+msgstr "Productividad"
+
+msgid "Profiling"
+msgstr "Perfiles"
+
+msgid "ProjectManagement"
+msgstr "Gestión de proyectos"
+
+msgid "Publishing"
+msgstr "Publicación"
+
+msgid "QT"
+msgstr "Qt"
+
+msgid "Qt"
+msgstr "Qt"
+
+msgid "RasterGraphics"
+msgstr "Gráficos Ráster"
+
+msgid "Recorder"
+msgstr "Grabadoras"
+
+msgid "RemoteAccess"
+msgstr "Acceso remoto"
+
+msgid "RevisionControl"
+msgstr "Control de versiones"
+
+msgid "Robotics"
+msgstr "Robótica"
+
+msgid "Role Playing"
+msgstr "Juegos de rol"
+
+msgid "RolePlaying"
+msgstr "Juegos de rol"
+
+msgid "Scanning"
+msgstr "Escaneado"
+
+msgid "Science"
+msgstr "Ciencia"
+
+msgid "Security"
+msgstr "Seguridad"
+
+msgid "Sequencer"
+msgstr "Secuenciadores"
+
+msgid "Services"
+msgstr "Servicios"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Shooter"
+msgstr "Disparos"
+
+msgid "Simulation"
+msgstr "Simulación"
+
+msgid "Software"
+msgstr "Programas"
+
+msgid "Spirituality"
+msgstr "Espiritualidad"
+
+msgid "Sports"
+msgstr "Deportes"
+
+msgid "SportsGame"
+msgstr "Juegos de deporte"
+
+msgid "Spreadsheet"
+msgstr "Hojas de cálculo"
+
+msgid "Strategy"
+msgstr "Estrategia"
+
+msgid "StrategyGame"
+msgstr "Juegos de estrategia"
+
+msgid "Support"
+msgstr "Asistencia"
+
+msgid "System"
+msgstr "sistema"
+
+msgid "TV"
+msgstr "TV"
+
+msgid "Telephony"
+msgstr "Telefonía"
+
+msgid "TelephonyTools"
+msgstr "Herramientas de telefonía"
+
+msgid "TerminalEmulator"
+msgstr "Terminales"
+
+msgid "TextEditor"
+msgstr "Editores de texto"
+
+msgid "TextTools"
+msgstr "Herramientas de texto"
+
+msgid "Translation"
+msgstr "Traducciones"
+
+msgid "Tuner"
+msgstr "Sintonizadores"
+
+msgid "Utilities"
+msgstr "Utilidades"
+
+msgid "Utility"
+msgstr "Utildad"
+
+msgid "VectorGraphics"
+msgstr "Gráficos vectoriales"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "VideoConference"
+msgstr "Videoconferencia"
+
+msgid "Viewer"
+msgstr "Visores"
+
+msgid "WebBrowser"
+msgstr "Navegadores"
+
+msgid "WebDevelopment"
+msgstr "Desarrollo web"
+
+msgid "Webdevelopment"
+msgstr "Desarrollo web"
+
+msgid "WordProcessor"
+msgstr "Procesadores de texto"
+
+msgid "X-CSuite"
+msgstr "X-CSuite"
+
+msgid "X-Tool"
+msgstr "X-Tool"
+
+msgid "XFCE"
+msgstr "Xfce"
+
+msgid "Zomando"
+msgstr "Zomando"
+
+msgid "accessories"
+msgstr "accesorios"
+
+msgid "admin-tools"
+msgstr "herramientas administrativas"
+
+msgid "collections"
+msgstr "colecciones"
+
+msgid "communication"
+msgstr "comunicación"
+
+msgid "configuration"
+msgstr "configuración"
+
+msgid "desktop-gnome"
+msgstr "escritorio gnome"
+
+msgid "desktop-kde"
+msgstr "escritorio kde"
+
+msgid "desktop-other"
+msgstr "escritorio varios"
+
+msgid "desktop-xfce"
+msgstr "escritorio xfce"
+
+msgid "documentation"
+msgstr "documentación"
+
+msgid "education"
+msgstr "educación"
+
+msgid "electronics"
+msgstr "electrónica"
+
+msgid "fonts"
+msgstr "tipos de letra"
+
+msgid "games"
+msgstr "juegos"
+
+msgid "graphics"
+msgstr "gráficos"
+
+msgid "internet"
+msgstr "internet"
+
+msgid "legacy"
+msgstr "antiguo"
+
+msgid "multimedia"
+msgstr "multimedia"
+
+msgid "network"
+msgstr "redes"
+
+msgid "other"
+msgstr "otros"
+
+msgid "programming"
+msgstr "programación"
+
+msgid "publishing"
+msgstr "publicación"
+
+msgid "resources"
+msgstr "herramientas"
+
+msgid "science"
+msgstr "ciencia"
+
+msgid "servers"
+msgstr "servidores"
+
+msgid "software"
+msgstr "software"
+
+msgid "system"
+msgstr "sistema"
+
+msgid "unknown"
+msgstr "desconocido"

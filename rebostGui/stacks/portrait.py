@@ -74,6 +74,7 @@ class portrait(confStack):
 		self.description=i18n.get('DESCRIPTION')
 		self.icon=('application-x-desktop')
 		self.tooltip=i18n.get('TOOLTIP')
+		self.i18nCat={}
 		self.index=1
 		self.appsToLoad=50
 		self.appsLoaded=0
@@ -99,10 +100,11 @@ class portrait(confStack):
 		seenCats={}
 		for cat in catList:
 			#if cat.islower() it's a category from system without appstream info 
-			if cat in seenCats.keys() or cat.islower():
+			if cat in self.i18nCat.keys() or cat.islower():
 				continue
 			seenCats[cat.capitalize()]=cat
-			self.cmbCategories.addItem(cat)
+			self.cmbCategories.addItem(_(cat))
+			self.i18nCat[_(cat)]=cat
 		self.apps=self._getAppList()
 		self._shuffleApps()
 		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
@@ -187,7 +189,8 @@ class portrait(confStack):
 		self.setCursor(cursor)
 		self.searchBox.setText("")
 		self.resetScreen()
-		cat=self.cmbCategories.currentText()
+		i18ncat=self.cmbCategories.currentText()
+		cat=self.i18nCat.get(i18ncat,i18ncat)
 		if cat==i18n.get("ALL"):
 			cat=""
 		self.apps=self._getAppList(cat)

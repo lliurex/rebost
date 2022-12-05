@@ -1,9 +1,9 @@
-rebost (0.9.10) lliurex22; urgency=medium
+rebost (0.9.11) lliurex22; urgency=medium
 
   * Release candidate 3. Bugfix 
   * Improve packagekit performance
   * Combobox for bundles install/remove/launch in details stack
-  * Preliminar i18n support
+  * WIP on i18n support
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 02 Nov 2022 10:35:53 +0100
 

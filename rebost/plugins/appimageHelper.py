@@ -17,7 +17,7 @@ import hashlib
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["load"]
@@ -271,11 +271,15 @@ class appimageHelper():
 		self._debug("Base URL {}".format(bundle))
 		installerUrl=self._get_releases(bundle)
 		version=""
+		splittedUrl=installerUrl.split('/')
+		print(splittedUrl)
 		if "releases" in installerUrl:
-			splittedUrl=installerUrl.split('/')
 			if splittedUrl[-2].startswith("v"):
 				version=splittedUrl[-2].replace("v","")
-		elif len(splittedUrl)>2: 
+			elif splittedUrl[-2].replace(".","").isnumeric():
+				version=splittedUrl[-2]
+
+		if version=="" and  len(splittedUrl)>2: 
 			self._debug("Installer {}".format(installerUrl))
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])

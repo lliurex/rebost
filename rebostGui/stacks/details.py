@@ -36,13 +36,19 @@ class epiClass(QThread):
 		self.args=''
 	#def __init__
 
-	def setArgs(self,app,args):
+	def setArgs(self,app,args,bundle=""):
 		self.app=app
 		self.args=args
+		if bundle:
+			oldBundle=self.app.get('bundle')
+			newBundle={bundle:oldBundle.get(bundle)}
+			self.app['bundle']=newBundle
+
 	#def setArgs
 
 	def run(self):
 		launched=False
+		print(self.app)
 		if self.app and self.args:
 			subprocess.run(self.args)
 			self.epiEnded.emit(self.app)
@@ -199,7 +205,7 @@ class details(confStack):
 			self.showMsg("{}".format(res.get('msg','Unknown Error')))
 		else:
 			cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')]
-			self.epi.setArgs(self.app,cmd)
+			self.epi.setArgs(self.app,cmd,bundle)
 			self.epi.epiEnded.connect(self._getEpiResults)
 			self.epi.start()
 		self.cmbInstall.setCurrentIndex(-1)
@@ -210,6 +216,9 @@ class details(confStack):
 		if app.get('name','')!=self.app.get('name',''):
 			return
 		self.app=json.loads(self.rc.showApp(app.get('name','')))[0]
+		bundle=list(app.get('bundle').keys())[0]
+		state=app.get('state',{}).get(bundle,1)
+		self.rc.commitInstall(app.get('name'),bundle,state)
 		if isinstance(self.app,str):
 			try:
 				self.app=json.loads(self.app)

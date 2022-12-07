@@ -183,7 +183,7 @@ class details(confStack):
 		elif bundle=="snap":
 			cmd=["snap","run",self.app.get("bundle",{}).get("snap","")]
 		elif bundle=="appimage":
-			cmd=["gtk-launch",self.app.get("name",'')]
+			cmd=["gtk-launch","{}-appimage".format(self.app.get("name",''))]
 		subprocess.run(cmd)
 		self.cmbOpen.setCurrentIndex(-1)
 	#def _runApp

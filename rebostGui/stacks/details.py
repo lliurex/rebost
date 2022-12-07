@@ -48,7 +48,6 @@ class epiClass(QThread):
 
 	def run(self):
 		launched=False
-		print(self.app)
 		if self.app and self.args:
 			subprocess.run(self.args)
 			self.epiEnded.emit(self.app)

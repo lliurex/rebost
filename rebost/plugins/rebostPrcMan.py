@@ -188,6 +188,7 @@ class rebostPrcMan():
 			try:
 				bundles=json.loads(rebostpkg).get('bundle',"not found")
 			except Exception as e:
+				print(e)
 				if isinstance(rebostpkg,dict):
 					bundles=rebostpkg.get('bundle',"not found")
 				else:

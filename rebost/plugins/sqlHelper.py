@@ -221,7 +221,10 @@ class sqlHelper():
 			release=data['versions'].get(bundle,0)
 			if isinstance(data['installed'],str):
 				data['installed']={}
-			data['installed'][bundle]=release
+			if state!=0:
+				data['installed'].pop(bundle,None)
+			else:
+				data['installed'][bundle]=release
 			dataContent=str(json.dumps(data))
 			#Ensure all single quotes are duplicated or sql will fail
 			dataContent=dataContent.replace("''","'")

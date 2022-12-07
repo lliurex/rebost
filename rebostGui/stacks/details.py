@@ -186,7 +186,7 @@ class details(confStack):
 	def _genericEpiInstall(self):
 		bundle=self.cmbInstall.currentText().lower().split(" ")[0]
 		if bundle=="":
-			bundle=self.cmbRemove.currentText().lower()
+			bundle=self.cmbRemove.currentText().lower().split(" ")[0]
 		self.rc.enableGui(True)
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)

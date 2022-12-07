@@ -179,7 +179,7 @@ def _sanitizeString(data,scape=False,unescape=False):
 		data=data.replace("´","")
 		data=data.replace("\n"," ")
 		data=data.replace("\\","*")
-		data.rstrip()
+		data=data.rstrip()
 		if scape:
 			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		if unescape:

@@ -67,7 +67,8 @@ class sqlHelper():
 			fblacklist=[]
 			with open(blacklistCatFile,'r') as f:
 				for line in f.readlines():
-					fblacklist.append(line.strip())
+					if line.strip()!='':
+						fblacklist.append(line.strip())
 		if len(fblacklist)>0:
 			blacklist=fblacklist
 		return(blacklist)
@@ -78,28 +79,44 @@ class sqlHelper():
 		blacklistFile=os.path.join(self.softwareBlackList,"blacklistApps.conf")
 		blacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop"]
 		if os.path.isfile(blacklistFile):
+			fblacklist=[]
 			with open(blacklistFile,'r') as f:
-				blacklist=f.readlines()
+				for line in f.readlines():
+					if line.strip()!='':
+						fblacklist.append(line.strip())
+		if len(fblacklist)>0:
+			blacklist=fblacklist
 		return(blacklist)
-
+	#def getAppsBlacklist
 
 	def getCategoriesWhitelist(self):
 		#Default whitelist. If there's a category whitelist file use it
 		whitelistCatFile=os.path.join(self.softwareWhiteList,"whitelistCategories.conf")
 		whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
 		if os.path.isfile(whitelistCatFile):
+			fwhitelist=[]
 			with open(whitelistCatFile,'r') as f:
-				whitelist=f.readlines()
+				for line in f.readlines():
+					if line.strip()!='':
+						fwhitelist.append(line.strip())
+		if len(fwhitelist)>0:
+			whitelist=fwhitelist
 		return(whitelist)
+	#def getCategoriesWhitelist
 
 	def _getWordsFilter(self):
 		#Default banned words list. If there's a banned words list file use it
 		bannedWordsFile=os.path.join(self.bannedWordsList,"bannedWords.conf")
 		wordblacklist=['cryptocurrency','cryptocurrencies','wallet','bitcoin','monero','Wallet','Bitcoin','Cryptocurrency','Monero','Mine','miner','mine','mining','Mining',"btc","BTC","Btc","Ethereum","ethereum"]
 		if os.path.isfile(bannedWordsFile):
-			with open(bannerWordsFile,'r') as f:
-				wordblacklist=f.readlines()
+			fwordlist=[]
+			with open(bannedWordsFile,'r') as f:
+				for line in f.readlines():
+					fwordlist.append(line.strip())
+		if len(fwordlist)>0:
+			wordblacklist=fwordlist
 		return (wordblacklist)
+	#def _getWordsFilter
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -396,6 +413,8 @@ class sqlHelper():
 			if (isinstance(description,str)==False) or (description==''):
 				description=str(pkgdataJson.get('summary',''))
 			description=description.replace("-"," ")
+			description=description.replace("."," ")
+			description=description.replace(","," ")
 			descriptionArray=description.split()
 			for word in self._getWordsFilter():
 				if word in descriptionArray:

@@ -69,23 +69,23 @@ class sqlHelper():
 				for line in f.readlines():
 					if line.strip()!='':
 						fblacklist.append(line.strip())
-		if len(fblacklist)>0:
-			blacklist=fblacklist
+			if len(fblacklist)>0:
+				blacklist=fblacklist
 		return(blacklist)
 	#def getCategoriesBlacklist
 
 	def getAppsBlacklist(self):
 		#Default blacklist. If there's a apps blacklist file use it
 		blacklistFile=os.path.join(self.softwareBlackList,"blacklistApps.conf")
-		blacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop"]
+		blacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
 		if os.path.isfile(blacklistFile):
 			fblacklist=[]
 			with open(blacklistFile,'r') as f:
 				for line in f.readlines():
 					if line.strip()!='':
 						fblacklist.append(line.strip())
-		if len(fblacklist)>0:
-			blacklist=fblacklist
+			if len(fblacklist)>0:
+				blacklist=fblacklist
 		return(blacklist)
 	#def getAppsBlacklist
 
@@ -99,8 +99,8 @@ class sqlHelper():
 				for line in f.readlines():
 					if line.strip()!='':
 						fwhitelist.append(line.strip())
-		if len(fwhitelist)>0:
-			whitelist=fwhitelist
+			if len(fwhitelist)>0:
+				whitelist=fwhitelist
 		return(whitelist)
 	#def getCategoriesWhitelist
 
@@ -113,8 +113,8 @@ class sqlHelper():
 			with open(bannedWordsFile,'r') as f:
 				for line in f.readlines():
 					fwordlist.append(line.strip())
-		if len(fwordlist)>0:
-			wordblacklist=fwordlist
+			if len(fwordlist)>0:
+				wordblacklist=fwordlist
 		return (wordblacklist)
 	#def _getWordsFilter
 

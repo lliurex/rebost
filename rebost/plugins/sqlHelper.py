@@ -439,11 +439,14 @@ class sqlHelper():
 				
 			while len(categories)<3:
 				categories.append("")
-			cat0=categories[0]
-			cat1=categories[-1]
-			cat2=categories[-2]
-			if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
+			if ("Lliurex" in categories):
 				cat0="Lliurex"
+				cat1=categories[0]
+				cat2=categories[-1]
+			else:
+				cat0=categories[0]
+				cat1=categories[-1]
+				cat2=categories[-2]
 			if isinstance(pkgdataJson['versions'],str):
 				states=pkgdataJson.get('state')
 				pkgdataJson['installed']={}
@@ -451,6 +454,9 @@ class sqlHelper():
 					if state=="0":
 						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
 			pkgdata=str(json.dumps(pkgdataJson))
+			if pkgname=="zero-lliurex-openboard":
+				print(table)
+				print(pkgdata)
 			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
 		return(retval)
 	#def _addPkgToQuery
@@ -545,9 +551,10 @@ class sqlHelper():
 				mergepkgdataJson[key].extend(item)
 				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))>0):
-					mergepkgdataJson[key]=item
-				elif len(item)>len(mergepkgdataJson.get(key,'')):
+				#if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))<len(item)):
+				#	mergepkgdataJson[key]=item
+				#elif len(item)>len(mergepkgdataJson.get(key,'')):
+				if len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
 	#def _mergePackage

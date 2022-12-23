@@ -4,6 +4,7 @@ import json
 import tempfile
 import rebostHelper
 import logging
+import locale
 import n4d.client as n4d
 
 class zomandoHelper():
@@ -22,6 +23,7 @@ class zomandoHelper():
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
 		self.iconDir="/usr/share/banners/lliurex-neu/"
+		self.locale=locale.getlocale()[0].split("_")[0]
 		self.n4d=n4d.Client()
 	#def __init__
 
@@ -71,6 +73,8 @@ class zomandoHelper():
 		appName=os.path.basename(zmd).replace(".zmd",".app")
 		appPath=os.path.join(self.appDir,appName)
 		rebostPkg['categories'].append("Zomando")
+		description=''
+		summary=''
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
 			(icon,cat)=("","")
@@ -86,9 +90,22 @@ class zomandoHelper():
 						cat=fline.split("=")[-1].rstrip()
 						if cat!='Category' and cat not in rebostPkg['categories']:
 							rebostPkg['categories'].append(cat)
+					elif fline.startswith("Name"):
+							summary=fline.split("=")[-1]
+							if len(self.locale)>0:
+								if fline.startswith("Name[{}".format(self.locale)):
+									rebostPkg['summary']=summary
+					elif fline.startswith("Comment"):
+							description=fline.split("=")[-1]
+							if len(self.locale)>0:
+								if fline.startswith("Comment[{}".format(self.locale)):
+									rebostPkg['description']=description
 					if icon and cat:
 						break
-
+		if len(summary)>0 and rebostPkg['summary']=='': 
+			rebostPkg['summary']=summary
+		if len(description)>0 and rebostPkg['description']=='': 
+			rebostPkg['description']=description
 		rebostPkg['categories'].append('Lliurex')
 		rebostPkg['license']="GPL-3"
 		rebostPkg['homepage']="https://www.github.com/lliurex"

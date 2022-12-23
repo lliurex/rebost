@@ -27,16 +27,16 @@ class Rebost():
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
 		self.store=appstream.Store()
-		self._loadPlugins()
-		self._loadPluginInfo()
 		if self.propagateDbg:
 			self._setPluginDbg()
-		self.cofig={}
+		self.config={}
 		self.procId=1
 
 	def run(self):
 		self._readConfig()
 		self._log("Starting rebost")
+		self._loadPlugins()
+		self._loadPluginInfo()
 		self._autostartActions()
 		self._log("Autostart ended. Populating data")
 	#def run

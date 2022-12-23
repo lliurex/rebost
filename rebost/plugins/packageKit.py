@@ -16,7 +16,7 @@ class packageKit():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
-		self.enabled=True
+		self.enabled=False
 		self._debug("Loaded")
 		self.packagekind="package"
 		self.actions=["load"]

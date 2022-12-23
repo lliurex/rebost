@@ -22,6 +22,9 @@ class sqlHelper():
 		self.postAutostartActions=["load"]
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
+		self.softwareBlackList=os.path.join(self.wrkDir,"lists.d/blacklist")
+		self.softwareWhiteList=os.path.join(self.wrkDir,"lists.d/whitelist")
+		self.bannedWordsList=os.path.join(self.wrkDir,"lists.d/words")
 		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
 		self.installed_table=os.path.join(self.wrkDir,"installed.db")
 		self.categories_table=os.path.join(self.wrkDir,"categories.db")
@@ -31,6 +34,13 @@ class sqlHelper():
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
 		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
+		self.blacklist=True
+		self.blacklistCategories=self.getCategoriesBlacklist()
+		self.blacklistApps=self.getAppsBlacklist()
+		self.whitelist=True
+		self.whitelistCategories=self.getCategoriesWhitelist()
+		self.whitelistApps=[]
+		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -48,6 +58,65 @@ class sqlHelper():
 			dbg="sql: {}".format(msg)
 			rebostHelper._debug(dbg)
 	#def _debug
+
+	def getCategoriesBlacklist(self):
+		#Default blacklist. If there's a category blacklist file use it
+		blacklistCatFile=os.path.join(self.softwareBlackList,"blacklistCategories.conf")
+		blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
+		if os.path.isfile(blacklistCatFile):
+			fblacklist=[]
+			with open(blacklistCatFile,'r') as f:
+				for line in f.readlines():
+					if line.strip()!='':
+						fblacklist.append(line.strip())
+			if len(fblacklist)>0:
+				blacklist=fblacklist
+		return(blacklist)
+	#def getCategoriesBlacklist
+
+	def getAppsBlacklist(self):
+		#Default blacklist. If there's a apps blacklist file use it
+		blacklistFile=os.path.join(self.softwareBlackList,"blacklistApps.conf")
+		blacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
+		if os.path.isfile(blacklistFile):
+			fblacklist=[]
+			with open(blacklistFile,'r') as f:
+				for line in f.readlines():
+					if line.strip()!='':
+						fblacklist.append(line.strip())
+			if len(fblacklist)>0:
+				blacklist=fblacklist
+		return(blacklist)
+	#def getAppsBlacklist
+
+	def getCategoriesWhitelist(self):
+		#Default whitelist. If there's a category whitelist file use it
+		whitelistCatFile=os.path.join(self.softwareWhiteList,"whitelistCategories.conf")
+		whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
+		if os.path.isfile(whitelistCatFile):
+			fwhitelist=[]
+			with open(whitelistCatFile,'r') as f:
+				for line in f.readlines():
+					if line.strip()!='':
+						fwhitelist.append(line.strip())
+			if len(fwhitelist)>0:
+				whitelist=fwhitelist
+		return(whitelist)
+	#def getCategoriesWhitelist
+
+	def _getWordsFilter(self):
+		#Default banned words list. If there's a banned words list file use it
+		bannedWordsFile=os.path.join(self.bannedWordsList,"bannedWords.conf")
+		wordblacklist=['cryptocurrency','cryptocurrencies','wallet','bitcoin','monero','Wallet','Bitcoin','Cryptocurrency','Monero','Mine','miner','mine','mining','Mining',"btc","BTC","Btc","Ethereum","ethereum"]
+		if os.path.isfile(bannedWordsFile):
+			fwordlist=[]
+			with open(bannedWordsFile,'r') as f:
+				for line in f.readlines():
+					fwordlist.append(line.strip())
+			if len(fwordlist)>0:
+				wordblacklist=fwordlist
+		return (wordblacklist)
+	#def _getWordsFilter
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -254,10 +323,8 @@ class sqlHelper():
 			fupdate.write("packagekit.db:{}".format(fsize))
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Categories
-		categories_table=os.path.basename(self.categories_table).replace(".db","")
-		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
 		#Begin merge
-		self.copyPackagekitSql()
+		#self.copyPackagekitSql()
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		allCategories=[]
 		for fname in include:
@@ -266,18 +333,8 @@ class sqlHelper():
 			allCategories=list(set(allCategories))
 		fupdate.close()
 		self.closeConnection(main_db)
-		if allCategories:
-			self._debug("Populating categories")
-			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
-			try:
-				for cat in allCategories:
-					if cat!='' and isinstance(cat,str):
-						#cat=cat.capitalize().strip()
-						cat=cat.strip()
-						cursor_cat.execute(queryCategories,(cat,))
-			except Exception as e:
-				self._debug(e)
-		self.closeConnection(db_cat)
+		if len(allCategories)>0:
+			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
 		return([])
@@ -322,19 +379,22 @@ class sqlHelper():
 		return(retval)
 	#def _processDatabase
 
-	def _processCategories(self):
-		if allCategories:
-			self._debug("Populating categories")
-			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
-			try:
-				for cat in allCategories:
-					if cat!='' and isinstance(cat,str):
-						#cat=cat.capitalize().strip()
-						cat=cat.strip()
-						cursor_cat.execute(queryCategories,(cat,))
-			except Exception as e:
-				self._debug(e)
-			self._debug(query)
+	def _processCategories(self,allCategories):
+		self._debug("Populating categories")
+		categories_table=os.path.basename(self.categories_table).replace(".db","")
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		queryDelete="DELETE FROM {}".format(categories_table)
+		cursor_cat.execute(queryDelete)
+		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
+		try:
+			for cat in allCategories:
+				if cat!='' and isinstance(cat,str):
+					#cat=cat.capitalize().strip()
+					cat=cat.strip()
+					cursor_cat.execute(queryCategories,(cat,))
+		except Exception as e:
+			self._debug(e)
+		self._debug(queryCategories)
 		self.closeConnection(db_cat)
 	#def _processCategories
 
@@ -343,6 +403,25 @@ class sqlHelper():
 		retval=([],[])
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
+		blacklisted=False
+		if self.whitelist==True:
+			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson))
+		if self.blacklist==True and blacklisted==False:
+			blacklisted=self._checkBlacklisted(pkgname,pkgdataJson)
+		if blacklisted==False:
+			description=pkgdataJson.get('description','')
+			if (isinstance(description,str)==False) or (description==''):
+				description=str(pkgdataJson.get('summary',''))
+			description=description.replace("-"," ")
+			description=description.replace("."," ")
+			description=description.replace(","," ")
+			descriptionArray=description.split()
+			for word in self._getWordsFilter():
+				if word in descriptionArray:
+					blacklisted=True
+					break
+		if blacklisted==True:
+			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()
 		if row:
@@ -355,14 +434,19 @@ class sqlHelper():
 					pkgdataJson['categories'][0]=categories[idx]
 					pkgdataJson['categories'][idx]=categories[0]
 				categories=pkgdataJson.get('categories',[])
+			categoriesSet=list(set(categories)-set(self.noShowCategories))
+			categories=categoriesSet
 				
 			while len(categories)<3:
 				categories.append("")
-			cat0=categories[0]
-			cat1=categories[-1]
-			cat2=categories[-2]
-			if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
+			if ("Lliurex" in categories):
 				cat0="Lliurex"
+				cat1=categories[0]
+				cat2=categories[-1]
+			else:
+				cat0=categories[0]
+				cat1=categories[-1]
+				cat2=categories[-2]
 			if isinstance(pkgdataJson['versions'],str):
 				states=pkgdataJson.get('state')
 				pkgdataJson['installed']={}
@@ -370,9 +454,38 @@ class sqlHelper():
 					if state=="0":
 						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
 			pkgdata=str(json.dumps(pkgdataJson))
+			if pkgname=="zero-lliurex-openboard":
+				print(table)
+				print(pkgdata)
 			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
 		return(retval)
 	#def _addPkgToQuery
+
+	def _checkBlacklisted(self,pkgname,data):
+		blacklisted=False
+		categories=data.get('categories')
+		if "Lliurex" not in categories and "LliureX" not in categories:
+			for blacklist in self.blacklistCategories:
+				if blacklist in categories:
+					blacklisted=True
+					break
+		if pkgname in self.blacklistApps and blacklisted==False:
+			blacklisted=True
+		return(blacklisted)
+	#def _checkBlacklisted
+
+	def _checkWhitelisted(self,pkgname,data):
+		whitelisted=False
+		categories=data.get('categories')
+		if pkgname in self.whitelistApps:
+			whitelisted=True
+		else:
+			for whitelist in self.whitelistCategories:
+				if whitelist in categories:
+					whitelisted=True
+					break
+		return(whitelisted)
+	#def _checkBlacklisted
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -438,9 +551,10 @@ class sqlHelper():
 				mergepkgdataJson[key].extend(item)
 				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))>0):
-					mergepkgdataJson[key]=item
-				elif len(item)>len(mergepkgdataJson.get(key,'')):
+				#if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))<len(item)):
+				#	mergepkgdataJson[key]=item
+				#elif len(item)>len(mergepkgdataJson.get(key,'')):
+				if len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
 	#def _mergePackage

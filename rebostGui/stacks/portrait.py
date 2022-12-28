@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -116,7 +116,16 @@ class portrait(confStack):
 			self.cmbCategories.addItem(cat)
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
+		wdg=QWidget()
+		hbox=QHBoxLayout()
+		btnHome=QPushButton()
+		icn=QtGui.QIcon.fromTheme("home")
+		btnHome.setIcon(icn)
+		btnHome.clicked.connect(self._goHome)
+		hbox.addWidget(btnHome)
+		hbox.addWidget(self.cmbCategories)
+		wdg.setLayout(hbox)
+		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
 		self.searchBox.setToolTip(i18n["SEARCH"])
 		self.searchBox.setPlaceholderText(i18n["SEARCH"])
@@ -160,6 +169,14 @@ class portrait(confStack):
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
 	#def _shuffleApps
+
+	def _goHome(self):
+		self.apps=self._getAppList()
+		self._shuffleApps()
+		self.resetScreen()
+		self.cmbCategories.setCurrentIndex(0)
+		self.updateScreen()
+	#def _goHome
 
 	def _resetSearchBtnIcon(self):
 		txt=self.searchBox.text()

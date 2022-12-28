@@ -1,4 +1,4 @@
-rebost (0.9.22) focal; urgency=medium
+rebost (0.9.23) focal; urgency=medium
 
   * Release candidate 4. 
   * Disable packagekit plugin
@@ -6,6 +6,7 @@ rebost (0.9.22) focal; urgency=medium
   * Load internacionalized summary/description from zomandos
   * Get pkg_list from epi for improved zomandos descriptions
   * Discard all zomandos but software,fp,resources
+  * Delete bundle info when an appimage is not recheable 
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 23 Dec 2022 09:13:11 +0100
 

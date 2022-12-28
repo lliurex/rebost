@@ -35,11 +35,10 @@ class sqlHelper():
 		self.appimage=appimageHelper.appimageHelper()
 		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
 		self.blacklist=True
-		self.blacklistCategories=self.getCategoriesBlacklist()
-		self.blacklistApps=self.getAppsBlacklist()
+		self.blacklistFilter=rebostHelper.getFiltersList(blacklist=True)
 		self.whitelist=True
-		self.whitelistCategories=self.getCategoriesWhitelist()
-		self.whitelistApps=[]
+		self.whitelistFilter=rebostHelper.getFiltersList(whitelist=True)
+		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
 		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 	#def __init__
 
@@ -58,51 +57,6 @@ class sqlHelper():
 			dbg="sql: {}".format(msg)
 			rebostHelper._debug(dbg)
 	#def _debug
-
-	def getCategoriesBlacklist(self):
-		#Default blacklist. If there's a category blacklist file use it
-		blacklistCatFile=os.path.join(self.softwareBlackList,"blacklistCategories.conf")
-		blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
-		if os.path.isfile(blacklistCatFile):
-			fblacklist=[]
-			with open(blacklistCatFile,'r') as f:
-				for line in f.readlines():
-					if line.strip()!='':
-						fblacklist.append(line.strip())
-			if len(fblacklist)>0:
-				blacklist=fblacklist
-		return(blacklist)
-	#def getCategoriesBlacklist
-
-	def getAppsBlacklist(self):
-		#Default blacklist. If there's a apps blacklist file use it
-		blacklistFile=os.path.join(self.softwareBlackList,"blacklistApps.conf")
-		blacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
-		if os.path.isfile(blacklistFile):
-			fblacklist=[]
-			with open(blacklistFile,'r') as f:
-				for line in f.readlines():
-					if line.strip()!='':
-						fblacklist.append(line.strip())
-			if len(fblacklist)>0:
-				blacklist=fblacklist
-		return(blacklist)
-	#def getAppsBlacklist
-
-	def getCategoriesWhitelist(self):
-		#Default whitelist. If there's a category whitelist file use it
-		whitelistCatFile=os.path.join(self.softwareWhiteList,"whitelistCategories.conf")
-		whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
-		if os.path.isfile(whitelistCatFile):
-			fwhitelist=[]
-			with open(whitelistCatFile,'r') as f:
-				for line in f.readlines():
-					if line.strip()!='':
-						fwhitelist.append(line.strip())
-			if len(fwhitelist)>0:
-				whitelist=fwhitelist
-		return(whitelist)
-	#def getCategoriesWhitelist
 
 	def _getWordsFilter(self):
 		#Default banned words list. If there's a banned words list file use it
@@ -416,7 +370,7 @@ class sqlHelper():
 			description=description.replace("."," ")
 			description=description.replace(","," ")
 			descriptionArray=description.split()
-			for word in self._getWordsFilter():
+			for word in self.wordlistFilter.get('words',[]):
 				if word in descriptionArray:
 					blacklisted=True
 					break
@@ -463,27 +417,33 @@ class sqlHelper():
 
 	def _checkBlacklisted(self,pkgname,data):
 		blacklisted=False
+		filters=self.blacklistFilter.get('blacklist',{})
 		categories=data.get('categories')
 		if "Lliurex" not in categories and "LliureX" not in categories:
-			for blacklist in self.blacklistCategories:
-				if blacklist in categories:
-					blacklisted=True
-					break
-		if pkgname in self.blacklistApps and blacklisted==False:
+			#for blacklist in self.blacklistCategories:
+			blackC=list(set(filters.get('categories',[])))
+			fcategories=list(set(categories))
+			if len(blackC+fcategories)!=len(set(blackC+fcategories)):
+			#If len==len(set) there's no matching categories
+				blacklisted=True
+		if pkgname in filters.get('apps',[]) and blacklisted==False:
 			blacklisted=True
 		return(blacklisted)
 	#def _checkBlacklisted
 
 	def _checkWhitelisted(self,pkgname,data):
 		whitelisted=False
-		categories=data.get('categories')
-		if pkgname in self.whitelistApps:
+		categorySet=list(set(data.get('categories',[])))
+		filters=self.whitelistFilter.get('whitelist',{})
+		if pkgname in filters.get('apps',[]):
 			whitelisted=True
 		else:
-			for whitelist in self.whitelistCategories:
-				if whitelist in categories:
-					whitelisted=True
-					break
+			whiteC=list(set(filters.get('categories',[])))
+			whitelisted=True
+			if len(whiteC)>0:
+				if len(whiteC+categorySet)==len(set(whiteC+categorySet)):
+				#If len==len(set) there's no matching categories
+					whitelisted=False
 		return(whitelisted)
 	#def _checkBlacklisted
 

@@ -527,3 +527,46 @@ def check_remove_unsure(package):
 	_debug("Helper: Checked")
 	return(sw)
 #def check_remove_unsure(package):
+
+def getFiltersList(blacklist=False,whitelist=False,wordlist=False):
+	wrkDir="/usr/share/rebost"
+	folderBlacklist=os.path.join(wrkDir,"lists.d/blacklist")
+	folderWhitelist=os.path.join(wrkDir,"lists.d/whitelist")
+	folderWordlist=os.path.join(wrkDir,"lists.d/words")
+	files={"categories":[],"apps":[]}
+	filters={"blacklist":files,"whitelist":files,"words":[]}
+	if blacklist==True:
+		filters["blacklist"]=getFilterContent(folderBlacklist)
+	if whitelist==True:
+		filters["whitelist"]=getFilterContent(folderWhitelist)
+	if wordlist==True:
+		filters["words"]=getFilterContent(folderWordlist)
+	return(filters)
+
+def getFilterContent(folder):
+	filters={"categories":[],"apps":[]}
+	if "word" in folder:
+		folders=[folder]
+		filters=[]
+	else:
+		folders=[os.path.join(folder,"categories"),os.path.join(folder,"apps")]
+	for folder in folders:
+		if os.path.isdir(folder):
+			for f in os.listdir(folder):
+				if f.endswith("conf"):
+					with open(os.path.join(folder,f),"r") as ffilter:
+						for line in ffilter.readlines():
+							fcontent=line.strip()
+							if "categories" in folder:
+								filters["categories"].append(fcontent)
+							elif "apps" in folder:
+								filters["apps"].append(fcontent)
+							else:
+								filters.append(fcontent)
+	return(filters)
+	#Default blacklist. If there's a category blacklist file use it
+
+#	blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
+		#appsblacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
+		#whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
+#def getCategoriesBlacklist

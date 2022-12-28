@@ -63,7 +63,8 @@ class zomandoHelper():
 					rebostPkg['name']=appName
 					rebostPkg['pkgname']=appName
 					rebostPkg=self.fillData(f,rebostPkg)
-					rebostPkgList.append(rebostPkg)
+					if isinstance(rebostPkg,dict):
+						rebostPkgList.append(rebostPkg)
 		if rebostPkgList:
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'zomandos.db')
 			self._debug("SQL Loaded")
@@ -72,9 +73,26 @@ class zomandoHelper():
 	def fillData(self,zmd,rebostPkg):
 		appName=os.path.basename(zmd).replace(".zmd",".app")
 		appPath=os.path.join(self.appDir,appName)
-		rebostPkg['categories'].append("Zomando")
 		description=''
 		summary=''
+		rebostPkg=self._get_zomando_data(zmd,rebostPkg)
+		if "Software" in rebostPkg.get('categories',[]):
+			if len(summary)>0 and rebostPkg['summary']=='': 
+				rebostPkg['summary']=summary
+			if len(description)>0 and rebostPkg['description']=='': 
+				rebostPkg['description']=description
+			rebostPkg['categories'].extend(["Zomando","Lliurex"])
+			rebostPkg['license']="GPL-3"
+			rebostPkg['homepage']="https://www.github.com/lliurex"
+			rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
+		else:
+			rebostPkg=None
+		return(rebostPkg)
+	#def fillData
+
+	def _get_zomando_data(self,zmd,rebostPkg):
+		appName=os.path.basename(zmd).replace(".zmd",".app")
+		appPath=os.path.join(self.appDir,appName)
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
 			(icon,cat)=("","")
@@ -100,18 +118,14 @@ class zomandoHelper():
 							if len(self.locale)>0:
 								if fline.startswith("Comment[{}".format(self.locale)):
 									rebostPkg['description']=description
+					elif fline.startswith("Groups"):
+							groups=fline.split("=")[-1]
+							if groups!='*;':
+								rebostPkg['categories']=["System"]
 					if icon and cat:
 						break
-		if len(summary)>0 and rebostPkg['summary']=='': 
-			rebostPkg['summary']=summary
-		if len(description)>0 and rebostPkg['description']=='': 
-			rebostPkg['description']=description
-		rebostPkg['categories'].append('Lliurex')
-		rebostPkg['license']="GPL-3"
-		rebostPkg['homepage']="https://www.github.com/lliurex"
-		rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
 		return(rebostPkg)
-	#def fillData
+
 	def _get_zomando_state(self,zmd):
 		zmdVars={}
 		try:

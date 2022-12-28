@@ -30,6 +30,8 @@ class QPushButtonRebostApp(QPushButton):
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
+		self.label=QLabel(text)
+		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
 		icn=''
@@ -39,13 +41,11 @@ class QPushButtonRebostApp(QPushButton):
 			icn2=QtGui.QIcon.fromTheme('application-x-executable')
 			icn=icn2.pixmap(128,128)
 		if icn:
-			self.icon.setPixmap(icn.scaled(128,128))
+			self.load(icn)
 		elif img.startswith('http'):
 			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
-		self.label=QLabel(text)
-		self.label.setWordWrap(True)
 		lay=QHBoxLayout()
 		lay.addStretch()
 		lay.addWidget(self.icon,0)
@@ -55,6 +55,8 @@ class QPushButtonRebostApp(QPushButton):
 	
 	def load(self,*args):
 		img=args[0]
+		if "0" in str(self.app.get('state',1)):
+			self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 		self.icon.setPixmap(img.scaled(128,128))
 	#def load
 	

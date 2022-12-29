@@ -275,10 +275,9 @@ class sqlHelper():
 		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
 			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
 			fupdate.write("packagekit.db:{}".format(fsize))
+			self.copyPackagekitSql()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
-		#Categories
 		#Begin merge
-		#self.copyPackagekitSql()
 		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		allCategories=[]
 		for fname in include:

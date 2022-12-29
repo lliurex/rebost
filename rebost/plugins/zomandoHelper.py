@@ -76,12 +76,11 @@ class zomandoHelper():
 		description=''
 		summary=''
 		rebostPkg=self._get_zomando_data(zmd,rebostPkg)
-		if  "Software" in rebostPkg.get('categories',[]):
+		if  "LliureX" in rebostPkg.get('categories',[]):
 			if len(summary)>0 and rebostPkg['summary']=='': 
 				rebostPkg['summary']=summary
 			if len(description)>0 and rebostPkg['description']=='': 
 				rebostPkg['description']=description
-			rebostPkg['categories'].extend(["Lliurex"])
 			rebostPkg['license']="GPL-3"
 			rebostPkg['homepage']="https://www.github.com/lliurex"
 			rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
@@ -107,10 +106,13 @@ class zomandoHelper():
 						rebostPkg['icon']=os.path.join(self.iconDir,icon)
 					elif fline.startswith("Category"):
 						cat=fline.split("=")[-1].rstrip()
-						if cat.lower() in ['software','fp','resources','multimedia'] and cat not in rebostPkg['categories']:
-							rebostPkg['categories'].append(cat)
-							if "Software" not in rebostPkg['categories']:
-								rebostPkg['categories'].append("Software")
+						if cat.lower() in ['software','fp','resources','multimedia','support','internet'] and cat not in rebostPkg['categories']:
+							if cat.lower()=="internet":
+								cat="Network"
+							elif cat.lower()=="support":
+								cat="Software"
+							if cat not in rebostPkg['categories']:
+								rebostPkg['categories'].append(cat)
 					elif fline.startswith("Name"):
 							summary=fline.split("=")[-1]
 							if len(self.locale)>0:
@@ -128,6 +130,8 @@ class zomandoHelper():
 		if groupsProcessed==False:
 			rebostPkg['categories']=["System"]
 		else:
+			if "LliureX" not in rebostPkg['categories']:
+				rebostPkg['categories'].append("LliureX")
 			rebostPkg=self._get_zomando_installs(zmd,rebostPkg)
 		return(rebostPkg)
 

@@ -58,12 +58,16 @@ class setWaiting(QThread):
 	def run(self):
 		for wdg in self.widget.findChildren(QPushButton):
 			wdg.setEnabled(False)
+		for wdg in self.widget.findChildren(QCheckBox):
+			wdg.setEnabled(False)
 		QApplication.processEvents()
 		return(True)
 	#def run
 	
 	def stop(self):
 		for wdg in self.widget.findChildren(QPushButton):
+			wdg.setEnabled(True)
+		for wdg in self.widget.findChildren(QCheckBox):
 			wdg.setEnabled(True)
 	#def stop
 #class setWaiting
@@ -120,7 +124,7 @@ class sources(confStack):
 		self.box.addWidget(btnReload,2,2,1,1)
 		btnReset=QPushButton(i18n.get("RESET"))
 		btnReset.setToolTip(i18n.get("RESET_TOOLTIP"))
-		btnReset.clicked.connect(self._resetDB)
+		btnReset.clicked.connect(lambda x:self._resetDB(True))
 		self.box.addWidget(btnReset,3,2,1,1)
 		self.box.setRowStretch(self.box.rowCount(), 1)
 		self.setLayout(self.box)
@@ -134,7 +138,10 @@ class sources(confStack):
 			print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
-	def _resetDB(self):
+	def _resetDB(self,refresh=False):
+		if refresh==True:
+			if self.changes:
+				self.writeConfig()
 		self.btnBack.clicked.connect(self.btnBack.text)
 		QApplication.processEvents()
 		self.btnBack.setEnabled(False)

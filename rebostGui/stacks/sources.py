@@ -120,7 +120,7 @@ class sources(confStack):
 		self.box.addWidget(btnReload,2,2,1,1)
 		btnReset=QPushButton(i18n.get("RESET"))
 		btnReset.setToolTip(i18n.get("RESET_TOOLTIP"))
-		btnReset.clicked.connect(self._resetCache)
+		btnReset.clicked.connect(self._resetDB)
 		self.box.addWidget(btnReset,3,2,1,1)
 		self.box.setRowStretch(self.box.rowCount(), 1)
 		self.setLayout(self.box)
@@ -134,12 +134,14 @@ class sources(confStack):
 			print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
-	def _resetCache(self):
+	def _resetDB(self):
+		self.btnBack.clicked.connect(self.btnBack.text)
 		QApplication.processEvents()
 		self.btnBack.setEnabled(False)
 		QApplication.processEvents()
 		wait=setWaiting(self)
 		wait.run()
+		self.changes=False
 		self._reloadCatalogue(True)
 		wait.stop()
 
@@ -192,9 +194,11 @@ class sources(confStack):
 		self.changes=True
 		self.refresh=True
 		self.config=self.getConfig()
-		print(self.config)
 		self.chkApt.setVisible(False)
 		self.chkApt.setEnabled(False)
+		self.chkSnap.setChecked(True)
+		self.chkFlatpak.setChecked(True)
+		self.chkImage.setChecked(True)
 		for key,value in self.config.get(self.level,{}).items():
 			if key=="packageKit":
 				self.chkApt.setChecked(value)
@@ -228,6 +232,6 @@ class sources(confStack):
 			data=wdg.isChecked()
 			if len(key)>0:
 				self.saveChanges(key,data,level=self.level)
-		self.updateScreen()
+		self._resetDB()
 	#def writeConfig
 

@@ -155,13 +155,16 @@ class Rebost():
 			if value==True:
 				self._enable(key)
 			else:
+				delPlugin=key
 				if key=="snap":
-					del(self.pluginInfo["snapHelper"])
+					delPlugin="snapHelper"
 				elif key=="flatpak":
-					del(self.pluginInfo["flatpakHelper"])
-				elif key=="apt" or key=="package":
-					del(self.pluginInfo["packageKit"])
+					delPlugin="flatpakHelper"
+				elif key in ["apt","package","packageKit"]:
+					delPlugin="packageKit"
 				elif key=="appimage":
+					delPlugin="appimageHelper"
+				if delPlugin in self.pluginInfo.keys():
 					del(self.pluginInfo["appimageHelper"])
 				self._disable(key)
 	#def _readConfig

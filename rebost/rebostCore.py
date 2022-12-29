@@ -165,7 +165,7 @@ class Rebost():
 				elif key=="appimage":
 					delPlugin="appimageHelper"
 				if delPlugin in self.pluginInfo.keys():
-					del(self.pluginInfo["appimageHelper"])
+					del(self.pluginInfo[delPlugin])
 				self._disable(key)
 	#def _readConfig
 

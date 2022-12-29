@@ -14,7 +14,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -137,10 +137,8 @@ class Rebost():
 	def _writeConfig(self,config):
 		cfg=self._readConfig()
 		cfgFile="/usr/share/rebost/store.json"
-		print(config)
 		for key,value in config.items():
 			cfg[key]=value
-		print(cfg)
 		if os.path.isfile(cfgFile):
 			with open(cfgFile,'w') as f:
 				try:

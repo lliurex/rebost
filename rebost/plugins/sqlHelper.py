@@ -271,14 +271,24 @@ class sqlHelper():
 			self._debug("Skip merge")
 			self._log("Database ready. Rebost operative")
 			return([])
+		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
-		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
+		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")) and sources.get("package",True)==True:
 			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
 			fupdate.write("packagekit.db:{}".format(fsize))
 			self.copyPackagekitSql()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		tables=["appimage","flatpak","snap","zomandos","appstream"]
+		include=[]
+		for source in sources.keys():
+			if source in tables:
+				if sources[source]==False:
+					idx=tables.index(source)
+					tables.pop(idx)
+		for table in tables:
+			include.append("{}.db".format(table))
+		print("INCLUDE {}".format(include))
 		allCategories=[]
 		for fname in include:
 			(count,categories)=self._processDatabase(fname,main_db,main_cursor,main_tmp_table,fupdate)
@@ -292,6 +302,15 @@ class sqlHelper():
 		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
+
+	def _getEnabledSources(self):
+		config=os.path.join(self.wrkDir,"store.json")
+		fcontent={}
+		if os.path.isfile(config):
+			with open(config,'r') as f:
+				fcontent=json.loads(f.read())
+		return(fcontent)
+	#def _getEnabledSources(self):
 
 	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
 		allCategories=[]

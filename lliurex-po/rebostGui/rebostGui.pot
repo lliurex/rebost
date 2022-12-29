@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-05 11:04+0100\n"
+"POT-Creation-Date: 2022-12-29 12:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -80,11 +80,46 @@ msgid "Reload catalogues"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:22
-msgid "Clear cache"
+msgid "Reload info from sources"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:23
+msgid "Clear cache"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:24
+msgid ""
+"Remove all files from cache, as per exemple icons or another related stuff"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:25
+msgid "Restart database"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:26
+msgid ""
+"Forces a refresh of all the info from sources resetting all previous stored "
+"information"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:27
 msgid "Service could not be reloaded. Check credentials"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:28
+msgid "Include flatpaks"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:29
+msgid "Include snaps"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:30
+msgid "Include appimages"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:31
+msgid "Include native packages"
 msgstr ""
 
 msgid "2DGraphics"
@@ -96,37 +131,13 @@ msgstr ""
 msgid "Accessibility"
 msgstr ""
 
-msgid "ActionGame"
-msgstr ""
-
-msgid "Administration"
-msgstr ""
-
-msgid "Adventure"
-msgstr ""
-
-msgid "AdventureGame"
-msgstr ""
-
-msgid "Amusement"
-msgstr ""
-
 msgid "Animation"
-msgstr ""
-
-msgid "Application"
-msgstr ""
-
-msgid "ArcadeGame"
 msgstr ""
 
 msgid "Archiving"
 msgstr ""
 
 msgid "Art"
-msgstr ""
-
-msgid "ArtificialIntelligence"
 msgstr ""
 
 msgid "Astronomy"
@@ -144,28 +155,13 @@ msgstr ""
 msgid "Biology"
 msgstr ""
 
-msgid "BlocksGame"
-msgstr ""
-
-msgid "BoardGame"
-msgstr ""
-
-msgid "Building"
-msgstr ""
-
 msgid "Calculator"
 msgstr ""
 
 msgid "Calendar"
 msgstr ""
 
-msgid "CardGame"
-msgstr ""
-
 msgid "Chart"
-msgstr ""
-
-msgid "Chat"
 msgstr ""
 
 msgid "Chemistry"
@@ -174,28 +170,10 @@ msgstr ""
 msgid "Clock"
 msgstr ""
 
-msgid "Communication"
-msgstr ""
-
-msgid "Communication & News"
-msgstr ""
-
 msgid "Compression"
 msgstr ""
 
 msgid "ComputerScience"
-msgstr ""
-
-msgid "Configuration"
-msgstr ""
-
-msgid "ConsoleOnly"
-msgstr ""
-
-msgid "Construction"
-msgstr ""
-
-msgid "ContactManagement"
 msgstr ""
 
 msgid "Core"
@@ -208,12 +186,6 @@ msgid "Database"
 msgstr ""
 
 msgid "Debugger"
-msgstr ""
-
-msgid "DesktopSettings"
-msgstr ""
-
-msgid "Developer Tools"
 msgstr ""
 
 msgid "Development"
@@ -240,61 +212,19 @@ msgstr ""
 msgid "Electronics"
 msgstr ""
 
-msgid "Email"
-msgstr ""
-
-msgid "Emulation"
-msgstr ""
-
-msgid "Emulator"
-msgstr ""
-
 msgid "Engineering"
 msgstr ""
 
 msgid "FP"
 msgstr ""
 
-msgid "Fantasy"
-msgstr ""
-
-msgid "Feed"
-msgstr ""
-
-msgid "Feeds"
-msgstr ""
-
-msgid "FileManager"
-msgstr ""
-
 msgid "FileTools"
-msgstr ""
-
-msgid "FileTransfer"
-msgstr ""
-
-msgid "Filesystem"
 msgstr ""
 
 msgid "Finance"
 msgstr ""
 
-msgid "FlowChart"
-msgstr ""
-
-msgid "GNOME"
-msgstr ""
-
-msgid "GTK"
-msgstr ""
-
 msgid "GUIDesigner"
-msgstr ""
-
-msgid "Game"
-msgstr ""
-
-msgid "Games"
 msgstr ""
 
 msgid "Geography"
@@ -312,9 +242,6 @@ msgstr ""
 msgid "HamRadio"
 msgstr ""
 
-msgid "HardwareSettings"
-msgstr ""
-
 msgid "HexEditor"
 msgstr ""
 
@@ -324,28 +251,10 @@ msgstr ""
 msgid "IDE"
 msgstr ""
 
-msgid "IRCClient"
-msgstr ""
-
 msgid "ImageProcessing"
 msgstr ""
 
-msgid "InstantMessaging"
-msgstr ""
-
-msgid "Internet"
-msgstr ""
-
-msgid "Java"
-msgstr ""
-
 msgid "Jukebox"
-msgstr ""
-
-msgid "KDE"
-msgstr ""
-
-msgid "KidsGame"
 msgstr ""
 
 msgid "Languages"
@@ -357,25 +266,13 @@ msgstr ""
 msgid "Literature"
 msgstr ""
 
-msgid "LliureX-Administration"
-msgstr ""
-
 msgid "Lliurex"
-msgstr ""
-
-msgid "LogicGame"
-msgstr ""
-
-msgid "MMORPG"
 msgstr ""
 
 msgid "Maps"
 msgstr ""
 
 msgid "Math"
-msgstr ""
-
-msgid "Matrix"
 msgstr ""
 
 msgid "MedicalSoftware"
@@ -390,19 +287,10 @@ msgstr ""
 msgid "Monitor"
 msgstr ""
 
-msgid "Motif"
-msgstr ""
-
-msgid "Multimedia"
-msgstr ""
-
 msgid "Music"
 msgstr ""
 
 msgid "Network"
-msgstr ""
-
-msgid "News"
 msgstr ""
 
 msgid "NumericalAnalysis"
@@ -414,31 +302,13 @@ msgstr ""
 msgid "Office"
 msgstr ""
 
-msgid "P2P"
-msgstr ""
-
-msgid "PackageManager"
-msgstr ""
-
-msgid "ParallelComputing"
-msgstr ""
-
 msgid "Photography"
 msgstr ""
 
 msgid "Physics"
 msgstr ""
 
-msgid "Player"
-msgstr ""
-
-msgid "Players"
-msgstr ""
-
 msgid "Presentation"
-msgstr ""
-
-msgid "Printing"
 msgstr ""
 
 msgid "Productivity"
@@ -453,31 +323,13 @@ msgstr ""
 msgid "Publishing"
 msgstr ""
 
-msgid "QT"
-msgstr ""
-
-msgid "Qt"
-msgstr ""
-
 msgid "RasterGraphics"
 msgstr ""
 
 msgid "Recorder"
 msgstr ""
 
-msgid "RemoteAccess"
-msgstr ""
-
 msgid "RevisionControl"
-msgstr ""
-
-msgid "Robotics"
-msgstr ""
-
-msgid "Role Playing"
-msgstr ""
-
-msgid "RolePlaying"
 msgstr ""
 
 msgid "Scanning"
@@ -492,18 +344,6 @@ msgstr ""
 msgid "Sequencer"
 msgstr ""
 
-msgid "Services"
-msgstr ""
-
-msgid "Settings"
-msgstr ""
-
-msgid "Shooter"
-msgstr ""
-
-msgid "Simulation"
-msgstr ""
-
 msgid "Software"
 msgstr ""
 
@@ -513,34 +353,7 @@ msgstr ""
 msgid "Sports"
 msgstr ""
 
-msgid "SportsGame"
-msgstr ""
-
 msgid "Spreadsheet"
-msgstr ""
-
-msgid "Strategy"
-msgstr ""
-
-msgid "StrategyGame"
-msgstr ""
-
-msgid "Support"
-msgstr ""
-
-msgid "System"
-msgstr ""
-
-msgid "TV"
-msgstr ""
-
-msgid "Telephony"
-msgstr ""
-
-msgid "TelephonyTools"
-msgstr ""
-
-msgid "TerminalEmulator"
 msgstr ""
 
 msgid "TextEditor"
@@ -552,12 +365,6 @@ msgstr ""
 msgid "Translation"
 msgstr ""
 
-msgid "Tuner"
-msgstr ""
-
-msgid "Utilities"
-msgstr ""
-
 msgid "Utility"
 msgstr ""
 
@@ -567,13 +374,7 @@ msgstr ""
 msgid "Video"
 msgstr ""
 
-msgid "VideoConference"
-msgstr ""
-
 msgid "Viewer"
-msgstr ""
-
-msgid "WebBrowser"
 msgstr ""
 
 msgid "WebDevelopment"
@@ -588,96 +389,9 @@ msgstr ""
 msgid "X-CSuite"
 msgstr ""
 
-msgid "X-Tool"
-msgstr ""
-
-msgid "XFCE"
-msgstr ""
-
 msgid "Zomando"
 msgstr ""
 
-msgid "accessories"
-msgstr ""
-
-msgid "admin-tools"
-msgstr ""
-
-msgid "collections"
-msgstr ""
-
-msgid "communication"
-msgstr ""
-
-msgid "configuration"
-msgstr ""
-
-msgid "desktop-gnome"
-msgstr ""
-
-msgid "desktop-kde"
-msgstr ""
-
-msgid "desktop-other"
-msgstr ""
-
-msgid "desktop-xfce"
-msgstr ""
-
-msgid "documentation"
-msgstr ""
-
-msgid "education"
-msgstr ""
-
-msgid "electronics"
-msgstr ""
-
-msgid "fonts"
-msgstr ""
-
-msgid "games"
-msgstr ""
-
-msgid "graphics"
-msgstr ""
-
-msgid "internet"
-msgstr ""
-
-msgid "legacy"
-msgstr ""
-
-msgid "multimedia"
-msgstr ""
-
-msgid "network"
-msgstr ""
-
-msgid "other"
-msgstr ""
-
-msgid "programming"
-msgstr ""
-
-msgid "publishing"
-msgstr ""
-
 msgid "resources"
-msgstr ""
-
-msgid "science"
-msgstr ""
-
-msgid "servers"
-msgstr ""
-
-msgid "software"
-msgstr ""
-
-msgid "system"
-msgstr ""
-
-msgid "unknown"
 msgstr ""
 

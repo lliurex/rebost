@@ -14,7 +14,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -33,10 +33,10 @@ class Rebost():
 		self.procId=1
 
 	def run(self):
-		self._readConfig()
 		self._log("Starting rebost")
 		self._loadPlugins()
 		self._loadPluginInfo()
+		self._processConfig()
 		self._autostartActions()
 		self._log("Autostart ended. Populating data")
 	#def run
@@ -72,6 +72,7 @@ class Rebost():
 	####
 	def _loadPlugins(self):
 		self._debug("Accessing %s"%self.plugDir)
+		disabledPlugins={}
 		if os.path.isdir(self.plugDir):
 			sys.path.insert(1,self.plugDir)
 			for plugin in os.listdir(self.plugDir):
@@ -98,6 +99,9 @@ class Rebost():
 							self._debug("%s will set its status"%plugin)
 					else:
 						self._debug("Plugin disabled: %s"%plugin)
+						disabledPlugins[plugin.replace(".py","")]=False
+		if len(disabledPlugins)>0:
+			self._writeConfig(disabledPlugins)
 	#def _loadPlugins
 
 	def _getPluginEnabled(self,pluginObject):
@@ -130,25 +134,51 @@ class Rebost():
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
 
+	def _writeConfig(self,config):
+		cfg=self._readConfig()
+		cfgFile="/usr/share/rebost/store.json"
+		print(config)
+		for key,value in config.items():
+			cfg[key]=value
+		print(cfg)
+		if os.path.isfile(cfgFile):
+			with open(cfgFile,'w') as f:
+				try:
+					f.write(json.dumps(cfg,skipkeys=True))
+				except:
+					pass
+	#def _writeConfig
+
+	def _processConfig(self):
+		cfg=self._readConfig()
+		for key,value in cfg.items():
+			if value==True:
+				self._enable(key)
+			else:
+				delPlugin=key
+				if key=="snap":
+					delPlugin="snapHelper"
+				elif key=="flatpak":
+					delPlugin="flatpakHelper"
+				elif key in ["apt","package","packageKit"]:
+					delPlugin="packageKit"
+				elif key=="appimage":
+					delPlugin="appimageHelper"
+				if delPlugin in self.pluginInfo.keys():
+					del(self.pluginInfo["appimageHelper"])
+				self._disable(key)
+	#def _readConfig
+
 	def _readConfig(self):
 		cfgFile="/usr/share/rebost/store.json"
+		cfg={}
 		if os.path.isfile(cfgFile):
 			with open(cfgFile,'r') as f:
-				cfg=json.loads(f.read())
-			for key,value in cfg.items():
-				if value==True:
-					self._enable(key)
-				else:
-					if key=="snap":
-						del(self.pluginInfo["snapHelper"])
-					elif key=="flatpak":
-						del(self.pluginInfo["flatpakHelper"])
-					elif key=="apt" or key=="package":
-						del(self.pluginInfo["packageKit"])
-					elif key=="appimage":
-						del(self.pluginInfo["appimageHelper"])
-					self._disable(key)
-	#def _readConfig
+				try:
+					cfg=json.loads(f.read())
+				except:
+					pass
+		return(cfg)
 
 	def _enable(self,bundle):
 		swEnabled=False
@@ -367,12 +397,22 @@ class Rebost():
 		self._debug("Rebost forcing update...")
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
+		self._debug("Cleaning tmp")
 		for i in os.listdir(rebostTmpPath):
 			try:
 				os.remove(os.path.join(rebostTmpPath,i))
 			except Exception as e:
 				print(e)
 				self._debug(e)
+		if force==True:
+			self._debug("Removing databases")
+			for i in os.listdir(rebostPath):
+				if i.endswith(".db"):
+					try:
+						os.remove(os.path.join(rebostPath,i))
+					except Exception as e:
+						print(e)
+						self._debug(e)
 		return()
 	#def getProgress(self):
 

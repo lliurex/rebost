@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-05 11:04+0100\n"
-"PO-Revision-Date: 2022-12-05 11:05+0100\n"
+"POT-Creation-Date: 2022-12-29 12:04+0100\n"
+"PO-Revision-Date: 2022-12-29 12:08+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -75,12 +75,49 @@ msgid "Reload catalogues"
 msgstr "Recargar"
 
 #: ../rebostGui/stacks/sources.py:22
+msgid "Reload info from sources"
+msgstr "Recarga la información del catálogo"
+
+#: ../rebostGui/stacks/sources.py:23
 msgid "Clear cache"
 msgstr "Limpiar caché"
 
-#: ../rebostGui/stacks/sources.py:23
+#: ../rebostGui/stacks/sources.py:24
+msgid ""
+"Remove all files from cache, as per exemple icons or another related stuff"
+msgstr "Elimina los ficheros de la caché, como puedan ser iconos o imágenes"
+
+#: ../rebostGui/stacks/sources.py:25
+msgid "Restart database"
+msgstr "Reinicializa el catálogo"
+
+#: ../rebostGui/stacks/sources.py:26
+msgid ""
+"Forces a refresh of all the info from sources resetting all previous stored "
+"information"
+msgstr ""
+"Recarga toda la información desde los proveedores de aplicaciones, "
+"eliminando toda la información almacenada"
+
+#: ../rebostGui/stacks/sources.py:27
 msgid "Service could not be reloaded. Check credentials"
 msgstr "No se puede recargar. Verifica credenciales"
+
+#: ../rebostGui/stacks/sources.py:28
+msgid "Include flatpaks"
+msgstr "Incluir flatpaks"
+
+#: ../rebostGui/stacks/sources.py:29
+msgid "Include snaps"
+msgstr "Incluir snaps"
+
+#: ../rebostGui/stacks/sources.py:30
+msgid "Include appimages"
+msgstr "Incluir appimages"
+
+#: ../rebostGui/stacks/sources.py:31
+msgid "Include native packages"
+msgstr "Incluir paquetes nativos"
 
 msgid "2DGraphics"
 msgstr "Gráficos 2D"
@@ -91,38 +128,14 @@ msgstr "Gráficos 3D"
 msgid "Accessibility"
 msgstr "Accesibilidad"
 
-msgid "ActionGame"
-msgstr "Juegos de acción"
-
-msgid "Administration"
-msgstr "Administración"
-
-msgid "Adventure"
-msgstr "Aventura"
-
-msgid "AdventureGame"
-msgstr "Juegos de aventura"
-
-msgid "Amusement"
-msgstr "Entretenimiento"
-
 msgid "Animation"
 msgstr "Animación"
-
-msgid "Application"
-msgstr "Aplicación"
-
-msgid "ArcadeGame"
-msgstr "Juegos Arcade"
 
 msgid "Archiving"
 msgstr "Compresión"
 
 msgid "Art"
 msgstr "Arte"
-
-msgid "ArtificialIntelligence"
-msgstr "Inteligencia Artificial"
 
 msgid "Astronomy"
 msgstr "Astronomía"
@@ -139,29 +152,14 @@ msgstr "Edición de video y sonido"
 msgid "Biology"
 msgstr "Biología"
 
-msgid "BlocksGame"
-msgstr "Juegos de bloques"
-
-msgid "BoardGame"
-msgstr "Juegos de tablero"
-
-msgid "Building"
-msgstr "Construcciones"
-
 msgid "Calculator"
 msgstr "Calculadora"
 
 msgid "Calendar"
 msgstr "Calendario"
 
-msgid "CardGame"
-msgstr "Juego de cartas"
-
 msgid "Chart"
 msgstr "Gráficas"
-
-msgid "Chat"
-msgstr "Chat"
 
 msgid "Chemistry"
 msgstr "Química"
@@ -169,29 +167,11 @@ msgstr "Química"
 msgid "Clock"
 msgstr "Reloj"
 
-msgid "Communication"
-msgstr "Comunicación"
-
-msgid "Communication & News"
-msgstr "Comunicación y noticias"
-
 msgid "Compression"
 msgstr "Compresores"
 
 msgid "ComputerScience"
 msgstr "Ciencia computacional"
-
-msgid "Configuration"
-msgstr "Configuración"
-
-msgid "ConsoleOnly"
-msgstr "Consola"
-
-msgid "Construction"
-msgstr "Construcción"
-
-msgid "ContactManagement"
-msgstr "Contactos"
 
 msgid "Core"
 msgstr "Sistema"
@@ -204,12 +184,6 @@ msgstr "Base de datos"
 
 msgid "Debugger"
 msgstr "Debug"
-
-msgid "DesktopSettings"
-msgstr "Ajustes de escritorio"
-
-msgid "Developer Tools"
-msgstr "Herramientas de desarrollo"
 
 msgid "Development"
 msgstr "Desarrollo"
@@ -235,62 +209,20 @@ msgstr "Electricidad"
 msgid "Electronics"
 msgstr "Electrónica"
 
-msgid "Email"
-msgstr "Correo"
-
-msgid "Emulation"
-msgstr "Simulación"
-
-msgid "Emulator"
-msgstr "Emuladores"
-
 msgid "Engineering"
 msgstr "Ingeniería"
 
 msgid "FP"
 msgstr "FP"
 
-msgid "Fantasy"
-msgstr "Fantasía"
-
-msgid "Feed"
-msgstr "Origen"
-
-msgid "Feeds"
-msgstr "Orígenes"
-
-msgid "FileManager"
-msgstr "Gestión de ficheros"
-
 msgid "FileTools"
 msgstr "Herrmientas"
-
-msgid "FileTransfer"
-msgstr "Transferencia de ficheros"
-
-msgid "Filesystem"
-msgstr "Ficheros"
 
 msgid "Finance"
 msgstr "Finanzas"
 
-msgid "FlowChart"
-msgstr "Gráficas"
-
-msgid "GNOME"
-msgstr "Gnome"
-
-msgid "GTK"
-msgstr "Gtk"
-
 msgid "GUIDesigner"
 msgstr "Diseño de interfaces"
-
-msgid "Game"
-msgstr "Juego"
-
-msgid "Games"
-msgstr "Juegos"
 
 msgid "Geography"
 msgstr "Geografía"
@@ -307,9 +239,6 @@ msgstr "Gráficos"
 msgid "HamRadio"
 msgstr "Radio"
 
-msgid "HardwareSettings"
-msgstr "Hardware"
-
 msgid "HexEditor"
 msgstr "Editores hexadecimales"
 
@@ -319,29 +248,11 @@ msgstr "Humanidades"
 msgid "IDE"
 msgstr "IDE"
 
-msgid "IRCClient"
-msgstr "IRC"
-
 msgid "ImageProcessing"
 msgstr "Procesamiento de imágenes"
 
-msgid "InstantMessaging"
-msgstr "Mensajería instantánea"
-
-msgid "Internet"
-msgstr "Internet"
-
-msgid "Java"
-msgstr "Java"
-
 msgid "Jukebox"
 msgstr "Reproductores de música"
-
-msgid "KDE"
-msgstr "Kde"
-
-msgid "KidsGame"
-msgstr "Juegos infantiles"
 
 msgid "Languages"
 msgstr "Idiomas"
@@ -352,26 +263,14 @@ msgstr "Aprender a programar"
 msgid "Literature"
 msgstr "Literatura"
 
-msgid "LliureX-Administration"
-msgstr "Administación LliureX"
-
 msgid "Lliurex"
 msgstr "LliureX"
-
-msgid "LogicGame"
-msgstr "Juegos de Lógica"
-
-msgid "MMORPG"
-msgstr "MMORPG"
 
 msgid "Maps"
 msgstr "Mapas"
 
 msgid "Math"
 msgstr "Matemáticas"
-
-msgid "Matrix"
-msgstr "Matrix"
 
 msgid "MedicalSoftware"
 msgstr "Software médico"
@@ -385,20 +284,11 @@ msgstr "Mezcladores"
 msgid "Monitor"
 msgstr "Monitores"
 
-msgid "Motif"
-msgstr "Motif"
-
-msgid "Multimedia"
-msgstr "Multimédia"
-
 msgid "Music"
 msgstr "Música"
 
 msgid "Network"
 msgstr "Redes"
-
-msgid "News"
-msgstr "Noticias"
 
 msgid "NumericalAnalysis"
 msgstr "Análisis numérico"
@@ -409,32 +299,14 @@ msgstr "OCR"
 msgid "Office"
 msgstr "Oficina"
 
-msgid "P2P"
-msgstr "P2P"
-
-msgid "PackageManager"
-msgstr "Gestión de paquetes"
-
-msgid "ParallelComputing"
-msgstr "Computación paralela"
-
 msgid "Photography"
 msgstr "Fotografía"
 
 msgid "Physics"
 msgstr "Física"
 
-msgid "Player"
-msgstr "Jugador"
-
-msgid "Players"
-msgstr "Jugadores"
-
 msgid "Presentation"
 msgstr "Presentaciones"
-
-msgid "Printing"
-msgstr "Impresión"
 
 msgid "Productivity"
 msgstr "Productividad"
@@ -448,32 +320,14 @@ msgstr "Gestión de proyectos"
 msgid "Publishing"
 msgstr "Publicación"
 
-msgid "QT"
-msgstr "Qt"
-
-msgid "Qt"
-msgstr "Qt"
-
 msgid "RasterGraphics"
 msgstr "Gráficos Ráster"
 
 msgid "Recorder"
 msgstr "Grabadoras"
 
-msgid "RemoteAccess"
-msgstr "Acceso remoto"
-
 msgid "RevisionControl"
 msgstr "Control de versiones"
-
-msgid "Robotics"
-msgstr "Robótica"
-
-msgid "Role Playing"
-msgstr "Juegos de rol"
-
-msgid "RolePlaying"
-msgstr "Juegos de rol"
 
 msgid "Scanning"
 msgstr "Escaneado"
@@ -487,18 +341,6 @@ msgstr "Seguridad"
 msgid "Sequencer"
 msgstr "Secuenciadores"
 
-msgid "Services"
-msgstr "Servicios"
-
-msgid "Settings"
-msgstr "Ajustes"
-
-msgid "Shooter"
-msgstr "Disparos"
-
-msgid "Simulation"
-msgstr "Simulación"
-
 msgid "Software"
 msgstr "Programas"
 
@@ -508,35 +350,8 @@ msgstr "Espiritualidad"
 msgid "Sports"
 msgstr "Deportes"
 
-msgid "SportsGame"
-msgstr "Juegos de deporte"
-
 msgid "Spreadsheet"
 msgstr "Hojas de cálculo"
-
-msgid "Strategy"
-msgstr "Estrategia"
-
-msgid "StrategyGame"
-msgstr "Juegos de estrategia"
-
-msgid "Support"
-msgstr "Asistencia"
-
-msgid "System"
-msgstr "Sistema"
-
-msgid "TV"
-msgstr "TV"
-
-msgid "Telephony"
-msgstr "Telefonía"
-
-msgid "TelephonyTools"
-msgstr "Herramientas de telefonía"
-
-msgid "TerminalEmulator"
-msgstr "Terminales"
 
 msgid "TextEditor"
 msgstr "Editores de texto"
@@ -547,12 +362,6 @@ msgstr "Herramientas de texto"
 msgid "Translation"
 msgstr "Traducciones"
 
-msgid "Tuner"
-msgstr "Sintonizadores"
-
-msgid "Utilities"
-msgstr "Utilidades"
-
 msgid "Utility"
 msgstr "Utildad"
 
@@ -562,14 +371,8 @@ msgstr "Gráficos vectoriales"
 msgid "Video"
 msgstr "Video"
 
-msgid "VideoConference"
-msgstr "Videoconferencia"
-
 msgid "Viewer"
 msgstr "Visores"
-
-msgid "WebBrowser"
-msgstr "Navegadores"
 
 msgid "WebDevelopment"
 msgstr "Desarrollo web"
@@ -583,95 +386,329 @@ msgstr "Procesadores de texto"
 msgid "X-CSuite"
 msgstr "X-CSuite"
 
-msgid "X-Tool"
-msgstr "X-Tool"
-
-msgid "XFCE"
-msgstr "Xfce"
-
 msgid "Zomando"
 msgstr "Zomando"
-
-msgid "accessories"
-msgstr "accesorios"
-
-msgid "admin-tools"
-msgstr "herramientas administrativas"
-
-msgid "collections"
-msgstr "colecciones"
-
-msgid "communication"
-msgstr "comunicación"
-
-msgid "configuration"
-msgstr "configuración"
-
-msgid "desktop-gnome"
-msgstr "escritorio gnome"
-
-msgid "desktop-kde"
-msgstr "escritorio kde"
-
-msgid "desktop-other"
-msgstr "escritorio varios"
-
-msgid "desktop-xfce"
-msgstr "escritorio xfce"
-
-msgid "documentation"
-msgstr "documentación"
-
-msgid "education"
-msgstr "educación"
-
-msgid "electronics"
-msgstr "electrónica"
-
-msgid "fonts"
-msgstr "tipos de letra"
-
-msgid "games"
-msgstr "juegos"
-
-msgid "graphics"
-msgstr "gráficos"
-
-msgid "internet"
-msgstr "internet"
-
-msgid "legacy"
-msgstr "antiguo"
-
-msgid "multimedia"
-msgstr "multimedia"
-
-msgid "network"
-msgstr "redes"
-
-msgid "other"
-msgstr "otros"
-
-msgid "programming"
-msgstr "programación"
-
-msgid "publishing"
-msgstr "publicación"
 
 msgid "resources"
 msgstr "herramientas"
 
-msgid "science"
-msgstr "ciencia"
+#~ msgid "ActionGame"
+#~ msgstr "Juegos de acción"
 
-msgid "servers"
-msgstr "servidores"
+#~ msgid "Administration"
+#~ msgstr "Administración"
 
-msgid "software"
-msgstr "software"
+#~ msgid "Adventure"
+#~ msgstr "Aventura"
 
-msgid "system"
-msgstr "sistema"
+#~ msgid "AdventureGame"
+#~ msgstr "Juegos de aventura"
 
-msgid "unknown"
-msgstr "desconocido"
+#~ msgid "Amusement"
+#~ msgstr "Entretenimiento"
+
+#~ msgid "Application"
+#~ msgstr "Aplicación"
+
+#~ msgid "ArcadeGame"
+#~ msgstr "Juegos Arcade"
+
+#~ msgid "ArtificialIntelligence"
+#~ msgstr "Inteligencia Artificial"
+
+#~ msgid "BlocksGame"
+#~ msgstr "Juegos de bloques"
+
+#~ msgid "BoardGame"
+#~ msgstr "Juegos de tablero"
+
+#~ msgid "Building"
+#~ msgstr "Construcciones"
+
+#~ msgid "CardGame"
+#~ msgstr "Juego de cartas"
+
+#~ msgid "Chat"
+#~ msgstr "Chat"
+
+#~ msgid "Communication"
+#~ msgstr "Comunicación"
+
+#~ msgid "Communication & News"
+#~ msgstr "Comunicación y noticias"
+
+#~ msgid "Configuration"
+#~ msgstr "Configuración"
+
+#~ msgid "ConsoleOnly"
+#~ msgstr "Consola"
+
+#~ msgid "Construction"
+#~ msgstr "Construcción"
+
+#~ msgid "ContactManagement"
+#~ msgstr "Contactos"
+
+#~ msgid "DesktopSettings"
+#~ msgstr "Ajustes de escritorio"
+
+#~ msgid "Developer Tools"
+#~ msgstr "Herramientas de desarrollo"
+
+#~ msgid "Email"
+#~ msgstr "Correo"
+
+#~ msgid "Emulation"
+#~ msgstr "Simulación"
+
+#~ msgid "Emulator"
+#~ msgstr "Emuladores"
+
+#~ msgid "Fantasy"
+#~ msgstr "Fantasía"
+
+#~ msgid "Feed"
+#~ msgstr "Origen"
+
+#~ msgid "Feeds"
+#~ msgstr "Orígenes"
+
+#~ msgid "FileManager"
+#~ msgstr "Gestión de ficheros"
+
+#~ msgid "FileTransfer"
+#~ msgstr "Transferencia de ficheros"
+
+#~ msgid "Filesystem"
+#~ msgstr "Ficheros"
+
+#~ msgid "FlowChart"
+#~ msgstr "Gráficas"
+
+#~ msgid "GNOME"
+#~ msgstr "Gnome"
+
+#~ msgid "GTK"
+#~ msgstr "Gtk"
+
+#~ msgid "Game"
+#~ msgstr "Juego"
+
+#~ msgid "Games"
+#~ msgstr "Juegos"
+
+#~ msgid "HardwareSettings"
+#~ msgstr "Hardware"
+
+#~ msgid "IRCClient"
+#~ msgstr "IRC"
+
+#~ msgid "InstantMessaging"
+#~ msgstr "Mensajería instantánea"
+
+#~ msgid "Internet"
+#~ msgstr "Internet"
+
+#~ msgid "Java"
+#~ msgstr "Java"
+
+#~ msgid "KDE"
+#~ msgstr "Kde"
+
+#~ msgid "KidsGame"
+#~ msgstr "Juegos infantiles"
+
+#~ msgid "LliureX-Administration"
+#~ msgstr "Administación LliureX"
+
+#~ msgid "LogicGame"
+#~ msgstr "Juegos de Lógica"
+
+#~ msgid "MMORPG"
+#~ msgstr "MMORPG"
+
+#~ msgid "Matrix"
+#~ msgstr "Matrix"
+
+#~ msgid "Motif"
+#~ msgstr "Motif"
+
+#~ msgid "Multimedia"
+#~ msgstr "Multimédia"
+
+#~ msgid "News"
+#~ msgstr "Noticias"
+
+#~ msgid "P2P"
+#~ msgstr "P2P"
+
+#~ msgid "PackageManager"
+#~ msgstr "Gestión de paquetes"
+
+#~ msgid "ParallelComputing"
+#~ msgstr "Computación paralela"
+
+#~ msgid "Player"
+#~ msgstr "Jugador"
+
+#~ msgid "Players"
+#~ msgstr "Jugadores"
+
+#~ msgid "Printing"
+#~ msgstr "Impresión"
+
+#~ msgid "QT"
+#~ msgstr "Qt"
+
+#~ msgid "Qt"
+#~ msgstr "Qt"
+
+#~ msgid "RemoteAccess"
+#~ msgstr "Acceso remoto"
+
+#~ msgid "Robotics"
+#~ msgstr "Robótica"
+
+#~ msgid "Role Playing"
+#~ msgstr "Juegos de rol"
+
+#~ msgid "RolePlaying"
+#~ msgstr "Juegos de rol"
+
+#~ msgid "Services"
+#~ msgstr "Servicios"
+
+#~ msgid "Settings"
+#~ msgstr "Ajustes"
+
+#~ msgid "Shooter"
+#~ msgstr "Disparos"
+
+#~ msgid "Simulation"
+#~ msgstr "Simulación"
+
+#~ msgid "SportsGame"
+#~ msgstr "Juegos de deporte"
+
+#~ msgid "Strategy"
+#~ msgstr "Estrategia"
+
+#~ msgid "StrategyGame"
+#~ msgstr "Juegos de estrategia"
+
+#~ msgid "Support"
+#~ msgstr "Asistencia"
+
+#~ msgid "System"
+#~ msgstr "Sistema"
+
+#~ msgid "TV"
+#~ msgstr "TV"
+
+#~ msgid "Telephony"
+#~ msgstr "Telefonía"
+
+#~ msgid "TelephonyTools"
+#~ msgstr "Herramientas de telefonía"
+
+#~ msgid "TerminalEmulator"
+#~ msgstr "Terminales"
+
+#~ msgid "Tuner"
+#~ msgstr "Sintonizadores"
+
+#~ msgid "Utilities"
+#~ msgstr "Utilidades"
+
+#~ msgid "VideoConference"
+#~ msgstr "Videoconferencia"
+
+#~ msgid "WebBrowser"
+#~ msgstr "Navegadores"
+
+#~ msgid "X-Tool"
+#~ msgstr "X-Tool"
+
+#~ msgid "XFCE"
+#~ msgstr "Xfce"
+
+#~ msgid "accessories"
+#~ msgstr "accesorios"
+
+#~ msgid "admin-tools"
+#~ msgstr "herramientas administrativas"
+
+#~ msgid "collections"
+#~ msgstr "colecciones"
+
+#~ msgid "communication"
+#~ msgstr "comunicación"
+
+#~ msgid "configuration"
+#~ msgstr "configuración"
+
+#~ msgid "desktop-gnome"
+#~ msgstr "escritorio gnome"
+
+#~ msgid "desktop-kde"
+#~ msgstr "escritorio kde"
+
+#~ msgid "desktop-other"
+#~ msgstr "escritorio varios"
+
+#~ msgid "desktop-xfce"
+#~ msgstr "escritorio xfce"
+
+#~ msgid "documentation"
+#~ msgstr "documentación"
+
+#~ msgid "education"
+#~ msgstr "educación"
+
+#~ msgid "electronics"
+#~ msgstr "electrónica"
+
+#~ msgid "fonts"
+#~ msgstr "tipos de letra"
+
+#~ msgid "games"
+#~ msgstr "juegos"
+
+#~ msgid "graphics"
+#~ msgstr "gráficos"
+
+#~ msgid "internet"
+#~ msgstr "internet"
+
+#~ msgid "legacy"
+#~ msgstr "antiguo"
+
+#~ msgid "multimedia"
+#~ msgstr "multimedia"
+
+#~ msgid "network"
+#~ msgstr "redes"
+
+#~ msgid "other"
+#~ msgstr "otros"
+
+#~ msgid "programming"
+#~ msgstr "programación"
+
+#~ msgid "publishing"
+#~ msgstr "publicación"
+
+#~ msgid "science"
+#~ msgstr "ciencia"
+
+#~ msgid "servers"
+#~ msgstr "servidores"
+
+#~ msgid "software"
+#~ msgstr "software"
+
+#~ msgid "system"
+#~ msgstr "sistema"
+
+#~ msgid "unknown"
+#~ msgstr "desconocido"

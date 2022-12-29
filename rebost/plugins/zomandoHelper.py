@@ -107,7 +107,7 @@ class zomandoHelper():
 						rebostPkg['icon']=os.path.join(self.iconDir,icon)
 					elif fline.startswith("Category"):
 						cat=fline.split("=")[-1].rstrip()
-						if cat in ['Software','FP','resources'] and cat not in rebostPkg['categories']:
+						if cat.lower() in ['software','fp','resources','multimedia'] and cat not in rebostPkg['categories']:
 							rebostPkg['categories'].append(cat)
 							if "Software" not in rebostPkg['categories']:
 								rebostPkg['categories'].append("Software")

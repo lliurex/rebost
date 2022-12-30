@@ -26,7 +26,7 @@ i18n={
 	"RUN":_("Open"),
 	"REMOVE":_("Remove"),
 	"UPGRADE":_("Upgrade"),
-	"ZMDNOTFOUND":_("not found. Open Zero-Center?")
+	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?")
 	}
 	
 class epiClass(QThread):
@@ -182,27 +182,27 @@ class details(confStack):
 	#def _runZomando
 
 	def _zmdNotFound(self,zmd):
+		def _launchZeroCenter():
+			dlg.close()
+			cmd=["zero-center"]
+			try:
+				subprocess.run(cmd)
+			except Exception as e:
+				print(e)
+				self.showMsg(e)
+
 		dlg=QDialog()
 		dlg.setWindowTitle("Error")
 		btns=QDialogButtonBox.Open|QDialogButtonBox.Cancel
 		dlgBtn=QDialogButtonBox(btns)
-		dlgBtn.accepted.connect(self._launchZeroCenter)
+		dlgBtn.accepted.connect(_launchZeroCenter)
 		dlgBtn.rejected.connect(dlg.close)
 		lay=QGridLayout()
-		lbl=QLabel("{0} {1}".format(os.path.basename(zmd),i18n.get("ZMDNOTFOUND")))
+		lbl=QLabel("{0}".format(i18n.get("ZMDNOTFOUND")))
 		lay.addWidget(lbl)
 		lay.addWidget(dlgBtn)
 		dlg.setLayout(lay)
 		dlg.exec()
-		
-	def _launchZeroCenter(self):
-		cmd=["zero-center"]
-		try:
-			subprocess.run(cmd)
-		except Exception as e:
-			print(e)
-			self.showMsg(e)
-
 
 	def _runApp(self):
 		bundle=self.cmbOpen.currentText().lower().split(" ")[0]

@@ -166,6 +166,8 @@ class zomandoHelper():
 
 	def _get_zomando_state(self,zmd):
 		zmdVars={}
+		if zmd.endswith(".zmd")==False:
+			zmd="{}.zmd".format(zmd)
 		try:
 			zmdVars=self.n4d.get_variable("ZEROCENTER")
 		except:

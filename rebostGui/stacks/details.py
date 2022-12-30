@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -25,7 +25,8 @@ i18n={
 	"INSTALL":_("Install"),
 	"RUN":_("Open"),
 	"REMOVE":_("Remove"),
-	"UPGRADE":_("Upgrade")
+	"UPGRADE":_("Upgrade"),
+	"ZMDNOTFOUND":_("not found. Open Zero-Center?")
 	}
 	
 class epiClass(QThread):
@@ -155,9 +156,13 @@ class details(confStack):
 
 	def _runZomando(self):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
+		if zmdPath.endswith(".zmd")==False:
+			zmdPath="{}.zmd".format(zmdPath)
 		if os.path.isfile(zmdPath):
 			#Look if pkexec is needed
 			appPath=os.path.join("/usr/share/zero-center/applications",self.app.get('bundle',{}).get('zomando','')).replace(".zmd",".app")
+			if appPath.endswith(".app")==False:
+				appPath="{}.app".format(appPath)
 			cmd=[zmdPath]
 			if os.path.isfile(appPath):
 				with open (appPath,'r') as f:
@@ -172,7 +177,32 @@ class details(confStack):
 			except Exception as e:
 				print(e)
 				self.showMsg(e)
+		else:
+			self._zmdNotFound(zmdPath)
 	#def _runZomando
+
+	def _zmdNotFound(self,zmd):
+		dlg=QDialog()
+		dlg.setWindowTitle("Error")
+		btns=QDialogButtonBox.Open|QDialogButtonBox.Cancel
+		dlgBtn=QDialogButtonBox(btns)
+		dlgBtn.accepted.connect(self._launchZeroCenter)
+		dlgBtn.rejected.connect(dlg.close)
+		lay=QGridLayout()
+		lbl=QLabel("{0} {1}".format(os.path.basename(zmd),i18n.get("ZMDNOTFOUND")))
+		lay.addWidget(lbl)
+		lay.addWidget(dlgBtn)
+		dlg.setLayout(lay)
+		dlg.exec()
+		
+	def _launchZeroCenter(self):
+		cmd=["zero-center"]
+		try:
+			subprocess.run(cmd)
+		except Exception as e:
+			print(e)
+			self.showMsg(e)
+
 
 	def _runApp(self):
 		bundle=self.cmbOpen.currentText().lower().split(" ")[0]
@@ -272,13 +302,18 @@ class details(confStack):
 		self.cmbOpen.setVisible(False)
 		self.cmbInstall.setVisible(False)
 		bundles=list(self.app.get('bundle',{}).keys())
+		pkgState=0
 		if "zomando" in bundles:
 			if "package" in bundles:
-				bundles.remove('package')
+				pkgState=self.app.get('state',{}).get("package",'1')
+				if pkgState=="0":
+					bundles.remove('package')
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
-			if bundle=="zomando":
+			if bundle=="zomando" and (pkgState=="0" or state=="0"):
 				self.btnZomando.setVisible(True)
+				continue
+			elif bundle=="zomando":
 				continue
 		#		self.btnPackageLaunch.setVisible(False)
 			tooltip=self.app.get('versions',{}).get(bundle,'')

@@ -426,9 +426,6 @@ class sqlHelper():
 					if state=="0":
 						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
 			pkgdata=str(json.dumps(pkgdataJson))
-			if pkgname=="zero-lliurex-openboard":
-				print(table)
-				print(pkgdata)
 			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
 		return(retval)
 	#def _addPkgToQuery

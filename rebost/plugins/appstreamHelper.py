@@ -147,8 +147,8 @@ class appstreamHelper():
 						store.add_app(pkg)
 					else:
 						print(app.validate())
-				except:
-					pass
+				except Exception as e:
+					print("{0}:{1}".format(idx,e))
 				added.append(pkg.get_id())
 		return(store)
 	#def _generate_store

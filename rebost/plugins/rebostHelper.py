@@ -12,7 +12,7 @@ import tempfile
 import subprocess
 import time
 
-DBG=False
+DBG=True
 path="/var/log/rebost.log"
 fname = "rebost.log"
 logger = logging.getLogger(fname)
@@ -203,6 +203,7 @@ def appstream_to_rebost(appstreamCatalogue):
 				name=nameComponents[cont].lower()
 				break
 			cont-=1
+		name=name.replace("_zmd",'')
 		pkg['name']=name
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
@@ -228,14 +229,27 @@ def appstream_to_rebost(appstreamCatalogue):
 					break
 
 		pkg['categories']=component.get_categories()
-		for i in component.get_bundles():
-			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
-				versionArray=["0.0"]
-				for release in component.get_releases():
-					versionArray.append(release.get_version())
-					versionArray.sort()
-				pkg['versions']={'flatpak':versionArray[-1]}
+		if len(component.get_bundles())>0:
+			for i in component.get_bundles():
+				if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
+					pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
+					versionArray=["0.0"]
+					for release in component.get_releases():
+						versionArray.append(release.get_version())
+						versionArray.sort()
+					pkg['versions']={'flatpak':versionArray[-1]}
+		else:
+			if "lliurex"  in component.get_id():
+				pkgName=component.get_id().replace('.desktop','')
+				pkgName=pkgName.replace('_zmd','')
+				zmdPkgName=pkgName
+				if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
+					zmdPkgName="{}.zmd".format(zmdPkgName)
+				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
+					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				elif "Education" in pkg['categories']:
+					pkgName=component.get_id().replace('.desktop','')
+					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
 		pkg['license']=component.get_project_license()
 		for scr in component.get_screenshots():
 			for img in scr.get_images():
@@ -446,9 +460,10 @@ def _get_appimage_commands(rebostpkg,user):
 
 def _get_zomando_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	installCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
 	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	#statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_zomando_commands
 

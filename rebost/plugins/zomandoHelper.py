@@ -125,7 +125,7 @@ class zomandoHelper():
 									rebostPkg['description']=description
 					elif fline.startswith("Groups"):
 							groups=fline.split("=")[-1].strip()
-							if groups=='*;' or "students" in groups:# or "teachers" in groups:
+							if '*' in groups or "students" in groups:# or "teachers" in groups:
 								groupsProcessed=True
 		if groupsProcessed==False:
 			rebostPkg['categories']=["System"]

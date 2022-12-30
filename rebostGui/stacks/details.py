@@ -155,9 +155,13 @@ class details(confStack):
 
 	def _runZomando(self):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
+		if zmdPath.endswith(".zmd")==False:
+			zmdPath="{}.zmd".format(zmdPath)
 		if os.path.isfile(zmdPath):
 			#Look if pkexec is needed
 			appPath=os.path.join("/usr/share/zero-center/applications",self.app.get('bundle',{}).get('zomando','')).replace(".zmd",".app")
+		if zmdPath.endswith(".app")==False:
+			appPath="{}.app".format(appPath)
 			cmd=[zmdPath]
 			if os.path.isfile(appPath):
 				with open (appPath,'r') as f:
@@ -272,12 +276,15 @@ class details(confStack):
 		self.cmbOpen.setVisible(False)
 		self.cmbInstall.setVisible(False)
 		bundles=list(self.app.get('bundle',{}).keys())
+		pkgState=0
 		if "zomando" in bundles:
 			if "package" in bundles:
-				bundles.remove('package')
+				pkgState=self.app.get('state',{}).get("package",'1')
+				if pkgState=="0":
+					bundles.remove('package')
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
-			if bundle=="zomando":
+			if bundle=="zomando" and pkgState=="0":
 				self.btnZomando.setVisible(True)
 				continue
 		#		self.btnPackageLaunch.setVisible(False)

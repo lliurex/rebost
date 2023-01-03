@@ -334,7 +334,7 @@ class details(confStack):
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
-		self.lblDesc.setText(html.unescape(self.app.get('description','')))
+		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
 		versions=self.app.get('versions',{})
 		self.cmbRemove.setVisible(False)
 		self.cmbOpen.setVisible(False)

@@ -228,6 +228,12 @@ def appstream_to_rebost(appstreamCatalogue):
 					pkg['icon']=url
 					break
 
+		homepage=''
+		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
+			homepage=component.get_url_item(kind)
+			if homepage:
+				break
+		pkg['homepage']=homepage
 		pkg['categories']=component.get_categories()
 		if len(component.get_bundles())>0:
 			for i in component.get_bundles():
@@ -250,17 +256,12 @@ def appstream_to_rebost(appstreamCatalogue):
 				elif "Education" in pkg['categories']:
 					pkgName=component.get_id().replace('.desktop','')
 					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				pkg['homepage']="https://github.com/lliurex"
 		pkg['license']=component.get_project_license()
 		for scr in component.get_screenshots():
 			for img in scr.get_images():
 				pkg['screenshots'].append(img.get_url())
 				break
-		homepage=''
-		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
-			homepage=component.get_url_item(kind)
-			if homepage:
-				break
-		pkg['homepage']=homepage
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)

@@ -1,8 +1,36 @@
-rebost (0.9.9.8) lliurex22; urgency=medium
+rebost (0.9.24) focal; urgency=medium
+
+  * Release candidate 4. 
+  * Disable packagekit plugin
+  * Improved restart mechanism
+  * Delete bundle info when an appimage is not reachable 
+  * Improved integration with zommands 
+  *  Load internacionalized summary/description from zomandos
+  *  Get pkg_list from epi for improved zomandos descriptions
+  *  Discard all zomandos but software,fp,resources
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 23 Dec 2022 09:13:11 +0100
+
+rebost (0.9.16) lliurex22; urgency=medium
+
+  * Release candidate 3. Bugfix 
+  * Improve packagekit performance
+  * Combobox for bundles install/remove/launch in details stack
+  * i18n support
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 02 Nov 2022 10:35:53 +0100
+
+rebost (0.9.9.8.6) lliurex22; urgency=medium
 
   * Release candidate 2. Bugfix 
   * N4d only for remote installs
+  * Print log when transaction fails
+  * Improved logging mechanism
   * Embed epic for installations
+  * Create log per transaction
+  * GUI: Set return values for EPI
+  * WIP on upgrades
+  * WIP on details stack
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 18 Oct 2022 18:33:55 +0200
 

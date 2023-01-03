@@ -1,4 +1,4 @@
-rebost (0.9.24) focal; urgency=medium
+rebost (0.9.25) focal; urgency=medium
 
   * Release candidate 4. 
   * Disable packagekit plugin

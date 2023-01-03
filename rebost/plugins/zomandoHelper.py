@@ -122,7 +122,8 @@ class zomandoHelper():
 							description=fline.split("=")[-1]
 							if len(self.locale)>0:
 								if fline.startswith("Comment[{}".format(self.locale)):
-									rebostPkg['description']=description
+									description=fline.split("=")[-1]
+							rebostPkg['description']=description
 					elif fline.startswith("Groups"):
 							groups=fline.split("=")[-1].strip()
 							if '*' in groups or "students" in groups:# or "teachers" in groups:

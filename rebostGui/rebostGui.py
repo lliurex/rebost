@@ -11,10 +11,9 @@ from appconfig import appconfigControls
 import gettext
 import time
 _ = gettext.gettext
-gettext.textdomain('lliurex-store')
 
-app=QApplication(["Lliurex-Store"])
-config=appConfig("Lliurex Store",{'app':app})
+app=QApplication(["RebostGui"])
+config=appConfig("RebostGui",{'app':app})
 config.setWindowTitle("Lliurex Store")
 config.setRsrcPath("/usr/share/rebost/rsrc")
 config.setIcon('lliurexstore')
@@ -24,5 +23,5 @@ config.hideNavMenu(True)
 #config.setBackgroundImage('repoman_login.svg')
 config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],".config/rebost")},confFile="store.json")
 config.Show()
-#config.setFixedSize(config.width(),config.height())
+config.resize(800,540)
 app.exec_()

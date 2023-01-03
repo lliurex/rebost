@@ -12,11 +12,36 @@ import tempfile
 import subprocess
 import time
 
-DBG=False
+DBG=True
+path="/var/log/rebost.log"
+fname = "rebost.log"
+logger = logging.getLogger(fname)
+formatter = logging.Formatter('%(asctime)s %(message)s')
+fh=logging.FileHandler(path)
+fh.setLevel(logging.INFO)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+st=logging.StreamHandler()
+st.setLevel(logging.DEBUG)
+st.setFormatter(formatter)
+#logger.addHandler(st)
+
+def setDebugEnabled(dbg):
+	DBG=dbg
+	if DBG:
+		logger.setLevel(logging.DEBUG)
+	else:
+		logger.setLevel(logging.INFO)
+#def enableDbg
+
+setDebugEnabled(DBG)
+
+def logmsg(msg):
+	logger.info("{}".format(msg))
+#def logmsg(msg)
 
 def _debug(msg):
-	if DBG:
-		logging.warning("rebostHelper: %s"%str(msg))
+	logger.debug("{}".format(msg))
 #def _debug
 	
 def rebostProcess(*kwargs):
@@ -37,33 +62,46 @@ def rebostPkg(*kwargs):
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	drop=False
 	if drop:
 		if os.path.isfile(tablePath):
 			os.remove(tablePath)
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	if drop:
-		query="DROP TABLE IF EXISTS {}".format(table)
-		_debug(query)
-		cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
-		_debug(query)
-		cursor.execute(query)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+	_debug("Helper: {}".format(query))
+	cursor.execute(query)
 	query=[]
 	while rebostPkgList:
 		rebostPkg=rebostPkgList.pop(0)
-		query.append(_rebostPkg_fill_data(rebostPkg,sanitize))
+		values=[]
+		values=(_rebostPkg_fill_data(rebostPkg,sanitize))
+		pkgName=values[0]
+		pkgData=values[1]
+		queryTmp='SELECT data FROM {0} where pkg="{1}"'.format(table,pkgName)
+		cursor.execute(queryTmp)
+		row=cursor.fetchone()
+		if row!=None:
+			if len(row)>0:
+				if pkgData!=row[0]:
+					query.append(values)
+				#else:
+				#	_debug("Already inserted {}".format(pkgName))
+			else:
+				query.append(values)
+		else:
+			query.append(values)
 		#take breath
-		if len(rebostPkgList)%4==0:
-			time.sleep(0.0002)
+		#if len(rebostPkgList)%20==0:
+		#	time.sleep(0.001)
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
-			_debug("INSERTING {} for {}".format(len(query),table))
+			_debug("Helper: INSERTING {} for {}".format(len(query),table))
 			cursor.executemany(queryMany,query)
 		except Exception as e:
-			_debug(e)
+			_debug("Helper: {}".format(e))
 		db.commit()
 	db.close()
 	cursor=None
@@ -77,13 +115,13 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
-	#print(query)
 	cursor.execute(query)
-	query=_rebostPkg_fill_data(rebostPkg)
+	query=[]
+	query.append(_rebostPkg_fill_data(rebostPkg))
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
 		try:
-			_debug("INSERTING {} for {}".format(len(query),table))
+			_debug("Helper: INSERTING {} for {}".format(len(query),table))
 			cursor.executemany(queryMany,query)
 		except sqlite3.OperationalError as e:
 			if "locked" in e:
@@ -100,7 +138,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	categories.extend(["","",""])
 	name=rebostPkg.get('name','')
 	if sanitize:
-		name=rebostPkg.get('name','').strip().lower().replace('.','_')
+		name=rebostPkg.get('name','').strip().lower()
 		rebostPkg["name"]=name.strip()
 		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
 		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
@@ -141,7 +179,7 @@ def _sanitizeString(data,scape=False,unescape=False):
 		data=data.replace("´","")
 		data=data.replace("\n"," ")
 		data=data.replace("\\","*")
-		data.rstrip()
+		data=data.rstrip()
 		if scape:
 			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		if unescape:
@@ -156,7 +194,17 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		pkg['name']=pkg['id'].split(".")[-1].lower().strip()
+		nameComponents=pkg['id'].split(".")
+		cont=len(nameComponents)-1
+		blacklist=["desktop","org","net","com"]
+		name=nameComponents[-1].lower()
+		while cont>=0:
+			if nameComponents[cont].lower() not in blacklist:
+				name=nameComponents[cont].lower()
+				break
+			cont-=1
+		name=name.replace("_zmd",'')
+		pkg['name']=name
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
@@ -180,26 +228,40 @@ def appstream_to_rebost(appstreamCatalogue):
 					pkg['icon']=url
 					break
 
-		pkg['categories']=component.get_categories()
-		for i in component.get_bundles():
-			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
-				versionArray=["0.0"]
-				for release in component.get_releases():
-					versionArray.append(release.get_version())
-					versionArray.sort()
-				pkg['versions']={'flatpak':versionArray[-1]}
-		pkg['license']=component.get_project_license()
-		for scr in component.get_screenshots():
-			for img in scr.get_images():
-				pkg['screenshots'].append(img.get_url())
-				break
 		homepage=''
 		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
 		pkg['homepage']=homepage
+		pkg['categories']=component.get_categories()
+		if len(component.get_bundles())>0:
+			for i in component.get_bundles():
+				if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
+					pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
+					versionArray=["0.0"]
+					for release in component.get_releases():
+						versionArray.append(release.get_version())
+						versionArray.sort()
+					pkg['versions']={'flatpak':versionArray[-1]}
+		else:
+			if "lliurex"  in component.get_id():
+				pkgName=component.get_id().replace('.desktop','')
+				pkgName=pkgName.replace('_zmd','')
+				zmdPkgName=pkgName
+				if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
+					zmdPkgName="{}.zmd".format(zmdPkgName)
+				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
+					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				elif "Education" in pkg['categories']:
+					pkgName=component.get_id().replace('.desktop','')
+					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				pkg['homepage']="https://github.com/lliurex"
+		pkg['license']=component.get_project_license()
+		for scr in component.get_screenshots():
+			for img in scr.get_images():
+				pkg['screenshots'].append(img.get_url())
+				break
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)
@@ -208,16 +270,15 @@ def appstream_to_rebost(appstreamCatalogue):
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
-	#_debug("Generating EPI for:\n{}".format(rebostpkg))
 	if os.path.isdir("/tmp/rebost")==False:
 		os.makedirs("/tmp/rebost")
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:
-		_debug("Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		_debug("Helper: Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=_generate_epi_json(rebostpkg,bundle,tmpDir=tmpDir)
 	else:
-		_debug("Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
+		_debug("Helper: Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=''
 		user=''
 	if user=='root':
@@ -247,7 +308,7 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 			with open(epiJson,'w') as f:
 				json.dump(epiFile,f,indent=4)
 		except Exception as e:
-			_debug("%s"%e)
+			_debug("Helper {}".format(e))
 			retCode=1
 	return(epiJson)
 #def _generate_epi_json
@@ -258,7 +319,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 		try:
 			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
 		except Exception as e:
-			_debug("%s"%e)
+			_debug("Helper: {}".format(e))
 			print("ERROR {}".format(e))
 			retCode=1
 		if os.path.isfile(epiScript):
@@ -267,7 +328,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 #def _generate_epi_sh
 
 def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
-	_debug("Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
+	_debug("Helper: Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
@@ -289,6 +350,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 			f.write("}\n")
 
 		f.write("ACTION=\"$1\"\n")
+		f.write("ERR=0\n")
 		f.write("case $ACTION in\n")
 		f.write("\tremove)\n")
 		f.write("\t\t{}\n".format(commands.get('removeCmd')))
@@ -317,7 +379,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 		if remote==True:
 			f.write("\ninstallPackage\n")
 
-		f.write("exit 0\n")
+		f.write("exit $ERR\n")
 #def _make_epi_script
 
 def _get_bundle_commands(bundle,rebostpkg,user=''):
@@ -328,44 +390,15 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-		installCmd="pkcon install -y {} 2>&1".format(rebostpkg['pkgname'])
-		removeCmd="pkcon remove -y {} 2>&1".format(rebostpkg['pkgname'])
-		removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
-		removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
-		removeCmdLine.append("exit 1")
-		removeCmdLine.append("fi")
-		statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
 	elif bundle=='snap':
-		installCmd="snap install {} 2>&1".format(rebostpkg['bundle']['snap'])
-		removeCmd="snap remove {} 2>&1".format(rebostpkg['bundle']['snap'])
-		statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_snap_commands(rebostpkg,user)
 	elif bundle=='flatpak':
-		installCmd="flatpak -y install {} 2>&1".format(rebostpkg['bundle']['flatpak'])
-		removeCmd="flatpak -y uninstall {} 2>&1".format(rebostpkg['bundle']['flatpak'])
-		statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_flatpak_commands(rebostpkg,user)
 	elif bundle=='appimage':
-		#user=os.environ.get('USER')
-		installCmd="wget -O /tmp/{}.appimage {} 2>&1".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
-		destdir="/opt/appimages"
-		if user!='root' and user:
-			destdir=os.path.join("/home",user,".local","bin")
-		installCmdLine.append("mkdir -p {}".format(destdir))
-		installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
-		destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
-		installCmdLine.append("chmod +x {}".format(destPath))
-		if user!='root' and user:
-			installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
-			installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
-			installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
-			installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{0} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user))
-		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
-		removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}.desktop".format(destPath,user,rebostpkg['pkgname'])
-		statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
 	elif bundle=='zomando':
-		installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-		removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-		statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
-
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
@@ -373,6 +406,67 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	commands['statusTestLine']=statusTestLine
 	return(commands)
 #def _get_bundle_commands
+
+def _get_package_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
+	removeCmdLine.append("exit 1")
+	removeCmdLine.append("fi")
+	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_package_commands
+
+def _get_snap_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="snap install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
+	removeCmd="snap remove {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
+	statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_snap_commands
+
+def _get_flatpak_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="flatpak -y install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
+	removeCmd="flatpak -y uninstall {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
+	statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_flatpak_commands
+
+def _get_appimage_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	#user=os.environ.get('USER')
+	installCmd=""
+	installCmd="wget -O /tmp/{}.appimage {} 2>&1;ERR=$?".format(rebostpkg['pkgname'],rebostpkg['bundle']['appimage'])
+	destdir="/opt/appimages"
+	if user!='root' and user:
+		destdir=os.path.join("/home",user,".local","bin")
+	installCmdLine.append("mkdir -p {}".format(destdir))
+	installCmdLine.append("mv /tmp/{0}.appimage {1}".format(rebostpkg['pkgname'],destdir))
+	destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
+	deskName="{}-appimage.desktop".format(rebostpkg['pkgname'])
+	installCmdLine.append("chmod +x {}".format(destPath))
+	if user!='root' and user:
+		installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
+		installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
+		installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
+		installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} \"{1}\" \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{6} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user,deskName))
+		installCmdLine.append("chown {0}:{0} /home/{0}/.local/share/applications/{1}".format(user,deskName))
+	removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}-appimage.desktop;ERR=$?".format(destPath,user,rebostpkg['pkgname'])
+	statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_appimage_commands
+
+def _get_zomando_commands(rebostpkg,user):
+	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
+	installCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	#statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
+#def _get_zomando_commands
 
 def get_epi_status(episcript):
 	st="0"
@@ -384,6 +478,40 @@ def get_epi_status(episcript):
 			_debug(e)
 	return(st)
 #def get_epi_status
+
+def get_table_pkg(table,pkg):
+	tablePath=os.path.join("/usr/share/rebost/",table)
+	ret=[]
+	if os.path.isfile(tablePath):
+		tableName=table.replace(".db","").lower()
+		db=sqlite3.connect(tablePath)
+		cursor=db.cursor()
+		query="Select * from {0} where pkg='{1}'".format(tableName,pkg)
+		try:
+			cursor.execute(query)
+			ret=cursor.fetchall()
+		except:
+			pass
+		db.close()
+	return ret
+#def get_table_state
+
+def get_table_pkgarray(table,pkgarray):
+	tablePath=os.path.join("/usr/share/rebost/",table)
+	ret=[]
+	if os.path.isfile(tablePath):
+		tableName=table.replace(".db","").lower()
+		db=sqlite3.connect(tablePath)
+		cursor=db.cursor()
+		query="Select * from {0} where pkg in ({1})'".format(tableName,",".join(pkgarray))
+		try:
+			cursor.execute(query)
+			ret=cursor.fetchall()
+		except:
+			pass
+		db.close()
+	return ret
+#def get_table_state
 
 def get_table_state(pkg,bundle):
 	tablePath="/usr/share/rebost/installed.db"
@@ -400,15 +528,61 @@ def get_table_state(pkg,bundle):
 
 def check_remove_unsure(package):
 	sw=False
-	_debug("Checking if remove {} is unsure".format(package))
+	_debug("Helper: Checking if remove {} is unsure".format(package))
 	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	version=llx.stdout.decode().strip()
+	try:
+		llx=subprocess.run(["lliurex-version","-f"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		version=llx.stdout.decode().strip()
+	except:
+		version="desktop"
 	for depend in proc.stdout.decode().split("\n"):
 		if "lliurex-meta-{}".format(version) in depend:
 			sw=True
 			break
-	_debug(proc.stdout)
-	_debug("Checked")
+	_debug("Helper: {}".format(proc.stdout))
+	_debug("Helper: Checked")
 	return(sw)
 #def check_remove_unsure(package):
+
+def getFiltersList(blacklist=False,whitelist=False,wordlist=False):
+	wrkDir="/usr/share/rebost"
+	folderBlacklist=os.path.join(wrkDir,"lists.d/blacklist")
+	folderWhitelist=os.path.join(wrkDir,"lists.d/whitelist")
+	folderWordlist=os.path.join(wrkDir,"lists.d/words")
+	files={"categories":[],"apps":[]}
+	filters={"blacklist":files,"whitelist":files,"words":[]}
+	if blacklist==True:
+		filters["blacklist"]=getFilterContent(folderBlacklist)
+	if whitelist==True:
+		filters["whitelist"]=getFilterContent(folderWhitelist)
+	if wordlist==True:
+		filters["words"]=getFilterContent(folderWordlist)
+	return(filters)
+
+def getFilterContent(folder):
+	filters={"categories":[],"apps":[]}
+	if "word" in folder:
+		folders=[folder]
+		filters=[]
+	else:
+		folders=[os.path.join(folder,"categories"),os.path.join(folder,"apps")]
+	for folder in folders:
+		if os.path.isdir(folder):
+			for f in os.listdir(folder):
+				if f.endswith("conf"):
+					with open(os.path.join(folder,f),"r") as ffilter:
+						for line in ffilter.readlines():
+							fcontent=line.strip()
+							if "categories" in folder:
+								filters["categories"].append(fcontent)
+							elif "apps" in folder:
+								filters["apps"].append(fcontent)
+							else:
+								filters.append(fcontent)
+	return(filters)
+	#Default blacklist. If there's a category blacklist file use it
+
+#	blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
+		#appsblacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
+		#whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
+#def getCategoriesBlacklist

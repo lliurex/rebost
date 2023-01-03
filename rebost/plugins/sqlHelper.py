@@ -4,7 +4,6 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
-import logging
 import html
 import sqlite3
 import subprocess
@@ -15,7 +14,6 @@ import appimageHelper
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
-		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories']
@@ -24,6 +22,9 @@ class sqlHelper():
 		self.postAutostartActions=["load"]
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
+		self.softwareBlackList=os.path.join(self.wrkDir,"lists.d/blacklist")
+		self.softwareWhiteList=os.path.join(self.wrkDir,"lists.d/whitelist")
+		self.bannedWordsList=os.path.join(self.wrkDir,"lists.d/words")
 		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
 		self.installed_table=os.path.join(self.wrkDir,"installed.db")
 		self.categories_table=os.path.join(self.wrkDir,"categories.db")
@@ -33,21 +34,43 @@ class sqlHelper():
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
 		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
+		self.blacklist=True
+		self.blacklistFilter=rebostHelper.getFiltersList(blacklist=True)
+		self.whitelist=True
+		self.whitelistFilter=rebostHelper.getFiltersList(whitelist=True)
+		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
+		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
+
+	def _log(self,msg):
+		dbg="sql: {}".format(msg)
+		rebostHelper.logmsg(dbg)
+	#def _debug
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("sql: %s"%str(msg))
+			dbg="sql: {}".format(msg)
+			rebostHelper._debug(dbg)
 	#def _debug
 
-	def _print(self,msg):
-		logging.warning("sql: %s"%str(msg))
-	#def _debug
+	def _getWordsFilter(self):
+		#Default banned words list. If there's a banned words list file use it
+		bannedWordsFile=os.path.join(self.bannedWordsList,"bannedWords.conf")
+		wordblacklist=['cryptocurrency','cryptocurrencies','wallet','bitcoin','monero','Wallet','Bitcoin','Cryptocurrency','Monero','Mine','miner','mine','mining','Mining',"btc","BTC","Btc","Ethereum","ethereum"]
+		if os.path.isfile(bannedWordsFile):
+			fwordlist=[]
+			with open(bannedWordsFile,'r') as f:
+				for line in f.readlines():
+					fwordlist.append(line.strip())
+			if len(fwordlist)>0:
+				wordblacklist=fwordlist
+		return (wordblacklist)
+	#def _getWordsFilter
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -205,7 +228,8 @@ class sqlHelper():
 	#def _listPackages
 
 	def _commitInstall(self,pkgname,bundle='',state=0):
-		self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
+		#self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
+		self._log("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
@@ -220,7 +244,10 @@ class sqlHelper():
 			release=data['versions'].get(bundle,0)
 			if isinstance(data['installed'],str):
 				data['installed']={}
-			data['installed'][bundle]=release
+			if state!=0:
+				data['installed'].pop(bundle,None)
+			else:
+				data['installed'][bundle]=release
 			dataContent=str(json.dumps(data))
 			#Ensure all single quotes are duplicated or sql will fail
 			dataContent=dataContent.replace("''","'")
@@ -242,18 +269,26 @@ class sqlHelper():
 		update=self._chkNeedUpdate()
 		if update==False:
 			self._debug("Skip merge")
+			self._log("Database ready. Rebost operative")
 			return([])
+		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
-		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")):
+		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")) and sources.get("package",True)==True:
 			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
 			fupdate.write("packagekit.db:{}".format(fsize))
+			self.copyPackagekitSql()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
-		#Categories
-		categories_table=os.path.basename(self.categories_table).replace(".db","")
-		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
 		#Begin merge
-		self.copyPackagekitSql()
-		include=["appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		tables=["appimage","flatpak","snap","zomandos","appstream"]
+		include=[]
+		for source in sources.keys():
+			if source in tables:
+				if sources[source]==False:
+					idx=tables.index(source)
+					tables.pop(idx)
+		for table in tables:
+			include.append("{}.db".format(table))
+		print("INCLUDE {}".format(include))
 		allCategories=[]
 		for fname in include:
 			(count,categories)=self._processDatabase(fname,main_db,main_cursor,main_tmp_table,fupdate)
@@ -261,22 +296,21 @@ class sqlHelper():
 			allCategories=list(set(allCategories))
 		fupdate.close()
 		self.closeConnection(main_db)
-		if allCategories:
-			self._debug("Populating categories")
-			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
-			try:
-				for cat in allCategories:
-					if cat!='' and isinstance(cat,str):
-						#cat=cat.capitalize().strip()
-						cat=cat.strip()
-						cursor_cat.execute(queryCategories,(cat,))
-			except Exception as e:
-				self._debug(e)
-		self.closeConnection(db_cat)
+		if len(allCategories)>0:
+			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
 		return([])
 	#def consolidateSqlTables
+
+	def _getEnabledSources(self):
+		config=os.path.join(self.wrkDir,"store.json")
+		fcontent={}
+		if os.path.isfile(config):
+			with open(config,'r') as f:
+				fcontent=json.loads(f.read())
+		return(fcontent)
+	#def _getEnabledSources(self):
 
 	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
 		allCategories=[]
@@ -301,35 +335,38 @@ class sqlHelper():
 						categories=processedPkg[1]
 						if len(categories)>0:
 							allCategories.extend(categories)
-							allCategories=list(set(allCategories))
 						query.append(pkgData)
 				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
+					db.commit()
 				except Exception as e:
 					self._debug(e)
 					self._debug(query)
 				offset=limit+1
 				if offset>count:
 					offset=count
-				db.commit()
+			allCategories=list(set(allCategories))
 			retval=(count,allCategories)
 		return(retval)
 	#def _processDatabase
 
-	def _processCategories(self):
-		if allCategories:
-			self._debug("Populating categories")
-			queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
-			try:
-				for cat in allCategories:
-					if cat!='' and isinstance(cat,str):
-						#cat=cat.capitalize().strip()
-						cat=cat.strip()
-						cursor_cat.execute(queryCategories,(cat,))
-			except Exception as e:
-				self._debug(e)
-			self._debug(query)
+	def _processCategories(self,allCategories):
+		self._debug("Populating categories")
+		categories_table=os.path.basename(self.categories_table).replace(".db","")
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		queryDelete="DELETE FROM {}".format(categories_table)
+		cursor_cat.execute(queryDelete)
+		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
+		try:
+			for cat in allCategories:
+				if cat!='' and isinstance(cat,str):
+					#cat=cat.capitalize().strip()
+					cat=cat.strip()
+					cursor_cat.execute(queryCategories,(cat,))
+		except Exception as e:
+			self._debug(e)
+		self._debug(queryCategories)
 		self.closeConnection(db_cat)
 	#def _processCategories
 
@@ -338,6 +375,25 @@ class sqlHelper():
 		retval=([],[])
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
+		blacklisted=False
+		if self.whitelist==True:
+			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson))
+		if self.blacklist==True and blacklisted==False:
+			blacklisted=self._checkBlacklisted(pkgname,pkgdataJson)
+		if blacklisted==False:
+			description=pkgdataJson.get('description','')
+			if (isinstance(description,str)==False) or (description==''):
+				description=str(pkgdataJson.get('summary',''))
+			description=description.replace("-"," ")
+			description=description.replace("."," ")
+			description=description.replace(","," ")
+			descriptionArray=description.split()
+			for word in self.wordlistFilter.get('words',[]):
+				if word in descriptionArray:
+					blacklisted=True
+					break
+		if blacklisted==True:
+			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()
 		if row:
@@ -350,15 +406,19 @@ class sqlHelper():
 					pkgdataJson['categories'][0]=categories[idx]
 					pkgdataJson['categories'][idx]=categories[0]
 				categories=pkgdataJson.get('categories',[])
+			categoriesSet=list(set(categories)-set(self.noShowCategories))
+			categories=categoriesSet
 				
-			if (len(categories)>=1):
-				cat0=categories[0]
-				if len(categories)>1:
-					cat1=categories[-1]
-				if len(categories)>2:
-					cat2=categories[-2]
-			if ("Lliurex" in categories) and ("Lliurex" not in [cat0,cat1,cat2]):
+			while len(categories)<3:
+				categories.append("")
+			if ("Lliurex" in categories):
 				cat0="Lliurex"
+				cat1=categories[0]
+				cat2=categories[-1]
+			else:
+				cat0=categories[0]
+				cat1=categories[-1]
+				cat2=categories[-2]
 			if isinstance(pkgdataJson['versions'],str):
 				states=pkgdataJson.get('state')
 				pkgdataJson['installed']={}
@@ -369,6 +429,38 @@ class sqlHelper():
 			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
 		return(retval)
 	#def _addPkgToQuery
+
+	def _checkBlacklisted(self,pkgname,data):
+		blacklisted=False
+		filters=self.blacklistFilter.get('blacklist',{})
+		categories=data.get('categories')
+		if "Lliurex" not in categories and "LliureX" not in categories:
+			#for blacklist in self.blacklistCategories:
+			blackC=list(set(filters.get('categories',[])))
+			fcategories=list(set(categories))
+			if len(blackC+fcategories)!=len(set(blackC+fcategories)):
+			#If len==len(set) there's no matching categories
+				blacklisted=True
+		if pkgname in filters.get('apps',[]) and blacklisted==False:
+			blacklisted=True
+		return(blacklisted)
+	#def _checkBlacklisted
+
+	def _checkWhitelisted(self,pkgname,data):
+		whitelisted=False
+		categorySet=list(set(data.get('categories',[])))
+		filters=self.whitelistFilter.get('whitelist',{})
+		if pkgname in filters.get('apps',[]):
+			whitelisted=True
+		else:
+			whiteC=list(set(filters.get('categories',[])))
+			whitelisted=True
+			if len(whiteC)>0:
+				if len(whiteC+categorySet)==len(set(whiteC+categorySet)):
+				#If len==len(set) there's no matching categories
+					whitelisted=False
+		return(whitelisted)
+	#def _checkBlacklisted
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -406,7 +498,7 @@ class sqlHelper():
 							update=True
 							break
 				if update:
-						break
+					break
 		return(update)
 	#def _chkNeedUpdate
 
@@ -434,9 +526,10 @@ class sqlHelper():
 				mergepkgdataJson[key].extend(item)
 				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))>0):
-					mergepkgdataJson[key]=item
-				elif len(item)>len(mergepkgdataJson.get(key,'')):
+				#if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))<len(item)):
+				#	mergepkgdataJson[key]=item
+				#elif len(item)>len(mergepkgdataJson.get(key,'')):
+				if len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
 	#def _mergePackage
@@ -459,8 +552,9 @@ class sqlHelper():
 		#Copy tmp to definitive
 		self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
 		copyfile(self.main_tmp_table,self.main_table)
-		self._print("Removing tmp file")
+		self._debug("Removing tmp file")
 		os.remove(self.main_tmp_table)
+		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	
 	def getTableStatus(self,pkg,bundle):

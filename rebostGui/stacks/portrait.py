@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -18,6 +18,7 @@ i18n={
 	"DESCRIPTION":_("Show applications"),
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
+	"SEARCH":_("Search"),
 	"ALL":_("All")
 	}
 
@@ -29,6 +30,8 @@ class QPushButtonRebostApp(QPushButton):
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
+		self.label=QLabel(text)
+		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
 		icn=''
@@ -38,13 +41,11 @@ class QPushButtonRebostApp(QPushButton):
 			icn2=QtGui.QIcon.fromTheme('application-x-executable')
 			icn=icn2.pixmap(128,128)
 		if icn:
-			self.icon.setPixmap(icn.scaled(128,128))
+			self.load(icn)
 		elif img.startswith('http'):
 			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
-		self.label=QLabel(text)
-		self.label.setWordWrap(True)
 		lay=QHBoxLayout()
 		lay.addStretch()
 		lay.addWidget(self.icon,0)
@@ -54,6 +55,8 @@ class QPushButtonRebostApp(QPushButton):
 	
 	def load(self,*args):
 		img=args[0]
+		if "0" in str(self.app.get('state',1)):
+			self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 		self.icon.setPixmap(img.scaled(128,128))
 	#def load
 	
@@ -74,6 +77,7 @@ class portrait(confStack):
 		self.description=i18n.get('DESCRIPTION')
 		self.icon=('application-x-desktop')
 		self.tooltip=i18n.get('TOOLTIP')
+		self.i18nCat={}
 		self.index=1
 		self.appsToLoad=50
 		self.appsLoaded=0
@@ -97,16 +101,34 @@ class portrait(confStack):
 		catList=json.loads(self.rc.execute('getCategories'))
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
+		#Sort categories
+		translatedCategories=[]
 		for cat in catList:
-			#if cat.islower() it's a category from system without appstream info 
-			if cat in seenCats.keys() or cat.islower():
+			if _(cat) in self.i18nCat.keys() or cat.islower():
 				continue
-			seenCats[cat.capitalize()]=cat
+			translatedCategories.append(_(cat))
+			self.i18nCat[_(cat)]=cat
+		translatedCategories.sort()
+
+
+		for cat in translatedCategories:
+			#if cat.islower() it's a category from system without appstream info 
 			self.cmbCategories.addItem(cat)
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
+		wdg=QWidget()
+		hbox=QHBoxLayout()
+		btnHome=QPushButton()
+		icn=QtGui.QIcon.fromTheme("home")
+		btnHome.setIcon(icn)
+		btnHome.clicked.connect(self._goHome)
+		hbox.addWidget(btnHome)
+		hbox.addWidget(self.cmbCategories)
+		wdg.setLayout(hbox)
+		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
+		self.searchBox.setToolTip(i18n["SEARCH"])
+		self.searchBox.setPlaceholderText(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
@@ -136,7 +158,10 @@ class portrait(confStack):
 			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
 			self._debug("Loading cat {}".format(cat))
 		else:
-			categories=",".join(["\"{}\"".format(self.cmbCategories.itemText(i)) for i in range(self.cmbCategories.count())])
+			categories=[]
+			for i18ncat,cat in self.i18nCat.items():
+				categories.append("\"{}\"".format(cat))
+			categories=",".join(categories)
 			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
 		return(apps)
 	#def _getAppList
@@ -144,6 +169,14 @@ class portrait(confStack):
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
 	#def _shuffleApps
+
+	def _goHome(self):
+		self.apps=self._getAppList()
+		self._shuffleApps()
+		self.resetScreen()
+		self.cmbCategories.setCurrentIndex(0)
+		self.updateScreen()
+	#def _goHome
 
 	def _resetSearchBtnIcon(self):
 		txt=self.searchBox.text()
@@ -187,7 +220,8 @@ class portrait(confStack):
 		self.setCursor(cursor)
 		self.searchBox.setText("")
 		self.resetScreen()
-		cat=self.cmbCategories.currentText()
+		i18ncat=self.cmbCategories.currentText()
+		cat=self.i18nCat.get(i18ncat,i18ncat)
 		if cat==i18n.get("ALL"):
 			cat=""
 		self.apps=self._getAppList(cat)
@@ -240,7 +274,10 @@ class portrait(confStack):
 	def _loadDetails(self,*args):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=3,parms=args)
+#		self.stack.gotoStack(idx=3,parms=(args))
+		#Refresh all pkg info
+		app=self.rc.showApp(args[0].get('name',''))
+		self.stack.gotoStack(idx=3,parms=app)
 	#def _loadDetails
 
 	def _gotoSettings(self):

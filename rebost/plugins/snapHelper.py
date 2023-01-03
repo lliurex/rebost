@@ -23,14 +23,17 @@ class snapHelper():
 		self.priority=1
 		self.lastUpdate="/usr/share/rebost/tmp/sn.lu"
 		self.snap=Snapd.Client()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("snap: %s"%str(msg))
+			dbg="snap: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -62,7 +65,11 @@ class snapHelper():
 			self._debug(e)
 		processed=[]
 		for section in sections:
-			apps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			try:
+				apps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+			except Exception as e:
+				print(e)
+				break
 			if self._chkNeedUpdate(len(apps),section):
 				updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
 				with open(updateFile,'w') as f:

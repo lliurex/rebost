@@ -11,15 +11,13 @@ import threading
 import shutil
 from bs4 import BeautifulSoup
 import rebostHelper
-import logging
 from queue import Queue
 import html2text
 import hashlib
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
-		logging.basicConfig(format='%(message)s')
+		self.dbg=True
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["load"]
@@ -40,14 +38,18 @@ class appimageHelper():
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
 		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
 		self._debug("Debug %s"%self.dbg)
+	#def setDebugEnabled(self,enable=True):
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("appimage: %s"%str(msg))
+			dbg="appimage: {}".format(msg)
+			rebostHelper._debug(dbg)
+	 #def _debug
 	
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -268,7 +270,16 @@ class appimageHelper():
 		bundle=rebostPkg['bundle'].get('appimage','')
 		self._debug("Base URL {}".format(bundle))
 		installerUrl=self._get_releases(bundle)
-		if len(installerUrl.split('/'))>2:
+
+		version=""
+		splittedUrl=installerUrl.split('/')
+		if "releases" in installerUrl:
+			if splittedUrl[-2].startswith("v"):
+				version=splittedUrl[-2].replace("v","")
+			elif splittedUrl[-2].replace(".","").isnumeric():
+				version=splittedUrl[-2]
+
+		if version=="" and  len(splittedUrl)>2: 
 			self._debug("Installer {}".format(installerUrl))
 			pkgname=installerUrl.split('/')[-1]
 			pkgname=".".join(pkgname.split(".")[:-1])
@@ -287,16 +298,16 @@ class appimageHelper():
 					if i.isnumeric():
 						version+="{}.".format(i)
 				version=version[:-1]
-			else:
-				version="0.1"
-			rebostPkg['versions'].update({'appimage':"{}".format(version)})
+		if version=="":
+			version="0.1"
+		rebostPkg['versions'].update({'appimage':"{}".format(version)})
 		if installerUrl:
 			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
 			if rebostPkg.get('icon','')!='' and not os.path.isfile(rebostPkg.get('icon')):
 				rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
 		#Uncomment for remove bundle if not url 
-		#else:
-		#	rebostPkg['bundle'].pop('appimage',None)
+		else:
+			rebostPkg['bundle'].pop('appimage',None)
 		#rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
 		#rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 		#rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()

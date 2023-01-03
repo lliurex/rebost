@@ -23,17 +23,18 @@ class appstreamHelper():
 		self.wrkDir='/tmp/.cache/rebost/xml/appstream'
 		self.lastUpdate="/usr/share/rebost/tmp/as.lu"
 		#self._loadStore()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("appstream: %s"%str(msg))
-
-	def _print(self,msg):
-		logging.warning("appstream: %s"%str(msg))
+			dbg="appstream: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug(self,msg):
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -49,6 +50,7 @@ class appstreamHelper():
 		store=self._get_appstream_catalogue()
 		update=self._chkNeedUpdate(store)
 		if update:
+			store=self._generate_store(store)
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
@@ -94,7 +96,6 @@ class appstreamHelper():
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:
 			store.load(flag,None)
-		store=self._generate_store(store)
 		self._debug("End loading appstream metadata")
 		return(store)
 
@@ -146,8 +147,8 @@ class appstreamHelper():
 						store.add_app(pkg)
 					else:
 						print(app.validate())
-				except:
-					pass
+				except Exception as e:
+					print("{0}:{1}".format(idx,e))
 				added.append(pkg.get_id())
 		return(store)
 	#def _generate_store

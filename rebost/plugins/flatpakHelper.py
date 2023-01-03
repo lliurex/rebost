@@ -24,15 +24,18 @@ class flatpakHelper():
 		self.priority=1
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
 		self.lastUpdate="/usr/share/rebost/tmp/fp.lu"
-		#self._loadStore()
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
+	#def setDebugEnabled
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("flatpak: %s"%str(msg))
+			dbg="flatpak: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -94,8 +97,12 @@ class flatpakHelper():
 			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
-		self._debug("Formatting flatpak metadata")
-		store=self._generate_store(store,flInst,srcDir)
+		#self._debug("Formatting flatpak metadata")
+		for app in store.get_apps():
+			idx=app.get_id()
+			icon=self._get_app_icons(srcDir,idx)
+			if icon:
+				app.add_icon(icon)
 		self._debug("End loading flatpak metadata")
 		return(store)
 
@@ -187,14 +194,26 @@ class flatpakHelper():
 	def _get_app_icons(self,srcDir,idx):
 		iconPath=''
 		icon=None
-		icon64=os.path.join(srcDir,"icons/64x64")
-		icon128=os.path.join(srcDir,"icons/128x128")
 		idx=idx.replace(".desktop","")
-		if os.path.isfile(os.path.join(icon128,"{}.png".format(idx))):
-			iconPath=os.path.join(icon128,"{}.png".format(idx))
-		elif os.path.isfile(os.path.join(icon64,"{}.png".format(idx))):
-			iconPath=os.path.join(icon64,"{}.png".format(idx))
+		iconDirs=[]
+		baseDir=os.path.dirname(srcDir)
+		for d in os.listdir(baseDir):
+			f=os.path.join(baseDir,d,"icons")
+			if os.path.isdir(f):
+				iconDirs.append(f)
+		for iconDir in iconDirs:
+
+			icon64=os.path.join(iconDir,"64x64")
+			icon128=os.path.join(iconDir,"128x128")
+			if os.path.isfile(os.path.join(icon128,"{}.png".format(idx))):
+				iconPath=os.path.join(icon128,"{}.png".format(idx))
+				break
+			elif os.path.isfile(os.path.join(icon64,"{}.png".format(idx))):
+				iconPath=os.path.join(icon64,"{}.png".format(idx))
+				break
 		if iconPath!='':
+			if "regex" in iconPath:
+				print(iconPath)
 			icon=appstream.Icon()
 			icon.set_kind(appstream.IconKind.LOCAL)
 			icon.set_filename(iconPath)

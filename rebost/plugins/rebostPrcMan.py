@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os,shutil
-import logging
 import sqlHelper
 from appconfig.appConfigN4d import appConfigN4d as n4dClient
 import json
@@ -17,7 +16,6 @@ class rebostPrcMan():
 		self.actions=["remote","test","install","remove","progress"]
 		self.packagekind="*"
 		self.enabled=True
-		logging.basicConfig(format='%(message)s')
 		self.sql=sqlHelper.sqlHelper()
 		self.failProc=0
 		if os.path.isfile(self.sql.proc_table):
@@ -30,19 +28,24 @@ class rebostPrcMan():
 		self.priority=100
 		self.gui=False
 		self.n4dClients={}
+	#def __init__
 
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
-		self._debug("Debug %s"%self.dbg)
+		self._debug("Debug {}".format(self.dbg))
 	#def setDebugEnabled
+
+	def _log(self,msg):
+		dbg="prcMan: {}".format(msg)
+		rebostHelper.logmsg(dbg)
+	#def _log
 
 	def _debug(self,msg):
 		if self.dbg:
-			logging.warning("prcMan: %s"%str(msg))
+			dbg="prcMan: {}".format(msg)
+			rebostHelper._debug(dbg)
+	#def _debug
 
-	def _print(self,msg):
-		logging.warning("prcMan: %s"%str(msg))
-	
 	def execute(self,*argcc,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
 		user=''
@@ -185,6 +188,7 @@ class rebostPrcMan():
 			try:
 				bundles=json.loads(rebostpkg).get('bundle',"not found")
 			except Exception as e:
+				print(e)
 				if isinstance(rebostpkg,dict):
 					bundles=rebostpkg.get('bundle',"not found")
 				else:
@@ -207,12 +211,18 @@ class rebostPrcMan():
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}'.format(bundles)})]
 		else:
 			rebostpkg=''
-			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} not found'.format(pkgname)})]
+			rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'{0} for {1} not found'.format(bundle,pkgname)})]
 		return(rebostpkg,bundle,rebostPkgList)
 	#def _chk_pkg_format
 
 	def _mpManagePackage(self,action,epifile,username,procQ):
-		self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		#self._debug("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		self._log("Starting process for {0} {1} as {2}".format(action,epifile,username))
+		logDir=os.path.dirname(os.path.dirname(epifile))
+		if os.path.isdir(logDir)==False:
+			logDir="/tmp"
+		logFile=os.path.join(logDir,"{}".format(os.path.basename(epifile).replace(".epi",".log")))
+		self._log("Full process log at {}".format(logFile))
 		if self.gui==True:
 			return
 			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
@@ -220,21 +230,24 @@ class rebostPrcMan():
 			cmd=["epic",action,"-nc","-u",epifile]
 			if action=="remove":
 				cmd=["epic","uninstall","-nc","-u",epifile]
-		self._debug(cmd)
-		proc=subprocess.Popen(cmd)
+		#self._debug(cmd)
+		self._log(cmd)
+		f=open(logFile,"w")
+		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True)
 		procQ.put(proc.pid)
 		while proc.poll()==None:
-			time.sleep(0.1)
+			time.sleep(0.01)
+		f.close()
 	#def _mpManagePackage
 
 	def _remoteInstall(self,usern,episcript):
 		if usern in self.n4dClients.keys():
 			n4d=self.n4dClients.get(usern)
-			self._print("Select n4d proxy")
+			self._debug("Select n4d proxy")
 		else:
 			n4d=n4dClient(username=usern)
 			self.n4dClients.update({usern:n4d})
-			self._print("Add n4d proxy")
+			self._debug("Add n4d proxy")
 		if n4dkey:
 			n4d.setCredentials(n4dkey=n4dkey)
 		pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
@@ -277,7 +290,7 @@ class rebostPrcMan():
 			tmpDir=os.path.dirname(tmpfile)
 			if os.path.isdir(tmpDir):
 				try:
-					self._print("Removing tmp dir {}".format(tmpDir))
+					self._debug("Removing tmp dir {}".format(tmpDir))
 					shutil.rmtree(tmpDir)
 				except Exception as e:
 					self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))

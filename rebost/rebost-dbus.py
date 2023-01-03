@@ -175,7 +175,7 @@ class rebostDbusMethods(dbus.service.Object):
 			pkg=json.loads(strpkg)
 			states=pkg.get('state',{})
 			installed=pkg.get('installed',{})
-			if isinstance(installed,str):
+			if isinstance(installed,dict)==False:
 				installed={}
 			versions=pkg.get('versions',{})
 			for bundle,state in states.items():
@@ -188,8 +188,8 @@ class rebostDbusMethods(dbus.service.Object):
 							app=json.loads(apps[0])
 							versions=app.get('versions',{})
 							self._debug(app)
-						installed=installed.get(bundle,0)
-						if ((installed!=versions.get(bundle,0)) and (installed!=0)):
+						installedStr=installed.get(bundle,0)
+						if ((installedStr!=versions.get(bundle,0)) and (installedStr!=0)):
 							filterData.append(strpkg)
 		ret=json.dumps(filterData)
 		return (ret)
@@ -208,11 +208,13 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='', out_signature='b')
 	def restart(self):
 		ret=True
-		self.rebost=None
-		self.rebost=rebost.Rebost()
+		#self.rebost=None
+		#self.rebost=rebost.Rebost()
 		try:
 			self.rebost.run()
-		except:
+		except Exception as e:
+			print("Critial error relaunching")
+			print(str(e))
 			ret=False
 #		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)

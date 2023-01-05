@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QVBoxLayout,QTableWidget,QHeaderView,QHBoxLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -75,7 +75,10 @@ class QLabelRebostApp(QLabel):
 			icn2=QtGui.QIcon.fromTheme('application-x-executable')
 			icn=icn2.pixmap(128,128)
 		if icn:
-			self.setPixmap(icn.scaled(128,128))
+			wsize=128
+			if "Zomando" in app.get("categories") or "zero" in app.get('pkgname').lower():
+				wsize=235
+			self.setPixmap(icn.scaled(wsize,128))
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
@@ -120,39 +123,74 @@ class details(confStack):
 		self.btnBack.clicked.connect(self._return)
 		self.btnBack.setIconSize(QSize(48,48))
 		self.btnBack.setFixedSize(QSize(64,64))
-		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
-		self.lblIcon=QLabelRebostApp()
-		self.box.addWidget(self.lblIcon,1,0,2,1,Qt.AlignTop)
+		self.box.addWidget(self.btnBack,0,0,1,1)
+		self.lblIcon=QLabelRebostApp()         
+		self.box.addWidget(self.lblIcon,0,1,2,1,Qt.AlignTop|Qt.AlignLeft)
 		self.lblName=QLabel()
-		self.box.addWidget(self.lblName,0,1,1,1,Qt.AlignTop)
+		self.box.addWidget(self.lblName,0,2,1,1,Qt.AlignTop)
 		self.lblSummary=QLabel()
 		self.lblSummary.setWordWrap(True)
-		self.box.addWidget(self.lblSummary,1,1,1,1,Qt.AlignTop)
-		self.lblDesc=appconfigControls.QScrollLabel()
-		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-		self.lblDesc.setWordWrap(True)	  
-		self.box.addWidget(self.lblDesc,2,1,4,1,Qt.AlignTop|Qt.AlignLeft)
+		self.box.addWidget(self.lblSummary,1,2,1,1,Qt.AlignTop)
+		self.launchers=QWidget()
+		lay=QHBoxLayout()
 		self.cmbInstall=QComboBox()
 		self.cmbInstall.activated.connect(self._genericEpiInstall)
-		self.box.addWidget(self.cmbInstall,3,0,1,1,Qt.AlignTop)
+		#self.box.addWidget(self.cmbInstall,3,0,1,1,Qt.AlignTop)
+		lay.addWidget(self.cmbInstall,Qt.AlignLeft)
 		self.cmbRemove=QComboBox()
 		self.cmbRemove.activated.connect(self._genericEpiInstall)
-		self.box.addWidget(self.cmbRemove,4,0,1,1,Qt.AlignTop)
-		self.Launchers=QWidget()
+		lay.addWidget(self.cmbRemove,Qt.AlignLeft)
+		#self.box.addWidget(self.cmbRemove,4,0,1,1,Qt.AlignTop)
 		self.cmbOpen=QComboBox()
 		self.cmbOpen.activated.connect(self._runApp)
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.btnZomando.setVisible(False)
-		self.box.addWidget(self.btnZomando,5,0,1,1)
-		self.box.addWidget(self.cmbOpen,5,0,1,1)
+		#self.box.addWidget(self.btnZomando,4,0,1,1)
+		lay.addWidget(self.btnZomando,Qt.AlignLeft)
+		#self.box.addWidget(self.cmbOpen,5,0,1,1)
+		lay.addWidget(self.cmbOpen,Qt.AlignLeft)
+		self.launchers.setLayout(lay)
+		self.box.addWidget(self.launchers,2,0,1,2,Qt.AlignTop|Qt.AlignLeft)
+#		self.tableBox=QTableWidget(1,1)
+#
+#		self.tableBox.verticalHeader().hide()
+#		self.tableBox.horizontalHeader().hide()
+#		#self.tableBox.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+#		self.tableBox.verticalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
+#		self.box.addWidget(self.tableBox,2,1,1,1)
+		self.lblDesc=appconfigControls.QScrollLabel()
+		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+		self.lblDesc.setWordWrap(True)	  
+#		self.tableBox.setCellWidget(0,0,self.lblDesc)
+		self.screenShot=appconfigControls.QScreenShotContainer()
+		#self.tableBox.setCellWidget(1,0,self.screenShot)
+		self.box.addWidget(self.lblDesc,3,0,1,3)
+		#self.box.addWidget(launchers,3,0,1,1)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
-		self.box.addWidget(self.lblHomepage,6,1,1,1,Qt.AlignLeft|Qt.AlignBottom)
-		self.Screenshot=appconfigControls.QScreenShotContainer()
-		self.box.addWidget(self.Screenshot,7,0,1,2,Qt.AlignTop)
+		self.box.addWidget(self.lblHomepage,4,0,1,3)
+		#self.tableBox.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
+		self.box.addWidget(self.screenShot,5,0,1,3,Qt.AlignTop)
+		self.box.setColumnStretch(0,0)
+		self.box.setColumnStretch(1,0)
+		self.box.setColumnStretch(2,2)
+		self.box.setRowStretch(0,0)
+		self.box.setRowStretch(1,0)
+		self.box.setRowStretch(2,0)
+		self.box.setRowStretch(3,2)
+		self.box.setRowStretch(4,1)
 		self.setLayout(self.box)
 	#def _load_screen
+
+	def resizeEvent(self,*args):
+		print(self.sizeHint())
+		#self.lblDesc.setMaximumWidth(self.sizeHint().width()-124)#,self.height()/2)
+		#self.lblDesc.setMaximumHeight(self.tableBox.sizeHint().height())#,self.height()/2)
+		#self.lblDesc.setMaximumHeight(self.screenShot.sizeHint().height())#,self.height()/2)
+		#self.lblDesc.setWidth(self.screenShot.width())#,self.height()/2)
+		#self.screenShot.setFixedWidth(self.lblDesc.width())#,self.height()/2)
+		pass
 
 	def _runZomando(self):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
@@ -279,6 +317,8 @@ class details(confStack):
 			if name!='':
 				status=self.rc.getAppStatus(name,bundle)
 				self.app['state'][bundle]=str(status)
+		#self.lblDesc.setMaximumWidth(self.height())#,self.height()/2)
+		#self.lblDesc.setMaximumHeight(10)#,self.height()/2)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def setParms
@@ -294,9 +334,7 @@ class details(confStack):
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
-		self.lblDesc.setText(html.unescape(self.app.get('description','')))
-		self.lblDesc.setFixedWidth(self.height())#,self.height()/2)
-		self.lblDesc.setFixedHeight(self.height()/3)#,self.height()/2)
+		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
 		versions=self.app.get('versions',{})
 		self.cmbRemove.setVisible(False)
 		self.cmbOpen.setVisible(False)
@@ -354,7 +392,7 @@ class details(confStack):
 		self.lblHomepage.setToolTip("{}".format(homepage))
 		try:
 			for icn in self.app.get('screenshots',[]):
-				self.Screenshot.addImage(icn)
+				self.screenShot.addImage(icn)
 		except Exception as e:
 			print(e)
 	#def _udpate_screen
@@ -375,7 +413,7 @@ class details(confStack):
 					self.app={}
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
-		self.Screenshot.clear()
+		self.screenShot.clear()
 		self.btnZomando.setVisible(False)
 		self.cmbInstall.clear()
 		self.cmbInstall.setPlaceholderText("{}...".format(i18n.get("INSTALL")))
@@ -383,7 +421,7 @@ class details(confStack):
 		self.cmbRemove.setPlaceholderText("{}...".format(i18n.get("REMOVE")))
 		self.cmbOpen.clear()
 		self.cmbOpen.setPlaceholderText("{}...".format(i18n.get("RUN")))
-		self.lblSummary.setFixedWidth(self.height())
+		#self.lblSummary.setFixedWidth(self.height())
 		self.lblHomepage.setText("")
 		self.app['name']=self.app.get('name','').replace(" ","")
 	#def _initScreen

@@ -324,7 +324,10 @@ class details(confStack):
 			text+="<strong>{}</strong>".format(license)
 		self.lblHomepage.setText(text)
 		self.lblHomepage.setToolTip("{}".format(homepage))
-		for icn in self.app.get('screenshots',[]):
+		scrs=self.app.get('screenshots',[])
+		if isinstance(scrs,list)==False:
+			scrs=[]
+		for icn in scrs:
 			try:
 				self.screenShot.addImage(icn)
 			except Exception as e:

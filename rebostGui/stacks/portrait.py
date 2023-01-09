@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -19,7 +19,11 @@ i18n={
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
 	"SEARCH":_("Search"),
-	"ALL":_("All")
+	"ALL":_("All"),
+	"FILTERS":_("Filters"),
+	"AVAILABLE":_("Available"),
+	"INSTALLED":_("Installed"),
+	"UPGRADABLE":_("Upgradables")
 	}
 
 class QPushButtonRebostApp(QPushButton):
@@ -96,19 +100,31 @@ class portrait(confStack):
 		self.config=self.getConfig()
 		self.box=QGridLayout()
 		self.setLayout(self.box)
+		wdg=QWidget()
+		hbox=QHBoxLayout()
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
+		hbox.addWidget(self.cmbCategories)
 		self._populateCategories()
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		wdg=QWidget()
-		hbox=QHBoxLayout()
 		btnHome=QPushButton()
 		icn=QtGui.QIcon.fromTheme("home")
 		btnHome.setIcon(icn)
 		btnHome.clicked.connect(self._goHome)
 		hbox.addWidget(btnHome)
-		hbox.addWidget(self.cmbCategories)
+		self.btnFilters=appconfigControls.QCheckableComboBox()
+		self.btnFilters.clicked.connect(self._filterView)
+		self.btnFilters.activated.connect(self._selectFilters)
+		self.btnFilters.setText(i18n.get("FILTERS"))
+		self.btnFilters.addItem(i18n.get("ALL"))
+		self.btnFilters.addItem(i18n.get("INSTALLED"),state=False)
+		self.btnFilters.addItem("Snap",state=False)
+		self.btnFilters.addItem("Appimage",state=False)
+		self.btnFilters.addItem("Flatpak",state=False)
+		self.btnFilters.addItem("Zomando",state=False)
+		icn=QtGui.QIcon.fromTheme("view-filter")
+		hbox.addWidget(self.btnFilters)
 		wdg.setLayout(hbox)
 		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
@@ -182,6 +198,74 @@ class portrait(confStack):
 		self.updateScreen()
 	#def _goHome
 
+	def _filterView(self):
+		filters={}
+		appsFiltered=[]
+		applyFilter=False
+		applyFilterBundle=False
+		self.resetScreen()
+		self.apps=self._getAppList()
+		for item in self.btnFilters.getItems():
+			filters[item.text().lower()]=item.checkState()
+			if item.checkState()==Qt.Checked:
+				if item.text().lower() in ["zomando","flatpak","appimage","snap"]:
+					applyFilterBundle=True
+				applyFilter=True
+		if applyFilterBundle==False:
+			for bund in ["zomando","flatpak","appimage","snap"]:
+				filters[bund]=Qt.Checked
+			
+		self.resetScreen()
+		if filters[i18n.get("ALL").lower()]!=Qt.Checked and applyFilter==True:
+			for app in self.apps:
+				japp=json.loads(app)
+				#Filter bundles
+				tmpApp=None
+				for bund in japp.get('bundle',{}).keys():
+					if bund in filters.keys():
+						if filters[bund]==Qt.Checked:
+							tmpApp=app
+					if tmpApp:
+						if filters.get(i18n.get("INSTALLED",'').lower())==Qt.Checked:
+							state=japp.get('state',{})
+							print(state)
+							if state.get(bund,"1")!="0":
+								tmpApp=None
+						if filters.get(i18n.get("UPGRADABLE",'').lower())==Qt.Checked:
+							state=japp.get('state',{})
+							installed=japp.get('installed',{}).get(bund,"")
+							if state.get(bund,"1")=="0":
+								available=japp.get('versions',{}).get(bund,"")
+								if available=="" or available==installed:
+									tmpApp=None
+							else:
+								tmpApp=None
+				if tmpApp:
+					appsFiltered.append(app)
+			self.apps=appsFiltered
+			self.updateScreen()
+		else:
+			self._goHome()
+	#def _filterView
+
+	def _selectFilters(self,*args):
+		idx=self.btnFilters.currentIndex()
+		if idx==1:
+			item=self.btnFilters.model().item(idx)
+			if item.checkState()==Qt.Checked:
+				state=Qt.Unchecked
+				init=2
+			else:
+				state=Qt.Checked	
+				init=3
+			for i in (range(init,self.btnFilters.count())):
+				item=self.btnFilters.model().item(i)
+				item.setCheckState(state)
+		else:
+			item=self.btnFilters.model().item(1)
+			item.setCheckState(Qt.Unchecked)
+	#def _selectFilters
+
 	def _resetSearchBtnIcon(self):
 		txt=self.searchBox.text()
 		if txt==self.oldSearch:
@@ -241,7 +325,7 @@ class portrait(confStack):
 		if applist==None:
 			apps=self.apps[idx:idx2]
 		else:
-			apps=applist
+			apps=applist[idx:idx2]
 		col=0
 		cont=self.appsToLoad
 		rowspan=random.randint(1,3)

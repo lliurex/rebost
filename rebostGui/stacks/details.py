@@ -1,19 +1,16 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QVBoxLayout,QTableWidget,QHeaderView,QHBoxLayout
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
 from appconfig import appconfigControls
 from rebost import store
 import subprocess
-from multiprocessing import Process
 import json
-import random
 import html
 import gettext
-import requests
 _ = gettext.gettext
 QString=type("")
 
@@ -56,7 +53,6 @@ class epiClass(QThread):
 		return launched
 	#def run
 #class epiClass
-
 
 class QLabelRebostApp(QLabel):
 	clicked=Signal("PyObject")
@@ -118,8 +114,7 @@ class details(confStack):
 	def _load_screen(self):
 		self.box=QGridLayout()
 		self.btnBack=QPushButton()
-		icn=QtGui.QIcon.fromTheme("go-previous")
-		self.btnBack.setIcon(icn)
+		self.btnBack.setIcon(QtGui.QIcon.fromTheme("go-previous"))
 		self.btnBack.clicked.connect(self._return)
 		self.btnBack.setIconSize(QSize(48,48))
 		self.btnBack.setFixedSize(QSize(64,64))
@@ -135,42 +130,27 @@ class details(confStack):
 		lay=QHBoxLayout()
 		self.cmbInstall=QComboBox()
 		self.cmbInstall.activated.connect(self._genericEpiInstall)
-		#self.box.addWidget(self.cmbInstall,3,0,1,1,Qt.AlignTop)
 		lay.addWidget(self.cmbInstall,Qt.AlignLeft)
 		self.cmbRemove=QComboBox()
 		self.cmbRemove.activated.connect(self._genericEpiInstall)
 		lay.addWidget(self.cmbRemove,Qt.AlignLeft)
-		#self.box.addWidget(self.cmbRemove,4,0,1,1,Qt.AlignTop)
 		self.cmbOpen=QComboBox()
 		self.cmbOpen.activated.connect(self._runApp)
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.btnZomando.setVisible(False)
-		#self.box.addWidget(self.btnZomando,4,0,1,1)
 		lay.addWidget(self.btnZomando,Qt.AlignLeft)
-		#self.box.addWidget(self.cmbOpen,5,0,1,1)
 		lay.addWidget(self.cmbOpen,Qt.AlignLeft)
 		self.launchers.setLayout(lay)
 		self.box.addWidget(self.launchers,2,0,1,2,Qt.AlignTop|Qt.AlignLeft)
-#		self.tableBox=QTableWidget(1,1)
-#
-#		self.tableBox.verticalHeader().hide()
-#		self.tableBox.horizontalHeader().hide()
-#		#self.tableBox.horizontalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-#		self.tableBox.verticalHeader().setSectionResizeMode(0,QHeaderView.Stretch)
-#		self.box.addWidget(self.tableBox,2,1,1,1)
 		self.lblDesc=appconfigControls.QScrollLabel()
 		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
-#		self.tableBox.setCellWidget(0,0,self.lblDesc)
 		self.screenShot=appconfigControls.QScreenShotContainer()
-		#self.tableBox.setCellWidget(1,0,self.screenShot)
 		self.box.addWidget(self.lblDesc,3,0,1,3)
-		#self.box.addWidget(launchers,3,0,1,1)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
 		self.box.addWidget(self.lblHomepage,4,0,1,3)
-		#self.tableBox.horizontalHeader().setSectionResizeMode(1,QHeaderView.Stretch)
 		self.box.addWidget(self.screenShot,5,0,1,3,Qt.AlignTop)
 		self.box.setColumnStretch(0,0)
 		self.box.setColumnStretch(1,0)
@@ -182,15 +162,6 @@ class details(confStack):
 		self.box.setRowStretch(4,1)
 		self.setLayout(self.box)
 	#def _load_screen
-
-	def resizeEvent(self,*args):
-		print(self.sizeHint())
-		#self.lblDesc.setMaximumWidth(self.sizeHint().width()-124)#,self.height()/2)
-		#self.lblDesc.setMaximumHeight(self.tableBox.sizeHint().height())#,self.height()/2)
-		#self.lblDesc.setMaximumHeight(self.screenShot.sizeHint().height())#,self.height()/2)
-		#self.lblDesc.setWidth(self.screenShot.width())#,self.height()/2)
-		#self.screenShot.setFixedWidth(self.lblDesc.width())#,self.height()/2)
-		pass
 
 	def _runZomando(self):
 		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
@@ -317,8 +288,6 @@ class details(confStack):
 			if name!='':
 				status=self.rc.getAppStatus(name,bundle)
 				self.app['state'][bundle]=str(status)
-		#self.lblDesc.setMaximumWidth(self.height())#,self.height()/2)
-		#self.lblDesc.setMaximumHeight(10)#,self.height()/2)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def setParms
@@ -340,6 +309,29 @@ class details(confStack):
 		self.cmbOpen.setVisible(False)
 		self.cmbInstall.setVisible(False)
 		bundles=list(self.app.get('bundle',{}).keys())
+		self._update_screen_controls(bundles)
+		homepage=self.app.get('homepage','')
+		text=''
+		if homepage:
+			if homepage.endswith("/"):
+				homepage=homepage.rstrip("/")
+			desc=homepage
+			if len(homepage)>30:
+				desc="{}...".format(homepage[0:30])
+			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
+		license=self.app.get('license','')
+		if license:
+			text+="<strong>{}</strong>".format(license)
+		self.lblHomepage.setText(text)
+		self.lblHomepage.setToolTip("{}".format(homepage))
+		for icn in self.app.get('screenshots',[]):
+			try:
+				self.screenShot.addImage(icn)
+			except Exception as e:
+				print(e)
+	#def _udpate_screen
+
+	def _update_screen_controls(self,bundles):
 		pkgState=0
 		if "zomando" in bundles:
 			if "package" in bundles:
@@ -375,27 +367,7 @@ class details(confStack):
 				self.cmbInstall.setVisible(True)
 				self.cmbInstall.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
 				self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
-
-		homepage=self.app.get('homepage','')
-		text=''
-		if homepage:
-			if homepage.endswith("/"):
-				homepage=homepage.rstrip("/")
-			desc=homepage
-			if len(homepage)>30:
-				desc="{}...".format(homepage[0:30])
-			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
-		license=self.app.get('license','')
-		if license:
-			text+="<strong>{}</strong>".format(license)
-		self.lblHomepage.setText(text)
-		self.lblHomepage.setToolTip("{}".format(homepage))
-		try:
-			for icn in self.app.get('screenshots',[]):
-				self.screenShot.addImage(icn)
-		except Exception as e:
-			print(e)
-	#def _udpate_screen
+	#def _update_screen_controls
 
 	def _initScreen(self):
 		#Reload config if app has been epified

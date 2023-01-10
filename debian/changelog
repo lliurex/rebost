@@ -1,4 +1,4 @@
-rebost (0.9.31) focal; urgency=medium
+rebost (0.9.32) focal; urgency=medium
 
   * Release candidate 4. 
   * Disable packagekit plugin (as apt is/will be theorically blocked for users) 

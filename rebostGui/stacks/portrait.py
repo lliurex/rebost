@@ -76,6 +76,7 @@ class QPushButtonRebostApp(QPushButton):
 class portrait(confStack):
 	def __init_stack__(self):
 		self.dbg=False
+		self.enabled=True
 		self._debug("portrait load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
@@ -86,13 +87,13 @@ class portrait(confStack):
 		self.appsToLoad=50
 		self.appsLoaded=0
 		self.appsSeen=[]
-		self.enabled=True
+		self.appsRaw=[]
+		self.oldSearch=""
 		self.defaultRepos={}
 		self.rc=store.client()
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'
-		self.oldSearch=""
 		self.config={}
 	#def __init__
 
@@ -108,21 +109,15 @@ class portrait(confStack):
 		self._populateCategories()
 		self.apps=self._getAppList()
 		self._shuffleApps()
+		self.btnFilters=appconfigControls.QCheckableComboBox()
+		self.btnFilters.clicked.connect(self._filterView)
+		self.btnFilters.activated.connect(self._selectFilters)
+		self._loadFilters()
 		btnHome=QPushButton()
 		icn=QtGui.QIcon.fromTheme("home")
 		btnHome.setIcon(icn)
 		btnHome.clicked.connect(self._goHome)
 		hbox.addWidget(btnHome)
-		self.btnFilters=appconfigControls.QCheckableComboBox()
-		self.btnFilters.clicked.connect(self._filterView)
-		self.btnFilters.activated.connect(self._selectFilters)
-		self.btnFilters.setText(i18n.get("FILTERS"))
-		self.btnFilters.addItem(i18n.get("ALL"))
-		self.btnFilters.addItem(i18n.get("INSTALLED"),state=False)
-		self.btnFilters.addItem("Snap",state=False)
-		self.btnFilters.addItem("Appimage",state=False)
-		self.btnFilters.addItem("Flatpak",state=False)
-		self.btnFilters.addItem("Zomando",state=False)
 		icn=QtGui.QIcon.fromTheme("view-filter")
 		hbox.addWidget(self.btnFilters)
 		wdg.setLayout(hbox)
@@ -153,6 +148,17 @@ class portrait(confStack):
 		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
 	#def _load_screen
 
+	def _loadFilters(self):
+		self.btnFilters.clear()
+		self.btnFilters.setText(i18n.get("FILTERS"))
+		self.btnFilters.addItem(i18n.get("ALL"))
+		self.btnFilters.addItem(i18n.get("INSTALLED"),state=False)
+		self.btnFilters.addItem("Snap",state=False)
+		self.btnFilters.addItem("Appimage",state=False)
+		self.btnFilters.addItem("Flatpak",state=False)
+		self.btnFilters.addItem("Zomando",state=False)
+	#def _loadFilters
+
 	def _populateCategories(self): 
 		self.cmbCategories.clear()
 		self.i18nCat={}
@@ -171,6 +177,7 @@ class portrait(confStack):
 
 		for cat in translatedCategories:
 			self.cmbCategories.addItem(cat)
+	#def _populateCategories
 
 	def _getAppList(self,cat=''):
 		apps=[]
@@ -183,6 +190,7 @@ class portrait(confStack):
 				categories.append("\"{}\"".format(cat))
 			categories=",".join(categories)
 			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
+		self.appsRaw=apps
 		return(apps)
 	#def _getAppList
 
@@ -191,6 +199,7 @@ class portrait(confStack):
 	#def _shuffleApps
 
 	def _goHome(self):
+		self._loadFilters()
 		self.apps=self._getAppList()
 		self._shuffleApps()
 		self.resetScreen()
@@ -198,13 +207,13 @@ class portrait(confStack):
 		self.updateScreen()
 	#def _goHome
 
-	def _filterView(self):
+	def _filterView(self,getApps=True):
 		filters={}
 		appsFiltered=[]
+		self.apps=self.appsRaw
 		applyFilter=False
 		applyFilterBundle=False
 		self.resetScreen()
-		self.apps=self._getAppList()
 		for item in self.btnFilters.getItems():
 			filters[item.text().lower()]=item.checkState()
 			if item.checkState()==Qt.Checked:
@@ -214,8 +223,6 @@ class portrait(confStack):
 		if applyFilterBundle==False:
 			for bund in ["zomando","flatpak","appimage","snap"]:
 				filters[bund]=Qt.Checked
-			
-		self.resetScreen()
 		if filters[i18n.get("ALL").lower()]!=Qt.Checked and applyFilter==True:
 			for app in self.apps:
 				japp=json.loads(app)
@@ -228,7 +235,6 @@ class portrait(confStack):
 					if tmpApp:
 						if filters.get(i18n.get("INSTALLED",'').lower())==Qt.Checked:
 							state=japp.get('state',{})
-							print(state)
 							if state.get(bund,"1")!="0":
 								tmpApp=None
 						if filters.get(i18n.get("UPGRADABLE",'').lower())==Qt.Checked:
@@ -243,9 +249,7 @@ class portrait(confStack):
 				if tmpApp:
 					appsFiltered.append(app)
 			self.apps=appsFiltered
-			self.updateScreen()
-		else:
-			self._goHome()
+		self.updateScreen()
 	#def _filterView
 
 	def _selectFilters(self,*args):
@@ -291,8 +295,9 @@ class portrait(confStack):
 		else:
 			icn=QtGui.QIcon.fromTheme("dialog-cancel")
 			self.apps=json.loads(self.rc.execute('search',txt))
+			self.appsRaw=self.apps
 		self.searchBox.btnSearch.setIcon(icn)
-		self.updateScreen()
+		self._filterView(getApps=False)
 	#def _searchApps
 
 	def _searchAppsBtn(self):
@@ -313,7 +318,7 @@ class portrait(confStack):
 		if cat==i18n.get("ALL"):
 			cat=""
 		self.apps=self._getAppList(cat)
-		self.updateScreen()
+		self._filterView(getApps=False)
 	#def _loadCategory
 
 	def _getMoreData(self):

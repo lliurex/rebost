@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#: ../rebostGui/stacks/details.py:24 ../rebostGui/stacks/portrait.py:20
+#: ../rebostGui/stacks/details.py:21 ../rebostGui/stacks/portrait.py:20
 #: ../rebostGui/stacks/sources.py:20
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-29 12:04+0100\n"
+"POT-Creation-Date: 2023-01-10 09:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,32 +19,36 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../rebostGui/stacks/details.py:21
+#: ../rebostGui/stacks/details.py:18
 msgid "Details"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:22
+#: ../rebostGui/stacks/details.py:19
 msgid "Show application detail"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:23 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:20 ../rebostGui/stacks/portrait.py:19
 msgid "Navigate through all applications"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:25
+#: ../rebostGui/stacks/details.py:22
 msgid "Install"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:26
+#: ../rebostGui/stacks/details.py:23
 msgid "Open"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:24
 msgid "Remove"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:25
 msgid "Upgrade"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:26
+msgid "Zommand not found. Open Zero-Center?"
 msgstr ""
 
 #: ../rebostGui/stacks/portrait.py:17
@@ -61,6 +65,22 @@ msgstr ""
 
 #: ../rebostGui/stacks/portrait.py:22
 msgid "All"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:23
+msgid "Filters"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Available"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Installed"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:26
+msgid "Upgradables"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:17
@@ -285,6 +305,9 @@ msgid "Mixer"
 msgstr ""
 
 msgid "Monitor"
+msgstr ""
+
+msgid "Multimedia"
 msgstr ""
 
 msgid "Music"

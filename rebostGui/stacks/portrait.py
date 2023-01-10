@@ -83,6 +83,7 @@ class portrait(confStack):
 		self.icon=('application-x-desktop')
 		self.tooltip=i18n.get('TOOLTIP')
 		self.i18nCat={}
+		self.config={}
 		self.index=1
 		self.appsToLoad=50
 		self.appsLoaded=0
@@ -94,7 +95,6 @@ class portrait(confStack):
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'
-		self.config={}
 	#def __init__
 
 	def _load_screen(self):
@@ -103,6 +103,11 @@ class portrait(confStack):
 		self.setLayout(self.box)
 		wdg=QWidget()
 		hbox=QHBoxLayout()
+		btnHome=QPushButton()
+		icn=QtGui.QIcon.fromTheme("home")
+		btnHome.setIcon(icn)
+		btnHome.clicked.connect(self._goHome)
+		hbox.addWidget(btnHome)
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
 		hbox.addWidget(self.cmbCategories)
@@ -110,14 +115,9 @@ class portrait(confStack):
 		self.apps=self._getAppList()
 		self._shuffleApps()
 		self.btnFilters=appconfigControls.QCheckableComboBox()
-		self.btnFilters.clicked.connect(self._filterView)
 		self.btnFilters.activated.connect(self._selectFilters)
+		self.btnFilters.clicked.connect(self._filterView)
 		self._loadFilters()
-		btnHome=QPushButton()
-		icn=QtGui.QIcon.fromTheme("home")
-		btnHome.setIcon(icn)
-		btnHome.clicked.connect(self._goHome)
-		hbox.addWidget(btnHome)
 		icn=QtGui.QIcon.fromTheme("view-filter")
 		hbox.addWidget(self.btnFilters)
 		wdg.setLayout(hbox)
@@ -208,6 +208,7 @@ class portrait(confStack):
 	#def _goHome
 
 	def _filterView(self,getApps=True):
+		idx=self.btnFilters.currentIndex()
 		filters={}
 		appsFiltered=[]
 		self.apps=self.appsRaw
@@ -215,6 +216,8 @@ class portrait(confStack):
 		applyFilterBundle=False
 		self.resetScreen()
 		for item in self.btnFilters.getItems():
+			if item.text().lower()==i18n.get("ALL").lower() and idx<=1:
+				continue
 			filters[item.text().lower()]=item.checkState()
 			if item.checkState()==Qt.Checked:
 				if item.text().lower() in ["zomando","flatpak","appimage","snap"]:
@@ -223,7 +226,7 @@ class portrait(confStack):
 		if applyFilterBundle==False:
 			for bund in ["zomando","flatpak","appimage","snap"]:
 				filters[bund]=Qt.Checked
-		if filters[i18n.get("ALL").lower()]!=Qt.Checked and applyFilter==True:
+		if filters.get(i18n.get("ALL").lower(),Qt.Unchecked)!=Qt.Checked and applyFilter==True:
 			for app in self.apps:
 				japp=json.loads(app)
 				#Filter bundles
@@ -249,11 +252,14 @@ class portrait(confStack):
 				if tmpApp:
 					appsFiltered.append(app)
 			self.apps=appsFiltered
+		idx=self.btnFilters.currentIndex()
 		self.updateScreen()
 	#def _filterView
 
 	def _selectFilters(self,*args):
 		idx=self.btnFilters.currentIndex()
+		if idx<1:
+			return
 		if idx==1:
 			item=self.btnFilters.model().item(idx)
 			if item.checkState()==Qt.Checked:

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-29 12:04+0100\n"
-"PO-Revision-Date: 2022-12-29 12:08+0100\n"
+"POT-Creation-Date: 2023-01-10 09:50+0100\n"
+"PO-Revision-Date: 2023-01-10 09:52+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -14,33 +14,37 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../rebostGui/stacks/details.py:21
+#: ../rebostGui/stacks/details.py:18
 msgid "Details"
 msgstr "Detalles"
 
-#: ../rebostGui/stacks/details.py:22
+#: ../rebostGui/stacks/details.py:19
 msgid "Show application detail"
 msgstr "Mostrar información"
 
-#: ../rebostGui/stacks/details.py:23 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:20 ../rebostGui/stacks/portrait.py:19
 msgid "Navigate through all applications"
 msgstr "Mostrar todas las aplicaciones"
 
-#: ../rebostGui/stacks/details.py:25
+#: ../rebostGui/stacks/details.py:22
 msgid "Install"
 msgstr "Instala"
 
-#: ../rebostGui/stacks/details.py:26
+#: ../rebostGui/stacks/details.py:23
 msgid "Open"
 msgstr "Abre"
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:24
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:25
 msgid "Upgrade"
 msgstr "Actualiza"
+
+#: ../rebostGui/stacks/details.py:26
+msgid "Zommand not found. Open Zero-Center?"
+msgstr "No encontrado. ¿Abrir el Zero-Center?"
 
 #: ../rebostGui/stacks/portrait.py:17
 msgid "Portrait"
@@ -57,6 +61,22 @@ msgstr "Busca..."
 #: ../rebostGui/stacks/portrait.py:22
 msgid "All"
 msgstr "Todo"
+
+#: ../rebostGui/stacks/portrait.py:23
+msgid "Filters"
+msgstr "Filtros"
+
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Available"
+msgstr "Disponible"
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Installed"
+msgstr "Instalado"
+
+#: ../rebostGui/stacks/portrait.py:26
+msgid "Upgradables"
+msgstr "Actualizables"
 
 #: ../rebostGui/stacks/sources.py:17
 msgid "Sources"
@@ -283,6 +303,9 @@ msgstr "Mezcladores"
 
 msgid "Monitor"
 msgstr "Monitores"
+
+msgid "Multimedia"
+msgstr "Multimédia"
 
 msgid "Music"
 msgstr "Música"
@@ -532,9 +555,6 @@ msgstr "herramientas"
 
 #~ msgid "Motif"
 #~ msgstr "Motif"
-
-#~ msgid "Multimedia"
-#~ msgstr "Multimédia"
 
 #~ msgid "News"
 #~ msgstr "Noticias"

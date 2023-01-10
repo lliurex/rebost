@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-29 12:04+0100\n"
-"PO-Revision-Date: 2022-12-29 12:14+0100\n"
+"POT-Creation-Date: 2023-01-10 09:50+0100\n"
+"PO-Revision-Date: 2023-01-10 09:53+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -18,33 +18,37 @@ msgstr ""
 "X-Generator: Poedit 2.3\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../rebostGui/stacks/details.py:21
+#: ../rebostGui/stacks/details.py:18
 msgid "Details"
 msgstr "Detalls"
 
-#: ../rebostGui/stacks/details.py:22
+#: ../rebostGui/stacks/details.py:19
 msgid "Show application detail"
 msgstr "Mostra els detalls"
 
-#: ../rebostGui/stacks/details.py:23 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:20 ../rebostGui/stacks/portrait.py:19
 msgid "Navigate through all applications"
 msgstr "Mostra totes les aplicacions"
 
-#: ../rebostGui/stacks/details.py:25
+#: ../rebostGui/stacks/details.py:22
 msgid "Install"
 msgstr "Instal·la"
 
-#: ../rebostGui/stacks/details.py:26
+#: ../rebostGui/stacks/details.py:23
 msgid "Open"
 msgstr "Obri"
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:24
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:25
 msgid "Upgrade"
 msgstr "Actualitza"
+
+#: ../rebostGui/stacks/details.py:26
+msgid "Zommand not found. Open Zero-Center?"
+msgstr "No trobat. Obrir el Zero-Center?"
 
 #: ../rebostGui/stacks/portrait.py:17
 msgid "Portrait"
@@ -61,6 +65,22 @@ msgstr "Cerca..."
 #: ../rebostGui/stacks/portrait.py:22
 msgid "All"
 msgstr "Tot"
+
+#: ../rebostGui/stacks/portrait.py:23
+msgid "Filters"
+msgstr "Filtres"
+
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Available"
+msgstr "Disponibles"
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Installed"
+msgstr "Instal·lats"
+
+#: ../rebostGui/stacks/portrait.py:26
+msgid "Upgradables"
+msgstr "Actualitzables"
 
 #: ../rebostGui/stacks/sources.py:17
 msgid "Sources"
@@ -90,8 +110,7 @@ msgstr "Neteja cau"
 msgid ""
 "Remove all files from cache, as per exemple icons or another related stuff"
 msgstr ""
-"Elimina tots els fitxers de la memoria cau, com puguen ser icones, "
-"imatges..."
+"Elimina tots els fitxers de la memoria cau, com puguen ser icones, imatges..."
 
 #: ../rebostGui/stacks/sources.py:25
 msgid "Restart database"
@@ -289,6 +308,9 @@ msgstr "Mescladors"
 
 msgid "Monitor"
 msgstr "Monitors"
+
+msgid "Multimedia"
+msgstr "Multimèdia"
 
 msgid "Music"
 msgstr "Música"
@@ -538,9 +560,6 @@ msgstr "eines"
 
 #~ msgid "Motif"
 #~ msgstr "Motif"
-
-#~ msgid "Multimedia"
-#~ msgstr "Multimèdia"
 
 #~ msgid "News"
 #~ msgstr "Noticies"

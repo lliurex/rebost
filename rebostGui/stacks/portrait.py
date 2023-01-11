@@ -33,6 +33,7 @@ class QPushButtonRebostApp(QPushButton):
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.setToolTip("<p>{0}</p>".format(self.app.get('summary',self.app.get('name'))))
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
 		self.label=QLabel(text)
 		self.label.setWordWrap(True)

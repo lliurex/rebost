@@ -108,6 +108,7 @@ class details(confStack):
 	#def __init__
 
 	def _return(self):
+		self.setWindowTitle("LliureX Store")
 		self.stack.gotoStack(idx=1,parms="")
 	#def _return
 
@@ -281,6 +282,7 @@ class details(confStack):
 					print(e)
 		if swErr:
 			self.app={}
+		self.setWindowTitle("LliureX Store - {}".format(self.app.get("name")))
 		for bundle,name in (self.app.get('bundle',{}).items()):
 			if bundle=='package':
 				continue

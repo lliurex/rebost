@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-10 09:50+0100\n"
-"PO-Revision-Date: 2023-01-10 09:52+0100\n"
+"POT-Creation-Date: 2023-01-11 09:41+0100\n"
+"PO-Revision-Date: 2023-01-11 09:41+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -56,7 +56,7 @@ msgstr "Mostrar aplicaciones"
 
 #: ../rebostGui/stacks/portrait.py:21
 msgid "Search"
-msgstr "Busca..."
+msgstr "Busca"
 
 #: ../rebostGui/stacks/portrait.py:22
 msgid "All"

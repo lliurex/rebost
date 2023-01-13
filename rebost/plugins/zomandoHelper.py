@@ -9,7 +9,7 @@ import n4d.client as n4d
 
 class zomandoHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="zomando"
@@ -76,7 +76,7 @@ class zomandoHelper():
 		description=''
 		summary=''
 		rebostPkg=self._get_zomando_data(zmd,rebostPkg)
-		if  "LliureX" in rebostPkg.get('categories',[]):
+		if  "Zomando" in rebostPkg.get('categories',[]):
 			if len(summary)>0 and rebostPkg['summary']=='': 
 				rebostPkg['summary']=summary
 			if len(description)>0 and rebostPkg['description']=='': 
@@ -84,6 +84,7 @@ class zomandoHelper():
 			rebostPkg['license']="GPL-3"
 			rebostPkg['homepage']="https://www.github.com/lliurex"
 			rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
+			rebostPkg['versions']={'zomando':'1'}
 		else:
 			rebostPkg=None
 		return(rebostPkg)
@@ -95,6 +96,8 @@ class zomandoHelper():
 		groupsProcessed=False
 		if os.path.isfile(appPath):
 			rebostPkg['state'].update({'zomando':self._get_zomando_state(zmd)})
+			if rebostPkg['state'].get('zomando','')=="0": 
+				rebostPkg['installed'].update({'zomando':"1"})
 			(icon,cat)=("","")
 			with open(appPath,'r') as f:
 				for fline in f.readlines():
@@ -113,6 +116,10 @@ class zomandoHelper():
 								cat="Software"
 							if cat not in rebostPkg['categories']:
 								rebostPkg['categories'].append(cat)
+							if "Zomando" not in rebostPkg['categories']:
+								rebostPkg['categories'].append("Zomando")
+						else:
+							rebostPkg['categories']=["System"]
 					elif fline.startswith("Name"):
 							summary=fline.split("=")[-1]
 							if len(self.locale)>0:
@@ -131,8 +138,6 @@ class zomandoHelper():
 		if groupsProcessed==False:
 			rebostPkg['categories']=["System"]
 		else:
-			if "LliureX" not in rebostPkg['categories']:
-				rebostPkg['categories'].append("LliureX")
 			rebostPkg=self._get_zomando_installs(zmd,rebostPkg)
 		return(rebostPkg)
 

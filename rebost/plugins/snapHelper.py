@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class snapHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="snap"

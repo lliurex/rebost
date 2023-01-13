@@ -1,4 +1,4 @@
-rebost (0.9.32) focal; urgency=medium
+rebost (0.9.4) focal; urgency=medium
 
   * Release candidate 4. 
   * Disable packagekit plugin (as apt is/will be theorically blocked for users) 
@@ -9,6 +9,7 @@ rebost (0.9.32) focal; urgency=medium
   *  Load internacionalized summary/description from zomandos
   *  Get pkg_list from epi for improved zomandos descriptions
   *  Discard all zomandos but software,fp,resources
+  * Whitelist enabled by default
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 10 Jan 2023 09:48:11 +0100
 

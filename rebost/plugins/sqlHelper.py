@@ -13,7 +13,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories']
@@ -288,7 +288,6 @@ class sqlHelper():
 					tables.pop(idx)
 		for table in tables:
 			include.append("{}.db".format(table))
-		print("INCLUDE {}".format(include))
 		allCategories=[]
 		for fname in include:
 			(count,categories)=self._processDatabase(fname,main_db,main_cursor,main_tmp_table,fupdate)
@@ -376,10 +375,10 @@ class sqlHelper():
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
 		blacklisted=False
+		if self.blacklist==True:
+			blacklisted=self._checkBlacklisted(pkgname,pkgdataJson)
 		if self.whitelist==True:
 			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson))
-		if self.blacklist==True and blacklisted==False:
-			blacklisted=self._checkBlacklisted(pkgname,pkgdataJson)
 		if blacklisted==False:
 			description=pkgdataJson.get('description','')
 			if (isinstance(description,str)==False) or (description==''):
@@ -392,7 +391,7 @@ class sqlHelper():
 				if word in descriptionArray:
 					blacklisted=True
 					break
-		if blacklisted==True:
+		else:
 			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()
@@ -419,12 +418,12 @@ class sqlHelper():
 				cat0=categories[0]
 				cat1=categories[-1]
 				cat2=categories[-2]
-			if isinstance(pkgdataJson['versions'],str):
+			if isinstance(pkgdataJson['versions'],dict):
 				states=pkgdataJson.get('state')
 				pkgdataJson['installed']={}
 				for bun,state in states.items():
 					if state=="0":
-						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get('bundle',0)
+						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get(bun,0)
 			pkgdata=str(json.dumps(pkgdataJson))
 			retval=([pkgname,pkgdata,cat0,cat1,cat2],categories)
 		return(retval)
@@ -447,20 +446,18 @@ class sqlHelper():
 	#def _checkBlacklisted
 
 	def _checkWhitelisted(self,pkgname,data):
-		whitelisted=False
 		categorySet=list(set(data.get('categories',[])))
 		filters=self.whitelistFilter.get('whitelist',{})
-		if pkgname in filters.get('apps',[]):
+		whiteC=list(set(filters.get('categories',[])))
+		whitelisted=False
+		if len(filters.get('apps',[]))>0 and pkgname in filters.get('apps',[]):
 			whitelisted=True
-		else:
-			whiteC=list(set(filters.get('categories',[])))
-			whitelisted=True
-			if len(whiteC)>0:
-				if len(whiteC+categorySet)==len(set(whiteC+categorySet)):
-				#If len==len(set) there's no matching categories
-					whitelisted=False
+		if len(whiteC)>0 and whitelisted==False:
+			if len(whiteC+categorySet)!=len(set(whiteC+categorySet)):
+			#If len==len(set) there's no matching categories
+				whitelisted=True
 		return(whitelisted)
-	#def _checkBlacklisted
+	#def _checkWhitelisted
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -521,10 +518,12 @@ class sqlHelper():
 			if not key in mergepkgdataJson.keys():
 				mergepkgdataJson[key]=item
 			elif isinstance(item,dict) and isinstance(mergepkgdataJson.get(key,''),dict):
-				mergepkgdataJson[key].update(item)
+				if len(item)>0:
+					mergepkgdataJson[key].update(item)
 			elif isinstance(item,list) and isinstance(mergepkgdataJson.get(key,''),list):
-				mergepkgdataJson[key].extend(item)
-				mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
+				if len(item)>0:
+					mergepkgdataJson[key].extend(item)
+					mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
 				#if (fname=="appstream.db") and (len(mergepkgdataJson.get(key,''))<len(item)):
 				#	mergepkgdataJson[key]=item

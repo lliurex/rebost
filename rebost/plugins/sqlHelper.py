@@ -378,7 +378,7 @@ class sqlHelper():
 		if self.blacklist==True:
 			blacklisted=self._checkBlacklisted(pkgname,pkgdataJson)
 		if self.whitelist==True:
-			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson))
+			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson,blacklisted))
 		if blacklisted==False:
 			description=pkgdataJson.get('description','')
 			if (isinstance(description,str)==False) or (description==''):
@@ -429,8 +429,7 @@ class sqlHelper():
 		return(retval)
 	#def _addPkgToQuery
 
-	def _checkBlacklisted(self,pkgname,data):
-		blacklisted=False
+	def _checkBlacklisted(self,pkgname,data,blacklisted=False):
 		filters=self.blacklistFilter.get('blacklist',{})
 		categories=data.get('categories')
 		if "Lliurex" not in categories and "LliureX" not in categories:
@@ -445,17 +444,24 @@ class sqlHelper():
 		return(blacklisted)
 	#def _checkBlacklisted
 
-	def _checkWhitelisted(self,pkgname,data):
+	def _checkWhitelisted(self,pkgname,data,blacklisted=False):
+		whitelisted=False
 		categorySet=list(set(data.get('categories',[])))
 		filters=self.whitelistFilter.get('whitelist',{})
 		whiteC=list(set(filters.get('categories',[])))
-		whitelisted=False
-		if len(filters.get('apps',[]))>0 and pkgname in filters.get('apps',[]):
-			whitelisted=True
-		if len(whiteC)>0 and whitelisted==False:
-			if len(whiteC+categorySet)!=len(set(whiteC+categorySet)):
-			#If len==len(set) there's no matching categories
-				whitelisted=True
+		if len(filters.get('apps',[]))==0 and len(whiteC)==0:
+			whitelisted=not(blacklisted)
+		else:
+			if len(filters.get('apps',[]))>0:
+				if pkgname in filters.get('apps',[]):
+					whitelisted=True
+				else:
+					whitelisted=False
+			if len(whiteC)>0 and whitelisted==False:
+				if len(whiteC+categorySet)!=len(set(whiteC+categorySet)):
+					whitelisted=True
+				else:
+					whitelisted=False
 		return(whitelisted)
 	#def _checkWhitelisted
 

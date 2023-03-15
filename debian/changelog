@@ -1,3 +1,10 @@
+rebost (0.9.4) focal; urgency=medium
+
+  * RC 5
+  * Improve filter usage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 15 Mar 2023 06:46:09 +0100
+
 rebost (0.9.34) focal; urgency=medium
 
   * Release candidate 4. 

@@ -72,7 +72,7 @@ class QLabelRebostApp(QLabel):
 			icn=icn2.pixmap(128,128)
 		if icn:
 			wsize=128
-			if "Zomando" in app.get("categories") or "zero" in app.get('pkgname').lower():
+			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
 				wsize=235
 			self.setPixmap(icn.scaled(wsize,128))
 		elif img.startswith('http'):
@@ -273,6 +273,9 @@ class details(confStack):
 			self.app=json.loads(args[0])
 		except:
 			swErr=True
+		finally:
+			if len(self.app)==0:
+				swErr=True
 		if swErr==False:
 			if isinstance(self.app[0],str):
 				try:
@@ -282,14 +285,16 @@ class details(confStack):
 					print(e)
 		if swErr:
 			self.app={}
-		self.setWindowTitle("LliureX Store - {}".format(self.app.get("name")))
-		for bundle,name in (self.app.get('bundle',{}).items()):
-			if bundle=='package':
-				continue
-			name=self.app.get('name','')
-			if name!='':
-				status=self.rc.getAppStatus(name,bundle)
-				self.app['state'][bundle]=str(status)
+			self._return()
+		else:
+			self.setWindowTitle("LliureX Store - {}".format(self.app.get("name","")))
+			for bundle,name in (self.app.get('bundle',{}).items()):
+				if bundle=='package':
+					continue
+				name=self.app.get('name','')
+				if name!='':
+					status=self.rc.getAppStatus(name,bundle)
+					self.app['state'][bundle]=str(status)
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def setParms

@@ -386,6 +386,16 @@ class Rebost():
 		return (stdout)
 	#def getEpiPkgStatus
 
+	def getFiltersEnabled(self):
+		state=True
+		try:
+			state=self.plugins["sqlHelper"].whitelist
+		except Exception as e:
+			print(e)
+			print("Critical error. Restarting rebost service now")
+			self.run()
+		return(state)
+
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))

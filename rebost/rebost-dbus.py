@@ -208,16 +208,24 @@ class rebostDbusMethods(dbus.service.Object):
 						 in_signature='', out_signature='b')
 	def restart(self):
 		ret=True
-		#self.rebost=None
-		#self.rebost=rebost.Rebost()
 		try:
 			self.rebost.run()
 		except Exception as e:
-			print("Critial error relaunching")
+			print("Critical error relaunching")
 			print(str(e))
 			ret=False
-#		ret = zlib.compress(ret.encode(),level=1)
 		return (ret)
+	#def restart(self):
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='')
+	def disableFilters(self):
+		ret=True
+		try:
+			self.rebost.execute("disableFilters")
+		except Exception as e:
+			print("Critical error disabling filters")
+			print(str(e))
 	#def restart(self):
 
 	def getPlugins(self):

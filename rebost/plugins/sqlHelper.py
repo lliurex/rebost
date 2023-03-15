@@ -16,7 +16,7 @@ class sqlHelper():
 		self.dbg=False
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","list",'commitInstall','getCategories']
+		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
 		self.packagekind="*"
 		self.priority=100
 		self.postAutostartActions=["load"]
@@ -86,6 +86,12 @@ class sqlHelper():
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
 			rs=self._getCategories()
+		if action=='disableFilters':
+			self.whitelist=not(self.whitelist)
+			if os.path.isfile(self.lastUpdate)==True:
+				os.remove(self.lastUpdate)
+			rs=self.consolidateSqlTables()
+			#self.whitelist=True
 		return(rs)
 	#def execute
 

@@ -23,7 +23,8 @@ i18n={
 	"RUN":_("Open"),
 	"REMOVE":_("Remove"),
 	"UPGRADE":_("Upgrade"),
-	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?")
+	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
+	"ERRUNKNOWN":_("Unknown error")
 	}
 	
 class epiClass(QThread):
@@ -238,10 +239,19 @@ class details(confStack):
 		pkg=self.app.get('name').replace(' ','')
 		user=os.environ.get('USER')
 		res=self.rc.testInstall("{}".format(pkg),"{}".format(bundle),user=user)
-		res=json.loads(res)[0]
+		try:
+			res=json.loads(res)[0]
+		except:
+			if isinstance(res,str):
+				res=eval(res)[0]
+				res=res[1]
+				res['epi']=None
+			else:
+				res={}
 		epi=res.get('epi')
 		if epi==None:
-			self.showMsg("{}".format(res.get('msg','Unknown Error')))
+			self.showMsg("{}".format(res.get('msg',i18n["ERRUNKNOWN"])))
+			self.updateScreen()
 		else:
 			cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",res.get('epi')]
 			self.epi.setArgs(self.app,cmd,bundle)
@@ -350,6 +360,8 @@ class details(confStack):
 					bundles.remove('package')
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
+			print(bundle)
+			print(self.app.get('state',{}))
 			if bundle=="zomando" and (pkgState=="0" or state=="0"):
 				self.btnZomando.setVisible(True)
 				continue

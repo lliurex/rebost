@@ -1,6 +1,6 @@
 [Unit]
 Description=Brings up rebost DBus
-After=snapd.service n4d.service
+After=multiuser.target
 
 [Service]
 Type=simple

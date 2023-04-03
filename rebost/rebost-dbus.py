@@ -234,7 +234,7 @@ class rebostDbusMethods(dbus.service.Object):
 		try:
 			ret=self.rebost.getFiltersEnabled()
 		except Exception as e:
-			print("Critical error disabling filters")
+			print("Critical error reading filters")
 			print(str(e))
 		return(ret)
 	#def disableFilters

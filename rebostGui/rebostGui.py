@@ -3,7 +3,7 @@ import sys
 import subprocess
 import os,shutil
 import json
-from PySide2.QtWidgets import QApplication,QDialog,QGridLayout,QLabel,QPushButton,QLayout,QSizePolicy
+from PySide2.QtWidgets import QApplication,QDialog,QGridLayout,QLabel,QPushButton,QLayout,QSizePolicy,QDesktopWidget
 from PySide2.QtCore import Qt
 from PySide2 import QtGui
 from appconfig.appConfigScreen import appConfigScreen as appConfig
@@ -23,5 +23,6 @@ config.hideNavMenu(True)
 #config.setBackgroundImage('repoman_login.svg')
 config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],".config/rebost")},confFile="store.json")
 config.Show()
-config.resize(800,540)
+sizeObject = QDesktopWidget().screenGeometry(-1)
+config.resize(int(sizeObject.width()/1.75),int(sizeObject.height()/1.50))
 app.exec_()

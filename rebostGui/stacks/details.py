@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QTableWidget,QTableWidgetItem
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -24,6 +24,8 @@ i18n={
 	"REMOVE":_("Remove"),
 	"UPGRADE":_("Upgrade"),
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
+	"FORMAT":_("Format"),
+	"RELEASE":_("Release"),
 	"ERRUNKNOWN":_("Unknown error")
 	}
 	
@@ -89,7 +91,7 @@ class QLabelRebostApp(QLabel):
 
 class details(confStack):
 	def __init_stack__(self):
-		self.dbg=True
+		self.dbg=False
 		self._debug("details load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
@@ -131,12 +133,39 @@ class details(confStack):
 		self.launchers=QWidget()
 		lay=QHBoxLayout()
 		self.cmbInstall=QComboBox()
+		self.tblInfoInstall=QTableWidget(0,2)
+		self.tblInfoInstall.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
+		self.tblInfoInstall.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoInstall.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoInstall.setSelectionBehavior(self.tblInfoInstall.SelectRows)
+		self.tblInfoInstall.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
+		self.tblInfoInstall.setShowGrid(False)
+		self.cmbInstall.setModel(self.tblInfoInstall.model())
+		self.cmbInstall.setView(self.tblInfoInstall)
 		self.cmbInstall.activated.connect(self._genericEpiInstall)
 		lay.addWidget(self.cmbInstall,Qt.AlignLeft)
 		self.cmbRemove=QComboBox()
+		self.tblInfoRemove=QTableWidget(0,2)
+		self.tblInfoRemove.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
+		self.tblInfoRemove.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoRemove.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoRemove.setSelectionBehavior(self.tblInfoRemove.SelectRows)
+		self.tblInfoRemove.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
+		self.tblInfoRemove.setShowGrid(False)
+		self.cmbRemove.setModel(self.tblInfoRemove.model())
+		self.cmbRemove.setView(self.tblInfoRemove)
 		self.cmbRemove.activated.connect(self._genericEpiInstall)
 		lay.addWidget(self.cmbRemove,Qt.AlignLeft)
 		self.cmbOpen=QComboBox()
+		self.tblInfoOpen=QTableWidget(0,2)
+		self.tblInfoOpen.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
+		self.tblInfoOpen.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoOpen.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
+		self.tblInfoOpen.setSelectionBehavior(self.tblInfoOpen.SelectRows)
+		self.tblInfoOpen.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
+		self.tblInfoOpen.setShowGrid(False)
+		self.cmbOpen.setModel(self.tblInfoOpen.model())
+		self.cmbOpen.setView(self.tblInfoOpen)
 		self.cmbOpen.activated.connect(self._runApp)
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
@@ -360,8 +389,6 @@ class details(confStack):
 					bundles.remove('package')
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
-			print(bundle)
-			print(self.app.get('state',{}))
 			if bundle=="zomando" and (pkgState=="0" or state=="0"):
 				self.btnZomando.setVisible(True)
 				continue
@@ -370,25 +397,42 @@ class details(confStack):
 		#		self.btnPackageLaunch.setVisible(False)
 			tooltip=self.app.get('versions',{}).get(bundle,'')
 			tipInfo=tooltip
-			if len(tooltip)>8:
-				tipArray=tooltip.split(".")
-				count=0
-				while len(tipInfo)<8 or count>=len(tipArray):
-					tipInfo=".".join(tipArray[0:count])
-					count+=1
-				if len(tipInfo)>8:
-					tipInfo=tipInfo[0:8]
+			#if len(tooltip)>8:
+			#	tipArray=tooltip.split(".")
+			#	count=0
+			#	while len(tipInfo)<8 or count>=len(tipArray):
+			#		tipInfo=".".join(tipArray[0:count])
+			#		count+=1
+			#	if len(tipInfo)>8:
+			#		tipInfo=tipInfo[0:8]
 			if state=='0':
 				self.cmbRemove.setVisible(True)
-				self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
+				#self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
+				self.tblInfoRemove.setRowCount(self.tblInfoRemove.rowCount()+1)
 				self.cmbRemove.setItemData(self.cmbRemove.count()-1,tooltip,Qt.ToolTipRole)
+				self.tblInfoRemove.setItem(self.tblInfoRemove.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
+				self.tblInfoRemove.setItem(self.tblInfoRemove.rowCount()-1,1,QTableWidgetItem(tooltip))
+				width = self.tblInfoRemove.sizeHint().width()-32
+				self.cmbRemove.view().setMinimumWidth(width)
+
 				self.cmbOpen.setVisible(True)
-				self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
+				#self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
+				self.tblInfoOpen.setRowCount(self.tblInfoOpen.rowCount()+1)
 				self.cmbOpen.setItemData(self.cmbOpen.count()-1,tooltip,Qt.ToolTipRole)
+				self.tblInfoOpen.setItem(self.tblInfoOpen.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
+				self.tblInfoOpen.setItem(self.tblInfoOpen.rowCount()-1,1,QTableWidgetItem(tooltip))
+				width = self.tblInfoOpen.sizeHint().width()-32
+				self.cmbOpen.view().setMinimumWidth(width)
 			else:
 				self.cmbInstall.setVisible(True)
-				self.cmbInstall.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
-				self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
+				#self.cmbInstall.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
+				#self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
+				self.tblInfoInstall.setRowCount(self.tblInfoInstall.rowCount()+1)
+				self.tblInfoInstall.setItem(self.tblInfoInstall.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
+				self.tblInfoInstall.setItem(self.tblInfoInstall.rowCount()-1,1,QTableWidgetItem(tooltip))
+				width = self.tblInfoInstall.sizeHint().width()-32
+				self.cmbInstall.view().setMinimumWidth(width)
+
 	#def _update_screen_controls
 
 	def _initScreen(self):

@@ -390,6 +390,7 @@ class details(confStack):
 		for bundle in bundles:
 			state=self.app.get('state',{}).get(bundle,'1')
 			if bundle=="zomando" and (pkgState=="0" or state=="0"):
+				print("B: {} P1: {} P2:{}".format(bundle,pkgState,state))
 				self.btnZomando.setVisible(True)
 				continue
 			elif bundle=="zomando":

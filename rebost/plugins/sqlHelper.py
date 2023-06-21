@@ -399,10 +399,6 @@ class sqlHelper():
 					if word in descriptionArray:
 						blacklisted=True
 						break
-			else:
-				print("Filter {}".format(pkgname))
-				print(categories)
-				print("{}".format(pkgdataJson.get('bundle',{})))
 		else:
 			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)

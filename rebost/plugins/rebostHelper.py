@@ -254,9 +254,11 @@ def appstream_to_rebost(appstreamCatalogue):
 				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
 					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
 				elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
-					pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
-			#	else:
-			#		pkg['bundle']={'package':pkg['pkgname']}
+					if "Zomando" in pkg['categories']:
+						pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
+					
+					else:
+						pkg['bundle']={'package':pkg['pkgname']}
 				if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
 					pkg['categories'].insert(0,"Lliurex")
 				pkg['homepage']="https://github.com/lliurex"

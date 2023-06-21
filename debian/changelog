@@ -1,3 +1,9 @@
+rebost (0.9.42) focal; urgency=medium
+
+  * Allow lliurex own packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 21 Jun 2023 11:43:00 +0200
+
 rebost (0.9.41) focal; urgency=medium
 
   * RC 5

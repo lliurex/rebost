@@ -12,7 +12,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class appstreamHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -93,9 +93,10 @@ class appstreamHelper():
 			except e as Exception:
 				print(e)
 				pass
-		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
-		for flag in flags:
-			store.load(flag,None)
+		#flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
+		#for flag in flags:
+		#	print("{}".format(flag))
+		#	store.load(flag,None)
 		self._debug("End loading appstream metadata")
 		return(store)
 

@@ -386,17 +386,23 @@ class sqlHelper():
 		if self.whitelist==True:
 			blacklisted=not(self._checkWhitelisted(pkgname,pkgdataJson,blacklisted))
 		if blacklisted==False:
-			description=pkgdataJson.get('description','')
-			if (isinstance(description,str)==False) or (description==''):
-				description=str(pkgdataJson.get('summary',''))
-			description=description.replace("-"," ")
-			description=description.replace("."," ")
-			description=description.replace(","," ")
-			descriptionArray=description.split()
-			for word in self.wordlistFilter.get('words',[]):
-				if word in descriptionArray:
-					blacklisted=True
-					break
+			categories=pkgdataJson.get('categories',[])
+			if not ("Lliurex" in categories) and not("LliureX" in categories):
+				description=pkgdataJson.get('description','')
+				if (isinstance(description,str)==False) or (description==''):
+					description=str(pkgdataJson.get('summary',''))
+				description=description.replace("-"," ")
+				description=description.replace("."," ")
+				description=description.replace(","," ")
+				descriptionArray=description.split()
+				for word in self.wordlistFilter.get('words',[]):
+					if word in descriptionArray:
+						blacklisted=True
+						break
+			else:
+				print("Filter {}".format(pkgname))
+				print(categories)
+				print("{}".format(pkgdataJson.get('bundle',{})))
 		else:
 			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
@@ -468,6 +474,8 @@ class sqlHelper():
 					whitelisted=True
 				else:
 					whitelisted=False
+		if "Lliurex" in categorySet or "LliureX" in categorySet:
+			whitelisted=True
 		return(whitelisted)
 	#def _checkWhitelisted
 

@@ -253,10 +253,17 @@ def appstream_to_rebost(appstreamCatalogue):
 					zmdPkgName="{}.zmd".format(zmdPkgName)
 				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
 					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
-				elif "Education" in pkg['categories']:
-					pkgName=component.get_id().replace('.desktop','')
-					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
+					pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
+			#	else:
+			#		pkg['bundle']={'package':pkg['pkgname']}
+				if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+					pkg['categories'].insert(0,"Lliurex")
 				pkg['homepage']="https://github.com/lliurex"
+					
+			elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+					pkg['bundle']={'package':pkg['pkgname']}
+					pkg['homepage']="https://github.com/lliurex"
 		pkg['license']=component.get_project_license()
 		for scr in component.get_screenshots():
 			for img in scr.get_images():

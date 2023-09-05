@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -18,7 +18,12 @@ i18n={
 	"DESCRIPTION":_("Show applications"),
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
-	"ALL":_("All")
+	"SEARCH":_("Search"),
+	"ALL":_("All"),
+	"FILTERS":_("Filters"),
+	"AVAILABLE":_("Available"),
+	"INSTALLED":_("Installed"),
+	"UPGRADABLE":_("Upgradables")
 	}
 
 class QPushButtonRebostApp(QPushButton):
@@ -28,7 +33,10 @@ class QPushButtonRebostApp(QPushButton):
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.setToolTip("<p>{0}</p>".format(self.app.get('summary',self.app.get('name'))))
 		text="<strong>{0}</strong> - {1}".format(self.app.get('name',''),self.app.get('summary'),'')
+		self.label=QLabel(text)
+		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
 		icn=''
@@ -38,13 +46,11 @@ class QPushButtonRebostApp(QPushButton):
 			icn2=QtGui.QIcon.fromTheme('application-x-executable')
 			icn=icn2.pixmap(128,128)
 		if icn:
-			self.icon.setPixmap(icn.scaled(128,128))
+			self.load(icn)
 		elif img.startswith('http'):
 			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
-		self.label=QLabel(text)
-		self.label.setWordWrap(True)
 		lay=QHBoxLayout()
 		lay.addStretch()
 		lay.addWidget(self.icon,0)
@@ -54,6 +60,8 @@ class QPushButtonRebostApp(QPushButton):
 	
 	def load(self,*args):
 		img=args[0]
+		if "0" in str(self.app.get('state',1)):
+			self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 		self.icon.setPixmap(img.scaled(128,128))
 	#def load
 	
@@ -69,44 +77,55 @@ class QPushButtonRebostApp(QPushButton):
 class portrait(confStack):
 	def __init_stack__(self):
 		self.dbg=False
+		self.enabled=True
 		self._debug("portrait load")
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
 		self.icon=('application-x-desktop')
 		self.tooltip=i18n.get('TOOLTIP')
+		self.i18nCat={}
+		self.config={}
 		self.index=1
 		self.appsToLoad=50
 		self.appsLoaded=0
 		self.appsSeen=[]
-		self.enabled=True
+		self.appsRaw=[]
+		self.oldSearch=""
 		self.defaultRepos={}
 		self.rc=store.client()
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'
-		self.oldSearch=""
-		self.config={}
 	#def __init__
 
 	def _load_screen(self):
 		self.config=self.getConfig()
 		self.box=QGridLayout()
 		self.setLayout(self.box)
+		wdg=QWidget()
+		hbox=QHBoxLayout()
+		btnHome=QPushButton()
+		icn=QtGui.QIcon.fromTheme("home")
+		btnHome.setIcon(icn)
+		btnHome.clicked.connect(self._goHome)
+		hbox.addWidget(btnHome)
 		self.cmbCategories=QComboBox()
 		self.cmbCategories.activated.connect(self._loadCategory)
-		catList=json.loads(self.rc.execute('getCategories'))
-		self.cmbCategories.addItem(i18n.get('ALL'))
-		seenCats={}
-		for cat in catList:
-			#if cat.islower() it's a category from system without appstream info 
-			if cat in seenCats.keys() or cat.islower():
-				continue
-			seenCats[cat.capitalize()]=cat
-			self.cmbCategories.addItem(cat)
+		hbox.addWidget(self.cmbCategories)
+		self._populateCategories()
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		self.box.addWidget(self.cmbCategories,0,0,1,1,Qt.AlignLeft)
+		self.btnFilters=appconfigControls.QCheckableComboBox()
+		self.btnFilters.activated.connect(self._selectFilters)
+		self.btnFilters.clicked.connect(self._filterView)
+		self._loadFilters()
+		icn=QtGui.QIcon.fromTheme("view-filter")
+		hbox.addWidget(self.btnFilters)
+		wdg.setLayout(hbox)
+		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
 		self.searchBox=appconfigControls.QSearchBox()
+		self.searchBox.setToolTip(i18n["SEARCH"])
+		self.searchBox.setPlaceholderText(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
@@ -130,20 +149,133 @@ class portrait(confStack):
 		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
 	#def _load_screen
 
+	def _loadFilters(self):
+		self.btnFilters.clear()
+		self.btnFilters.setText(i18n.get("FILTERS"))
+		self.btnFilters.addItem(i18n.get("ALL"))
+		self.btnFilters.addItem(i18n.get("INSTALLED"),state=False)
+		self.btnFilters.addItem("Snap",state=False)
+		self.btnFilters.addItem("Appimage",state=False)
+		self.btnFilters.addItem("Flatpak",state=False)
+		self.btnFilters.addItem("Zomando",state=False)
+	#def _loadFilters
+
+	def _populateCategories(self): 
+		self.cmbCategories.clear()
+		self.i18nCat={}
+		catList=json.loads(self.rc.execute('getCategories'))
+		self.cmbCategories.addItem(i18n.get('ALL'))
+		seenCats={}
+		#Sort categories
+		translatedCategories=[]
+		for cat in catList:
+			#if cat.islower() it's a category from system without appstream info 
+			if _(cat) in self.i18nCat.keys() or cat.islower():
+				continue
+			translatedCategories.append(_(cat))
+			self.i18nCat[_(cat)]=cat
+		translatedCategories.sort()
+
+		for cat in translatedCategories:
+			self.cmbCategories.addItem(cat)
+	#def _populateCategories
+
 	def _getAppList(self,cat=''):
 		apps=[]
 		if cat!='':
 			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
 			self._debug("Loading cat {}".format(cat))
 		else:
-			categories=",".join(["\"{}\"".format(self.cmbCategories.itemText(i)) for i in range(self.cmbCategories.count())])
+			categories=[]
+			for i18ncat,cat in self.i18nCat.items():
+				categories.append("\"{}\"".format(cat))
+			categories=",".join(categories)
 			apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
+		self.appsRaw=apps
 		return(apps)
 	#def _getAppList
 
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
 	#def _shuffleApps
+
+	def _goHome(self):
+		self._loadFilters()
+		self.apps=self._getAppList()
+		self._shuffleApps()
+		self.resetScreen()
+		self.cmbCategories.setCurrentIndex(0)
+		self.updateScreen()
+	#def _goHome
+
+	def _filterView(self,getApps=True):
+		idx=self.btnFilters.currentIndex()
+		filters={}
+		appsFiltered=[]
+		self.apps=self.appsRaw
+		applyFilter=False
+		applyFilterBundle=False
+		self.resetScreen()
+		for item in self.btnFilters.getItems():
+			if item.text().lower()==i18n.get("ALL").lower() and idx<=1:
+				continue
+			filters[item.text().lower()]=item.checkState()
+			if item.checkState()==Qt.Checked:
+				if item.text().lower() in ["zomando","flatpak","appimage","snap"]:
+					applyFilterBundle=True
+				applyFilter=True
+		if applyFilterBundle==False:
+			for bund in ["zomando","flatpak","appimage","snap"]:
+				filters[bund]=Qt.Checked
+		if filters.get(i18n.get("ALL").lower(),Qt.Unchecked)!=Qt.Checked and applyFilter==True:
+			for app in self.apps:
+				japp=json.loads(app)
+				#Filter bundles
+				tmpApp=None
+				for bund in japp.get('bundle',{}).keys():
+					if bund in filters.keys():
+						if filters[bund]==Qt.Checked:
+							tmpApp=app
+					if tmpApp:
+						if filters.get(i18n.get("INSTALLED",'').lower())==Qt.Checked:
+							state=japp.get('state',{})
+							if state.get(bund,"1")!="0":
+								tmpApp=None
+						if filters.get(i18n.get("UPGRADABLE",'').lower())==Qt.Checked:
+							state=japp.get('state',{})
+							installed=japp.get('installed',{}).get(bund,"")
+							if state.get(bund,"1")=="0":
+								available=japp.get('versions',{}).get(bund,"")
+								if available=="" or available==installed:
+									tmpApp=None
+							else:
+								tmpApp=None
+				if tmpApp:
+					appsFiltered.append(app)
+			self.apps=appsFiltered
+		idx=self.btnFilters.currentIndex()
+		self.updateScreen()
+	#def _filterView
+
+	def _selectFilters(self,*args):
+		idx=self.btnFilters.currentIndex()
+		if idx<1:
+			return
+		if idx==1:
+			item=self.btnFilters.model().item(idx)
+			if item.checkState()==Qt.Checked:
+				state=Qt.Unchecked
+				init=2
+			else:
+				state=Qt.Checked	
+				init=3
+			for i in (range(init,self.btnFilters.count())):
+				item=self.btnFilters.model().item(i)
+				item.setCheckState(state)
+		else:
+			item=self.btnFilters.model().item(1)
+			item.setCheckState(Qt.Unchecked)
+	#def _selectFilters
 
 	def _resetSearchBtnIcon(self):
 		txt=self.searchBox.text()
@@ -170,8 +302,9 @@ class portrait(confStack):
 		else:
 			icn=QtGui.QIcon.fromTheme("dialog-cancel")
 			self.apps=json.loads(self.rc.execute('search',txt))
+			self.appsRaw=self.apps
 		self.searchBox.btnSearch.setIcon(icn)
-		self.updateScreen()
+		self._filterView(getApps=False)
 	#def _searchApps
 
 	def _searchAppsBtn(self):
@@ -187,11 +320,12 @@ class portrait(confStack):
 		self.setCursor(cursor)
 		self.searchBox.setText("")
 		self.resetScreen()
-		cat=self.cmbCategories.currentText()
+		i18ncat=self.cmbCategories.currentText()
+		cat=self.i18nCat.get(i18ncat,i18ncat)
 		if cat==i18n.get("ALL"):
 			cat=""
 		self.apps=self._getAppList(cat)
-		self.updateScreen()
+		self._filterView(getApps=False)
 	#def _loadCategory
 
 	def _getMoreData(self):
@@ -203,7 +337,7 @@ class portrait(confStack):
 		if applist==None:
 			apps=self.apps[idx:idx2]
 		else:
-			apps=applist
+			apps=applist[idx:idx2]
 		col=0
 		cont=self.appsToLoad
 		rowspan=random.randint(1,3)
@@ -263,6 +397,7 @@ class portrait(confStack):
 		self.table.setRowCount(0)
 		self.table.setRowCount(1)
 		self.appsLoaded=0
+		self.oldSearch=""
 		self.appsSeen=[]
 	#def resetScreen
 
@@ -270,6 +405,7 @@ class portrait(confStack):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		if len(args)>=1:
+			self._populateCategories()
 			self.oldSearch=""
 			self._searchApps()
 	#def setParms

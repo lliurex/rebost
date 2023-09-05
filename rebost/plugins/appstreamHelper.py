@@ -93,9 +93,10 @@ class appstreamHelper():
 			except e as Exception:
 				print(e)
 				pass
-		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
-		for flag in flags:
-			store.load(flag,None)
+		#flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
+		#for flag in flags:
+		#	print("{}".format(flag))
+		#	store.load(flag,None)
 		self._debug("End loading appstream metadata")
 		return(store)
 
@@ -147,8 +148,8 @@ class appstreamHelper():
 						store.add_app(pkg)
 					else:
 						print(app.validate())
-				except:
-					pass
+				except Exception as e:
+					print("{0}:{1}".format(idx,e))
 				added.append(pkg.get_id())
 		return(store)
 	#def _generate_store

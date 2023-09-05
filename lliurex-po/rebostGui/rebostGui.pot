@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#: ../rebostGui/stacks/details.py:24 ../rebostGui/stacks/portrait.py:20
+#: ../rebostGui/stacks/details.py:21 ../rebostGui/stacks/portrait.py:20
 #: ../rebostGui/stacks/sources.py:20
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-02 10:38+0100\n"
+"POT-Creation-Date: 2023-01-11 09:41+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,32 +19,36 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../rebostGui/stacks/details.py:21
+#: ../rebostGui/stacks/details.py:18
 msgid "Details"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:22
+#: ../rebostGui/stacks/details.py:19
 msgid "Show application detail"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:23 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:20 ../rebostGui/stacks/portrait.py:19
 msgid "Navigate through all applications"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:25
+#: ../rebostGui/stacks/details.py:22
 msgid "Install"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:26
+#: ../rebostGui/stacks/details.py:23
 msgid "Open"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:24
 msgid "Remove"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:25
 msgid "Upgrade"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:26
+msgid "Zommand not found. Open Zero-Center?"
 msgstr ""
 
 #: ../rebostGui/stacks/portrait.py:17
@@ -56,7 +60,27 @@ msgid "Show applications"
 msgstr ""
 
 #: ../rebostGui/stacks/portrait.py:21
+msgid "Search"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:22
 msgid "All"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:23
+msgid "Filters"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Available"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Installed"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:26
+msgid "Upgradables"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:17
@@ -76,9 +100,321 @@ msgid "Reload catalogues"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:22
-msgid "Clear cache"
+msgid "Reload info from sources"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:23
+msgid "Clear cache"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:24
+msgid ""
+"Remove all files from cache, as per exemple icons or another related stuff"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:25
+msgid "Restart database"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:26
+msgid ""
+"Forces a refresh of all the info from sources resetting all previous stored "
+"information"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:27
 msgid "Service could not be reloaded. Check credentials"
 msgstr ""
+
+#: ../rebostGui/stacks/sources.py:28
+msgid "Include flatpaks"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:29
+msgid "Include snaps"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:30
+msgid "Include appimages"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:31
+msgid "Include native packages"
+msgstr ""
+
+msgid "2DGraphics"
+msgstr ""
+
+msgid "3DGraphics"
+msgstr ""
+
+msgid "Accessibility"
+msgstr ""
+
+msgid "Animation"
+msgstr ""
+
+msgid "Archiving"
+msgstr ""
+
+msgid "Art"
+msgstr ""
+
+msgid "Astronomy"
+msgstr ""
+
+msgid "Audio"
+msgstr ""
+
+msgid "AudioVideo"
+msgstr ""
+
+msgid "AudioVideoEditing"
+msgstr ""
+
+msgid "Biology"
+msgstr ""
+
+msgid "Calculator"
+msgstr ""
+
+msgid "Calendar"
+msgstr ""
+
+msgid "Chart"
+msgstr ""
+
+msgid "Chemistry"
+msgstr ""
+
+msgid "Clock"
+msgstr ""
+
+msgid "Compression"
+msgstr ""
+
+msgid "ComputerScience"
+msgstr ""
+
+msgid "Core"
+msgstr ""
+
+msgid "DataVisualization"
+msgstr ""
+
+msgid "Database"
+msgstr ""
+
+msgid "Debugger"
+msgstr ""
+
+msgid "Development"
+msgstr ""
+
+msgid "Dictionary"
+msgstr ""
+
+msgid "DiscBurning"
+msgstr ""
+
+msgid "Documentation"
+msgstr ""
+
+msgid "Economy"
+msgstr ""
+
+msgid "Education"
+msgstr ""
+
+msgid "Electricity"
+msgstr ""
+
+msgid "Electronics"
+msgstr ""
+
+msgid "Engineering"
+msgstr ""
+
+msgid "FP"
+msgstr ""
+
+msgid "FileTools"
+msgstr ""
+
+msgid "Finance"
+msgstr ""
+
+msgid "GUIDesigner"
+msgstr ""
+
+msgid "Geography"
+msgstr ""
+
+msgid "Geology"
+msgstr ""
+
+msgid "Geoscience"
+msgstr ""
+
+msgid "Graphics"
+msgstr ""
+
+msgid "HamRadio"
+msgstr ""
+
+msgid "HexEditor"
+msgstr ""
+
+msgid "Humanities"
+msgstr ""
+
+msgid "IDE"
+msgstr ""
+
+msgid "ImageProcessing"
+msgstr ""
+
+msgid "Jukebox"
+msgstr ""
+
+msgid "Languages"
+msgstr ""
+
+msgid "LearnToCode"
+msgstr ""
+
+msgid "Literature"
+msgstr ""
+
+msgid "Lliurex"
+msgstr ""
+
+msgid "Maps"
+msgstr ""
+
+msgid "Math"
+msgstr ""
+
+msgid "MedicalSoftware"
+msgstr ""
+
+msgid "Midi"
+msgstr ""
+
+msgid "Mixer"
+msgstr ""
+
+msgid "Monitor"
+msgstr ""
+
+msgid "Multimedia"
+msgstr ""
+
+msgid "Music"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "NumericalAnalysis"
+msgstr ""
+
+msgid "OCR"
+msgstr ""
+
+msgid "Office"
+msgstr ""
+
+msgid "Photography"
+msgstr ""
+
+msgid "Physics"
+msgstr ""
+
+msgid "Presentation"
+msgstr ""
+
+msgid "Productivity"
+msgstr ""
+
+msgid "Profiling"
+msgstr ""
+
+msgid "ProjectManagement"
+msgstr ""
+
+msgid "Publishing"
+msgstr ""
+
+msgid "RasterGraphics"
+msgstr ""
+
+msgid "Recorder"
+msgstr ""
+
+msgid "RevisionControl"
+msgstr ""
+
+msgid "Scanning"
+msgstr ""
+
+msgid "Science"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+msgid "Sequencer"
+msgstr ""
+
+msgid "Software"
+msgstr ""
+
+msgid "Spirituality"
+msgstr ""
+
+msgid "Sports"
+msgstr ""
+
+msgid "Spreadsheet"
+msgstr ""
+
+msgid "TextEditor"
+msgstr ""
+
+msgid "TextTools"
+msgstr ""
+
+msgid "Translation"
+msgstr ""
+
+msgid "Utility"
+msgstr ""
+
+msgid "VectorGraphics"
+msgstr ""
+
+msgid "Video"
+msgstr ""
+
+msgid "Viewer"
+msgstr ""
+
+msgid "WebDevelopment"
+msgstr ""
+
+msgid "Webdevelopment"
+msgstr ""
+
+msgid "WordProcessor"
+msgstr ""
+
+msgid "X-CSuite"
+msgstr ""
+
+msgid "Zomando"
+msgstr ""
+
+msgid "resources"
+msgstr ""
+

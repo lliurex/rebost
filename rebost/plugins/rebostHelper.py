@@ -12,7 +12,7 @@ import tempfile
 import subprocess
 import time
 
-DBG=False
+DBG=True
 path="/var/log/rebost.log"
 fname = "rebost.log"
 logger = logging.getLogger(fname)
@@ -179,7 +179,7 @@ def _sanitizeString(data,scape=False,unescape=False):
 		data=data.replace("´","")
 		data=data.replace("\n"," ")
 		data=data.replace("\\","*")
-		data.rstrip()
+		data=data.rstrip()
 		if scape:
 			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
 		if unescape:
@@ -203,6 +203,7 @@ def appstream_to_rebost(appstreamCatalogue):
 				name=nameComponents[cont].lower()
 				break
 			cont-=1
+		name=name.replace("_zmd",'')
 		pkg['name']=name
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
@@ -227,26 +228,49 @@ def appstream_to_rebost(appstreamCatalogue):
 					pkg['icon']=url
 					break
 
-		pkg['categories']=component.get_categories()
-		for i in component.get_bundles():
-			if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-				pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
-				versionArray=["0.0"]
-				for release in component.get_releases():
-					versionArray.append(release.get_version())
-					versionArray.sort()
-				pkg['versions']={'flatpak':versionArray[-1]}
-		pkg['license']=component.get_project_license()
-		for scr in component.get_screenshots():
-			for img in scr.get_images():
-				pkg['screenshots'].append(img.get_url())
-				break
 		homepage=''
 		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
 		pkg['homepage']=homepage
+		pkg['categories']=component.get_categories()
+		if len(component.get_bundles())>0:
+			for i in component.get_bundles():
+				if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
+					pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
+					versionArray=["0.0"]
+					for release in component.get_releases():
+						versionArray.append(release.get_version())
+						versionArray.sort()
+					pkg['versions']={'flatpak':versionArray[-1]}
+		else:
+			if "lliurex"  in component.get_id():
+				pkgName=component.get_id().replace('.desktop','')
+				pkgName=pkgName.replace('_zmd','')
+				zmdPkgName=pkgName
+				if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
+					zmdPkgName="{}.zmd".format(zmdPkgName)
+				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
+					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+				elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
+					if "Zomando" in pkg['categories']:
+						pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
+					
+					else:
+						pkg['bundle']={'package':pkg['pkgname']}
+				if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+					pkg['categories'].insert(0,"Lliurex")
+				pkg['homepage']="https://github.com/lliurex"
+					
+			elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+					pkg['bundle']={'package':pkg['pkgname']}
+					pkg['homepage']="https://github.com/lliurex"
+		pkg['license']=component.get_project_license()
+		for scr in component.get_screenshots():
+			for img in scr.get_images():
+				pkg['screenshots'].append(img.get_url())
+				break
 
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)
@@ -394,7 +418,10 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 
 def _get_package_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
+	#Temporary use apt until bug fix
+	installCmd="apt install -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
@@ -437,7 +464,8 @@ def _get_appimage_commands(rebostpkg,user):
 		installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
 		installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
 		installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
-		installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} {1} \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{6} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user,deskName))
+		installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} \"{1}\" \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{6} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user,deskName))
+		installCmdLine.append("chown {0}:{0} /home/{0}/.local/share/applications/{1}".format(user,deskName))
 	removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}-appimage.desktop;ERR=$?".format(destPath,user,rebostpkg['pkgname'])
 	statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
@@ -445,9 +473,10 @@ def _get_appimage_commands(rebostpkg,user):
 
 def _get_zomando_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="{}".format(os.path.join("exec/usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
+	installCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
 	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	#statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_zomando_commands
 
@@ -526,3 +555,46 @@ def check_remove_unsure(package):
 	_debug("Helper: Checked")
 	return(sw)
 #def check_remove_unsure(package):
+
+def getFiltersList(blacklist=False,whitelist=False,wordlist=False):
+	wrkDir="/usr/share/rebost"
+	folderBlacklist=os.path.join(wrkDir,"lists.d/blacklist")
+	folderWhitelist=os.path.join(wrkDir,"lists.d/whitelist")
+	folderWordlist=os.path.join(wrkDir,"lists.d/words")
+	files={"categories":[],"apps":[]}
+	filters={"blacklist":files,"whitelist":files,"words":[]}
+	if blacklist==True:
+		filters["blacklist"]=getFilterContent(folderBlacklist)
+	if whitelist==True:
+		filters["whitelist"]=getFilterContent(folderWhitelist)
+	if wordlist==True:
+		filters["words"]=getFilterContent(folderWordlist)
+	return(filters)
+
+def getFilterContent(folder):
+	filters={"categories":[],"apps":[]}
+	if "word" in folder:
+		folders=[folder]
+		filters=[]
+	else:
+		folders=[os.path.join(folder,"categories"),os.path.join(folder,"apps")]
+	for folder in folders:
+		if os.path.isdir(folder):
+			for f in os.listdir(folder):
+				if f.endswith("conf"):
+					with open(os.path.join(folder,f),"r") as ffilter:
+						for line in ffilter.readlines():
+							fcontent=line.strip()
+							if "categories" in folder:
+								filters["categories"].append(fcontent)
+							elif "apps" in folder:
+								filters["apps"].append(fcontent)
+							else:
+								filters.append(fcontent)
+	return(filters)
+	#Default blacklist. If there's a category blacklist file use it
+
+#	blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
+		#appsblacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
+		#whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
+#def getCategoriesBlacklist

@@ -16,7 +16,8 @@ class packageKit():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
-		self.enabled=True
+		self.enabled=False
+		self.onlyLliurex=True
 		self._debug("Loaded")
 		self.packagekind="package"
 		self.actions=["load"]
@@ -142,40 +143,48 @@ class packageKit():
 		selected=[]
 		pkgDict={}
 		updateSelected=[]
-		if os.path.isfile("/usr/share/rebost/packagekit.db"):
-			for item in pkgToProcess:
-				#0->Name,1->Release,2->arch,3->origin
-				itemData=item.split(";")
-				if itemData[2]=="i386":
-					continue
-				pkgName=item.split(";")[0]
-				pkgDict[pkgName]=item
-			#Get rows for ids
-			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
-			for row in rows:
-				try:
-					rowData=json.loads(row[0][1])
-					rowPkg=json.loads(row[0][0])
-				except:
-					selected.append(item)
-					continue
-				del(pkgDict[rowPkg])
-				#Check if there's any change on state or version
-				swUpdate=False
-				if ":" in itemData[3] and rowData.get('state',{}).get('package',"1")!="0":
-					rowData["state"]={"package":"0"}
-					swUpdate=True
-				elif ":" not in itemData[3] and rowData.get('state',{}).get('package',"1")!="1":
-					rowData["state"]={"package":"1"}
-					swUpdate=True
-				if swUpdate:
-					updateSelected.append(rowData)
-			#Add non existent ids
-			for pkg,item in pkgDict.items():
-				selected.append(item)
+		if self.onlyLliurex==True:
+			lliurexPkgs=[]
+			for pkg in pkgToProcess:
+				if "zero-lliurex-" in pkg.lower():
+					lliurexPkgs.append(pkg)
+			pkgToProcess=lliurexPkgs
 
-		else:
-			selected=pkgToProcess
+		#if os.path.isfile("/usr/share/rebost/packagekit.db"):
+		for pkg in pkgToProcess:
+			#0->Name,1->Release,2->arch,3->origin
+			pkgData=pkg.split(";")
+			if pkgData[2]=="i386":
+				continue
+			pkgName=pkg.split(";")[0]
+			pkgDict[pkgName]=pkg
+		#Get rows for ids
+		rows=[]
+		if os.path.isfile("/usr/share/rebost/packagekit.db"):
+			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
+		for row in rows:
+			try:
+				rowData=json.loads(row[0][1])
+				rowPkg=json.loads(row[0][0])
+			except:
+				selected.append(item)
+				continue
+			del(pkgDict[rowPkg])
+			#Check if there's any change on state or version
+			swUpdate=False
+			if ":" in itemData[3] and rowData.get('state',{}).get('package',"1")!="0":
+				rowData["state"]={"package":"0"}
+				swUpdate=True
+			elif ":" not in itemData[3] and rowData.get('state',{}).get('package',"1")!="1":
+				rowData["state"]={"package":"1"}
+				swUpdate=True
+			if swUpdate:
+				updateSelected.append(rowData)
+		#Add non existent ids
+		for pkg,item in pkgDict.items():
+			selected.append(item)
+#		else:
+#			selected=pkgToProcess
 		return(selected,updateSelected)
 	#def _processPkgList
 

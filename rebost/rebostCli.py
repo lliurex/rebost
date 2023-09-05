@@ -253,7 +253,8 @@ def _getResult(pid):
 			elif status=='1':
 				result=i18n["REMOVED"].capitalize()
 			elif status=='-1':
-				result="{0}ERROR{1} {2} {3}".format(color.RED,color.END,i18n["ERR"],i18n.get(action,action))
+				#result="{2} {0}ERROR{1} {3}".format(color.RED,color.END,i18n["ERR"],i18n.get(action.upper(),action))
+				result="{0}Error:{1} {2}".format(color.RED,color.END,i18n.get(action.upper(),action))
 				ERR=err.transactionFailed
 			else:
 				ERR=err.transactionUnknownStatus

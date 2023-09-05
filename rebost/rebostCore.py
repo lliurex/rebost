@@ -27,16 +27,16 @@ class Rebost():
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
 		self.store=appstream.Store()
-		self._loadPlugins()
-		self._loadPluginInfo()
 		if self.propagateDbg:
 			self._setPluginDbg()
-		self.cofig={}
+		self.config={}
 		self.procId=1
 
 	def run(self):
-		self._readConfig()
 		self._log("Starting rebost")
+		self._loadPlugins()
+		self._loadPluginInfo()
+		self._processConfig()
 		self._autostartActions()
 		self._log("Autostart ended. Populating data")
 	#def run
@@ -72,6 +72,7 @@ class Rebost():
 	####
 	def _loadPlugins(self):
 		self._debug("Accessing %s"%self.plugDir)
+		disabledPlugins={}
 		if os.path.isdir(self.plugDir):
 			sys.path.insert(1,self.plugDir)
 			for plugin in os.listdir(self.plugDir):
@@ -98,6 +99,9 @@ class Rebost():
 							self._debug("%s will set its status"%plugin)
 					else:
 						self._debug("Plugin disabled: %s"%plugin)
+						disabledPlugins[plugin.replace(".py","")]=False
+		if len(disabledPlugins)>0:
+			self._writeConfig(disabledPlugins)
 	#def _loadPlugins
 
 	def _getPluginEnabled(self,pluginObject):
@@ -130,25 +134,49 @@ class Rebost():
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
 
+	def _writeConfig(self,config):
+		cfg=self._readConfig()
+		cfgFile="/usr/share/rebost/store.json"
+		for key,value in config.items():
+			cfg[key]=value
+		if os.path.isfile(cfgFile):
+			with open(cfgFile,'w') as f:
+				try:
+					f.write(json.dumps(cfg,skipkeys=True))
+				except:
+					pass
+	#def _writeConfig
+
+	def _processConfig(self):
+		cfg=self._readConfig()
+		for key,value in cfg.items():
+			if value==True:
+				self._enable(key)
+			else:
+				delPlugin=key
+				if key=="snap":
+					delPlugin="snapHelper"
+				elif key=="flatpak":
+					delPlugin="flatpakHelper"
+				elif key in ["apt","package","packageKit"]:
+					delPlugin="packageKit"
+				elif key=="appimage":
+					delPlugin="appimageHelper"
+				if delPlugin in self.pluginInfo.keys():
+					del(self.pluginInfo[delPlugin])
+				self._disable(key)
+	#def _readConfig
+
 	def _readConfig(self):
 		cfgFile="/usr/share/rebost/store.json"
+		cfg={}
 		if os.path.isfile(cfgFile):
 			with open(cfgFile,'r') as f:
-				cfg=json.loads(f.read())
-			for key,value in cfg.items():
-				if value==True:
-					self._enable(key)
-				else:
-					if key=="snap":
-						del(self.pluginInfo["snapHelper"])
-					elif key=="flatpak":
-						del(self.pluginInfo["flatpakHelper"])
-					elif key=="apt" or key=="package":
-						del(self.pluginInfo["packageKit"])
-					elif key=="appimage":
-						del(self.pluginInfo["appimageHelper"])
-					self._disable(key)
-	#def _readConfig
+				try:
+					cfg=json.loads(f.read())
+				except:
+					pass
+		return(cfg)
 
 	def _enable(self,bundle):
 		swEnabled=False
@@ -253,7 +281,7 @@ class Rebost():
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
 		rebostPkgList=[]
 		store=[]
-		self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}".format(action,package,extraParms,extraParms2))
+		self._debug("Parms:\n-action: {}*\n-package: {}*\n-extraParms: {}*\nplugin: {}*".format(action,package,extraParms,extraParms2))
 		if extraParms:
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraParms):
@@ -267,7 +295,7 @@ class Rebost():
 		if rebostPkgList==[]:
 			#sqlHelper now manages all operations but load
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-			self._debug("Parms:\n-action: {}\n-package: {}\n-extraParms: {}\nplugin: {}\nuser: {}".format(action,package,extraParms,plugin,user))
+			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
 		#Generate the store with results and sanitize them
 		if action!='getCategories':
@@ -358,6 +386,16 @@ class Rebost():
 		return (stdout)
 	#def getEpiPkgStatus
 
+	def getFiltersEnabled(self):
+		state=True
+		try:
+			state=self.plugins["sqlHelper"].whitelist
+		except Exception as e:
+			print(e)
+			print("Critical error. Restarting rebost service now")
+			self.run()
+		return(state)
+
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
@@ -367,12 +405,22 @@ class Rebost():
 		self._debug("Rebost forcing update...")
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
+		self._debug("Cleaning tmp")
 		for i in os.listdir(rebostTmpPath):
 			try:
 				os.remove(os.path.join(rebostTmpPath,i))
 			except Exception as e:
 				print(e)
 				self._debug(e)
+		if force==True:
+			self._debug("Removing databases")
+			for i in os.listdir(rebostPath):
+				if i.endswith(".db"):
+					try:
+						os.remove(os.path.join(rebostPath,i))
+					except Exception as e:
+						print(e)
+						self._debug(e)
 		return()
 	#def getProgress(self):
 

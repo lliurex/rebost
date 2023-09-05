@@ -1,3 +1,9 @@
+rebost (0.9.42-lliurex23) jammy; urgency=medium
+
+  * Jammy release
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 05 Sep 2023 12:47:47 +0200
+
 rebost (0.9.42) focal; urgency=medium
 
   * Allow lliurex own packages

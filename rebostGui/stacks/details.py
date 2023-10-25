@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QTableWidget,QTableWidgetItem
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -11,8 +11,13 @@ import subprocess
 import json
 import html
 import gettext
+from . import libhelper
 _ = gettext.gettext
 QString=type("")
+R=140
+G=255
+B=0
+A=70
 
 i18n={
 	"CONFIG":_("Details"),
@@ -20,6 +25,7 @@ i18n={
 	"MENUDESCRIPTION":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
 	"INSTALL":_("Install"),
+	"CHOOSE":_("Choose"),
 	"RUN":_("Open"),
 	"REMOVE":_("Remove"),
 	"UPGRADE":_("Upgrade"),
@@ -107,6 +113,7 @@ class details(confStack):
 		self.app={}
 		self.hideControlButtons()
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
+		self.helper=libhelper.helper()
 		self.epi=epiClass()
 	#def __init__
 
@@ -130,138 +137,89 @@ class details(confStack):
 		self.lblSummary=QLabel()
 		self.lblSummary.setWordWrap(True)
 		self.box.addWidget(self.lblSummary,1,2,1,1,Qt.AlignTop)
-		self.launchers=QWidget()
+
+		launchers=QWidget()
 		lay=QHBoxLayout()
-		self.cmbInstall=QComboBox()
-		self.tblInfoInstall=QTableWidget(0,2)
-		self.tblInfoInstall.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
-		self.tblInfoInstall.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoInstall.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoInstall.setSelectionBehavior(self.tblInfoInstall.SelectRows)
-		self.tblInfoInstall.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
-		self.tblInfoInstall.setShowGrid(False)
-		self.cmbInstall.setModel(self.tblInfoInstall.model())
-		self.cmbInstall.setView(self.tblInfoInstall)
-		self.cmbInstall.activated.connect(self._genericEpiInstall)
-		lay.addWidget(self.cmbInstall,Qt.AlignLeft)
-		self.cmbRemove=QComboBox()
-		self.tblInfoRemove=QTableWidget(0,2)
-		self.tblInfoRemove.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
-		self.tblInfoRemove.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoRemove.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoRemove.setSelectionBehavior(self.tblInfoRemove.SelectRows)
-		self.tblInfoRemove.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
-		self.tblInfoRemove.setShowGrid(False)
-		self.cmbRemove.setModel(self.tblInfoRemove.model())
-		self.cmbRemove.setView(self.tblInfoRemove)
-		self.cmbRemove.activated.connect(self._genericEpiInstall)
-		lay.addWidget(self.cmbRemove,Qt.AlignLeft)
-		self.cmbOpen=QComboBox()
-		self.tblInfoOpen=QTableWidget(0,2)
-		self.tblInfoOpen.setHorizontalHeaderLabels([i18n.get("FORMAT"),i18n.get("RELEASE")])
-		self.tblInfoOpen.horizontalHeaderItem(0).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoOpen.horizontalHeaderItem(1).setTextAlignment (Qt.AlignLeft)
-		self.tblInfoOpen.setSelectionBehavior(self.tblInfoOpen.SelectRows)
-		self.tblInfoOpen.setStyleSheet("QHeaderView::section{font-weight:bold}  QTableView::item {border-bottom: 2px solid silver;} QTableView::item:selected{color:inherit}")
-		self.tblInfoOpen.setShowGrid(False)
-		self.cmbOpen.setModel(self.tblInfoOpen.model())
-		self.cmbOpen.setView(self.tblInfoOpen)
-		self.cmbOpen.activated.connect(self._runApp)
+		self.btnInstall=QPushButton(i18n.get("INSTALL"))
+		self.btnInstall.clicked.connect(self._genericEpiInstall)
+		lay.addWidget(self.btnInstall,Qt.AlignLeft)
+		self.btnRemove=QPushButton(i18n.get("REMOVE"))
+		self.btnRemove.clicked.connect(self._genericEpiInstall)
+		lay.addWidget(self.btnRemove,Qt.AlignLeft)
+
 		self.btnZomando=QPushButton("{} zomando".format(i18n.get("RUN")))
 		self.btnZomando.clicked.connect(self._runZomando)
 		self.btnZomando.setVisible(False)
 		lay.addWidget(self.btnZomando,Qt.AlignLeft)
-		lay.addWidget(self.cmbOpen,Qt.AlignLeft)
-		self.launchers.setLayout(lay)
-		self.box.addWidget(self.launchers,2,0,1,2,Qt.AlignTop|Qt.AlignLeft)
+
+		self.btnLaunch=QPushButton(i18n.get("RUN"))
+		self.btnLaunch.clicked.connect(self._runApp)
+		lay.addWidget(self.btnLaunch,Qt.AlignLeft)
+		launchers.setLayout(lay)
+		self.box.addWidget(launchers,2,0,1,3,Qt.AlignTop|Qt.AlignLeft)
+
+		info=QWidget()
+		layInfo=QHBoxLayout()
+		info.setLayout(layInfo)
+		self.lstInfo=QListWidget()
+		self.lstInfo.currentRowChanged.connect(self._setLauncherOptions)	
+		layInfo.addWidget(self.lstInfo)
 		self.lblDesc=appconfigControls.QScrollLabel()
 		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
-		self.screenShot=appconfigControls.QScreenShotContainer()
-		self.box.addWidget(self.lblDesc,3,0,1,3)
+		layInfo.addWidget(self.lblDesc)
+		self.box.addWidget(info,3,0,1,3)
+
+		resources=QWidget()
+		layResources=QVBoxLayout()
+		resources.setLayout(layResources)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
-		self.box.addWidget(self.lblHomepage,4,0,1,3)
-		self.box.addWidget(self.screenShot,5,0,1,3,Qt.AlignTop)
+		self.screenShot=appconfigControls.QScreenShotContainer()
+		self.screenShot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+		self.screenShot.setStyleSheet("margin:0px;border:0px;padding:0px;")
+		layResources.addWidget(self.screenShot)
+		layResources.addWidget(self.lblHomepage)
+		self.box.addWidget(resources,4,0,1,3,Qt.AlignTop)
+		self.setLayout(self.box)
 		self.box.setColumnStretch(0,0)
 		self.box.setColumnStretch(1,0)
-		self.box.setColumnStretch(2,2)
-		self.box.setRowStretch(0,0)
-		self.box.setRowStretch(1,0)
-		self.box.setRowStretch(2,0)
-		self.box.setRowStretch(3,2)
-		self.box.setRowStretch(4,1)
-		self.setLayout(self.box)
+		self.box.setColumnStretch(2,1)
 	#def _load_screen
 
-	def _runZomando(self):
-		zmdPath=os.path.join("/usr/share/zero-center/zmds",self.app.get('bundle',{}).get('zomando',''))
-		if zmdPath.endswith(".zmd")==False:
-			zmdPath="{}.zmd".format(zmdPath)
-		if os.path.isfile(zmdPath):
-			#Look if pkexec is needed
-			appPath=os.path.join("/usr/share/zero-center/applications",self.app.get('bundle',{}).get('zomando','')).replace(".zmd",".app")
-			if appPath.endswith(".app")==False:
-				appPath="{}.app".format(appPath)
-			cmd=[zmdPath]
-			if os.path.isfile(appPath):
-				with open (appPath,'r') as f:
-					flines=f.readlines()
-				for l in flines:
-					if "pkexec" in l:
-						cmd=["pkexec",zmdPath]
-						break
-			#subprocess.run(["pkexec",zmdPath])
-			try:
-				subprocess.run(cmd)
-			except Exception as e:
-				print(e)
-				self.showMsg(e)
+	def _setLauncherOptions(self):
+		item=self.lstInfo.currentItem()
+		bundle=""
+		rgb=(0,0,0,0)
+		if item!=None:
+			bundle=item.text().lower().split(" ")[-1]
+			rgb=item.background().color().getRgb()
+		if bundle=="package":
+			bundle=""
+		self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),bundle))
+		self.btnRemove.setText("{} {}".format(i18n.get("REMOVE"),bundle))
+		self.btnLaunch.setText("{} {}".format(i18n.get("RUN"),bundle))
+		if rgb[0]==R and rgb[1]==G and rgb[2]==B and rgb[3]==A:
+			self.btnInstall.setVisible(False)
+			self.btnRemove.setVisible(True)
+			self.btnLaunch.setVisible(True)
 		else:
-			self._zmdNotFound(zmdPath)
+			self.btnInstall.setVisible(True)
+			self.btnRemove.setVisible(False)
+			self.btnLaunch.setVisible(False)
+	#def _setLauncherOptions
+
+	def _runZomando(self):
+		self.helper.runZmd(self.app)
 	#def _runZomando
 
-	def _zmdNotFound(self,zmd):
-		def _launchZeroCenter():
-			dlg.close()
-			cmd=["zero-center"]
-			try:
-				subprocess.run(cmd)
-			except Exception as e:
-				print(e)
-				self.showMsg(e)
-
-		dlg=QDialog()
-		dlg.setWindowTitle("Error")
-		btns=QDialogButtonBox.Open|QDialogButtonBox.Cancel
-		dlgBtn=QDialogButtonBox(btns)
-		dlgBtn.accepted.connect(_launchZeroCenter)
-		dlgBtn.rejected.connect(dlg.close)
-		lay=QGridLayout()
-		lbl=QLabel("{0}".format(i18n.get("ZMDNOTFOUND")))
-		lay.addWidget(lbl)
-		lay.addWidget(dlgBtn)
-		dlg.setLayout(lay)
-		dlg.exec()
-
 	def _runApp(self):
-		bundle=self.cmbOpen.currentText().lower().split(" ")[0]
-		if bundle=="package":
-			cmd=["gtk-launch",self.app.get("name",'')]
-		elif bundle=="flatpak":
-			cmd=["flatpak","run",self.app.get("bundle",{}).get("flatpak","")]
-		elif bundle=="snap":
-			cmd=["snap","run",self.app.get("bundle",{}).get("snap","")]
-		elif bundle=="appimage":
-			cmd=["gtk-launch","{}-appimage".format(self.app.get("name",''))]
-		subprocess.run(cmd)
-		self.cmbOpen.setCurrentIndex(-1)
+		bundle=self.lstInfo.currentItem().text().lower().split(" ")[-1]
+		self.helper.runApp(self.app,bundle)
 	#def _runApp
 
 	def _genericEpiInstall(self):
-		bundle=self.cmbInstall.currentText().lower().split(" ")[0]
-		if bundle=="":
-			bundle=self.cmbRemove.currentText().lower().split(" ")[0]
+		bundle=self.lstInfo.currentItem().text().lower().split(" ")[-1]
 		self.rc.enableGui(True)
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
@@ -286,8 +244,6 @@ class details(confStack):
 			self.epi.setArgs(self.app,cmd,bundle)
 			self.epi.epiEnded.connect(self._getEpiResults)
 			self.epi.start()
-		self.cmbInstall.setCurrentIndex(-1)
-		self.cmbRemove.setCurrentIndex(-1)
 	#def _genericEpiInstall
 	
 	def _getEpiResults(self,app):
@@ -341,26 +297,18 @@ class details(confStack):
 	def updateScreen(self):
 		self._initScreen()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
-		icn=QtGui.QPixmap.fromImage(self.app.get('icon',''))
-		if icn.depth()==0:
-		#something went wrong. Perhaps img it's gzipped
-			icn2=QtGui.QIcon.fromTheme('application-x-executable')
-			icn=icn2.pixmap(128,128)
+		icn=self._getIconFromApp(self.app)
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
 		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
 		versions=self.app.get('versions',{})
-		self.cmbRemove.setVisible(False)
-		self.cmbOpen.setVisible(False)
-		self.cmbInstall.setVisible(False)
 		bundles=list(self.app.get('bundle',{}).keys())
 		self._update_screen_controls(bundles)
 		homepage=self.app.get('homepage','')
 		text=''
 		if homepage:
-			if homepage.endswith("/"):
-				homepage=homepage.rstrip("/")
+			homepage=homepage.rstrip("/")
 			desc=homepage
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])
@@ -378,7 +326,17 @@ class details(confStack):
 				self.screenShot.addImage(icn)
 			except Exception as e:
 				print(e)
-	#def _udpate_screen
+		self._setLauncherOptions()
+	#def _updateScreen
+
+	def _getIconFromApp(self,app):
+		icn=QtGui.QPixmap.fromImage(app.get('icon',''))
+		if icn.depth()==0:
+		#something went wrong. Perhaps img it's gzipped
+			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn=icn2.pixmap(128,128)
+		return(icn)
+	#def _getIconFromApp
 
 	def _update_screen_controls(self,bundles):
 		pkgState=0
@@ -387,54 +345,75 @@ class details(confStack):
 				pkgState=self.app.get('state',{}).get("package",'1')
 				if pkgState=="0":
 					bundles.remove('package')
+		states=0
 		for bundle in bundles:
-			state=self.app.get('state',{}).get(bundle,'1')
+			state=(self.app.get('state',{}).get(bundle,'1'))
+			if state.isdigit()==True:
+				state=int(state)
+			else:
+				state=1
+			states+=state
 			if bundle=="zomando" and (pkgState=="0" or state=="0"):
-				print("B: {} P1: {} P2:{}".format(bundle,pkgState,state))
 				self.btnZomando.setVisible(True)
 				continue
 			elif bundle=="zomando":
 				continue
-		#		self.btnPackageLaunch.setVisible(False)
-			tooltip=self.app.get('versions',{}).get(bundle,'')
-			tipInfo=tooltip
-			#if len(tooltip)>8:
-			#	tipArray=tooltip.split(".")
-			#	count=0
-			#	while len(tipInfo)<8 or count>=len(tipArray):
-			#		tipInfo=".".join(tipArray[0:count])
-			#		count+=1
-			#	if len(tipInfo)>8:
-			#		tipInfo=tipInfo[0:8]
-			if state=='0':
-				self.cmbRemove.setVisible(True)
-				#self.cmbRemove.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
-				self.tblInfoRemove.setRowCount(self.tblInfoRemove.rowCount()+1)
-				self.cmbRemove.setItemData(self.cmbRemove.count()-1,tooltip,Qt.ToolTipRole)
-				self.tblInfoRemove.setItem(self.tblInfoRemove.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
-				self.tblInfoRemove.setItem(self.tblInfoRemove.rowCount()-1,1,QTableWidgetItem(tooltip))
-				width = self.tblInfoRemove.sizeHint().width()-32
-				self.cmbRemove.view().setMinimumWidth(width)
-
-				self.cmbOpen.setVisible(True)
-				#self.cmbOpen.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
-				self.tblInfoOpen.setRowCount(self.tblInfoOpen.rowCount()+1)
-				self.cmbOpen.setItemData(self.cmbOpen.count()-1,tooltip,Qt.ToolTipRole)
-				self.tblInfoOpen.setItem(self.tblInfoOpen.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
-				self.tblInfoOpen.setItem(self.tblInfoOpen.rowCount()-1,1,QTableWidgetItem(tooltip))
-				width = self.tblInfoOpen.sizeHint().width()-32
-				self.cmbOpen.view().setMinimumWidth(width)
-			else:
-				self.cmbInstall.setVisible(True)
-				#self.cmbInstall.addItem("{0} {1}".format(bundle.capitalize(),tipInfo))
-				#self.cmbInstall.setItemData(self.cmbInstall.count()-1,tooltip,Qt.ToolTipRole)
-				self.tblInfoInstall.setRowCount(self.tblInfoInstall.rowCount()+1)
-				self.tblInfoInstall.setItem(self.tblInfoInstall.rowCount()-1,0,QTableWidgetItem(bundle.capitalize()))
-				self.tblInfoInstall.setItem(self.tblInfoInstall.rowCount()-1,1,QTableWidgetItem(tooltip))
-				width = self.tblInfoInstall.sizeHint().width()-32
-				self.cmbInstall.view().setMinimumWidth(width)
-
+	#	if states<len(bundles): #at least one installed
+	#		self._installedAppControls()
+	#	else:
+	#		self._uninstalledAppControls()
+		self._getReleasesInfo()
 	#def _update_screen_controls
+
+	def _getReleasesInfo(self):
+		bundles=self.app.get('bundle',[])
+		self.lstInfo.clear()
+		installed=[]
+		uninstalled=[]
+		priority=["snap","flatpak","appimage","package"]
+		for bundle in bundles.keys():
+			if int(self.app.get("state",{}).get(bundle,1))==0: #installed
+				installed.append(bundle)
+			else:
+				uninstalled.append(bundle)
+		for p in priority:
+			if p in installed:
+				version=self.app.get('versions',{}).get(p,'')
+				version=version.split("+")[0]
+				release=QListWidgetItem("{} {}".format(version,p))
+				release.setBackground(QtGui.QColor().fromRgb(R,G,B,A))
+				self.lstInfo.addItem(release)
+		for p in priority:
+			if p in uninstalled:
+				version=self.app.get('versions',{}).get(p,'')
+				version=version.split("+")[0]
+				release=QListWidgetItem("{} {}".format(version,p))
+				self.lstInfo.addItem(release)
+		if len(bundles)<=1:
+			self.lstInfo.setVisible(False)
+			if len(bundles)==1:
+				if list(bundles.keys())[0]=="package":
+					self.btnInstall.setText(i18n.get("INSTALL"))
+				else:
+					self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),list(bundles.keys())[0]))
+			else:
+				self.btnInstall.setEnabled(False)
+		else:
+			self.lstInfo.setVisible(True)
+		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
+		self.lstInfo.setCurrentRow(0)
+	#def _getReleasesInfo
+
+	def _installedAppControls(self):
+		self.btnRemove.setVisible(True)
+		self.btnLaunch.setVisible(True)
+	#def _installedAppControls
+
+	def _uninstalledAppControls(self):
+		self.btnInstall.setVisible(True)
+		self.btnRemove.setVisible(False)
+		self.btnLaunch.setVisible(False)
+	#def _uninstalledAppControls(self,bundle,tooltip):
 
 	def _initScreen(self):
 		#Reload config if app has been epified
@@ -451,16 +430,11 @@ class details(confStack):
 					print(e)
 					self.app={}
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
+		self.btnInstall.setEnabled(True)
+		self.btnInstall.setText(i18n.get("INSTALL"))
 		self.setCursor(cursor)
 		self.screenShot.clear()
 		self.btnZomando.setVisible(False)
-		self.cmbInstall.clear()
-		self.cmbInstall.setPlaceholderText("{}...".format(i18n.get("INSTALL")))
-		self.cmbRemove.clear()
-		self.cmbRemove.setPlaceholderText("{}...".format(i18n.get("REMOVE")))
-		self.cmbOpen.clear()
-		self.cmbOpen.setPlaceholderText("{}...".format(i18n.get("RUN")))
-		#self.lblSummary.setFixedWidth(self.height())
 		self.lblHomepage.setText("")
 		self.app['name']=self.app.get('name','').replace(" ","")
 	#def _initScreen

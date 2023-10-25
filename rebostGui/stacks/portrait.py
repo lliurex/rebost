@@ -312,6 +312,7 @@ class portrait(confStack):
 		if txt==self.oldSearch:
 			self.searchBox.setText("")
 			txt=""
+		self.oldSearch=txt
 		self._searchApps()
 	#def _searchAppsBtn
 

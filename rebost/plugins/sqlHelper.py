@@ -13,7 +13,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
@@ -270,6 +270,7 @@ class sqlHelper():
 
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
+		consolidate_table="packagekit.db"
 		main_tmp_table=os.path.basename(self.main_table).replace(".db","")
 		#Update?
 		update=self._chkNeedUpdate()
@@ -279,9 +280,9 @@ class sqlHelper():
 			return([])
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
-		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")) and sources.get("package",True)==True:
-			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
-			fupdate.write("packagekit.db:{}".format(fsize))
+		if os.path.isfile(os.path.join(self.wrkDir,consolidate_table)) and sources.get("package",True)==True:
+			fsize=os.path.getsize(os.path.join(self.wrkDir,consolidate_table))
+			fupdate.write("{0}: {1}".format(consolidate_table,fsize))
 			self.copyPackagekitSql()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
@@ -405,6 +406,8 @@ class sqlHelper():
 		row=cursor.execute(fetchquery).fetchone()
 		if row:
 			pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
+		#elif "packagekit" in fname.lower():
+		#	return(retval)
 		if pkgdataJson.get('bundle',{})!={}:
 			categories=pkgdataJson.get('categories',[])
 			if "Lliurex" in categories:
@@ -553,12 +556,13 @@ class sqlHelper():
 		rebost_db=sqlite3.connect(self.main_tmp_table)
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
+		consolidate_table="packagekit"
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
 		cursor.execute(query)
-		cursor.execute("ATTACH DATABASE '/usr/share/rebost/packagekit.db' AS pk;")
-		cursor.execute("INSERT INTO {} (pkg,data,cat0,cat1,cat2) SELECT * from pk.packagekit;".format(table))
+		cursor.execute("ATTACH DATABASE '/usr/share/rebost/{}.db' AS pk;".format(consolidate_table))
+		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()
 	#def copyPackagekitSql

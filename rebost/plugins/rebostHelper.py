@@ -235,16 +235,21 @@ def appstream_to_rebost(appstreamCatalogue):
 				break
 		pkg['homepage']=homepage
 		pkg['categories']=component.get_categories()
+		versionArray=["0.0"]
+		for release in component.get_releases():
+			versionArray.append(release.get_version())
+			versionArray.sort()
 		if len(component.get_bundles())>0:
 			for i in component.get_bundles():
-				if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-					pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
-					versionArray=["0.0"]
-					for release in component.get_releases():
-						versionArray.append(release.get_version())
-						versionArray.sort()
-					pkg['versions']={'flatpak':versionArray[-1]}
-		else:
+				if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
+					if i.get_kind()==2:
+						bundle="flatpak"
+						pkgid=component.get_id()
+					else:
+						pkgid=component.get_pkgname_default()
+						bundle="package"
+					pkg['bundle']={bundle:pkgid.replace('.desktop','')}
+					pkg['versions']={bundle:versionArray[-1]}
 			if "lliurex"  in component.get_id():
 				pkgName=component.get_id().replace('.desktop','')
 				pkgName=pkgName.replace('_zmd','')

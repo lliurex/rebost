@@ -3,21 +3,18 @@ import gi
 from gi.repository import Gio
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
-import threading
 import json
 import rebostHelper
 import logging
-import html
 import os
-import hashlib
 import time
 
 class packageKit():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
-		self.enabled=False
-		self.onlyLliurex=True
+		self.enabled=True
+		self.onlyLliurex=False
 		self._debug("Loaded")
 		self.packagekind="package"
 		self.actions=["load"]
@@ -52,13 +49,13 @@ class packageKit():
 		action="load"
 		self._debug("Getting pkg list")
 		pkcon=packagekit.Client()
-		pkList=pkcon.get_packages(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		pkList=pkcon.get_packages(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
 		pkgSack=pkList.get_package_sack()
 		#Needed for controlling updates
 		gioFile=Gio.file_new_tmp()
 		pkgSack.to_file(gioFile[0])
 		gPath=gioFile[0].get_path()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		newMd5=""
 		pkgIds=self._getChanges(gPath)
@@ -229,7 +226,10 @@ class packageKit():
 	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
 		for pkg in pkgList.get_details_array():
-			rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+			pkgId=pkg.get_package_id().split(";")
+			name=pkgId[0]
+			if name.startswith("lib")==False and name.startswith("python")==False:
+				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
 	#def _th_generateRebostPkg
 

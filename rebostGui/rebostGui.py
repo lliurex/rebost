@@ -24,5 +24,7 @@ config.hideNavMenu(True)
 config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],".config/rebost")},confFile="store.json")
 config.Show()
 sizeObject = QDesktopWidget().screenGeometry(-1)
-config.resize(int(sizeObject.width()/1.75),int(sizeObject.height()/1.40)+16)
+config.setMinimumWidth(config.sizeHint().width()*1.5)
+config.setMinimumHeight(config.sizeHint().height()*1.1)
+
 app.exec_()

@@ -110,7 +110,7 @@ class appstreamHelper():
 			icondefault=pkg.get_icon_default()
 			fname=None
 			if icondefault:
-				prefix=icondefault.get_prefix()
+				prefix=os.path.dirname(icondefault.get_prefix())
 				name=icondefault.get_name()
 				if not name or not prefix:
 					continue

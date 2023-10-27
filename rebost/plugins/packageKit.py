@@ -227,12 +227,7 @@ class packageKit():
 			pkgId=pkg.get_package_id().split(";")
 			name=pkgId[0]
 			pref=name[:6]
-			dismiss=["lib","n4d","python","calamares","lliurex-auto","qml-","lliurex-grub","cdc"]
-			sw_dismiss=False
-			for d in dismiss:
-				if name.startswith(d)==True:
-					sw_dismiss=True
-			dismiss=["admin-tools","other"]
+			dismiss=["admin-tools","other","system"]
 			if pkg.get_group().to_string(pkg.get_group()).lower().strip() in dismiss:
 				sw_dismiss=True
 			if sw_dismiss==False:

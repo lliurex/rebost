@@ -45,7 +45,6 @@ class QPushButtonRebostApp(QPushButton):
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
 		elif img=='':
-			print(self.app)
 			icn2=QtGui.QIcon.fromTheme(self.app.get('pkgname'))
 			icn=icn2.pixmap(128,128)
 		if icn:

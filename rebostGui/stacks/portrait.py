@@ -31,6 +31,8 @@ class QPushButtonRebostApp(QPushButton):
 	def __init__(self,strapp,parent=None):
 		QPushButton.__init__(self, parent)
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
+		if os.path.exists(self.cacheDir)==False:
+			os.makedirs(self.cacheDir)
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setToolTip("<p>{0}</p>".format(self.app.get('summary',self.app.get('name'))))
@@ -43,7 +45,8 @@ class QPushButtonRebostApp(QPushButton):
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
 		elif img=='':
-			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			print(self.app)
+			icn2=QtGui.QIcon.fromTheme(self.app.get('pkgname'))
 			icn=icn2.pixmap(128,128)
 		if icn:
 			self.load(icn)

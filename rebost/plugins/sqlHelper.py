@@ -283,10 +283,10 @@ class sqlHelper():
 		if os.path.isfile(os.path.join(self.wrkDir,consolidate_table)) and sources.get("package",True)==True:
 			fsize=os.path.getsize(os.path.join(self.wrkDir,consolidate_table))
 			fupdate.write("{0}: {1}".format(consolidate_table,fsize))
-			self.copyPackagekitSql()
+			#self.copyBaseTable()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		tables=["appimage","flatpak","snap","zomandos","appstream"]
+		tables=["packagekit","appimage","flatpak","snap","zomandos","appstream"]
 		include=[]
 		for source in sources.keys():
 			if source in tables:
@@ -443,15 +443,25 @@ class sqlHelper():
 	def _checkBlacklisted(self,pkgname,data,blacklisted=False):
 		filters=self.blacklistFilter.get('blacklist',{})
 		categories=data.get('categories')
-		if "Lliurex" not in categories and "LliureX" not in categories:
-			#for blacklist in self.blacklistCategories:
-			blackC=list(set(filters.get('categories',[])))
-			fcategories=list(set(categories))
-			if len(blackC+fcategories)!=len(set(blackC+fcategories)):
-			#If len==len(set) there's no matching categories
-				blacklisted=True
-		if pkgname in filters.get('apps',[]) and blacklisted==False:
+#		if "Lliurex" not in categories and "LliureX" not in categories:
+		blackC=list(set(filters.get('categories',[])))
+		fcategories=list(set(categories))
+		#REM: len==len(set) -> no matching categories
+		if len(blackC+fcategories)!=len(set(blackC+fcategories)):
 			blacklisted=True
+		#endif "Lliurex"...
+		apps=filters.get('apps',[]) 
+		globs=[ c for c in apps if c.endswith("*")]
+		apps=[ c for c in apps if not c.endswith("*")]
+		if blacklisted==False:
+			if pkgname in apps:
+				blacklisted=True
+			else:
+				for glob in globs:
+					if pkgname.startswith("libreof"):
+						break
+					if pkgname.startswith(glob.replace("*","")):
+						blacklisted=True
 		return(blacklisted)
 	#def _checkBlacklisted
 
@@ -473,8 +483,8 @@ class sqlHelper():
 					whitelisted=True
 				else:
 					whitelisted=False
-		if "Lliurex" in categorySet or "LliureX" in categorySet:
-			whitelisted=True
+		#if "Lliurex" in categorySet or "LliureX" in categorySet:
+		#	whitelisted=True
 		return(whitelisted)
 	#def _checkWhitelisted
 
@@ -552,7 +562,7 @@ class sqlHelper():
 		return(mergepkgdataJson)
 	#def _mergePackage
 
-	def copyPackagekitSql(self):
+	def copyBaseTable(self):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -565,7 +575,7 @@ class sqlHelper():
 		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()
-	#def copyPackagekitSql
+	#def copyBaseTable
 
 	def _copyTmpDef(self):
 		#Copy tmp to definitive

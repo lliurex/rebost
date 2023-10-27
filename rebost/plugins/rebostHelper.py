@@ -155,6 +155,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
+			iconPaths.append(os.path.join("/usr/share/icons/lliurex/apps/48/{0}.png".format(iconName)))
 			while iconPaths:
 				iconPath=iconPaths.pop(0)
 				if os.path.isfile(iconPath):

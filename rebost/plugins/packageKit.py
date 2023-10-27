@@ -49,13 +49,14 @@ class packageKit():
 		action="load"
 		self._debug("Getting pkg list")
 		pkcon=packagekit.Client()
-		pkList=pkcon.get_packages(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
+		#pkList=pkcon.get_packages(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
+		pkList=pkcon.get_packages(packagekit.FilterEnum.GUI, None, self._load_callback, None)
 		pkgSack=pkList.get_package_sack()
 		#Needed for controlling updates
 		gioFile=Gio.file_new_tmp()
 		pkgSack.to_file(gioFile[0])
 		gPath=gioFile[0].get_path()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.GUI, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		newMd5=""
 		pkgIds=self._getChanges(gPath)
@@ -146,8 +147,6 @@ class packageKit():
 				if "zero-lliurex-" in pkg.lower():
 					lliurexPkgs.append(pkg)
 			pkgToProcess=lliurexPkgs
-
-		#if os.path.isfile("/usr/share/rebost/packagekit.db"):
 		for pkg in pkgToProcess:
 			#0->Name,1->Release,2->arch,3->origin
 			pkgData=pkg.split(";")
@@ -197,12 +196,9 @@ class packageKit():
 		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
-		#Updateversion now is a list. Must be a dict with name:version!!!!
 		updateVersion=updateInfo.get(name,{}).get('release',"{}".format(version))
 		rebostPkg['versions']={"package":"{}".format(updateVersion)}
-		#rebostPkg['versions']={"package":"{}".format(version)}
 		rebostPkg['bundle']={"package":"{}".format(rebostPkg['name'])}
-		#if 'installed' in pkgId:
 		if ":" in origin:
 			rebostPkg['state']={"package":"0"}
 			rebostPkg['installed']={"package":"{}".format(version)}
@@ -220,6 +216,8 @@ class packageKit():
 			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(rebostPkg['name']))
 		elif os.path.isfile(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))):
 			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))
+		elif os.path.isfile(os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))):
+			rebostPkg['icon']=os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))
 		return(rebostPkg)
 	#def _th_generateRebostPkg
 
@@ -228,7 +226,16 @@ class packageKit():
 		for pkg in pkgList.get_details_array():
 			pkgId=pkg.get_package_id().split(";")
 			name=pkgId[0]
-			if name.startswith("lib")==False and name.startswith("python")==False:
+			pref=name[:6]
+			dismiss=["lib","n4d","python","calamares","lliurex-auto","qml-","lliurex-grub","cdc"]
+			sw_dismiss=False
+			for d in dismiss:
+				if name.startswith(d)==True:
+					sw_dismiss=True
+			dismiss=["admin-tools","other"]
+			if pkg.get_group().to_string(pkg.get_group()).lower().strip() in dismiss:
+				sw_dismiss=True
+			if sw_dismiss==False:
 				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
 	#def _th_generateRebostPkg

@@ -382,7 +382,10 @@ class details(confStack):
 		uninstalled=[]
 		priority=["zomando","snap","flatpak","appimage","package"]
 		for bundle in bundles.keys():
-			if int(self.app.get("state",{}).get(bundle,1))==0: #installed
+			state=self.app.get("state",{}).get(bundle,1)
+			if state.isdigit()==False:
+				state="1"
+			if int(state)==0: #installed
 				installed.append(bundle)
 			else:
 				uninstalled.append(bundle)

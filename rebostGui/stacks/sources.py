@@ -132,10 +132,11 @@ class sources(confStack):
 
 	def _clearCache(self):
 		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
-		try:
-			shutil.rmtree(cacheDir)
-		except Exception as e:
-			print("Error removing {0}: {1}".format(cacheDir,e))
+		if os.path.isdir(cacheDir):
+			try:
+				shutil.rmtree(cacheDir)
+			except Exception as e:
+				print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
 	def _resetDB(self,refresh=False):

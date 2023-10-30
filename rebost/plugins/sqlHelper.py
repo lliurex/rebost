@@ -13,7 +13,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
@@ -270,6 +270,7 @@ class sqlHelper():
 
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
+		consolidate_table="packagekit.db"
 		main_tmp_table=os.path.basename(self.main_table).replace(".db","")
 		#Update?
 		update=self._chkNeedUpdate()
@@ -279,13 +280,13 @@ class sqlHelper():
 			return([])
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
-		if os.path.isfile(os.path.join(self.wrkDir,"packagekit.db")) and sources.get("package",True)==True:
-			fsize=os.path.getsize(os.path.join(self.wrkDir,"packagekit.db"))
-			fupdate.write("packagekit.db:{}".format(fsize))
-			self.copyPackagekitSql()
+		if os.path.isfile(os.path.join(self.wrkDir,consolidate_table)) and sources.get("package",True)==True:
+			fsize=os.path.getsize(os.path.join(self.wrkDir,consolidate_table))
+			fupdate.write("{0}: {1}".format(consolidate_table,fsize))
+			#self.copyBaseTable()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		tables=["appimage","flatpak","snap","zomandos","appstream"]
+		tables=["packagekit","appimage","flatpak","snap","zomandos","appstream"]
 		include=[]
 		for source in sources.keys():
 			if source in tables:
@@ -394,17 +395,18 @@ class sqlHelper():
 				description=description.replace("-"," ")
 				description=description.replace("."," ")
 				description=description.replace(","," ")
-				descriptionArray=description.split()
 				for word in self.wordlistFilter.get('words',[]):
-					if word in descriptionArray:
+					if word in description:
 						blacklisted=True
 						break
-		else:
+		if blacklisted==True:
 			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()
 		if row:
 			pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
+		#elif "packagekit" in fname.lower():
+		#	return(retval)
 		if pkgdataJson.get('bundle',{})!={}:
 			categories=pkgdataJson.get('categories',[])
 			if "Lliurex" in categories:
@@ -440,15 +442,25 @@ class sqlHelper():
 	def _checkBlacklisted(self,pkgname,data,blacklisted=False):
 		filters=self.blacklistFilter.get('blacklist',{})
 		categories=data.get('categories')
-		if "Lliurex" not in categories and "LliureX" not in categories:
-			#for blacklist in self.blacklistCategories:
-			blackC=list(set(filters.get('categories',[])))
-			fcategories=list(set(categories))
-			if len(blackC+fcategories)!=len(set(blackC+fcategories)):
-			#If len==len(set) there's no matching categories
-				blacklisted=True
-		if pkgname in filters.get('apps',[]) and blacklisted==False:
+#		if "Lliurex" not in categories and "LliureX" not in categories:
+		blackC=list(set(filters.get('categories',[])))
+		fcategories=list(set(categories))
+		#REM: len==len(set) -> no matching categories
+		if len(blackC+fcategories)!=len(set(blackC+fcategories)):
 			blacklisted=True
+		#endif "Lliurex"...
+		apps=filters.get('apps',[]) 
+		globs=[ c for c in apps if c.endswith("*")]
+		apps=[ c for c in apps if not c.endswith("*")]
+		if blacklisted==False:
+			if pkgname in apps:
+				blacklisted=True
+			else:
+				for glob in globs:
+					if pkgname.startswith("libreof"):
+						break
+					if pkgname.startswith(glob.replace("*","")):
+						blacklisted=True
 		return(blacklisted)
 	#def _checkBlacklisted
 
@@ -470,8 +482,8 @@ class sqlHelper():
 					whitelisted=True
 				else:
 					whitelisted=False
-		if "Lliurex" in categorySet or "LliureX" in categorySet:
-			whitelisted=True
+		#if "Lliurex" in categorySet or "LliureX" in categorySet:
+		#	whitelisted=True
 		return(whitelisted)
 	#def _checkWhitelisted
 
@@ -549,19 +561,20 @@ class sqlHelper():
 		return(mergepkgdataJson)
 	#def _mergePackage
 
-	def copyPackagekitSql(self):
+	def copyBaseTable(self):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
+		consolidate_table="packagekit"
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
 		cursor.execute(query)
-		cursor.execute("ATTACH DATABASE '/usr/share/rebost/packagekit.db' AS pk;")
-		cursor.execute("INSERT INTO {} (pkg,data,cat0,cat1,cat2) SELECT * from pk.packagekit;".format(table))
+		cursor.execute("ATTACH DATABASE '/usr/share/rebost/{}.db' AS pk;".format(consolidate_table))
+		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()
-	#def copyPackagekitSql
+	#def copyBaseTable
 
 	def _copyTmpDef(self):
 		#Copy tmp to definitive

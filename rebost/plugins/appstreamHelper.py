@@ -110,7 +110,7 @@ class appstreamHelper():
 			icondefault=pkg.get_icon_default()
 			fname=None
 			if icondefault:
-				prefix=icondefault.get_prefix()
+				prefix=os.path.dirname(icondefault.get_prefix())
 				name=icondefault.get_name()
 				if not name or not prefix:
 					continue
@@ -141,6 +141,11 @@ class appstreamHelper():
 					pkg.add_icon(icon)
 			else:
 				pkg.add_icon(icondefault)
+			if not pkg.get_bundles():
+				bundle=appstream.Bundle()
+				bundle.set_id("{}".format(pkg.get_id()))
+				bundle.set_kind(appstream.BundleKind.PACKAGE)
+				pkg.add_bundle(bundle)
 			add=False
 			if add and pkg.get_id() not in added:
 				try:

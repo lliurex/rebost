@@ -42,4 +42,7 @@ Rebost could be accessed over dbus at net.lliurex.rebost /net/lliurex/rebost. It
    -net.lliurex.rebost.load: loads the catalogue
    -net.lliurex.rebost.restart: Restarts the daemon
 
+# Python
+
+There's a python lib called python3-rebost that presents an api analogue to d-bus for rebost related operations.
 

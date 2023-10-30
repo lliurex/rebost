@@ -395,7 +395,6 @@ class sqlHelper():
 				description=description.replace("-"," ")
 				description=description.replace("."," ")
 				description=description.replace(","," ")
-				descriptionArray=description.split()
 				for word in self.wordlistFilter.get('words',[]):
 					if word in description:
 						blacklisted=True

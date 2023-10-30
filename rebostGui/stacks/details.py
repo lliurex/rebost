@@ -77,7 +77,7 @@ class QLabelRebostApp(QLabel):
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
 		elif img=='':
-			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn2=QtGui.QIcon.fromTheme(app.get('pkgname'))
 			icn=icn2.pixmap(128,128)
 		if icn:
 			wsize=128
@@ -343,7 +343,7 @@ class details(confStack):
 		icn=QtGui.QPixmap.fromImage(app.get('icon',''))
 		if icn.depth()==0:
 		#something went wrong. Perhaps img it's gzipped
-			icn2=QtGui.QIcon.fromTheme('application-x-executable')
+			icn2=QtGui.QIcon.fromTheme(app.get('pkgname'))
 			icn=icn2.pixmap(128,128)
 		return(icn)
 	#def _getIconFromApp

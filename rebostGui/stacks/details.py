@@ -332,7 +332,9 @@ class details(confStack):
 			else:
 				self.btnRemove.setVisible(True)
 				self.btnLaunch.setVisible(True)
+			self.lstInfo.setStyleSheet("selection-color:grey;selection-background-color:rgba({0},{1},{2},0.5)".format(rgb[0],rgb[1],rgb[2]))
 		else:
+			self.lstInfo.setStyleSheet("")
 			self.btnInstall.setVisible(True)
 			self.btnRemove.setVisible(False)
 			self.btnLaunch.setVisible(False)

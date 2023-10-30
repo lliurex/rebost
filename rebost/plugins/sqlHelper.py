@@ -397,10 +397,10 @@ class sqlHelper():
 				description=description.replace(","," ")
 				descriptionArray=description.split()
 				for word in self.wordlistFilter.get('words',[]):
-					if word in descriptionArray:
+					if word in description:
 						blacklisted=True
 						break
-		else:
+		if blacklisted==True:
 			return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()

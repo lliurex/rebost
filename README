@@ -2,3 +2,47 @@ Rebost is a software management system for LliureX.
 
 Its main purpose is to bring a unified engine for software-related operations accessible from dbus
 
+# Introduction
+
+Rebost is aimed at software management in a simple way for unskilled users. It supports the main software distribution systems (flatpak, snap, appimage and native packages) through a simple plugin mechanism.
+
+# Plugins
+
+A rebost plugin is a python module that provides a method for loading the information of the distribution systems is designed for. This info should be loaded as appstream  and processed as a rebostpkg object.
+
+# Fiters
+
+Rebost supports filters for forbidden apps and also for strictly mandatory apps. 
+The filters could be applied per category or by app name, in this last case the glob "*" at end of line will be expanded to match all results (gimp-* will apply filters for all apps starting with "gimp-")
+Also is capable of filtering applications searching for forbidden words in their contents.
+
+# D-Bus
+
+Rebost could be accessed over dbus at net.lliurex.rebost /net/lliurex/rebost. It offers the next interfaces:
+ -Package related:
+   -net.lliurex.rebost.search [search]: returns zlib compressed info about searched string
+   -net.lliurex.rebost.search_by_category [category]: returns zlib compressed list of packages in searched category
+   -net.lliurex.rebost.search_by_category_limit [category] [limit]: returns zlib compressed list of packages in searched category
+   -net.lliurex.rebost.show [package] [bundle]: returns info of package. bundle argument is mandatory but deprecated
+   -net.lliurex.rebost.install [package] [bundle]: Installs desired bundle of package
+   -net.lliurex.rebost.install [package] [bundle]: Installs desired bundle of package
+   -net.lliurex.rebost.remote_install [package] [bundle]: Adds package to remote installer queue
+   -net.lliurex.rebost.getInstalledApps: Return info of all installed packages despite their format
+   -net.lliurex.rebost.getUpgradableApps: Return info of all upgradable packages despite their format
+   -net.lliurex.rebost.getCategories: List all available categories
+   -net.lliurex.rebost.test [package] [bundle]: Test install specified bundle format of package
+   -net.lliurex.rebost.addTransaction [action] [package] [bundle]: Adds a new package transaction
+   -net.lliurex.rebost.commitInstall [userdata] [package] [status]: Sets the status (0/1) of a (un)install process for package
+   -net.lliurex.rebost.getEpiPkgStatus [epifile]: Returns the status as returned by epifile
+ -Rebost related:
+   -net.lliurex.rebost.disableFilters: Disable filters 
+   -net.lliurex.rebost.enableGui: deprecated
+   -net.lliurex.rebost.getFiltersEnabled: Returns true/false
+   -net.lliurex.rebost.getResults: Returns the array of transaction results
+   -net.lliurex.rebost.load: loads the catalogue
+   -net.lliurex.rebost.restart: Restarts the daemon
+
+# Python
+
+There's a python lib called python3-rebost that presents an api analogue to d-bus for rebost related operations.
+

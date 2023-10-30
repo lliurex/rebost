@@ -53,9 +53,13 @@ class setWaiting(QThread):
 	def __init__(self,widget,parent=None):
 		QThread.__init__(self,parent)
 		self.widget=widget
+		self.cursor=widget.cursor
 	#def __init__
 
 	def run(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.widget.setCursor(cursor)
+		
 		for wdg in self.widget.findChildren(QPushButton):
 			wdg.setEnabled(False)
 		for wdg in self.widget.findChildren(QCheckBox):
@@ -69,6 +73,7 @@ class setWaiting(QThread):
 			wdg.setEnabled(True)
 		for wdg in self.widget.findChildren(QCheckBox):
 			wdg.setEnabled(True)
+		self.widget.setCursor(self.cursor)
 	#def stop
 #class setWaiting
 	
@@ -88,6 +93,7 @@ class sources(confStack):
 		self.config={}
 		self.app={}
 		self.level='system'
+		self.cursor=self.cursor()
 	#def __init__
 
 	def _load_screen(self):
@@ -152,6 +158,7 @@ class sources(confStack):
 		self.changes=False
 		self._reloadCatalogue(True)
 		wait.stop()
+	#def _resetDB
 
 	def _reload(self):
 		self.btnBack.clicked.connect(self.btnBack.text)
@@ -168,15 +175,11 @@ class sources(confStack):
 		reloadRebost=reloadCatalogue(self.rc,force)
 		if self.changes:
 			self.writeConfig()
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
 		reloadRebost.active.connect(self._endReloadCatalogue)
 		reloadRebost.run()
 	#def _reloadCatalogue
 
 	def _endReloadCatalogue(self):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
 		self.rc=None
 		try:
 			self.rc=store.client()
@@ -188,9 +191,7 @@ class sources(confStack):
 				print("UNKNOWN ERROR")
 		time.sleep(2)
 		self.updateScreen()
-		cursor=QtGui.QCursor(Qt.PointingHandCursor)
-		self.setCursor(cursor)
-	#def _reloadCatalogue
+	#def _endreloadCatalogue
 
 	def _return(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)

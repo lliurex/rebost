@@ -119,8 +119,8 @@ class packageKit():
 			pkDetails=[]
 			if selected:
 				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
-				self._debug("Sending to SQL")
 				if pkDetails:
+					self._debug("Sending to SQL")
 					data=self._generateRebostPkgList(pkDetails,pkgUpdateIds)
 					rebostHelper.rebostPkgList_to_sqlite(data,'packagekit.db',drop=False,sanitize=False)
 			if updateSelected:
@@ -142,17 +142,14 @@ class packageKit():
 		pkgDict={}
 		updateSelected=[]
 		if self.onlyLliurex==True:
-			lliurexPkgs=[]
-			for pkg in pkgToProcess:
-				if "zero-lliurex-" in pkg.lower():
-					lliurexPkgs.append(pkg)
+			lliurexPkgs=[pkg for pkg in pkgToProcess if "lliurex" in pkg.lower()]
 			pkgToProcess=lliurexPkgs
 		for pkg in pkgToProcess:
 			#0->Name,1->Release,2->arch,3->origin
 			pkgData=pkg.split(";")
 			if pkgData[2]=="i386":
 				continue
-			pkgName=pkg.split(";")[0]
+			pkgName=pkgData[0]
 			pkgDict[pkgName]=pkg
 		#Get rows for ids
 		rows=[]
@@ -171,16 +168,13 @@ class packageKit():
 			if ":" in itemData[3] and rowData.get('state',{}).get('package',"1")!="0":
 				rowData["state"]={"package":"0"}
 				swUpdate=True
+				updateSelected.append(rowData)
 			elif ":" not in itemData[3] and rowData.get('state',{}).get('package',"1")!="1":
 				rowData["state"]={"package":"1"}
-				swUpdate=True
-			if swUpdate:
 				updateSelected.append(rowData)
 		#Add non existent ids
 		for pkg,item in pkgDict.items():
 			selected.append(item)
-#		else:
-#			selected=pkgToProcess
 		return(selected,updateSelected)
 	#def _processPkgList
 
@@ -219,21 +213,20 @@ class packageKit():
 		elif os.path.isfile(os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))):
 			rebostPkg['icon']=os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))
 		return(rebostPkg)
-	#def _th_generateRebostPkg
+	#def _generateRebostPkg
 
 	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
 		for pkg in pkgList.get_details_array():
-			pkgId=pkg.get_package_id().split(";")
-			name=pkgId[0]
-			pref=name[:6]
 			dismiss=["admin-tools","other","system"]
-			if pkg.get_group().to_string(pkg.get_group()).lower().strip() in dismiss:
-				sw_dismiss=True
-			if sw_dismiss==False:
-				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+			cat=pkg.get_group().to_string(pkg.get_group()).lower().strip()
+			if (cat in dismiss)==False:
+				pkgId=pkg.get_package_id().split(";")
+				name=pkgId[0]
+				if name.startswith("zero-lliurex")==False:
+					rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
-	#def _th_generateRebostPkg
+	#def _generateRebostPkgList
 
 	def _load_callback(self,*args):
 		return

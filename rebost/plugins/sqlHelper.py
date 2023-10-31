@@ -286,7 +286,7 @@ class sqlHelper():
 			#self.copyBaseTable()
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		tables=["packagekit","appimage","flatpak","snap","zomandos","appstream"]
+		tables=["appstram","flatpak","snap","appimage","packagekit"]
 		include=[]
 		for source in sources.keys():
 			if source in tables:

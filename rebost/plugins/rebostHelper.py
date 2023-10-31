@@ -195,92 +195,117 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		nameComponents=pkg['id'].split(".")
-		cont=len(nameComponents)-1
-		blacklist=["desktop","org","net","com"]
-		name=nameComponents[-1].lower()
-		while cont>=0:
-			if nameComponents[cont].lower() not in blacklist:
-				name=nameComponents[cont].lower()
-				break
-			cont-=1
-		name=name.replace("_zmd",'')
-		pkg['name']=name
+		pkg['name']=_componentGetName(component)
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
 			pkg['pkgname']=pkg['name']
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
-		pkg['summary']=component.get_comment()
-		pkg['summary']=_sanitizeString(pkg['summary'],scape=True)
+		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
-		for icon in component.get_icons():
-			fname=icon.get_filename()
-			if fname:
-				pkg['icon']=fname
-				break
-			url=icon.get_url()
-			if url:
-				if url.startswith("http"):
-					pkg['icon']=url
-					break
+		pkg['icon']=_componentGetIcon(component)
+		pkg['homepage']=_componentGetHomepage(component)
+		pkg['categories']=component.get_categories()
+		pkg=_componentFillInfo(component,pkg)
+		pkg['license']=component.get_project_license()
+		pkg['screenshots']=_componentGetScreenshots(component)
+		rebostPkgList.append(pkg)
+	return(rebostPkgList)
+#def appstream_to_rebost
 
+def _componentGetName(component):
+	name=component.get_id()
+	nameComponents=name.lower().split(".")
+	cont=len(nameComponents)-1
+	blacklist=["desktop","org","net","com"]
+	name=nameComponents[-1].lower()
+	while cont>=0:
+		if nameComponents[cont].lower() not in blacklist:
+			name=nameComponents[cont].lower()
+			break
+		cont-=1
+	name=name.replace("_zmd",'')
+	return(name)
+#def _componentGetName
+
+def _componentGetIcon(component):
+	iconf=""
+	for icon in component.get_icons():
+		if icon.get_filename():
+			iconf=icon.get_filename()
+			break
+		url=icon.get_url()
+		if url:
+			if url.startswith("http"):
+				iconf=url
+				break
+	return(iconf)
+#def _componentGetIcon
+
+def _componentGetHomepage(component):
 		homepage=''
 		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
-		pkg['homepage']=homepage
-		pkg['categories']=component.get_categories()
-		versionArray=["0.0"]
-		for release in component.get_releases():
-			versionArray.append(release.get_version())
-			versionArray.sort()
-		if len(component.get_bundles())>0:
-			for i in component.get_bundles():
-				if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
-					if i.get_kind()==2:
-						bundle="flatpak"
-						pkgid=component.get_id()
-					else:
-						pkgid=component.get_pkgname_default()
-						bundle="package"
-					pkg['bundle']={bundle:pkgid.replace('.desktop','')}
-					pkg['versions']={bundle:versionArray[-1]}
-			if "lliurex"  in component.get_id():
-				pkgName=component.get_id().replace('.desktop','')
-				pkgName=pkgName.replace('_zmd','')
-				zmdPkgName=pkgName
-				if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
-					zmdPkgName="{}.zmd".format(zmdPkgName)
-				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
-					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
-				elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
-					if "Zomando" in pkg['categories']:
-						pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
-					
-					else:
-						pkg['bundle']={'package':pkg['pkgname']}
-				if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
-					pkg['categories'].insert(0,"Lliurex")
-				pkg['homepage']="https://github.com/lliurex"
-					
-			elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
-					pkg['bundle']={'package':pkg['pkgname']}
-					pkg['homepage']="https://github.com/lliurex"
-		pkg['license']=component.get_project_license()
-		for scr in component.get_screenshots():
-			for img in scr.get_images():
-				pkg['screenshots'].append(img.get_url())
-				break
+		return(homepage)
+#def _componentGetHomepage
 
-		rebostPkgList.append(pkg)
-	return(rebostPkgList)
-#def appstream_to_rebost
+def _componentFillInfo(component,pkg):
+	versionArray=["0.0"]
+	for release in component.get_releases():
+		versionArray.append(release.get_version())
+		versionArray.sort()
+	if len(component.get_bundles())>0:
+		for i in component.get_bundles():
+			if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
+				if i.get_kind()==2:
+					bundle="flatpak"
+					pkgid=component.get_id()
+				else:
+					pkgid=component.get_pkgname_default()
+					bundle="package"
+				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
+				pkg['versions']={bundle:versionArray[-1]}
+		if "lliurex"  in component.get_id():
+			pkg=_componentLliurexPackage(component,pkg)
+		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+				pkg['bundle']={'package':pkg['pkgname']}
+				pkg['homepage']="https://github.com/lliurex"
+	return(pkg)
+#def _componentFillInfo
+
+def _componentLliurexPackage(component,pkg):
+	pkgName=component.get_id().replace('.desktop','')
+	pkgName=pkgName.replace('_zmd','')
+	zmdPkgName=pkgName
+	if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
+		zmdPkgName="{}.zmd".format(zmdPkgName)
+	if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
+		pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+	elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
+		if "Zomando" in pkg['categories']:
+			pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
+		else:
+			pkg['bundle']={'package':pkg['pkgname']}
+	if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+		pkg['categories'].insert(0,"Lliurex")
+	pkg['homepage']="https://github.com/lliurex"
+	return(pkg)
+#def _componentLliurexPackage
+
+def _componentGetScreenshots(component):
+	screenshots=[]
+	for scr in component.get_screenshots():
+		for img in scr.get_images():
+			screenshots.append(img.get_url())
+			if len(screenshots)>3:
+				break
+#def _componentGetScreenshots
 
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):

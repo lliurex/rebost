@@ -90,7 +90,7 @@ class appstreamHelper():
 			storeFile=Gio.File.new_for_path(storeYml)
 			try:
 				store.from_file(storeFile,iconDir,None)
-			except e as Exception:
+			except Exception as e:
 				print(e)
 				pass
 		#flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]

@@ -303,8 +303,10 @@ def _componentGetScreenshots(component):
 	for scr in component.get_screenshots():
 		for img in scr.get_images():
 			screenshots.append(img.get_url())
-			if len(screenshots)>3:
-				break
+			break
+		if len(screenshots)>3:
+			break
+	return(screenshots)
 #def _componentGetScreenshots
 
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):

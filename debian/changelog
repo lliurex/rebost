@@ -1,6 +1,11 @@
-rebost (1.0+1lliurex) jammy; urgency=medium
+rebost (1.0.1) jammy; urgency=medium
 
   * First stable release
+  * Reworked detail screen
+  * Improved filters, add option to append or restrict included apps
+  * Enable packagekit only with packages of "applications" group
+  * Improve dbus calls
+  * Remove need of a master database (taked as reference)
 
  -- Juanma1980 <juanma1980@gmail.com>  Mon, 30 Oct 2023 13:02:44 +0100
 

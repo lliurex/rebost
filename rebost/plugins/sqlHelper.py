@@ -450,16 +450,19 @@ class sqlHelper():
 			blacklisted=True
 		#endif "Lliurex"...
 		apps=filters.get('apps',[]) 
-		globs=[ c for c in apps if c.endswith("*")]
-		apps=[ c for c in apps if not c.endswith("*")]
+		globs=[ c for c in apps if "*" in c]
+		apps=[ c for c in apps if not "*" in c]
 		if blacklisted==False:
 			if pkgname in apps:
 				blacklisted=True
 			else:
 				for glob in globs:
+					#libreoffice specific hack
 					if pkgname.startswith("libreof"):
 						break
 					if pkgname.startswith(glob.replace("*","")):
+						blacklisted=True
+					elif pkgname.endswith(glob.replace("*","")):
 						blacklisted=True
 		return(blacklisted)
 	#def _checkBlacklisted

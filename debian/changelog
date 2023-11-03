@@ -1,6 +1,6 @@
-rebost (0.9.99) UNRELEASED; urgency=medium
+rebost (1.0) jammy; urgency=medium
 
-  * wip
+  * First stable release
 
  -- Juanma1980 <juanma1980@gmail.com>  Mon, 30 Oct 2023 13:02:44 +0100
 

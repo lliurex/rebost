@@ -118,8 +118,8 @@ class portrait(confStack):
 		self.apps=self._getAppList()
 		self._shuffleApps()
 		self.btnFilters=appconfigControls.QCheckableComboBox()
+		#self.btnFilters.clicked.connect(self._filterView)
 		self.btnFilters.activated.connect(self._selectFilters)
-		self.btnFilters.clicked.connect(self._filterView)
 		self._loadFilters()
 		icn=QtGui.QIcon.fromTheme("view-filter")
 		hbox.addWidget(self.btnFilters)
@@ -211,72 +211,85 @@ class portrait(confStack):
 	#def _goHome
 
 	def _filterView(self,getApps=True):
-		idx=self.btnFilters.currentIndex()
 		filters={}
 		appsFiltered=[]
 		self.apps=self.appsRaw
-		applyFilter=False
-		applyFilterBundle=False
 		self.resetScreen()
-		for item in self.btnFilters.getItems():
-			if item.text().lower()==i18n.get("ALL").lower() and idx<=1:
-				continue
-			filters[item.text().lower()]=item.checkState()
-			if item.checkState()==Qt.Checked:
-				if item.text().lower() in ["zomando","flatpak","appimage","snap"]:
-					applyFilterBundle=True
-				applyFilter=True
-		if applyFilterBundle==False:
-			for bund in ["zomando","flatpak","appimage","snap"]:
-				filters[bund]=Qt.Checked
-		if filters.get(i18n.get("ALL").lower(),Qt.Unchecked)!=Qt.Checked and applyFilter==True:
-			for app in self.apps:
-				japp=json.loads(app)
-				#Filter bundles
-				tmpApp=None
-				for bund in japp.get('bundle',{}).keys():
-					if bund in filters.keys():
-						if filters[bund]==Qt.Checked:
-							tmpApp=app
-					if tmpApp:
-						if filters.get(i18n.get("INSTALLED",'').lower())==Qt.Checked:
-							state=japp.get('state',{})
-							if state.get(bund,"1")!="0":
-								tmpApp=None
-						if filters.get(i18n.get("UPGRADABLE",'').lower())==Qt.Checked:
-							state=japp.get('state',{})
-							installed=japp.get('installed',{}).get(bund,"")
-							if state.get(bund,"1")=="0":
-								available=japp.get('versions',{}).get(bund,"")
-								if available=="" or available==installed:
-									tmpApp=None
-							else:
-								tmpApp=None
-				if tmpApp:
-					appsFiltered.append(app)
-			self.apps=appsFiltered
-		idx=self.btnFilters.currentIndex()
+		filters=self._readFilters()
+		if len(filters)==0:
+			filters['package']=True
+		self.apps=self._applyFilters(filters)
 		self.updateScreen()
 	#def _filterView
 
+	def _readFilters(self):
+		filters={}
+		for item in self.btnFilters.getItems():
+			if item.checkState()==Qt.Checked:
+				filters[item.text().lower()]=True
+		if len(filters)>1:
+			filters[i18n.get("ALL").lower()]=False
+		return(filters)
+	#def _readFilters
+
+	def _applyFilters(self,filters):
+		appsFiltered=[]
+		filterList=False
+		if filters.get(i18n.get("ALL").lower(),False)!=True:
+			for app in self.apps:
+				japp=json.loads(app)
+				#Filter bundles
+				flterList=False
+				for bund in ["appimage","flatpak","snap","zomando"]:
+					if bund  in filters.keys():
+						filterList=True
+						break
+				for bund in japp.get('bundle',{}).keys():
+					if filters.get(i18n.get("UPGRADABLE",False))==True:
+						state=japp.get('state',{})
+						installed=japp.get('installed',{}).get(bund,"")
+						if state.get(bund,"1")=="0":
+							available=japp.get('versions',{}).get(bund,"")
+							if available=="" or available==installed:
+								continue
+						else:
+							continue
+					if filters.get(i18n.get("INSTALLED").lower(),False)==True:
+						state=japp.get('state',{})
+						if state.get(bund,"1")!="0":
+							continue
+					if bund not in filters.keys() and filterList==True:
+						continue
+					if app not in appsFiltered:
+						appsFiltered.append(app)
+		else:
+			appsFiltered=self.appsRaw
+		return(appsFiltered)
+	#def _applyFilters
+
 	def _selectFilters(self,*args):
-		idx=self.btnFilters.currentIndex()
+		if len(args)>0:
+			idx=args[0]
+		else:
+			idx=self.btnFilters.currentIndex()
 		if idx<1:
 			return
+		item=self.btnFilters.model().item(idx)
+		state=item.checkState()
+		if state==Qt.Checked:
+			state=Qt.Unchecked
+			init=2
+		else:
+			state=Qt.Checked
+			init=3
 		if idx==1:
-			item=self.btnFilters.model().item(idx)
-			if item.checkState()==Qt.Checked:
-				state=Qt.Unchecked
-				init=2
-			else:
-				state=Qt.Checked	
-				init=3
 			for i in (range(init,self.btnFilters.count())):
 				item=self.btnFilters.model().item(i)
 				item.setCheckState(state)
-		else:
+		elif state==Qt.Unchecked: # -> Remember: swap
 			item=self.btnFilters.model().item(1)
 			item.setCheckState(Qt.Unchecked)
+		self._filterView()
 	#def _selectFilters
 
 	def _resetSearchBtnIcon(self):

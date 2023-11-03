@@ -148,9 +148,9 @@ class sqlHelper():
 			for bundle in bundles.keys():
 				if bundle=='appimage':
 					app=bundles.get(bundle,'')
-					rebostPkg=self._upgradeAppimageData(app,pkg,rebostPkg)
+					rebostPkg=self._upgradeAppimageData(db,table,cursor,app,pkg,rebostPkg)
 				#Get state from epi
-				rebostPkg=self._getStateFromEpi(pkgname,rebostPkg,bundle,user)
+				rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
@@ -160,24 +160,20 @@ class sqlHelper():
 		return(rows)
 	#def _showPackage
 
-	def _upgradeAppimageData(self,app,pkg,rebostPkg):
-		if not app.lower().endswith(".appimage") and app!='':
-			dataTmp=self.appimage.fillData(data)
+	def _upgradeAppimageData(self,db,table,cursor,pkgname,pkg,rebostPkg):
+		if not pkgname.lower().endswith(".appimage") and pkgname!='':
+			dataTmp=self.appimage.fillData(rebostPkg)
 			row=(pkg,dataTmp)
 			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
 			try:
 				cursor.execute(query)
 			except:
 				print("Query error upgrading appimage: {}".format(query))
-				
-			db.commit()
 			rebostPkg=json.loads(dataTmp)
 		return(rebostPkg)
 	#def _upgradeAppimageData
 
-	def _getStateFromEpi(self,pkgname,rebostPkg,bundle,user):
-		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+	def _getStateFromEpi(self,db,table,cursor,pkgname,rebostPkg,bundle,user):
 		(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
 		state=rebostHelper.get_epi_status(script)
 		tmpDir=os.path.dirname(epi)

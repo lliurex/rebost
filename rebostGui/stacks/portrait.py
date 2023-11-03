@@ -202,6 +202,7 @@ class portrait(confStack):
 	#def _shuffleApps
 
 	def _goHome(self):
+		self.searchBox.setText("")
 		self._loadFilters()
 		self.apps=self._getAppList()
 		self._shuffleApps()
@@ -414,7 +415,6 @@ class portrait(confStack):
 		self.table.setRowCount(1)
 		self.appsLoaded=0
 		self.oldSearch=""
-		self.searchBox.setText("")
 		self.appsSeen=[]
 	#def resetScreen
 

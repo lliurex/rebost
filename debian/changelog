@@ -1,4 +1,4 @@
-rebost (0.9.9) focal; urgency=medium
+rebost (0.9.50) focal; urgency=medium
 
   * Reenable packagekit with aditional filters
   * Minor fixes

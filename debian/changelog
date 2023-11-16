@@ -1,3 +1,10 @@
+rebost (0.9.9) focal; urgency=medium
+
+  * Reenable packagekit with aditional filters
+  * Minor fixes
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 16 Nov 2023 07:31:50 +0100
+
 rebost (0.9.42) focal; urgency=medium
 
   * Allow lliurex own packages

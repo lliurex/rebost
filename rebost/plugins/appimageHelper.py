@@ -262,10 +262,12 @@ class appimageHelper():
 	#def _searchdirsForAppimages
 
 	def fillData(self,rebostPkg):
-		try:
-			rebostPkg=json.loads(rebostPkg)
-		except Exception as e:
-			self._debug(e)
+		if not isinstance(rebostPkg,dict):
+			try:
+				rebostPkg=json.loads(rebostPkg)
+			except Exception as e:
+				self._debug(e)
+				self._debug(rebostPkg)
 		self._debug("Filling data for {}".format(rebostPkg.get('name')))
 		bundle=rebostPkg['bundle'].get('appimage','')
 		self._debug("Base URL {}".format(bundle))

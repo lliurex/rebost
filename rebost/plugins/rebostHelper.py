@@ -155,6 +155,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
 			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
+			iconPaths.append(os.path.join("/usr/share/icons/lliurex/apps/48/{0}.png".format(iconName)))
 			while iconPaths:
 				iconPath=iconPaths.pop(0)
 				if os.path.isfile(iconPath):
@@ -194,87 +195,119 @@ def appstream_to_rebost(appstreamCatalogue):
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
 		pkg['id']=component.get_id().lower()
-		nameComponents=pkg['id'].split(".")
-		cont=len(nameComponents)-1
-		blacklist=["desktop","org","net","com"]
-		name=nameComponents[-1].lower()
-		while cont>=0:
-			if nameComponents[cont].lower() not in blacklist:
-				name=nameComponents[cont].lower()
-				break
-			cont-=1
-		name=name.replace("_zmd",'')
-		pkg['name']=name
+		pkg['name']=_componentGetName(component)
 		if component.get_pkgname_default():
 			pkg['pkgname']=component.get_pkgname_default()
 		else:
 			pkg['pkgname']=pkg['name']
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
-		pkg['summary']=component.get_comment()
-		pkg['summary']=_sanitizeString(pkg['summary'],scape=True)
+		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
-		for icon in component.get_icons():
-			fname=icon.get_filename()
-			if fname:
-				pkg['icon']=fname
-				break
-			url=icon.get_url()
-			if url:
-				if url.startswith("http"):
-					pkg['icon']=url
-					break
+		pkg['icon']=_componentGetIcon(component)
+		pkg['homepage']=_componentGetHomepage(component)
+		pkg['categories']=component.get_categories()
+		pkg=_componentFillInfo(component,pkg)
+		pkg['license']=component.get_project_license()
+		pkg['screenshots']=_componentGetScreenshots(component)
+		rebostPkgList.append(pkg)
+	return(rebostPkgList)
+#def appstream_to_rebost
 
+def _componentGetName(component):
+	name=component.get_id()
+	nameComponents=name.lower().split(".")
+	cont=len(nameComponents)-1
+	banlist=["desktop","org","net","com"]
+	name=nameComponents[-1].lower()
+	while cont>=0:
+		if nameComponents[cont].lower() not in banlist:
+			name=nameComponents[cont].lower()
+			break
+		cont-=1
+	name=name.replace("_zmd",'')
+	return(name)
+#def _componentGetName
+
+def _componentGetIcon(component):
+	iconf=""
+	for icon in component.get_icons():
+		if icon.get_filename():
+			iconf=icon.get_filename()
+			break
+		url=icon.get_url()
+		if url:
+			if url.startswith("http"):
+				iconf=url
+				break
+	return(iconf)
+#def _componentGetIcon
+
+def _componentGetHomepage(component):
 		homepage=''
 		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
-		pkg['homepage']=homepage
-		pkg['categories']=component.get_categories()
-		if len(component.get_bundles())>0:
-			for i in component.get_bundles():
-				if i.get_kind()==2: #appstream.BundleKind.FLATPAK:
-					pkg['bundle']={'flatpak':component.get_id().replace('.desktop','')}
-					versionArray=["0.0"]
-					for release in component.get_releases():
-						versionArray.append(release.get_version())
-						versionArray.sort()
-					pkg['versions']={'flatpak':versionArray[-1]}
-		else:
-			if "lliurex"  in component.get_id():
-				pkgName=component.get_id().replace('.desktop','')
-				pkgName=pkgName.replace('_zmd','')
-				zmdPkgName=pkgName
-				if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
-					zmdPkgName="{}.zmd".format(zmdPkgName)
-				if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
-					pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
-				elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
-					if "Zomando" in pkg['categories']:
-						pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
-					
-					else:
-						pkg['bundle']={'package':pkg['pkgname']}
-				if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
-					pkg['categories'].insert(0,"Lliurex")
-				pkg['homepage']="https://github.com/lliurex"
-					
-			elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
-					pkg['bundle']={'package':pkg['pkgname']}
-					pkg['homepage']="https://github.com/lliurex"
-		pkg['license']=component.get_project_license()
-		for scr in component.get_screenshots():
-			for img in scr.get_images():
-				pkg['screenshots'].append(img.get_url())
-				break
+		return(homepage)
+#def _componentGetHomepage
 
-		rebostPkgList.append(pkg)
-	return(rebostPkgList)
-#def appstream_to_rebost
+def _componentFillInfo(component,pkg):
+	versionArray=["0.0"]
+	for release in component.get_releases():
+		versionArray.append(release.get_version())
+		versionArray.sort()
+	if len(component.get_bundles())>0:
+		for i in component.get_bundles():
+			if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
+				if i.get_kind()==2:
+					bundle="flatpak"
+					pkgid=component.get_id()
+				else:
+					pkgid=component.get_pkgname_default()
+					bundle="package"
+				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
+				pkg['versions']={bundle:versionArray[-1]}
+		if "lliurex"  in component.get_id():
+			pkg=_componentLliurexPackage(component,pkg)
+		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+				pkg['bundle']={'package':pkg['pkgname']}
+				pkg['homepage']="https://github.com/lliurex"
+	return(pkg)
+#def _componentFillInfo
+
+def _componentLliurexPackage(component,pkg):
+	pkgName=component.get_id().replace('.desktop','')
+	pkgName=pkgName.replace('_zmd','')
+	zmdPkgName=pkgName
+	if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
+		zmdPkgName="{}.zmd".format(zmdPkgName)
+	if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
+		pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
+	elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
+		if "Zomando" in pkg['categories']:
+			pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
+		else:
+			pkg['bundle']={'package':pkg['pkgname']}
+	if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+		pkg['categories'].insert(0,"Lliurex")
+	pkg['homepage']="https://github.com/lliurex"
+	return(pkg)
+#def _componentLliurexPackage
+
+def _componentGetScreenshots(component):
+	screenshots=[]
+	for scr in component.get_screenshots():
+		for img in scr.get_images():
+			screenshots.append(img.get_url())
+			break
+		if len(screenshots)>3:
+			break
+	return(screenshots)
+#def _componentGetScreenshots
 
 def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 	if isinstance(rebostpkg,str):
@@ -556,17 +589,17 @@ def check_remove_unsure(package):
 	return(sw)
 #def check_remove_unsure(package):
 
-def getFiltersList(blacklist=False,whitelist=False,wordlist=False):
+def getFiltersList(banlist=False,includelist=False,wordlist=False):
 	wrkDir="/usr/share/rebost"
-	folderBlacklist=os.path.join(wrkDir,"lists.d/blacklist")
-	folderWhitelist=os.path.join(wrkDir,"lists.d/whitelist")
+	folderbanlist=os.path.join(wrkDir,"lists.d/banned")
+	folderincludelist=os.path.join(wrkDir,"lists.d/include")
 	folderWordlist=os.path.join(wrkDir,"lists.d/words")
 	files={"categories":[],"apps":[]}
-	filters={"blacklist":files,"whitelist":files,"words":[]}
-	if blacklist==True:
-		filters["blacklist"]=getFilterContent(folderBlacklist)
-	if whitelist==True:
-		filters["whitelist"]=getFilterContent(folderWhitelist)
+	filters={"banlist":files,"includelist":files,"words":[]}
+	if banlist==True:
+		filters["banlist"]=getFilterContent(folderbanlist)
+	if includelist==True:
+		filters["includelist"]=getFilterContent(folderincludelist)
 	if wordlist==True:
 		filters["words"]=getFilterContent(folderWordlist)
 	return(filters)
@@ -592,9 +625,9 @@ def getFilterContent(folder):
 							else:
 								filters.append(fcontent)
 	return(filters)
-	#Default blacklist. If there's a category blacklist file use it
+	#Default banlist. If there's a category banlist file use it
 
-#	blacklist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
-		#appsblacklist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
-		#whitelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
-#def getCategoriesBlacklist
+#	banlist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
+		#appsbanlist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
+		#includelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
+#def getCategoriesbanlist

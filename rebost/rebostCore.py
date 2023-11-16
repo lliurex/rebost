@@ -14,7 +14,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -149,23 +149,36 @@ class Rebost():
 
 	def _processConfig(self):
 		cfg=self._readConfig()
+		sw_pkg=False
+		if "enabled" not in cfg.keys():
+			cfg["packageKit"]=True
+			cfg["enabled"]=True
+			self._writeConfig(cfg)
 		for key,value in cfg.items():
+			if value=="enabled":
+				continue
 			if value==True:
 				self._enable(key)
+				if key.lower() in ["apt","package","packagekit"]:
+					self._enable("appstream")
 			else:
 				delPlugin=key
 				if key=="snap":
 					delPlugin="snapHelper"
 				elif key=="flatpak":
 					delPlugin="flatpakHelper"
-				elif key in ["apt","package","packageKit"]:
+				elif key.lower() in ["apt","package","packagekit"]:
 					delPlugin="packageKit"
+					if "appstreamHelper" in self.pluginInfo.keys():
+						del(self.pluginInfo["appstreamHelper"])
+						self._disable("appstream")
 				elif key=="appimage":
 					delPlugin="appimageHelper"
 				if delPlugin in self.pluginInfo.keys():
 					del(self.pluginInfo[delPlugin])
 				self._disable(key)
-	#def _readConfig
+		print(self.pluginInfo)
+	#def _processConfig
 
 	def _readConfig(self):
 		cfgFile="/usr/share/rebost/store.json"
@@ -177,6 +190,7 @@ class Rebost():
 				except:
 					pass
 		return(cfg)
+	#def _readConfig
 
 	def _enable(self,bundle):
 		swEnabled=False
@@ -185,19 +199,17 @@ class Rebost():
 			prefix=""
 			if bundle=="apt" or bundle=="package":
 				prefix="pk"
-				prefix2="as"
 			elif bundle=="snap":
 				prefix="sn"
-				prefix2="sn"
 			elif bundle=="flatpak":
 				prefix="fp"
-				prefix2="fp"
 			elif bundle=="appimage":
 				prefix="ai"
-				prefix2="ai"
+			elif bundle=="appstream":
+				prefix="ai"
 			if prefix:
 				for f in os.listdir(tmpPath):
-					if f.startswith(prefix) or f.startswith(prefix2):
+					if f.startswith(prefix):
 						swEnabled=True
 						break
 		if swEnabled==False:
@@ -213,21 +225,19 @@ class Rebost():
 		swRemoved=False
 		if os.path.isdir(tmpPath):
 			prefix=""
-			if bundle=="apt" or bundle=="package":
+			if bundle=="apt" or bundle=="packageKit":
 				prefix="pk"
-				prefix2="as"
 			elif bundle=="snap":
 				prefix="sn"
-				prefix2="sn"
 			elif bundle=="flatpak":
 				prefix="fp"
-				prefix2="fp"
 			elif bundle=="appimage":
 				prefix="ai"
-				prefix2="ai"
+			elif bundle=="appstream":
+				prefix="as"
 			if prefix:
 				for f in os.listdir(tmpPath):
-					if f.startswith(prefix) or f.startswith(prefix2):
+					if f.startswith(prefix):
 						os.remove(os.path.join(tmpPath,f))
 						swRemoved=True
 		if swRemoved==True:
@@ -328,8 +338,11 @@ class Rebost():
 			else:
 				app=rebostpkg
 			if isinstance(app,str):
-				appJson=json.loads(app)
-				if appJson.get('name').startswith("lliurex-meta")==False:
+				try:
+					appJson=json.loads(app)
+					if appJson.get('name').startswith("lliurex-meta")==False:
+						store.append(app)
+				except:
 					store.append(app)
 			else:
 				store.append(app)

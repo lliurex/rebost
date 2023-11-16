@@ -53,9 +53,13 @@ class setWaiting(QThread):
 	def __init__(self,widget,parent=None):
 		QThread.__init__(self,parent)
 		self.widget=widget
+		self.cursor=widget.cursor
 	#def __init__
 
 	def run(self):
+		cursor=QtGui.QCursor(Qt.WaitCursor)
+		self.widget.setCursor(cursor)
+		
 		for wdg in self.widget.findChildren(QPushButton):
 			wdg.setEnabled(False)
 		for wdg in self.widget.findChildren(QCheckBox):
@@ -69,6 +73,7 @@ class setWaiting(QThread):
 			wdg.setEnabled(True)
 		for wdg in self.widget.findChildren(QCheckBox):
 			wdg.setEnabled(True)
+		self.widget.setCursor(self.cursor)
 	#def stop
 #class setWaiting
 	
@@ -88,6 +93,7 @@ class sources(confStack):
 		self.config={}
 		self.app={}
 		self.level='system'
+		self.cursor=self.cursor()
 	#def __init__
 
 	def _load_screen(self):
@@ -100,9 +106,6 @@ class sources(confStack):
 		self.btnBack.setFixedSize(QSize(64,64))
 		self.box.addWidget(self.btnBack,0,0,1,1,Qt.AlignTop)
 		self.chkApt=QCheckBox(i18n.get("SOURCE_PK"))
-		self.chkApt.setEnabled(False)
-		self.chkApt.setChecked(False)
-		self.chkApt.setVisible(False)
 		self.box.addWidget(self.chkApt,4,1,1,1,Qt.AlignLeft)
 		self.chkSnap=QCheckBox(i18n.get("SOURCE_SN"))
 		if shutil.which("snap")==None:
@@ -132,10 +135,11 @@ class sources(confStack):
 
 	def _clearCache(self):
 		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
-		try:
-			shutil.rmtree(cacheDir)
-		except Exception as e:
-			print("Error removing {0}: {1}".format(cacheDir,e))
+		if os.path.isdir(cacheDir):
+			try:
+				shutil.rmtree(cacheDir)
+			except Exception as e:
+				print("Error removing {0}: {1}".format(cacheDir,e))
 	#def _clearCache
 
 	def _resetDB(self,refresh=False):
@@ -151,6 +155,7 @@ class sources(confStack):
 		self.changes=False
 		self._reloadCatalogue(True)
 		wait.stop()
+	#def _resetDB
 
 	def _reload(self):
 		self.btnBack.clicked.connect(self.btnBack.text)
@@ -167,15 +172,11 @@ class sources(confStack):
 		reloadRebost=reloadCatalogue(self.rc,force)
 		if self.changes:
 			self.writeConfig()
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
 		reloadRebost.active.connect(self._endReloadCatalogue)
 		reloadRebost.run()
 	#def _reloadCatalogue
 
 	def _endReloadCatalogue(self):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
 		self.rc=None
 		try:
 			self.rc=store.client()
@@ -187,9 +188,7 @@ class sources(confStack):
 				print("UNKNOWN ERROR")
 		time.sleep(2)
 		self.updateScreen()
-		cursor=QtGui.QCursor(Qt.PointingHandCursor)
-		self.setCursor(cursor)
-	#def _reloadCatalogue
+	#def _endreloadCatalogue
 
 	def _return(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
@@ -201,17 +200,12 @@ class sources(confStack):
 		self.changes=True
 		self.refresh=True
 		self.config=self.getConfig()
-		self.chkApt.setVisible(False)
-		self.chkApt.setEnabled(False)
 		self.chkSnap.setChecked(True)
 		self.chkFlatpak.setChecked(True)
 		self.chkImage.setChecked(True)
 		for key,value in self.config.get(self.level,{}).items():
 			if key=="packageKit":
 				self.chkApt.setChecked(value)
-				if value==True:
-					self.chkApt.setVisible(True)
-					self.chkApt.setEnabled(True)
 			if key=="snap":
 				self.chkSnap.setChecked(value)
 			if key=="flatpak":

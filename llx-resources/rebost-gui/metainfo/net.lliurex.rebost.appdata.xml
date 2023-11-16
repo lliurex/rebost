@@ -4,8 +4,8 @@
 <metadata_license>CC0-1.0</metadata_license>
 <name>Rebost</name>
 <summary>Software center for Lliurex</summary>
-<summary xml:lang="es">Centro de aplicaciones de Lliurex</summary>
-<summary xml:lang="ca">Centre d'aplicacions de Lliurex</summary>
+<summary xml:lang="es">Centro de aplicaciones para Lliurex</summary>
+<summary xml:lang="ca">Centre d'aplicacions per a Lliurex</summary>
 <description>
 <p>Rebost is a software center capable of manage and install software from many different formats as apt, snap, flatpak or appimage.</p>
 <p xml:lang="es">Rebost es un centro de software compatible con diversos formatos como puedan ser apt, appimage, snap o flatpak.</p>
@@ -14,6 +14,7 @@
 <categories>
 <category>System</category>
 <category>Utilities</category>
+<category>Lliurex</category>
 </categories>
 <icon type="stock">rebost</icon>
 <provides><binary>/usr/bin/rebost-gui</binary></provides>

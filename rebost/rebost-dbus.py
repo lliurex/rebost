@@ -62,7 +62,7 @@ class rebostDbusMethods(dbus.service.Object):
 	#def remote_install
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='i')
+						 in_signature='', out_signature='s')
 	def load(self):
 		action='load'
 		ret=self.rebost.execute(action)

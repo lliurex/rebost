@@ -143,7 +143,7 @@ class sqlHelper():
 		for row in rowsTmp:
 			(pkg,data)=row
 			rebostPkg=json.loads(data)
-			bundles=rebostPkg.get('bundle',{})
+			bundles=rebostPkg.get('bundle',{}).copy()
 			#Update state for bundles as they can be installed outside rebost
 			for bundle in bundles.keys():
 				if bundle=='appimage':

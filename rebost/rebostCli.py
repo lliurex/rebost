@@ -245,7 +245,6 @@ def _getResult(pid):
 				status=data.get('status',-2)
 				if isinstance(status,int):
 					status=str(status)
-				print(data)
 			except Exception as e:
 				print(data)
 				print(e)

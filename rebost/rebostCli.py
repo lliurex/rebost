@@ -156,7 +156,7 @@ def _printShow(result):
 			versionStr+=" {}{}{}".format(color.PURPLE,result['versions'].get('appimage'),color.END)
 		if version=='snap':
 			versionStr+=" {}{}{}".format(color.RED,result['versions'].get('snap'),color.END)
-		if version=='package' or bundle=="limba":
+		if version=='package':
 			versionStr+=" {}{}{}".format(color.YELLOW,result['versions'].get('package'),color.END)
 		if version=='flatpak':
 			versionStr+=" {}{}{}".format(color.BLUE,result['versions'].get('flatpak'),color.END)
@@ -281,6 +281,41 @@ def showHelp():
 	sys.exit(0)
 #def showHelp
 
+def launchActions(action,actionArgs):
+	result=json.loads(rebostClient.execute(action,actionArgs))
+	if action=='search' or action=='s':
+		for res in result:
+			print(_printSearch(json.loads(res)))
+	elif action=='show':
+		for res in result:
+			if isinstance(res,dict):
+				print(_printShow(res))
+			else:
+				print(_printShow(json.loads(res)))
+		if not result:
+			ERR=err.notFound
+	elif action in ["install","i","remove","r","remote_install"]:
+		if (isinstance(result,list)):
+			for res in result:
+				if isinstance(res,str):
+					res=json.loads(res)
+				pid=res.get('pid','-10')
+				_waitProcess(pid)
+				if action=="remote_install":
+					if res.get('bundle')==None:
+						print("{0} {1}not added{2}".format(res.get('package'),color.RED,color.END))
+					else:
+						print("Added to remote: {} {}".format(res.get('package'),res.get('bundle')))
+				else:
+					print(_printInstall(res,pid))
+		else:
+			print("{0} {1}root{2}".format(i18n["ROOT_MSG"],color.RED,color.END))
+			ERR=err.privileges
+	elif action=='test':
+		print(result)
+	else:
+		showHelp()
+
 rebostClient=store.client()#.RebostClient(user=os.getenv('USER'))
 #Set cli mode
 rebostClient.enableGui('false')
@@ -298,39 +333,18 @@ elif action=="r":
 	action="remove"
 elif action=="sh":
 	action="show"
-result=json.loads(rebostClient.execute(action,actionArgs))
-	
-if action=='search' or action=='s':
-	for res in result:
-		print(_printSearch(json.loads(res)))
-elif action=='show':
-	for res in result:
-		if isinstance(res,dict):
-			print(_printShow(res))
-		else:
-			print(_printShow(json.loads(res)))
-	if not result:
-		ERR=err.notFound
-elif action in ["install","i","remove","r","remote_install"]:
-	if (isinstance(result,list)):
-		for res in result:
-			if isinstance(res,str):
-				res=json.loads(res)
-			pid=res.get('pid','-10')
-			_waitProcess(pid)
-			if action=="remote_install":
-				if res.get('bundle')==None:
-					print("{0} {1}not added{2}".format(res.get('package'),color.RED,color.END))
-				else:
-					print("Added to remote: {} {}".format(res.get('package'),res.get('bundle')))
-			else:
-				print(_printInstall(res,pid))
-	else:
-		print("{0} {1}root{2}".format(i18n["ROOT_MSG"],color.RED,color.END))
-		ERR=err.privileges
-elif action=='test':
-	print(result)
-else:
-	showHelp()
+
+bundle=""
+actionItems=actionArgs.split(":")
+if ":" in actionArgs:
+	if actionItems[-1].lower() in ["package","appimage","flatpak","snap"]:
+		bundle=actionItems.pop(-1)
+while actionItems:
+	item=actionItems.pop()
+	if len(bundle)>0:
+		item="{}:{}".format(item,bundle)
+	launchActions(action,item)
+	print("")
+
 
 sys.exit(ERR)

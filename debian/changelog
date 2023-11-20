@@ -1,7 +1,8 @@
-rebost (0.9.50) focal; urgency=medium
+rebost (0.9.51) focal; urgency=medium
 
   * Reenable packagekit with aditional filters
   * Minor fixes
+  * Sync with jammy
 
  -- Juanma1980 <juanma1980@gmail.com>  Thu, 16 Nov 2023 07:31:50 +0100
 

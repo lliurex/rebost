@@ -1,3 +1,9 @@
+rebost (1.1) jammy; urgency=medium
+
+  * Cli support multiple apps actions
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 20 Nov 2023 17:04:02 +0100
+
 rebost (1.0.1) jammy; urgency=medium
 
   * First stable release

@@ -120,7 +120,7 @@ class rebostPrcMan():
 		currentTime=int(time.time())
 		estimatedTime=120
 		#Real progress is unknown so fake it
-		firstStep=int(random.randrange(20,30))
+		firstStep=int(random.randrange(10,20))
 		secondStep=int(random.randrange(firstStep+1,80))
 		thirdStep=100-(firstStep+secondStep)
 		progressSteps=[firstStep,secondStep,thirdStep]
@@ -132,10 +132,11 @@ class rebostPrcMan():
 				estimatedTime=step+10
 			seconds=int((step*estimatedTime)/100)
 			#print("Step seconds: {}".format(seconds))
+			#print("Being seconds: {}".format(currentTime))
 			#print("Running seconds: {}".format(runningTime))
 			if runningTime>seconds and step<max_time:
 				continue
-			stepPercentage=((runningTime*100/seconds))
+			stepPercentage=(runningTime*100/seconds)
 			#print("Step percentage: {}".format(stepPercentage))
 			pending=int((step*stepPercentage)/100)
 			#print("Total: {}".format(pending))
@@ -227,13 +228,16 @@ class rebostPrcMan():
 			return
 			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
 		else:
+			renv = os.environ.copy()
+			if len(renv.get("USER",""))==0:
+				renv["USER"]=username
 			cmd=["epic",action,"-nc","-u",epifile]
 			if action=="remove":
 				cmd=["epic","uninstall","-nc","-u",epifile]
 		#self._debug(cmd)
 		self._log(cmd)
 		f=open(logFile,"w")
-		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True)
+		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True,env=renv)
 		procQ.put(proc.pid)
 		while proc.poll()==None:
 			time.sleep(0.01)

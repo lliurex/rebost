@@ -1,3 +1,9 @@
+rebost (1.1.1) jammy; urgency=medium
+
+  * Force username for epic
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 24 Nov 2023 10:34:29 +0100
+
 rebost (1.1) jammy; urgency=medium
 
   * Cli support multiple apps actions

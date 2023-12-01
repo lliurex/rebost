@@ -343,6 +343,8 @@ elif action=="r":
 	action="remove"
 elif action=="sh":
 	action="show"
+if (action=="install" or action=="remove") and ("zomando" in actionArgs):
+	actionArgs=actionArgs.replace(":zomando",":package")
 
 bundle=""
 actionItems=actionArgs.split(":")

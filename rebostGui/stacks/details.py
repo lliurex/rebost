@@ -287,7 +287,7 @@ class details(confStack):
 		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
 		versions=self.app.get('versions',{})
 		bundles=list(self.app.get('bundle',{}).keys())
-		self._update_screen_controls(bundles)
+		self._updateScreenControls(bundles)
 		homepage=self.app.get('homepage','')
 		text=''
 		if homepage:
@@ -334,6 +334,13 @@ class details(confStack):
 				self.btnLaunch.setVisible(True)
 			self.lstInfo.setStyleSheet("selection-color:grey;selection-background-color:rgba({0},{1},{2},0.5)".format(rgb[0],rgb[1],rgb[2]))
 		else:
+			pkgState=self.app.get('state',{}).get("package",'1')
+			if pkgState.isdigit()==True:
+				pkgState=int(pkgState)
+			if pkgState==1:
+				bundle="package"
+				self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
+				self.lstInfo.setCurrentRow(1)
 			self.lstInfo.setStyleSheet("")
 			self.btnInstall.setVisible(True)
 			self.btnRemove.setVisible(False)
@@ -350,7 +357,7 @@ class details(confStack):
 		return(icn)
 	#def _getIconFromApp
 
-	def _update_screen_controls(self,bundles):
+	def _updateScreenControls(self,bundles):
 		pkgState=0
 		if "zomando" in bundles:
 			if "package" in bundles:
@@ -373,7 +380,7 @@ class details(confStack):
 			elif bundle=="zomando":
 				continue
 		self._getReleasesInfo()
-	#def _update_screen_controls
+	#def _updateScreenControls
 
 	def _getReleasesInfo(self):
 		bundles=self.app.get('bundle',[])

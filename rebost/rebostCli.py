@@ -46,6 +46,12 @@ i18n={"ERR":_("ocurred when attempting to"),
 	"FOUND":_("found"),
 	"FOR":_("for"),
 	"AVAILABLE":_("available"),
+	"FROM":_("from"),
+	"MANY":_("many"),
+	"SOURCES":_("sources"),
+	"PLEASE":_("please"),
+	"CHOOSE":_("choose"),
+	"ONE":_("one"),
 	"AS":_("as"),
 	"ONLY":_("only")
 	}

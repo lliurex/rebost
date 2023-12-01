@@ -105,7 +105,6 @@ def _printInstall(result,pid):
 		rawmsg=result.get('msg','')
 		newmsg=""
 		for w in rawmsg[0:].split(" "):
-			print(w.upper())
 			if w.upper()!="PACKAGE":
 				newmsg+="{} ".format(i18n.get(w.upper().strip(""),w))
 			else:

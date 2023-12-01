@@ -1,3 +1,9 @@
+rebost (1.2.1.3) focal; urgency=medium
+
+  * Sync with jammy 1.3
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 01 Dec 2023 08:24:31 +0100
+
 rebost (0.9.52) focal; urgency=medium
 
   * Force username for epic

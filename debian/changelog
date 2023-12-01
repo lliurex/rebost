@@ -1,6 +1,6 @@
-rebost (1.2.1.3) focal; urgency=medium
+rebost (1.1.2-1lliurex21) focal; urgency=medium
 
-  * Sync with jammy 1.3
+  * Sync with jammy 1.1.2
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 01 Dec 2023 08:24:31 +0100
 

@@ -204,7 +204,7 @@ class rebostPrcMan():
 					else:
 						if len(bundles)>1:
 							rebostpkg=''
-							rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format(" ".join(list(bundles.keys())))})]
+							rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format("|".join(list(bundles.keys())))})]
 						else:
 							bundle=list(bundles.keys())[0]
 			else:

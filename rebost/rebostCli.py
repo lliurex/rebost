@@ -83,7 +83,9 @@ def _printInstall(result,pid):
 		pkg=result.get('package','unknown')
 		if ';' in pkg:
 			pkg=pkg.split(";")[0]
-		msg=("{0} {1}{2}{3}".format(actionArgs.replace(":"," "),color.UNDERLINE,status,color.END))
+		#msg=("{0} {1}{2}{3}".format(actionArgs.replace(":"," "),color.UNDERLINE,status,color.END))
+		actions=""
+		msg=("{0} {1} {2}{3}{4}".format(pkg,result.get('bundle',''),color.UNDERLINE,status,color.END))
 		if status.startswith(color.RED):
 			ERR=err.transactionProcessFailed
 			msg+="\n\n"
@@ -186,8 +188,25 @@ def _processArgs(*args):
 		if len(action)>2:
 			actionArgs=args[0][2:]
 		action=args[0][1]
-	actionArgs=":".join(actionArgs)
+	act=[]
+	pkg=""
+	bund=""
+	for arg in actionArgs:
+		if arg in ['appimage','flatpak','package','snap','zomando']:
+			bund=arg
+			act.append((pkg,bund))
+			pkg=""
+		elif pkg=="":
+			pkg=arg
+		else:
+			act.append((pkg,bund))
+			pkg=arg
+		bund=""
+	if len(pkg)>0:
+		act.append((pkg,bund))
+	actionArgs=act
 	return(action,actionArgs)	
+#def _processArgs
 
 def _waitProcess(pid):
 	var='LliureX Store '
@@ -343,20 +362,18 @@ elif action=="r":
 	action="remove"
 elif action=="sh":
 	action="show"
-if (action=="install" or action=="remove") and ("zomando" in actionArgs):
-	actionArgs=actionArgs.replace(":zomando",":package")
 
-bundle=""
-actionItems=actionArgs.split(":")
-if ":" in actionArgs:
-	if actionItems[-1].lower() in ["package","appimage","flatpak","snap"]:
-		bundle=actionItems.pop(-1)
-while actionItems:
-	item=actionItems.pop()
-	if len(bundle)>0:
-		item="{}:{}".format(item,bundle)
+for actionArg in actionArgs:
+	if (action=="install" or action=="remove") and (actionArg[1]=="zomando"):
+		actionArg=(actionArg[0],"package")
+
+	bundle=""
+	actionItems=actionArg
+	if len(actionArg[1])>0:
+		if actionArg[1].lower() in ["package","appimage","flatpak","snap"]:
+			bundle=":{}".format(actionArg[1])
+	item=actionArg[0]+bundle
 	launchActions(action,item)
 	print("")
-
 
 sys.exit(ERR)

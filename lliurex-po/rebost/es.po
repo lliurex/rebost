@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-01 09:30+0100\n"
-"PO-Revision-Date: 2023-12-01 09:32+0100\n"
+"POT-Creation-Date: 2023-12-01 09:41+0100\n"
+"PO-Revision-Date: 2023-12-01 09:41+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -153,34 +153,38 @@ msgid "available"
 msgstr "disponible"
 
 #: ../rebost/rebostCli.py:49
+msgid "from:"
+msgstr "entre:"
+
+#: ../rebost/rebostCli.py:50
 msgid "from"
 msgstr "de"
 
-#: ../rebost/rebostCli.py:50
+#: ../rebost/rebostCli.py:51
 msgid "many"
 msgstr "varios"
 
-#: ../rebost/rebostCli.py:51
-msgid "sources"
-msgstr "formatos"
-
 #: ../rebost/rebostCli.py:52
+msgid "sources."
+msgstr "formatos."
+
+#: ../rebost/rebostCli.py:53
 msgid "please"
 msgstr "Se debe"
 
-#: ../rebost/rebostCli.py:53
+#: ../rebost/rebostCli.py:54
 msgid "choose"
 msgstr "seleccionar"
 
-#: ../rebost/rebostCli.py:54
+#: ../rebost/rebostCli.py:55
 msgid "one"
 msgstr "uno"
 
-#: ../rebost/rebostCli.py:55
+#: ../rebost/rebostCli.py:56
 msgid "as"
 msgstr "como"
 
-#: ../rebost/rebostCli.py:56
+#: ../rebost/rebostCli.py:57
 msgid "only"
 msgstr "solo"
 

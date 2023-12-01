@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-01 09:30+0100\n"
-"PO-Revision-Date: 2023-12-01 09:34+0100\n"
+"POT-Creation-Date: 2023-12-01 09:41+0100\n"
+"PO-Revision-Date: 2023-12-01 09:42+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -56,11 +56,11 @@ msgstr "eliminat"
 
 #: ../rebost/rebostCli.py:26
 msgid "Versions"
-msgstr "Versions:"
+msgstr "Versions"
 
 #: ../rebost/rebostCli.py:27
 msgid "Categories"
-msgstr "Categories:"
+msgstr "Categories"
 
 #: ../rebost/rebostCli.py:28
 msgid "unknown"
@@ -153,34 +153,38 @@ msgid "available"
 msgstr "disponible"
 
 #: ../rebost/rebostCli.py:49
+msgid "from:"
+msgstr "entre:"
+
+#: ../rebost/rebostCli.py:50
 msgid "from"
 msgstr "de"
 
-#: ../rebost/rebostCli.py:50
+#: ../rebost/rebostCli.py:51
 msgid "many"
 msgstr "diversos"
 
-#: ../rebost/rebostCli.py:51
-msgid "sources"
-msgstr "formats"
-
 #: ../rebost/rebostCli.py:52
-msgid "please"
-msgstr "Cal"
+msgid "sources."
+msgstr "formats."
 
 #: ../rebost/rebostCli.py:53
+msgid "please"
+msgstr "cal"
+
+#: ../rebost/rebostCli.py:54
 msgid "choose"
 msgstr "triar"
 
-#: ../rebost/rebostCli.py:54
+#: ../rebost/rebostCli.py:55
 msgid "one"
 msgstr "un"
 
-#: ../rebost/rebostCli.py:55
+#: ../rebost/rebostCli.py:56
 msgid "as"
 msgstr "com"
 
-#: ../rebost/rebostCli.py:56
+#: ../rebost/rebostCli.py:57
 msgid "only"
 msgstr "no més"
 

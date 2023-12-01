@@ -46,9 +46,10 @@ i18n={"ERR":_("ocurred when attempting to"),
 	"FOUND":_("found"),
 	"FOR":_("for"),
 	"AVAILABLE":_("available"),
+	"FROM:":_("from:"),
 	"FROM":_("from"),
 	"MANY":_("many"),
-	"SOURCES":_("sources"),
+	"SOURCES,":_("sources."),
 	"PLEASE":_("please"),
 	"CHOOSE":_("choose"),
 	"ONE":_("one"),
@@ -104,7 +105,11 @@ def _printInstall(result,pid):
 		rawmsg=result.get('msg','')
 		newmsg=""
 		for w in rawmsg[0:].split(" "):
-			newmsg+="{} ".format(i18n.get(w.upper(),w))
+			print(w.upper())
+			if w.upper()!="PACKAGE":
+				newmsg+="{} ".format(i18n.get(w.upper().strip(""),w))
+			else:
+				newmsg+="{} ".format(w)
 		newmsg=newmsg.lstrip()
 		if newmsg.startswith(i18n["FOR"]):
 			newmsg="{} {}".format(i18n["PACKAGE"],newmsg)

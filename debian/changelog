@@ -1,3 +1,9 @@
+rebost (1.1.2) jammy; urgency=medium
+
+  * Improve zomando management
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 01 Dec 2023 08:20:46 +0100
+
 rebost (1.1.1) jammy; urgency=medium
 
   * Force username for epic

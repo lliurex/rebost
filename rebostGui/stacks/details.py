@@ -337,7 +337,7 @@ class details(confStack):
 			pkgState=self.app.get('state',{}).get("package",'1')
 			if pkgState.isdigit()==True:
 				pkgState=int(pkgState)
-			if pkgState==1:
+			if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
 				bundle="package"
 				self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
 				self.lstInfo.setCurrentRow(1)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-11 09:41+0100\n"
+"POT-Creation-Date: 2023-12-01 09:41+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -148,9 +148,37 @@ msgid "available"
 msgstr ""
 
 #: ../rebost/rebostCli.py:49
-msgid "as"
+msgid "from:"
 msgstr ""
 
 #: ../rebost/rebostCli.py:50
+msgid "from"
+msgstr ""
+
+#: ../rebost/rebostCli.py:51
+msgid "many"
+msgstr ""
+
+#: ../rebost/rebostCli.py:52
+msgid "sources."
+msgstr ""
+
+#: ../rebost/rebostCli.py:53
+msgid "please"
+msgstr ""
+
+#: ../rebost/rebostCli.py:54
+msgid "choose"
+msgstr ""
+
+#: ../rebost/rebostCli.py:55
+msgid "one"
+msgstr ""
+
+#: ../rebost/rebostCli.py:56
+msgid "as"
+msgstr ""
+
+#: ../rebost/rebostCli.py:57
 msgid "only"
 msgstr ""

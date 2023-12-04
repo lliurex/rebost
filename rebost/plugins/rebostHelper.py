@@ -12,7 +12,7 @@ import tempfile
 import subprocess
 import time
 
-DBG=True
+DBG=False
 path="/var/log/rebost.log"
 fname = "rebost.log"
 logger = logging.getLogger(fname)

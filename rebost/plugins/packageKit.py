@@ -11,7 +11,7 @@ import time
 
 class packageKit():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.onlyLliurex=False

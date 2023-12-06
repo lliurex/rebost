@@ -14,7 +14,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -71,7 +71,7 @@ class Rebost():
 	#Load and register the plugins from plugin dir
 	####
 	def _loadPlugins(self):
-		self._debug("Accessing %s"%self.plugDir)
+		self._debug("Accessing {}".format(self.plugDir))
 		disabledPlugins={}
 		if os.path.isdir(self.plugDir):
 			sys.path.insert(1,self.plugDir)
@@ -85,7 +85,7 @@ class Rebost():
 						else:
 							pluginObject=imp
 					except Exception as e:
-						self._log("Failed importing %s: %s"%(plugin,e))
+						self._log("Failed importing {0}: {1}".format(plugin,e))
 						continue
 					if "rebostHelper" in plugin:
 						enabled=True
@@ -94,9 +94,9 @@ class Rebost():
 					if enabled!=False:
 						self.plugins[plugin.replace(".py","")]=pluginObject
 						if enabled:
-							self._debug("Plugin loaded: %s"%plugin)
+							print("Plugin loaded: {}".format(plugin))
 						else:
-							self._debug("%s will set its status"%plugin)
+							print("{} will set its status".format(plugin))
 					else:
 						self._debug("Plugin disabled: %s"%plugin)
 						disabledPlugins[plugin.replace(".py","")]=False
@@ -126,7 +126,7 @@ class Rebost():
 			if mandatory:
 				#Disable plugin as not all values have been set
 				if plugin!="rebostHelper":
-					self._debug("Disable {} as faulting values: {}".format(plugin,mandatory))
+					print("Disable {} as faulting values: {}".format(plugin,mandatory))
 					delPlugins.append(plugin)
 			else:
 				self.pluginInfo[plugin]=plugInfo
@@ -177,7 +177,6 @@ class Rebost():
 				if delPlugin in self.pluginInfo.keys():
 					del(self.pluginInfo[delPlugin])
 				self._disable(key)
-		print(self.pluginInfo)
 	#def _processConfig
 
 	def _readConfig(self):

@@ -119,20 +119,6 @@ class snapHelper():
 		if rebostPkg['homepage'].lower()=="none":
 			rebostPkg['homepage']=""
 		rebostPkg['license']="{}".format(pkg.get_license())
-		#if pkg.get_screenshots():
-		#if 'screenshots' in appimage.keys():
-		#	rebostPkg['thumbnails']=appimage['screenshots']
-		#if 'links' in appimage.keys():
-		#	if appimage['links']:
-		#		for link in appimage['links']:
-		#			if 'url' in link.keys() and link['type']=='Download':
-		#				rebostPkg['installerUrl']=link['url']
-		#if 'authors' in appimage.keys():
-		#	if appimage['authors']:
-		#		for author in appimage['authors']:
-		#			if 'url' in author.keys():
-		#				#self._debug("Author: %s"%author['url'])
-		#				rebostPkg['homepage']=author['url']
 		state='1'
 		if pkg.get_install_date():
 			state='0'

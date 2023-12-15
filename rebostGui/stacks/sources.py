@@ -53,7 +53,7 @@ class setWaiting(QThread):
 	def __init__(self,widget,parent=None):
 		QThread.__init__(self,parent)
 		self.widget=widget
-		self.cursor=widget.cursor
+		self.oldcursor=widget.cursor()
 	#def __init__
 
 	def run(self):
@@ -73,7 +73,7 @@ class setWaiting(QThread):
 			wdg.setEnabled(True)
 		for wdg in self.widget.findChildren(QCheckBox):
 			wdg.setEnabled(True)
-		self.widget.setCursor(self.cursor)
+		self.widget.setCursor(self.oldcursor)
 	#def stop
 #class setWaiting
 	
@@ -93,7 +93,7 @@ class sources(confStack):
 		self.config={}
 		self.app={}
 		self.level='system'
-		self.cursor=self.cursor()
+		self.oldcursor=self.cursor()
 	#def __init__
 
 	def _load_screen(self):

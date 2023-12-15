@@ -161,6 +161,9 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 				if os.path.isfile(iconPath):
 					rebostPkg['icon']=iconPath
 					break
+		elif "/flatpak/" in rebostPkg["icon"] and os.path.isfile(rebostPkg["icon"])==False:
+			rebostPkg["icon"]=self._fixFlatpakIconPath(rebostPkg['icon'])
+			
 		#fix LliureX category:
 		lliurex=list(filter(lambda cat: 'lliurex' in str(cat).lower(), categories))
 		if lliurex:
@@ -171,6 +174,20 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	(cat0,cat1,cat2)=categories[0:3]
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
 #def _rebostPkg_fill_data
+
+def _fixFlatpakIconPath(self,icon):
+	fpath=os.path.dirname(icon)
+	spath=fpath.split("/")
+	idx=0
+	if "icons" in spath:
+		idx=spath.index("icons")-1
+		fpath="/".join(spath[0:idx])
+	if os.path.isdir(fpath) and idx>0:
+		for d in os.listdir(fpath):
+			if os.path.isdir(os.path.join(fpath,d,"icons")):
+				icon=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
+	return icon
+#def _fixFlatpakIconPath
 
 def _sanitizeString(data,scape=False,unescape=False):
 	if isinstance(data,str):
@@ -208,6 +225,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		else:
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
+		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
+			pkg["icon"]=self._fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)

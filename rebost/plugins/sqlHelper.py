@@ -154,6 +154,21 @@ class sqlHelper():
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+			if "flatpak" in rebostPkg['icon'] and os.path.exists(rebostPkg['icon'])==False:
+				fpath=os.path.dirname(rebostPkg['icon'])
+				spath=fpath.split("/")
+				idx=0
+				if "icons" in spath:
+					idx=spath.index("icons")-1
+					fpath="/".join(spath[0:idx])
+				if os.path.isdir(fpath) and idx>0:
+					for d in os.listdir(fpath):
+						print(os.path.join(fpath,d,"icons"))
+						if os.path.isdir(os.path.join(fpath,d,"icons")):
+							print("OERORO")
+							rebostPkg['icon']=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
+							print(rebostPkg["icon"])
+							print("___")
 			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
 		self.closeConnection(db)

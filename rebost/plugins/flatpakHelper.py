@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -212,8 +212,6 @@ class flatpakHelper():
 				iconPath=os.path.join(icon64,"{}.png".format(idx))
 				break
 		if iconPath!='':
-			if "regex" in iconPath:
-				print(iconPath)
 			icon=appstream.Icon()
 			icon.set_kind(appstream.IconKind.LOCAL)
 			icon.set_filename(iconPath)

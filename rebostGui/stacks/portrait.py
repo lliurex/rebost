@@ -155,11 +155,9 @@ class portrait(confStack):
 		self.btnFilters.clear()
 		self.btnFilters.setText(i18n.get("FILTERS"))
 		self.btnFilters.addItem(i18n.get("ALL"))
-		self.btnFilters.addItem(i18n.get("INSTALLED"),state=False)
-		self.btnFilters.addItem("Snap",state=False)
-		self.btnFilters.addItem("Appimage",state=False)
-		self.btnFilters.addItem("Flatpak",state=False)
-		self.btnFilters.addItem("Zomando",state=False)
+		items=[i18n.get("INSTALLED"),"Lliurex","Snap","Appimage","Flatpak","Zomando"]
+		for item in items:
+			self.btnFilters.addItem(item,state=False)
 	#def _loadFilters
 
 	def _populateCategories(self): 
@@ -182,11 +180,17 @@ class portrait(confStack):
 			self.cmbCategories.addItem(cat)
 	#def _populateCategories
 
-	def _getAppList(self,cat=''):
+	def _getAppList(self,cat=[]):
 		apps=[]
-		if cat!='':
-			apps=json.loads(self.rc.execute('list',"\"{}\"".format(cat)))
-			self._debug("Loading cat {}".format(cat))
+		if isinstance(cat,str):
+			cat=cat.split()
+		if len(cat)>0:
+			categories=",".join(cat)
+			if len(cat)>1:
+				apps.extend(json.loads(self.rc.execute('list',"({})".format(categories))))
+			else:
+				apps.extend(json.loads(self.rc.execute('list',"{}".format(categories))))
+			self._debug("Loading cat {}".format(",".join(cat)))
 		else:
 			categories=[]
 			for i18ncat,cat in self.i18nCat.items():
@@ -219,6 +223,8 @@ class portrait(confStack):
 		filters=self._readFilters()
 		if len(filters)==0:
 			filters['package']=True
+		if filters.get("lliurex",False)==True:
+			self.apps=self._getAppList(["\"Lliurex\"","\"Lliurex-Administration\"","\"Lliurex-Infantil\""])
 		self.apps=self._applyFilters(filters)
 		self.updateScreen()
 	#def _filterView
@@ -269,6 +275,7 @@ class portrait(confStack):
 	#def _applyFilters
 
 	def _selectFilters(self,*args):
+		cat=""
 		if len(args)>0:
 			idx=args[0]
 		else:
@@ -282,7 +289,7 @@ class portrait(confStack):
 			init=2
 		else:
 			state=Qt.Checked
-			init=3
+			init=4
 		if idx==1:
 			for i in (range(init,self.btnFilters.count())):
 				item=self.btnFilters.model().item(i)
@@ -290,7 +297,7 @@ class portrait(confStack):
 		elif state==Qt.Unchecked: # -> Remember: swap
 			item=self.btnFilters.model().item(1)
 			item.setCheckState(Qt.Unchecked)
-		self._filterView()
+		self._filterView(getApps=False)
 	#def _selectFilters
 
 	def _resetSearchBtnIcon(self):

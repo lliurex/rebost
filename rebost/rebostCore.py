@@ -27,8 +27,6 @@ class Rebost():
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
 		self.store=appstream.Store()
-		if self.propagateDbg:
-			self._setPluginDbg()
 		self.config={}
 		self.procId=1
 
@@ -123,13 +121,20 @@ class Rebost():
 						pluginObject.__dict__[item]="lliurex"
 				if item in mandatory:
 					mandatory.remove(item)
-			if mandatory:
+			if len(mandatory)>0:
 				#Disable plugin as not all values have been set
 				if plugin!="rebostHelper":
 					print("Disable {} as faulting values: {}".format(plugin,mandatory))
 					delPlugins.append(plugin)
+				else:
+					pluginObject.setDebugEnabled(self.dbg)
 			else:
 				self.pluginInfo[plugin]=plugInfo
+				if self.propagateDbg:
+					try:
+						pluginObject.setDebugEnabled(self.dbg)
+					except Exception as e:
+						print(e)
 		for plugin in delPlugins:
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
@@ -138,6 +143,7 @@ class Rebost():
 		cfg=self._readConfig()
 		cfgFile="/usr/share/rebost/store.json"
 		for key,value in config.items():
+			key=key.replace("Helper","")
 			cfg[key]=value
 		if os.path.isfile(cfgFile):
 			with open(cfgFile,'w') as f:
@@ -247,18 +253,18 @@ class Rebost():
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
-		postactions=''
-		actions=''
+		postactions=[]
+		actions=[]
 		for plugin,info in self.pluginInfo.items():
 			actions=info.get('autostartActions',[])
 			postactions=info.get('postAutostartActions',[])
-			if actions:
+			if len(actions)>0:
 				self._debug("Loading autostart actions for {}".format(plugin))
 				priority=info.get('priority',0)
 				newDict=actionDict.get(priority,{})
 				newDict[plugin]=actions
 				actionDict[priority]=newDict.copy()
-			if postactions:
+			if len(postactions)>0:
 				postactionDict[plugin]=postactions
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
@@ -271,13 +277,15 @@ class Rebost():
 							procList.append(self._execute(action,'','',plugin=plugin,th=False))
 						except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+							self._log("Error launching {} from {}: {}".format(action,plugin,e))
+							print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			if isinstance(proc,threading.Thread):
 				proc.join()
 			elif isinstance(proc,multiprocessing.Process):
 				proc.join()
-		self._debug("postactions: {}".format(postactions))
-		if postactionDict:
+		self._debug("postactions: {}".format(postactionDict))
+		if len(postactionDict)>0:
 			self._debug("Launching postactions")
 			for plugin,actions in postactionDict.items():
 				for action in actions:

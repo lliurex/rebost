@@ -137,6 +137,7 @@ class zomandoHelper():
 								rebostPkg['categories'].append(cat)
 							if "Zomando" not in rebostPkg['categories']:
 								rebostPkg['categories'].append("Zomando")
+							rebostPkg['categories'].append("Lliurex")
 						else:
 							rebostPkg['categories']=["System"]
 					elif fline.startswith("Name"):

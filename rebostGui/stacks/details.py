@@ -388,6 +388,8 @@ class details(confStack):
 		installed=[]
 		uninstalled=[]
 		priority=["zomando","snap","flatpak","appimage","package"]
+		if isinstance(bundles,dict)==False:
+			return()
 		for bundle in bundles.keys():
 			state=self.app.get("state",{}).get(bundle,1)
 			if state.isdigit()==False:

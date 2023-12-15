@@ -362,7 +362,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
 		except Exception as e:
 			_debug("Helper: {}".format(e))
-			print("ERROR {}".format(e))
+			print("Generate_epi error {}".format(e))
 			retCode=1
 		if os.path.isfile(epiScript):
 			os.chmod(epiScript,0o755)

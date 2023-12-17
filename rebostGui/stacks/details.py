@@ -142,7 +142,7 @@ class details(confStack):
 			self.app={}
 			self._return()
 		else:
-			self.setWindowTitle("LliureX Store - {}".format(self.app.get("name","")))
+			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
 					continue

@@ -49,7 +49,14 @@ class packageKit():
 		action="load"
 		self._debug("Getting pkg list")
 		pkcon=packagekit.Client()
-		pkcon.refresh_cache(False,None,self._load_callback,None)
+		try:
+			pkcon.refresh_cache(False,None,self._load_callback,None)
+		except:
+			self._debug("apt seems blocked. Retrying...")
+			try:
+				pkcon.refresh_cache(False,None,self._load_callback,None)
+			except Exception as e:
+				print(e)
 		#pkList=pkcon.get_packages(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
 		pkList=pkcon.get_packages(packagekit.FilterEnum.GUI, None, self._load_callback, None)
 		pkgSack=pkList.get_package_sack()

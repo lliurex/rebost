@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import importlib
+import requests
 import os,shutil
 import multiprocessing
 import threading
@@ -14,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -250,6 +251,14 @@ class Rebost():
 				os.remove(os.path.join(tmpPath,"sq.lu"))
 	#def _disable
 
+	def _chkNetwork(self):
+		try:
+			requests.get('https://portal.edu.gva.es/',timeout=1)
+			return True
+		except:
+			return False
+	#def _chkNetwork
+
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
@@ -263,7 +272,9 @@ class Rebost():
 				priority=info.get('priority',0)
 				newDict=actionDict.get(priority,{})
 				newDict[plugin]=actions
-				actionDict[priority]=newDict.copy()
+				network=self._chkNetwork()
+				if network==True or priority==100:
+					actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
 				postactionDict[plugin]=postactions
 		#Launch actions by priority
@@ -303,14 +314,21 @@ class Rebost():
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraParms):
 					bundle=str(extraParms)
-		plugin='sqlHelper'
+		plugin=''
 		for plugName,plugAction in self.pluginInfo.items():
 			if action in plugAction.get('actions',[]):
 				plugin=plugName
 				break
-
-		if rebostPkgList==[]:
-			#sqlHelper now manages all operations but load
+		coreAction=False
+		if len(plugin)==0:
+			#search for a local method
+			if hasattr(self,action):
+				plugin="core"
+				rebostPkgList.extend(self._executeCoreAction(action))
+				print("**")
+				print(rebostPkgList)
+				print("**")
+		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
@@ -394,6 +412,24 @@ class Rebost():
 			retval=0
 		return(proc)
 	#def _executeAction
+
+	def _executeCoreAction(self,action,th=True):
+		retval=1
+		rs=[{}]
+		proc=None
+		self._debug("Launching {} from CORE (th {})".format(action,th))
+		func=eval("self.{}".format(action))
+		if th:
+			proc=threading.Thread(target=func)
+		else:
+			proc=multiprocessing.Process(target=func,daemon=False)
+		try:
+			proc.start()
+		except Exception as e:
+			print(e)
+			retval=0
+		return(rs)
+	#def _executeAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -426,23 +462,28 @@ class Rebost():
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
 		self._debug("Cleaning tmp")
-		for i in os.listdir(rebostTmpPath):
+		for i in os.scandir(rebostTmpPath):
 			try:
-				os.remove(os.path.join(rebostTmpPath,i))
+				os.remove(i.path)
 			except Exception as e:
 				print(e)
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.listdir(rebostPath):
-				if i.endswith(".db"):
+			for i in os.scandir(rebostPath):
+				if i.path.endswith(".db"):
 					try:
-						os.remove(os.path.join(rebostPath,i))
+						os.remove(i.path)
 					except Exception as e:
 						print(e)
 						self._debug(e)
-		return()
+		return(self.restart())
 	#def getProgress(self):
+
+	def restart(self):
+		self.run()
+		return('[{}]')
+
 
 	def update(self):
 		return

@@ -142,7 +142,7 @@ class details(confStack):
 			self.app={}
 			self._return()
 		else:
-			self.setWindowTitle("LliureX Store - {}".format(self.app.get("name","")))
+			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
 					continue
@@ -315,15 +315,23 @@ class details(confStack):
 	def _setLauncherOptions(self):
 		item=self.lstInfo.currentItem()
 		bundle=""
+		release=""
 		rgb=(0,0,0,0)
 		if item!=None:
 			bundle=item.text().lower().split(" ")[-1]
+			release=item.text().lower().split(" ")[0]
 			rgb=item.background().color().getRgb()
+		else:
+			return()
 		if bundle=="package":
 			bundle=""
-		self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),bundle))
-		self.btnRemove.setText("{} {}".format(i18n.get("REMOVE"),bundle))
-		self.btnLaunch.setText("{} {}".format(i18n.get("RUN"),bundle))
+		if self.lstInfo.count()>1:
+			self.btnInstall.setText("{0} {1}".format(i18n.get("INSTALL"),bundle))
+			self.btnRemove.setText("{0} {1}".format(i18n.get("REMOVE"),bundle))
+			self.btnLaunch.setText("{0} {1}".format(i18n.get("RUN"),bundle))
+		self.btnInstall.setToolTip("{0}: {1}\n{2}".format(i18n.get("RELEASE"),release,bundle.capitalize()))
+		self.btnRemove.setToolTip(item.text())
+		self.btnLaunch.setToolTip(item.text())
 		if rgb[0]==R and rgb[1]==G and rgb[2]==B and rgb[3]==A:
 			self.btnInstall.setVisible(False)
 			if self.app.get("bundle",{}).get("zomando","")!="":
@@ -388,6 +396,8 @@ class details(confStack):
 		installed=[]
 		uninstalled=[]
 		priority=["zomando","snap","flatpak","appimage","package"]
+		if isinstance(bundles,dict)==False:
+			return()
 		for bundle in bundles.keys():
 			state=self.app.get("state",{}).get(bundle,1)
 			if state.isdigit()==False:
@@ -412,10 +422,10 @@ class details(confStack):
 		if len(bundles)<=1 or "zomando" in bundles.keys():
 			self.lstInfo.setVisible(False)
 			if len(bundles)==1:
-				if list(bundles.keys())[0]=="package":
-					self.btnInstall.setText(i18n.get("INSTALL"))
-				else:
-					self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),list(bundles.keys())[0]))
+			#	if list(bundles.keys())[0]=="package":
+				self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),self.app.get("name","")))
+			#	else:
+			#		self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),list(bundles.keys())[0]))
 			elif "zomando" in bundles.keys():
 				self.lstInfo.setVisible(False)
 				self.btnInstall.setVisible(False)

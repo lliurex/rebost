@@ -51,9 +51,10 @@ class reloadCatalogue(QThread):
 
 class setWaiting(QThread):
 	def __init__(self,widget,parent=None):
-		QThread.__init__(self,parent)
 		self.widget=widget
-		self.cursor=widget.cursor
+		if parent==None:
+			self.parent=parent
+		self.oldcursor=widget.cursor()
 	#def __init__
 
 	def run(self):
@@ -73,7 +74,7 @@ class setWaiting(QThread):
 			wdg.setEnabled(True)
 		for wdg in self.widget.findChildren(QCheckBox):
 			wdg.setEnabled(True)
-		self.widget.setCursor(self.cursor)
+		self.widget.setCursor(self.oldcursor)
 	#def stop
 #class setWaiting
 	
@@ -93,7 +94,7 @@ class sources(confStack):
 		self.config={}
 		self.app={}
 		self.level='system'
-		self.cursor=self.cursor()
+		self.oldcursor=self.cursor()
 	#def __init__
 
 	def _load_screen(self):
@@ -135,37 +136,45 @@ class sources(confStack):
 
 	def _clearCache(self):
 		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
+		self._setEnabled(False)
 		if os.path.isdir(cacheDir):
 			try:
 				shutil.rmtree(cacheDir)
 			except Exception as e:
 				print("Error removing {0}: {1}".format(cacheDir,e))
+		self._setEnabled(True)
 	#def _clearCache
+
+	def _setEnabled(self,state):
+		if state==False:
+			cursor=QtGui.QCursor(Qt.WaitCursor)
+			self.setCursor(cursor)
+		else:
+			self.setCursor(self.oldcursor)
+		QApplication.processEvents()
+		for wdg in self.findChildren(QPushButton):
+			wdg.setEnabled(state)
+		for wdg in self.findChildren(QCheckBox):
+			wdg.setEnabled(state)
+		QApplication.processEvents()
+	#def _setEnabled
 
 	def _resetDB(self,refresh=False):
 		if refresh==True:
 			if self.changes:
 				self.writeConfig()
 		self.btnBack.clicked.connect(self.btnBack.text)
-		QApplication.processEvents()
-		self.btnBack.setEnabled(False)
-		QApplication.processEvents()
-		wait=setWaiting(self)
-		wait.run()
 		self.changes=False
+		self._setEnabled(False)
 		self._reloadCatalogue(True)
-		wait.stop()
+		self._setEnabled(True)
 	#def _resetDB
 
 	def _reload(self):
 		self.btnBack.clicked.connect(self.btnBack.text)
-		QApplication.processEvents()
-		self.btnBack.setEnabled(False)
-		QApplication.processEvents()
-		wait=setWaiting(self)
-		wait.run()
+		self._setEnabled(False)
 		self._reloadCatalogue(False)
-		wait.stop()
+		self._setEnabled(True)
 	#def _reload
 		
 	def _reloadCatalogue(self,force=False):
@@ -194,6 +203,7 @@ class sources(confStack):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 		self.stack.gotoStack(idx=1,parms="1")
+		self.setCursor(self.oldcursor)
 	#def _return
 
 	def updateScreen(self):

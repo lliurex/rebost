@@ -17,7 +17,7 @@ import hashlib
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["load"]
@@ -268,6 +268,7 @@ class appimageHelper():
 			except Exception as e:
 				self._debug(e)
 				self._debug(rebostPkg)
+				return(rebostPkg)
 		self._debug("Filling data for {}".format(rebostPkg.get('name')))
 		bundle=rebostPkg['bundle'].get('appimage','')
 		self._debug("Base URL {}".format(bundle))

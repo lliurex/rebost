@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import importlib
+import requests
 import os,shutil
 import multiprocessing
 import threading
@@ -27,8 +28,6 @@ class Rebost():
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
 		self.store=appstream.Store()
-		if self.propagateDbg:
-			self._setPluginDbg()
 		self.config={}
 		self.procId=1
 
@@ -71,7 +70,7 @@ class Rebost():
 	#Load and register the plugins from plugin dir
 	####
 	def _loadPlugins(self):
-		self._debug("Accessing %s"%self.plugDir)
+		self._debug("Accessing {}".format(self.plugDir))
 		disabledPlugins={}
 		if os.path.isdir(self.plugDir):
 			sys.path.insert(1,self.plugDir)
@@ -85,7 +84,7 @@ class Rebost():
 						else:
 							pluginObject=imp
 					except Exception as e:
-						self._log("Failed importing %s: %s"%(plugin,e))
+						self._log("Failed importing {0}: {1}".format(plugin,e))
 						continue
 					if "rebostHelper" in plugin:
 						enabled=True
@@ -94,9 +93,9 @@ class Rebost():
 					if enabled!=False:
 						self.plugins[plugin.replace(".py","")]=pluginObject
 						if enabled:
-							self._debug("Plugin loaded: %s"%plugin)
+							print("Plugin loaded: {}".format(plugin))
 						else:
-							self._debug("%s will set its status"%plugin)
+							print("{} will set its status".format(plugin))
 					else:
 						self._debug("Plugin disabled: %s"%plugin)
 						disabledPlugins[plugin.replace(".py","")]=False
@@ -123,13 +122,20 @@ class Rebost():
 						pluginObject.__dict__[item]="lliurex"
 				if item in mandatory:
 					mandatory.remove(item)
-			if mandatory:
+			if len(mandatory)>0:
 				#Disable plugin as not all values have been set
 				if plugin!="rebostHelper":
-					self._debug("Disable {} as faulting values: {}".format(plugin,mandatory))
+					print("Disable {} as faulting values: {}".format(plugin,mandatory))
 					delPlugins.append(plugin)
+				else:
+					pluginObject.setDebugEnabled(self.dbg)
 			else:
 				self.pluginInfo[plugin]=plugInfo
+				if self.propagateDbg:
+					try:
+						pluginObject.setDebugEnabled(self.dbg)
+					except Exception as e:
+						print(e)
 		for plugin in delPlugins:
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
@@ -138,6 +144,7 @@ class Rebost():
 		cfg=self._readConfig()
 		cfgFile="/usr/share/rebost/store.json"
 		for key,value in config.items():
+			key=key.replace("Helper","")
 			cfg[key]=value
 		if os.path.isfile(cfgFile):
 			with open(cfgFile,'w') as f:
@@ -177,7 +184,6 @@ class Rebost():
 				if delPlugin in self.pluginInfo.keys():
 					del(self.pluginInfo[delPlugin])
 				self._disable(key)
-		print(self.pluginInfo)
 	#def _processConfig
 
 	def _readConfig(self):
@@ -245,21 +251,31 @@ class Rebost():
 				os.remove(os.path.join(tmpPath,"sq.lu"))
 	#def _disable
 
+	def _chkNetwork(self):
+		try:
+			requests.get('https://portal.edu.gva.es/',timeout=1)
+			return True
+		except:
+			return False
+	#def _chkNetwork
+
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
-		postactions=''
-		actions=''
+		postactions=[]
+		actions=[]
 		for plugin,info in self.pluginInfo.items():
 			actions=info.get('autostartActions',[])
 			postactions=info.get('postAutostartActions',[])
-			if actions:
+			if len(actions)>0:
 				self._debug("Loading autostart actions for {}".format(plugin))
 				priority=info.get('priority',0)
 				newDict=actionDict.get(priority,{})
 				newDict[plugin]=actions
-				actionDict[priority]=newDict.copy()
-			if postactions:
+				network=self._chkNetwork()
+				if network==True or priority==100:
+					actionDict[priority]=newDict.copy()
+			if len(postactions)>0:
 				postactionDict[plugin]=postactions
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
@@ -272,13 +288,15 @@ class Rebost():
 							procList.append(self._execute(action,'','',plugin=plugin,th=False))
 						except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+							self._log("Error launching {} from {}: {}".format(action,plugin,e))
+							print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			if isinstance(proc,threading.Thread):
 				proc.join()
 			elif isinstance(proc,multiprocessing.Process):
 				proc.join()
-		self._debug("postactions: {}".format(postactions))
-		if postactionDict:
+		self._debug("postactions: {}".format(postactionDict))
+		if len(postactionDict)>0:
 			self._debug("Launching postactions")
 			for plugin,actions in postactionDict.items():
 				for action in actions:
@@ -296,14 +314,21 @@ class Rebost():
 			for regPlugin,info in self.pluginInfo.items():
 				if info.get('packagekind','package')==str(extraParms):
 					bundle=str(extraParms)
-		plugin='sqlHelper'
+		plugin=''
 		for plugName,plugAction in self.pluginInfo.items():
 			if action in plugAction.get('actions',[]):
 				plugin=plugName
 				break
-
-		if rebostPkgList==[]:
-			#sqlHelper now manages all operations but load
+		coreAction=False
+		if len(plugin)==0:
+			#search for a local method
+			if hasattr(self,action):
+				plugin="core"
+				rebostPkgList.extend(self._executeCoreAction(action))
+				print("**")
+				print(rebostPkgList)
+				print("**")
+		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
@@ -387,6 +412,24 @@ class Rebost():
 			retval=0
 		return(proc)
 	#def _executeAction
+
+	def _executeCoreAction(self,action,th=True):
+		retval=1
+		rs=[{}]
+		proc=None
+		self._debug("Launching {} from CORE (th {})".format(action,th))
+		func=eval("self.{}".format(action))
+		if th:
+			proc=threading.Thread(target=func)
+		else:
+			proc=multiprocessing.Process(target=func,daemon=False)
+		try:
+			proc.start()
+		except Exception as e:
+			print(e)
+			retval=0
+		return(rs)
+	#def _executeAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -419,23 +462,28 @@ class Rebost():
 		rebostPath="/usr/share/rebost/"
 		rebostTmpPath="/usr/share/rebost/tmp"
 		self._debug("Cleaning tmp")
-		for i in os.listdir(rebostTmpPath):
+		for i in os.scandir(rebostTmpPath):
 			try:
-				os.remove(os.path.join(rebostTmpPath,i))
+				os.remove(i.path)
 			except Exception as e:
 				print(e)
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.listdir(rebostPath):
-				if i.endswith(".db"):
+			for i in os.scandir(rebostPath):
+				if i.path.endswith(".db"):
 					try:
-						os.remove(os.path.join(rebostPath,i))
+						os.remove(i.path)
 					except Exception as e:
 						print(e)
 						self._debug(e)
-		return()
+		return(self.restart())
 	#def getProgress(self):
+
+	def restart(self):
+		self.run()
+		return('[{}]')
+
 
 	def update(self):
 		return

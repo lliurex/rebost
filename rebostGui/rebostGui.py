@@ -14,7 +14,7 @@ _ = gettext.gettext
 
 app=QApplication(["RebostGui"])
 config=appConfig("RebostGui",{'app':app})
-config.setWindowTitle("Lliurex Store")
+config.setWindowTitle("Lliurex Rebost")
 config.setRsrcPath("/usr/share/rebost/rsrc")
 config.setIcon('rebost')
 config.setWiki('https://wiki.edu.gva.es/lliurex/tiki-index.php?page=Accesibilidad%20en%20Lliurex:%20Access%20Helper')
@@ -23,7 +23,6 @@ config.hideNavMenu(True)
 #config.setBackgroundImage('repoman_login.svg')
 config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],".config/rebost")},confFile="store.json")
 config.Show()
-sizeObject = QDesktopWidget().screenGeometry(-1)
 config.setMinimumWidth(config.sizeHint().width()*1.5)
 config.setMinimumHeight(config.sizeHint().height()*1.1)
 

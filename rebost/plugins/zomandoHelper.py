@@ -9,7 +9,7 @@ import n4d.client as n4d
 
 class zomandoHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="zomando"
@@ -54,12 +54,31 @@ class zomandoHelper():
 	def _get_zomandos(self):
 		self._debug("Loading store")
 		rebostPkgList=[]
+		seen=[]
 		if os.path.isdir(self.zmdDir):
 			self._debug("Processing {}".format(self.zmdDir))
 			for f in os.listdir(self.zmdDir):
 				if f.endswith(".zmd"):
 					rebostPkg=rebostHelper.rebostPkg()
 					appName=os.path.basename(f).replace(".zmd","")
+					if appName not in seen:
+						seen.append(appName)
+					else:
+						continue
+					rebostPkg['name']=appName
+					rebostPkg['pkgname']=appName
+					rebostPkg=self.fillData(f,rebostPkg)
+					if isinstance(rebostPkg,dict):
+						rebostPkgList.append(rebostPkg)
+			self._debug("Processing {}".format(self.appDir))
+			for f in os.listdir(self.appDir):
+				if f.endswith(".app"):
+					rebostPkg=rebostHelper.rebostPkg()
+					appName=os.path.basename(f).replace(".app","")
+					if appName not in seen:
+						seen.append(appName)
+					else:
+						continue
 					rebostPkg['name']=appName
 					rebostPkg['pkgname']=appName
 					rebostPkg=self.fillData(f,rebostPkg)
@@ -118,6 +137,7 @@ class zomandoHelper():
 								rebostPkg['categories'].append(cat)
 							if "Zomando" not in rebostPkg['categories']:
 								rebostPkg['categories'].append("Zomando")
+							rebostPkg['categories'].append("Lliurex")
 						else:
 							rebostPkg['categories']=["System"]
 					elif fline.startswith("Name"):
@@ -133,7 +153,7 @@ class zomandoHelper():
 							rebostPkg['description']=description
 					elif fline.startswith("Groups"):
 							groups=fline.split("=")[-1].strip()
-							if '*' in groups or "students" in groups:# or "teachers" in groups:
+							if '*' in groups or "students" in groups or "teachers" in groups:
 								groupsProcessed=True
 		if groupsProcessed==False:
 			rebostPkg['categories']=["System"]

@@ -13,7 +13,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
@@ -147,28 +147,44 @@ class sqlHelper():
 			#Update state for bundles as they can be installed outside rebost
 			for bundle in bundles.keys():
 				if bundle=='appimage':
-					app=bundles.get(bundle,'')
-					rebostPkg=self._upgradeAppimageData(db,table,cursor,app,pkg,rebostPkg)
+					bundleurl=bundles.get(bundle,'')
+					rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
 				#Get state from epi
 				rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+			if "flatpak" in rebostPkg['icon'] and os.path.exists(rebostPkg['icon'])==False:
+				fpath=os.path.dirname(rebostPkg['icon'])
+				spath=fpath.split("/")
+				idx=0
+				if "icons" in spath:
+					idx=spath.index("icons")-1
+					fpath="/".join(spath[0:idx])
+				if os.path.isdir(fpath) and idx>0:
+					for d in os.listdir(fpath):
+						print(os.path.join(fpath,d,"icons"))
+						if os.path.isdir(os.path.join(fpath,d,"icons")):
+							print("OERORO")
+							rebostPkg['icon']=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
+							print(rebostPkg["icon"])
+							print("___")
 			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
 		self.closeConnection(db)
 		return(rows)
 	#def _showPackage
 
-	def _upgradeAppimageData(self,db,table,cursor,pkgname,pkg,rebostPkg):
-		if not pkgname.lower().endswith(".appimage") and pkgname!='':
+	def _upgradeAppimageData(self,db,table,cursor,bundleurl,pkg,rebostPkg):
+		if not rebostPkg.get("bundle",{}).get("appimage","").lower().endswith(".appimage") and bundleurl!='':
 			dataTmp=self.appimage.fillData(rebostPkg)
 			row=(pkg,dataTmp)
-			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkgname)
+			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
 			try:
 				cursor.execute(query)
 			except:
 				print("Query error upgrading appimage: {}".format(query))
+			db.commit()
 			rebostPkg=json.loads(dataTmp)
 		return(rebostPkg)
 	#def _upgradeAppimageData
@@ -595,10 +611,11 @@ class sqlHelper():
 
 	def _copyTmpDef(self):
 		#Copy tmp to definitive
-		self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
-		copyfile(self.main_tmp_table,self.main_table)
-		self._debug("Removing tmp file")
-		os.remove(self.main_tmp_table)
+		if os.path.isfile(self.main_tmp_table):
+			self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
+			copyfile(self.main_tmp_table,self.main_table)
+			self._debug("Removing tmp file")
+			os.remove(self.main_tmp_table)
 		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	

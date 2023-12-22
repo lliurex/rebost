@@ -198,8 +198,7 @@ class rebostDbusMethods(dbus.service.Object):
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='ay')
 	def update(self,force=False):
-		self.rebost.forceUpdate(force)
-		ret=self.restart()
+		ret=self.rebost.forceUpdate(force)
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
 	#def update
@@ -209,7 +208,7 @@ class rebostDbusMethods(dbus.service.Object):
 	def restart(self):
 		ret=True
 		try:
-			self.rebost.run()
+			self.rebost.execute("restart")
 		except Exception as e:
 			print("Critical error relaunching")
 			print(str(e))

@@ -611,10 +611,11 @@ class sqlHelper():
 
 	def _copyTmpDef(self):
 		#Copy tmp to definitive
-		self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
-		copyfile(self.main_tmp_table,self.main_table)
-		self._debug("Removing tmp file")
-		os.remove(self.main_tmp_table)
+		if os.path.isfile(self.main_tmp_table):
+			self._debug("Copying {0} to main table {1}".format(self.main_tmp_table,self.main_table))
+			copyfile(self.main_tmp_table,self.main_table)
+			self._debug("Removing tmp file")
+			os.remove(self.main_tmp_table)
 		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	

@@ -118,7 +118,7 @@ class details(confStack):
 	#def __init__
 
 	def _return(self):
-		self.setWindowTitle("LliureX Store")
+		self.setWindowTitle("LliureX Rebost")
 		self.stack.gotoStack(idx=1,parms="")
 	#def _return
 

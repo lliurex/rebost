@@ -25,9 +25,8 @@ config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.e
 config.Show()
 config.setMinimumWidth(config.sizeHint().width()*1.5)
 config.setMinimumHeight(config.sizeHint().height()*1.1)
-print(sys.argv)
 if len(sys.argv)>1:
-	if sys.argv[1].startswith("appstream://"):
+	if sys.argv[1].startswith("appstream://") or os.path.isfile(sys.argv[1]):
 		config.gotoStack(3,parms=sys.argv[1])
 
 app.exec_()

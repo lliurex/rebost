@@ -140,7 +140,7 @@ class details(confStack):
 					print(e)
 		if swErr:
 			if isinstance(args[0],str):
-				if args[0].startswith("appstream://"):
+				if args[0].startswith("appstream://") or os.path.isfile(args[0]):
 					name=args[0].replace("appstream://","").replace(".desktop","").replace(".flatpakref","")
 					name=name.split(".")[-1]
 					app=self.rc.showApp(name)

@@ -8,5 +8,5 @@ Icon=rebost
 Type=Application
 GenericName=rebost
 Categories=System;Utilities;Lliurex
-MimeType=x-scheme-handler/appstream;
 MimeType=application/vnd.flatpak.ref;
+MimeType=x-scheme-handler/appstream;

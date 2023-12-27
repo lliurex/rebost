@@ -26,7 +26,7 @@ config.Show()
 config.setMinimumWidth(config.sizeHint().width()*1.5)
 config.setMinimumHeight(config.sizeHint().height()*1.1)
 if len(sys.argv)>1:
-	if sys.argv[1].startswith("appstream://") or os.path.isfile(sys.argv[1]):
+	if ("://") in sys.argv[1] or os.path.isfile(sys.argv[1]):
 		config.gotoStack(3,parms=sys.argv[1])
 
 app.exec_()

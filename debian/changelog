@@ -1,4 +1,4 @@
-rebost (1.3.9-1lliurex23) jammy; urgency=medium
+rebost (1.4.1-1lliurex23) jammy; urgency=medium
 
   * Add basic support for streamed installers:
   *   kdeapps

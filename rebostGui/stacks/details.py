@@ -122,6 +122,32 @@ class details(confStack):
 		self.stack.gotoStack(idx=1,parms="")
 	#def _return
 
+	def _processStreams(self,args):
+		swErr=True
+		if isinstance(args,str):
+			name=""
+			if args.startswith("appstream://") or os.path.isfile(args):
+				name=args.replace("appstream://","").replace(".desktop","").replace(".flatpakref","")
+				name=name.split(".")[-1]
+			elif args.startswith("ocs://"):
+				ocs=args.split("&")[-1]
+				idx=1
+				for i in ocs.split("=")[-1]:
+					if i.isalnum():
+						idx+=1
+					else:
+						break
+				name=ocs.split("=")[-1][:idx-1]
+			if len(name)>0:
+				app=self.rc.showApp(name)
+				if len(app)>2:
+					self.app=json.loads(app)[0]
+					self.app=json.loads(self.app)
+					swErr=False
+
+		return(swErr)
+	#def _processStreams
+
 	def setParms(self,*args):
 		swErr=False
 		try:
@@ -138,6 +164,8 @@ class details(confStack):
 				except Exception as e:
 					swErr=True
 					print(e)
+		if swErr:
+			swErr=self._processStreams(args[0])
 		if swErr:
 			self.app={}
 			self._return()

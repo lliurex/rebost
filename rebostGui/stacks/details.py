@@ -139,6 +139,16 @@ class details(confStack):
 					swErr=True
 					print(e)
 		if swErr:
+			if isinstance(args[0],str):
+				if args[0].startswith("appstream://"):
+					name=args[0].replace("appstream://","").replace(".desktop","").replace(".flatpakref","")
+					name=name.split(".")[-1]
+					app=self.rc.showApp(name)
+					if len(app)>2:
+						self.app=json.loads(app)[0]
+						self.app=json.loads(self.app)
+						swErr=False
+		if swErr:
 			self.app={}
 			self._return()
 		else:

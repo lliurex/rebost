@@ -126,10 +126,8 @@ class details(confStack):
 		swErr=True
 		if isinstance(args,str):
 			name=""
-			if args.startswith("appstream://") or os.path.isfile(args):
-				name=args.replace("appstream://","").replace(".desktop","").replace(".flatpakref","")
-				name=name.split(".")[-1]
-			elif args.startswith("ocs://"):
+			args=args.split("://")[-1]
+			if args.startswith("install?"):
 				ocs=args.split("&")[-1]
 				idx=1
 				for i in ocs.split("=")[-1]:
@@ -138,13 +136,15 @@ class details(confStack):
 					else:
 						break
 				name=ocs.split("=")[-1][:idx-1]
+			else:
+				name=args.replace(".desktop","").replace(".flatpakref","")
+				name=name.split(".")[-1]
 			if len(name)>0:
 				app=self.rc.showApp(name)
 				if len(app)>2:
 					self.app=json.loads(app)[0]
 					self.app=json.loads(self.app)
 					swErr=False
-
 		return(swErr)
 	#def _processStreams
 
@@ -165,10 +165,9 @@ class details(confStack):
 					swErr=True
 					print(e)
 		if swErr:
-			swErr=self._processStreams(args[0])
-		if swErr:
-			self.app={}
-			self._return()
+			if self._processStreams(args[0])==True:
+				self.app={}
+				self._return()
 		else:
 			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
@@ -181,8 +180,6 @@ class details(confStack):
 		cursor=QtGui.QCursor(Qt.PointingHandCursor)
 		self.setCursor(cursor)
 	#def setParms
-
-
 
 	def _runZomando(self):
 		self.helper.runZmd(self.app)
@@ -324,9 +321,9 @@ class details(confStack):
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])
 			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
-		license=self.app.get('license','')
-		if license:
-			text+="<strong>{}</strong>".format(license)
+		applicense=self.app.get('license','')
+		if applicense:
+			text+="<strong>{}</strong>".format(applicense)
 		self.lblHomepage.setText(text)
 		self.lblHomepage.setToolTip("{}".format(homepage))
 		scrs=self.app.get('screenshots',[])

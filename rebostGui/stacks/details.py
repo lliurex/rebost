@@ -20,7 +20,7 @@ B=0
 A=70
 
 i18n={
-	"APPUNKNOWN":_("The app could not be loaded.\nPerhaps it's not in LliureX catalogue and thus it can't be installed"),
+	"APPUNKNOWN":_("The app could not be loaded. Perhaps it's not in LliureX catalogue and thus it can't be installed"),
 	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
 	"DESCRIPTION":_("Show application detail"),
@@ -125,7 +125,7 @@ class details(confStack):
 	#def _return
 
 	def _processStreams(self,args):
-		swErr=True
+		self.app={}
 		if isinstance(args,str):
 			name=""
 			args=args.split("://")[-1]
@@ -146,29 +146,22 @@ class details(confStack):
 				if len(app)>2:
 					self.app=json.loads(app)[0]
 					self.app=json.loads(self.app)
-					swErr=False
-		return(swErr)
 	#def _processStreams
 
 	def setParms(self,*args):
 		swErr=False
 		try:
 			self.app=json.loads(args[0])
-		except:
-			swErr=True
-		finally:
-			if len(self.app)==0:
-				swErr=True
-		if swErr==False:
+		except Exception as e:
+			print(e)
+		if len(self.app)>0:
 			if isinstance(self.app[0],str):
 				try:
 					self.app=json.loads(self.app[0])
 				except Exception as e:
-					swErr=True
 					print(e)
-		if swErr:
-			if self._processStreams(args[0])==True:
-				self.app={}
+		if len(self.app)<=0:
+			self._processStreams(args[0])
 		else:
 			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
@@ -350,6 +343,10 @@ class details(confStack):
 		color=qpal.color(qpal.Dark)
 		self.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
 		self.wdgError.setVisible(True)
+		self.lstInfo.setVisible(False)
+		self.btnInstall.setVisible(False)
+		self.btnRemove.setVisible(False)
+		self.btnLaunch.setVisible(False)
 		#self.blur=QGraphicsBlurEffect() 
 		#self.blur.setBlurRadius(15) 
 		#self.opacity=QGraphicsOpacityEffect()
@@ -359,34 +356,32 @@ class details(confStack):
 		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
 		self.app["pkgname"]="rebost"
 		self.app["description"]=i18n.get("APPUNKNOWN")
-
 	#def _onError
-
 
 	def _setLauncherOptions(self):
 		item=self.lstInfo.currentItem()
 		bundle=""
 		release=""
 		rgb=(0,0,0,0)
-		if item!=None:
-			bundle=item.text().lower().split(" ")[-1]
-			release=item.text().lower().split(" ")[0]
-			rgb=item.background().color().getRgb()
-		else:
-			self.btnInstall.setVisible(False)
-			self.btnRemove.setVisible(False)
-			self.btnLaunch.setVisible(False)
-			self.lstInfo.setVisible(False)
+		if item==None:
+			self._onError()
 			return()
+		bundle=item.text().lower().split(" ")[-1]
 		if bundle=="package":
 			bundle=""
 		if self.lstInfo.count()>1:
 			self.btnInstall.setText("{0} {1}".format(i18n.get("INSTALL"),bundle))
 			self.btnRemove.setText("{0} {1}".format(i18n.get("REMOVE"),bundle))
 			self.btnLaunch.setText("{0} {1}".format(i18n.get("RUN"),bundle))
+		release=item.text().lower().split(" ")[0]
 		self.btnInstall.setToolTip("{0}: {1}\n{2}".format(i18n.get("RELEASE"),release,bundle.capitalize()))
 		self.btnRemove.setToolTip(item.text())
 		self.btnLaunch.setToolTip(item.text())
+		self._setListState(item)
+	#def _setLauncherOptions
+
+	def _setListState(self,item):
+		rgb=item.background().color().getRgb()
 		if rgb[0]==R and rgb[1]==G and rgb[2]==B and rgb[3]==A:
 			self.btnInstall.setVisible(False)
 			if self.app.get("bundle",{}).get("zomando","")!="":
@@ -400,16 +395,17 @@ class details(confStack):
 			pkgState=self.app.get('state',{}).get("package",'1')
 			if pkgState.isdigit()==True:
 				pkgState=int(pkgState)
+			else:
+				self._onError()
+				return()
 			if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
-				bundle="package"
 				self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
 				self.lstInfo.setCurrentRow(1)
 			self.lstInfo.setStyleSheet("")
 			self.btnInstall.setVisible(True)
 			self.btnRemove.setVisible(False)
 			self.btnLaunch.setVisible(False)
-	#def _setLauncherOptions
-
+	#def _setLstState
 
 	def _getIconFromApp(self,app):
 		icn=QtGui.QPixmap.fromImage(app.get('icon',''))
@@ -442,45 +438,30 @@ class details(confStack):
 				continue
 			elif bundle=="zomando":
 				continue
-		self._getReleasesInfo()
+		self._setReleasesInfo()
 	#def _updateScreenControls
 
-	def _getReleasesInfo(self):
+	def _setReleasesInfo(self):
 		bundles=self.app.get('bundle',[])
 		self.lstInfo.clear()
-		installed=[]
-		uninstalled=[]
-		priority=["zomando","snap","flatpak","appimage","package"]
 		if isinstance(bundles,dict)==False:
 			return()
-		for bundle in bundles.keys():
-			state=self.app.get("state",{}).get(bundle,1)
-			if state.isdigit()==False:
-				state="1"
-			if int(state)==0: #installed
-				installed.append(bundle)
+		(installed,uninstalled)=self._classifyBundles(bundles)
+		priority=["zomando","snap","flatpak","appimage","package"]
+		for i in installed+uninstalled:
+			version=self.app.get('versions',{}).get(i,'')
+			version=version.split("+")[0]
+			release=QListWidgetItem("{} {}".format(version,i))
+			idx=priority.index(i)
+			if i in uninstalled:
+				idx+=len(installed)
 			else:
-				uninstalled.append(bundle)
-		for p in priority:
-			if p in installed:
-				version=self.app.get('versions',{}).get(p,'')
-				version=version.split("+")[0]
-				release=QListWidgetItem("{} {}".format(version,p))
 				release.setBackground(QtGui.QColor().fromRgb(R,G,B,A))
-				self.lstInfo.addItem(release)
-		for p in priority:
-			if p in uninstalled:
-				version=self.app.get('versions',{}).get(p,'')
-				version=version.split("+")[0]
-				release=QListWidgetItem("{} {}".format(version,p))
-				self.lstInfo.addItem(release)
+			self.lstInfo.insertItem(idx,release)
 		if len(bundles)<=1 or "zomando" in bundles.keys():
 			self.lstInfo.setVisible(False)
 			if len(bundles)==1:
-			#	if list(bundles.keys())[0]=="package":
 				self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),self.app.get("name","")))
-			#	else:
-			#		self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),list(bundles.keys())[0]))
 			elif "zomando" in bundles.keys():
 				self.lstInfo.setVisible(False)
 				self.btnInstall.setVisible(False)
@@ -491,7 +472,21 @@ class details(confStack):
 			self.lstInfo.setVisible(True)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 		self.lstInfo.setCurrentRow(0)
-	#def _getReleasesInfo
+	#def _setReleasesInfo
+
+	def _classifyBundles(self,bundles):
+		installed=[]
+		uninstalled=[]
+		for bundle in bundles.keys():
+			state=self.app.get("state",{}).get(bundle,1)
+			if state.isdigit()==False:
+				state="1"
+			if int(state)==0: #installed
+				installed.append(bundle)
+			else:
+				uninstalled.append(bundle)
+		return(installed,uninstalled)
+	#def _classifyBundles
 
 	def _initScreen(self):
 		#Reload config if app has been epified

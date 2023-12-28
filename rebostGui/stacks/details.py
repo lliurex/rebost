@@ -305,13 +305,8 @@ class details(confStack):
 		self.wdgError=QWidget()
 		errorLay=QGridLayout()
 		self.wdgError.setLayout(errorLay)
-		self.lblError=QLabel(i18n.get("APPUNKNOWN"))
 		self.lblBkg=QLabel()
-		self.blur=QGraphicsBlurEffect() 
-		self.blur.setBlurRadius(5) 
-		self.lblBkg.setGraphicsEffect(self.blur) 
 		errorLay.addWidget(self.lblBkg,0,0,1,1)
-		errorLay.addWidget(self.lblError,0,0,1,1,Qt.AlignCenter|Qt.AlignCenter)
 		self.wdgError.setVisible(False)
 		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
 	#def _load_screen
@@ -360,8 +355,11 @@ class details(confStack):
 		#self.opacity=QGraphicsOpacityEffect()
 		#self.lblBkg.setGraphicsEffect(self.blur)
 		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
-		self.app["name"]=i18n.get("APPUNKNOWN")
-		self.app["summary"]=i18n.get("APPUNKNOWN")
+		self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
+		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
+		self.app["pkgname"]="rebost"
+		self.app["description"]=i18n.get("APPUNKNOWN")
+
 	#def _onError
 
 
@@ -375,6 +373,10 @@ class details(confStack):
 			release=item.text().lower().split(" ")[0]
 			rgb=item.background().color().getRgb()
 		else:
+			self.btnInstall.setVisible(False)
+			self.btnRemove.setVisible(False)
+			self.btnLaunch.setVisible(False)
+			self.lstInfo.setVisible(False)
 			return()
 		if bundle=="package":
 			bundle=""

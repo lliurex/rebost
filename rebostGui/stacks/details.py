@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -20,19 +20,20 @@ B=0
 A=70
 
 i18n={
+	"APPUNKNOWN":_("The app could not be loaded.\nPerhaps it's not in LliureX catalogue and thus it can't be installed"),
+	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
 	"DESCRIPTION":_("Show application detail"),
-	"MENUDESCRIPTION":_("Navigate through all applications"),
-	"TOOLTIP":_(""),
+	"ERRUNKNOWN":_("Unknown error"),
+	"FORMAT":_("Format"),
 	"INSTALL":_("Install"),
-	"CHOOSE":_("Choose"),
-	"RUN":_("Open"),
+	"MENUDESCRIPTION":_("Navigate through all applications"),
+	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
+	"RUN":_("Open"),
+	"TOOLTIP":_(""),
 	"UPGRADE":_("Upgrade"),
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
-	"FORMAT":_("Format"),
-	"RELEASE":_("Release"),
-	"ERRUNKNOWN":_("Unknown error")
 	}
 	
 class epiClass(QThread):
@@ -115,12 +116,39 @@ class details(confStack):
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		self.helper=libhelper.helper()
 		self.epi=epiClass()
+		self.oldcursor=self.cursor()
 	#def __init__
 
 	def _return(self):
-		self.setWindowTitle("LliureX Store")
+		self.setWindowTitle("LliureX Rebost")
 		self.stack.gotoStack(idx=1,parms="")
 	#def _return
+
+	def _processStreams(self,args):
+		swErr=True
+		if isinstance(args,str):
+			name=""
+			args=args.split("://")[-1]
+			if args.startswith("install?"):
+				ocs=args.split("&")[-1]
+				idx=1
+				for i in ocs.split("=")[-1]:
+					if i.isalnum():
+						idx+=1
+					else:
+						break
+				name=ocs.split("=")[-1][:idx-1]
+			else:
+				name=args.replace(".desktop","").replace(".flatpakref","")
+				name=name.split(".")[-1]
+			if len(name)>0:
+				app=self.rc.showApp(name)
+				if len(app)>2:
+					self.app=json.loads(app)[0]
+					self.app=json.loads(self.app)
+					swErr=False
+		return(swErr)
+	#def _processStreams
 
 	def setParms(self,*args):
 		swErr=False
@@ -139,8 +167,8 @@ class details(confStack):
 					swErr=True
 					print(e)
 		if swErr:
-			self.app={}
-			self._return()
+			if self._processStreams(args[0])==True:
+				self.app={}
 		else:
 			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
@@ -150,11 +178,8 @@ class details(confStack):
 				if name!='':
 					status=self.rc.getAppStatus(name,bundle)
 					self.app['state'][bundle]=str(status)
-		cursor=QtGui.QCursor(Qt.PointingHandCursor)
-		self.setCursor(cursor)
+		self.setCursor(self.oldcursor)
 	#def setParms
-
-
 
 	def _runZomando(self):
 		self.helper.runZmd(self.app)
@@ -217,8 +242,9 @@ class details(confStack):
 		self.btnBack.setIconSize(QSize(48,48))
 		self.btnBack.setFixedSize(QSize(64,64))
 		self.box.addWidget(self.btnBack,0,0,1,1)
-		self.lblIcon=QLabelRebostApp()         
+		self.lblIcon=QLabelRebostApp()		 
 		self.box.addWidget(self.lblIcon,0,1,2,1,Qt.AlignTop|Qt.AlignLeft)
+  
 		self.lblName=QLabel()
 		self.box.addWidget(self.lblName,0,2,1,1,Qt.AlignTop)
 		self.lblSummary=QLabel()
@@ -275,6 +301,14 @@ class details(confStack):
 		self.box.setColumnStretch(2,1)
 		self.box.setRowStretch(3,1)
 		self.box.setRowStretch(4,0)
+		
+		self.wdgError=QWidget()
+		errorLay=QGridLayout()
+		self.wdgError.setLayout(errorLay)
+		self.lblBkg=QLabel()
+		errorLay.addWidget(self.lblBkg,0,0,1,1)
+		self.wdgError.setVisible(False)
+		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
 	#def _load_screen
 
 	def updateScreen(self):
@@ -296,11 +330,10 @@ class details(confStack):
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])
 			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
-		license=self.app.get('license','')
-		if license:
-			text+="<strong>{}</strong>".format(license)
-		self.lblHomepage.setText(text)
-		self.lblHomepage.setToolTip("{}".format(homepage))
+		applicense=self.app.get('license','')
+		if applicense:
+			text+="<strong>{}</strong>".format(applicense)
+		
 		scrs=self.app.get('screenshots',[])
 		if isinstance(scrs,list)==False:
 			scrs=[]
@@ -312,6 +345,24 @@ class details(confStack):
 		self._setLauncherOptions()
 	#def _updateScreen
 
+	def _onError(self):
+		qpal=QtGui.QPalette()
+		color=qpal.color(qpal.Dark)
+		self.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		self.wdgError.setVisible(True)
+		#self.blur=QGraphicsBlurEffect() 
+		#self.blur.setBlurRadius(15) 
+		#self.opacity=QGraphicsOpacityEffect()
+		#self.lblBkg.setGraphicsEffect(self.blur)
+		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
+		self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
+		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
+		self.app["pkgname"]="rebost"
+		self.app["description"]=i18n.get("APPUNKNOWN")
+
+	#def _onError
+
+
 	def _setLauncherOptions(self):
 		item=self.lstInfo.currentItem()
 		bundle=""
@@ -322,6 +373,10 @@ class details(confStack):
 			release=item.text().lower().split(" ")[0]
 			rgb=item.background().color().getRgb()
 		else:
+			self.btnInstall.setVisible(False)
+			self.btnRemove.setVisible(False)
+			self.btnLaunch.setVisible(False)
+			self.lstInfo.setVisible(False)
 			return()
 		if bundle=="package":
 			bundle=""
@@ -441,6 +496,7 @@ class details(confStack):
 	def _initScreen(self):
 		#Reload config if app has been epified
 		if len(self.app)>0:
+			self.wdgError.setVisible(False)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]
@@ -452,14 +508,15 @@ class details(confStack):
 				except Exception as e:
 					print(e)
 					self.app={}
-		cursor=QtGui.QCursor(Qt.PointingHandCursor)
-		self.btnInstall.setEnabled(True)
-		self.btnInstall.setText(i18n.get("INSTALL"))
-		self.setCursor(cursor)
-		self.screenShot.clear()
-		self.btnZomando.setVisible(False)
-		self.lblHomepage.setText("")
-		self.app['name']=self.app.get('name','').replace(" ","")
+			self.btnInstall.setEnabled(True)
+			self.btnInstall.setText(i18n.get("INSTALL"))
+			self.setCursor(self.oldcursor)
+			self.screenShot.clear()
+			self.btnZomando.setVisible(False)
+			self.lblHomepage.setText("")
+			self.app['name']=self.app.get('name','').replace(" ","")
+		else:
+			self._onError()
 	#def _initScreen
 
 	def _updateConfig(self,key):

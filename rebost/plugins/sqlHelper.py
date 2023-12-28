@@ -163,12 +163,8 @@ class sqlHelper():
 					fpath="/".join(spath[0:idx])
 				if os.path.isdir(fpath) and idx>0:
 					for d in os.listdir(fpath):
-						print(os.path.join(fpath,d,"icons"))
 						if os.path.isdir(os.path.join(fpath,d,"icons")):
-							print("OERORO")
 							rebostPkg['icon']=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
-							print(rebostPkg["icon"])
-							print("___")
 			row=(pkg,json.dumps(rebostPkg))
 			rows.append(row)
 		self.closeConnection(db)

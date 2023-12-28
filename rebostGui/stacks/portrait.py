@@ -53,10 +53,12 @@ class QPushButtonRebostApp(QPushButton):
 			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
+		self.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
 		lay=QHBoxLayout()
 		lay.addStretch()
 		lay.addWidget(self.icon,0)
 		lay.addWidget(self.label,1)
+		self.setDefault(True)
 		self.setLayout(lay)
 	#def __init__
 	
@@ -70,6 +72,12 @@ class QPushButtonRebostApp(QPushButton):
 	def activate(self):
 		self.clicked.emit(self.app)
 	#def activate
+
+	def keyPressEvent(self,ev):
+		if ev.key() in [Qt.Key_Return,Qt.Key_Enter,Qt.Key_Space]:
+			self.clicked.emit(self.app)
+		ev.ignore()
+	#def keyPressEvent(self,ev):
 
 	def mousePressEvent(self,*args):
 		self.clicked.emit(self.app)
@@ -98,6 +106,7 @@ class portrait(confStack):
 		self.hideControlButtons()
 		self.changed=[]
 		self.level='user'
+		self.oldcursor=self.cursor()
 	#def __init__
 
 	def _load_screen(self):
@@ -413,8 +422,7 @@ class portrait(confStack):
 	def updateScreen(self):
 		self._loadData(self.appsLoaded,self.appsToLoad)
 		self.table.show()
-		cursor=QtGui.QCursor(Qt.PointingHandCursor)
-		self.setCursor(cursor)
+		self.setCursor(self.oldcursor)
 	#def _udpate_screen
 
 	def resetScreen(self):

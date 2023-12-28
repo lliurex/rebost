@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect
+from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 from appconfig.appConfigStack import appConfigStack as confStack
@@ -150,10 +150,6 @@ class details(confStack):
 		return(swErr)
 	#def _processStreams
 
-	def _onError(self):
-		self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
-
-
 	def setParms(self,*args):
 		swErr=False
 		try:
@@ -173,7 +169,6 @@ class details(confStack):
 		if swErr:
 			if self._processStreams(args[0])==True:
 				self.app={}
-				self._onError()
 		else:
 			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
@@ -317,6 +312,7 @@ class details(confStack):
 		self.lblBkg.setGraphicsEffect(self.blur) 
 		errorLay.addWidget(self.lblBkg,0,0,1,1)
 		errorLay.addWidget(self.lblError,0,0,1,1,Qt.AlignCenter|Qt.AlignCenter)
+		self.wdgError.setVisible(False)
 		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
 	#def _load_screen
 
@@ -353,6 +349,21 @@ class details(confStack):
 				print(e)
 		self._setLauncherOptions()
 	#def _updateScreen
+
+	def _onError(self):
+		qpal=QtGui.QPalette()
+		color=qpal.color(qpal.Dark)
+		self.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		self.wdgError.setVisible(True)
+		#self.blur=QGraphicsBlurEffect() 
+		#self.blur.setBlurRadius(15) 
+		#self.opacity=QGraphicsOpacityEffect()
+		#self.lblBkg.setGraphicsEffect(self.blur)
+		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
+		self.app["name"]=i18n.get("APPUNKNOWN")
+		self.app["summary"]=i18n.get("APPUNKNOWN")
+	#def _onError
+
 
 	def _setLauncherOptions(self):
 		item=self.lstInfo.currentItem()
@@ -483,6 +494,7 @@ class details(confStack):
 	def _initScreen(self):
 		#Reload config if app has been epified
 		if len(self.app)>0:
+			self.wdgError.setVisible(False)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]
@@ -494,13 +506,15 @@ class details(confStack):
 				except Exception as e:
 					print(e)
 					self.app={}
-		self.btnInstall.setEnabled(True)
-		self.btnInstall.setText(i18n.get("INSTALL"))
-		self.setCursor(self.oldcursor)
-		self.screenShot.clear()
-		self.btnZomando.setVisible(False)
-		self.lblHomepage.setText("")
-		self.app['name']=self.app.get('name','').replace(" ","")
+			self.btnInstall.setEnabled(True)
+			self.btnInstall.setText(i18n.get("INSTALL"))
+			self.setCursor(self.oldcursor)
+			self.screenShot.clear()
+			self.btnZomando.setVisible(False)
+			self.lblHomepage.setText("")
+			self.app['name']=self.app.get('name','').replace(" ","")
+		else:
+			self._onError()
 	#def _initScreen
 
 	def _updateConfig(self,key):

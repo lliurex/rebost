@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import os,shutil
 import sqlHelper
-from appconfig.appConfigN4d import appConfigN4d as n4dClient
 import json
 import rebostHelper
 import subprocess
+import n4d.server.core as n4dcore
 import multiprocessing
 import time
 import random
@@ -245,17 +245,45 @@ class rebostPrcMan():
 	#def _mpManagePackage
 
 	def _remoteInstall(self,usern,episcript):
-		if usern in self.n4dClients.keys():
-			n4d=self.n4dClients.get(usern)
-			self._debug("Select n4d proxy")
-		else:
-			n4d=n4dClient(username=usern)
-			self.n4dClients.update({usern:n4d})
-			self._debug("Add n4d proxy")
-		if n4dkey:
-			n4d.setCredentials(n4dkey=n4dkey)
-		pid=n4d.n4dQuery("Rebost","remote_install",episcript,self.gui,username=usern)
+		sw=False
+		apachePath="/var/www/llx-remote"
+		scriptname=os.path.basename(episcript)
+		if os.path.exists(apachePath)==True:
+			destPath=os.path.join(apachePath,scriptname)
+			shutil.copy(episcript,destPath)
+			core=n4dcore.Core.get_core()
+			remoteVar=core.get_variable("LLX_REMOTE_INSTALLER").get('return',{})
+			if remoteVar:
+				#Send file to apache dir as expected by remote-installer, then update remote-installer
+				lines=subprocess.Popen(["LAGUAGE=en_EN; md5sum %s | awk '{print $1}'"%episcript],shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+				for line in lines.splitlines():
+					md5=line.decode('utf-8')
+				pkg_tupla=[episcript,md5]
+				url='http://server/llx-remote/'
+				if remoteVar.get('sh',[]):
+					packages=remoteVar['sh'].get('packages',[])
+					if packages==None:
+						packages=[]
+					packages.append((scriptname,md5))
+					packagesSet=[]
+					packagesAdded=[]
+					for pkgtuple in packages:
+						pkg=''
+						if isinstance(pkgtuple,tuple):
+							pkg,md5=pkgtuple
+							if pkg not in packagesAdded:
+								packagesAdded.append(pkg)
+								packagesSet.append((pkg,md5))
+
+					remoteVar['sh'].update({'packages':packagesSet})
+				else:
+					remoteVar.update({'sh':{'url':url,'packages':[scriptname]}})
+				result=core.set_variable("LLX_REMOTE_INSTALLER",remoteVar)
+				sw=True
 		self._removeTempDir(episcript)
+		if sw==False:
+			self._debug("Remote installer not found")
+		return(sw)
 	#def _remoteInstall
 
 	def _managePackage(self,pkgname,bundle='',action='install',user='',remote=False,n4dkey=''):

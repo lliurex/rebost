@@ -1,10 +1,10 @@
-rebost (1.4.2lliurex21) jammy; urgency=medium
+rebost (1.4.2lliurex21) focal; urgency=medium
 
   * Remove n4d plugin
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 12 Jan 2024 07:24:32 +0100
 
-rebost (1.4.1lliurex21) jammy; urgency=medium
+rebost (1.4.1lliurex21) focal; urgency=medium
 
   * Add basic support for streamed installers:
   *   kdeapps

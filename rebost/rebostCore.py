@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import os,shutil
+import os
 import multiprocessing
 import threading
 import time
@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
@@ -26,6 +26,9 @@ class Rebost():
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
+		self.rebostPath="/usr/share/rebost/"
+		self.confFile=os.path.join(self.rebostPath,"store.json")
+		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -97,7 +100,7 @@ class Rebost():
 						else:
 							print("{} will set its status".format(plugin))
 					else:
-						self._debug("Plugin disabled: %s"%plugin)
+						self._debug("Plugin disabled: {}".format(plugin))
 						disabledPlugins[plugin.replace(".py","")]=False
 		if len(disabledPlugins)>0:
 			self._writeConfig(disabledPlugins)
@@ -141,8 +144,9 @@ class Rebost():
 	#def _loadPluginInfo
 
 	def _writeConfig(self,config):
+		return()
 		cfg=self._readConfig()
-		cfgFile="/usr/share/rebost/store.json"
+		cfgFile=self.confFile
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
@@ -156,41 +160,19 @@ class Rebost():
 
 	def _processConfig(self):
 		cfg=self._readConfig()
-		sw_pkg=False
-		if "enabled" not in cfg.keys():
-			cfg["packageKit"]=True
-			cfg["enabled"]=True
-			self._writeConfig(cfg)
-		for key,value in cfg.items():
-			if value=="enabled":
-				continue
-			if value==True:
-				self._enable(key)
-				if key.lower() in ["apt","package","packagekit"]:
-					self._enable("appstream")
+		for plugin,state in cfg.get("plugins",{}).items():
+			if state==True:
+				self._enable(plugin)
 			else:
-				delPlugin=key
-				if key=="snap":
-					delPlugin="snapHelper"
-				elif key=="flatpak":
-					delPlugin="flatpakHelper"
-				elif key.lower() in ["apt","package","packagekit"]:
-					delPlugin="packageKit"
-					if "appstreamHelper" in self.pluginInfo.keys():
-						del(self.pluginInfo["appstreamHelper"])
-						self._disable("appstream")
-				elif key=="appimage":
-					delPlugin="appimageHelper"
-				if delPlugin in self.pluginInfo.keys():
-					del(self.pluginInfo[delPlugin])
-				self._disable(key)
+				self._disable(plugin)
+		self.restricted=cfg.get("restricted",True)
+		self.mainTableForRestrict=cfg.get("maintable","")
 	#def _processConfig
 
 	def _readConfig(self):
-		cfgFile="/usr/share/rebost/store.json"
 		cfg={}
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'r') as f:
+		if os.path.isfile(self.confFile):
+			with open(self.confFile,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:
@@ -201,18 +183,8 @@ class Rebost():
 	def _enable(self,bundle):
 		swEnabled=False
 		tmpPath="/usr/share/rebost/tmp"
-		if os.path.isdir(tmpPath):
-			prefix=""
-			if bundle=="apt" or bundle=="package":
-				prefix="pk"
-			elif bundle=="snap":
-				prefix="sn"
-			elif bundle=="flatpak":
-				prefix="fp"
-			elif bundle=="appimage":
-				prefix="ai"
-			elif bundle=="appstream":
-				prefix="ai"
+		if os.path.isdir(tmpPath) and len(bundle)>=4:
+			prefix=bundle[0]+bundle[3]
 			if prefix:
 				for f in os.listdir(tmpPath):
 					if f.startswith(prefix):
@@ -224,31 +196,28 @@ class Rebost():
 	#def _enable
 
 	def _disable(self,bundle):
-		tmpPath="/usr/share/rebost/tmp"
-		dbPath=os.path.join("/usr/share/rebost","{}.db".format(bundle.lower()))
-		if os.path.isfile(dbPath):
-			os.remove(dbPath)
-		swRemoved=False
-		if os.path.isdir(tmpPath):
-			prefix=""
-			if bundle=="apt" or bundle=="packageKit":
-				prefix="pk"
-			elif bundle=="snap":
-				prefix="sn"
-			elif bundle=="flatpak":
-				prefix="fp"
-			elif bundle=="appimage":
-				prefix="ai"
-			elif bundle=="appstream":
-				prefix="as"
-			if prefix:
-				for f in os.listdir(tmpPath):
-					if f.startswith(prefix):
-						os.remove(os.path.join(tmpPath,f))
-						swRemoved=True
-		if swRemoved==True:
-			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
-				os.remove(os.path.join(tmpPath,"sq.lu"))
+		disable=[]
+		for plugin,data in self.pluginInfo.items():
+			if data.get("packagekind","")==bundle:
+				disable.append(plugin)
+		tables={"eduapp":"eduapps.db","zomando":"zomandos.db","package":"packagekit.db","flatpak":"flatpak.db","snap":"snap.db","appimage":"appimage.db"}
+		for plugin in disable:
+			self._debug("Config disable {}".format(plugin))
+			del(self.pluginInfo[plugin])
+			table=tables.get(bundle,"")
+			if len(table)>0:
+				self._debug("Deleting table {}".format(table))
+				tpath=os.path.join(self.rebostPathTmp,table)
+				if os.path.isfile(tpath):
+					os.remove(tpath)
+				prefix=plugin[0]+plugin[3]
+				fprefix=os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower()))
+				if os.path.isfile(fprefix):
+					os.remove(fprefix)
+		if len(disable)>0:
+			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
+				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
+		return()
 	#def _disable
 
 	def _chkNetwork(self):
@@ -275,21 +244,27 @@ class Rebost():
 				network=self._chkNetwork()
 				if network==True or priority==100:
 					actionDict[priority]=newDict.copy()
+				else:
+					print("Error autostart {}: Network error".format(plugin))
+					#actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
-				postactionDict[plugin]=postactions
+				priority=info.get('priority',0)
+				newDictPost=actionDict.get(priority,{})
+				newDictPost[plugin]=postactions
+				postactionDict[priority]=newDictPost.copy()
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
 		actionList.sort(reverse=False)
 		procList=[]
 		for priority in actionList:
 			for plugin,actions in actionDict[priority].items():
-					for action in actions:
-						try:
-							procList.append(self._execute(action,'','',plugin=plugin,th=False))
-						except Exception as e:
-							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
-							self._log("Error launching {} from {}: {}".format(action,plugin,e))
-							print("Error launching {} from {}: {}".format(action,plugin,e))
+				for action in actions:
+					try:
+						procList.append(self._execute(action,'','',plugin=plugin,th=False))
+					except Exception as e:
+						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+						self._log("Error launching {} from {}: {}".format(action,plugin,e))
+						print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			if isinstance(proc,threading.Thread):
 				proc.join()
@@ -297,13 +272,18 @@ class Rebost():
 				proc.join()
 		self._debug("postactions: {}".format(postactionDict))
 		if len(postactionDict)>0:
-			self._debug("Launching postactions")
-			for plugin,actions in postactionDict.items():
-				for action in actions:
-					try:
-						self._execute(action,'','',plugin=plugin,th=True)
-					except Exception as e:
-						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+			actionList=list(postactionDict.keys())
+			actionList.sort(reverse=False)
+			procList=[]
+			for priority in actionList:
+				self._debug("Launching postactions")
+				for plugin,actions in postactionDict[priority].items():
+					for action in actions:
+						try:
+							pr=self._execute(action,'','',plugin=plugin,th=True)
+							pr.join()
+						except Exception as e:
+							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
@@ -325,9 +305,6 @@ class Rebost():
 			if hasattr(self,action):
 				plugin="core"
 				rebostPkgList.extend(self._executeCoreAction(action))
-				print("**")
-				print(rebostPkgList)
-				print("**")
 		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
@@ -372,7 +349,7 @@ class Rebost():
 			else:
 				store.append(app)
 		self._debug("End sanitize")
-		return((json.dumps(store)))
+		return(json.dumps(store))
 	#def _sanitizeStore
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
@@ -451,18 +428,16 @@ class Rebost():
 			print("Critical error. Restarting rebost service now")
 			self.run()
 		return(state)
+	#def getFiltersEnabled(self):
 
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
 	#def getProgress(self):
 
-	def forceUpdate(self,force=False):
-		self._debug("Rebost forcing update...")
-		rebostPath="/usr/share/rebost/"
-		rebostTmpPath="/usr/share/rebost/tmp"
+	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		for i in os.scandir(rebostTmpPath):
+		for i in os.scandir(self.rebostPathTmp):
 			try:
 				os.remove(i.path)
 			except Exception as e:
@@ -470,13 +445,18 @@ class Rebost():
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.scandir(rebostPath):
+			for i in os.scandir(self.rebostPath):
 				if i.path.endswith(".db"):
 					try:
 						os.remove(i.path)
 					except Exception as e:
 						print(e)
 						self._debug(e)
+	#def _cleanData
+
+	def forceUpdate(self,force=False):
+		self._debug("Rebost forcing update...")
+		self._cleanData(force=force)
 		return(self.restart())
 	#def getProgress(self):
 

@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
+from PySide2.QtWidgets import QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+#from appconfig.appConfigStack import appConfigStack as confStack
+from QtExtraWidgets import QScreenShotContainer,QScrollLabel,QStackedWindowItem
+from app2menu import App2Menu as app2menu
 from rebost import store
 import subprocess
 import json
@@ -23,15 +24,18 @@ i18n={
 	"APPUNKNOWN":_("The app could not be loaded. Perhaps it's not in LliureX catalogue and thus it can't be installed"),
 	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
-	"DESCRIPTION":_("Show application detail"),
+	"DESC":_("Navigate through all applications"),
+	"ERRLAUNCH":_("Error opening"),
 	"ERRUNKNOWN":_("Unknown error"),
+	"FORBIDDEN":_("App unauthorized"),
 	"FORMAT":_("Format"),
+	"INFO":_("For more info go to"),
 	"INSTALL":_("Install"),
-	"MENUDESCRIPTION":_("Navigate through all applications"),
+	"MENU":_("Show application detail"),
 	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
 	"RUN":_("Open"),
-	"TOOLTIP":_(""),
+	"TOOLTIP":_("Details"),
 	"UPGRADE":_("Upgrade"),
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
 	}
@@ -57,7 +61,12 @@ class epiClass(QThread):
 	def run(self):
 		launched=False
 		if self.app and self.args:
-			subprocess.run(self.args)
+			try:
+				subprocess.run(["xhost","+"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+				proc=subprocess.run(self.args,stderr=subprocess.PIPE,universal_newlines=True)
+				subprocess.run(["xhost","-"])
+			except Exception as e:
+				print(e)
 			self.epiEnded.emit(self.app)
 			launched=True
 		return launched
@@ -73,7 +82,8 @@ class QLabelRebostApp(QLabel):
 
 	def loadImg(self,app):
 		img=app.get('icon','')
-		self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
+		aux=QScreenShotContainer()
+		self.scr=aux.loadScreenShot(img,self.cacheDir)
 		icn=''
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
@@ -96,10 +106,16 @@ class QLabelRebostApp(QLabel):
 	#def load
 #class QLabelRebostApp
 
-class details(confStack):
+class details(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
 		self._debug("details load")
+		self.setProps(shortDesc=i18n.get("MENU"),
+			longDesc=i18n.get("DESC"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=3,
+			visible=True)
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
 		self.icon=('application-x-desktop')
@@ -117,11 +133,13 @@ class details(confStack):
 		self.helper=libhelper.helper()
 		self.epi=epiClass()
 		self.oldcursor=self.cursor()
+		self.appmenu=app2menu.app2menu()
+		self.launcher=""
 	#def __init__
 
 	def _return(self):
-		self.setWindowTitle("LliureX Rebost")
-		self.stack.gotoStack(idx=1,parms="")
+		self.parent.setWindowTitle("LliureX Rebost")
+		self.parent.setCurrentStack(1,parms={"refresh":True,"app":self.app})
 	#def _return
 
 	def _processStreams(self,args):
@@ -163,7 +181,7 @@ class details(confStack):
 		if len(self.app)<=0:
 			self._processStreams(args[0])
 		else:
-			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
+			self.parent.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
 					continue
@@ -180,7 +198,12 @@ class details(confStack):
 
 	def _runApp(self):
 		bundle=self.lstInfo.currentItem().text().lower().split(" ")[-1]
-		self.helper.runApp(self.app,bundle)
+		proc=self.helper.runApp(self.app,bundle)
+		if proc.returncode!=0:
+			launcher=self._getLauncherForApp()
+			proc=self.helper.runApp(self.app,bundle,launcher=launcher)
+			if proc.returncode!=0:
+				self.showMsg("{} {}".format(i18n.get("ERRLAUNCH"),self.app["name"]))
 	#def _runApp
 
 	def _genericEpiInstall(self):
@@ -227,7 +250,7 @@ class details(confStack):
 		self.updateScreen()
 	#def _getEpiResults
 
-	def _load_screen(self):
+	def __initScreen__(self):
 		self.box=QGridLayout()
 		self.btnBack=QPushButton()
 		self.btnBack.setIcon(QtGui.QIcon.fromTheme("go-previous"))
@@ -270,7 +293,7 @@ class details(confStack):
 		self.lstInfo=QListWidget()
 		self.lstInfo.currentRowChanged.connect(self._setLauncherOptions)	
 		layInfo.addWidget(self.lstInfo)
-		self.lblDesc=appconfigControls.QScrollLabel()
+		self.lblDesc=QScrollLabel()
 		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
 		layInfo.addWidget(self.lblDesc)
@@ -281,13 +304,13 @@ class details(confStack):
 		resources.setLayout(layResources)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
-		self.screenShot=appconfigControls.QScreenShotContainer()
+		self.screenShot=QScreenShotContainer()
 		self.screenShot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.screenShot.setStyleSheet("margin:0px;padding:0px;")
 		layResources.addWidget(self.screenShot)
 		layResources.addWidget(self.lblHomepage)
 		self.box.addWidget(resources,4,0,1,3,Qt.AlignTop)
-		self.box.setSpacing(0)
+		#self.box.setSpacing(0)
 		self.setLayout(self.box)
 		self.box.setColumnStretch(0,0)
 		self.box.setColumnStretch(1,0)
@@ -298,7 +321,7 @@ class details(confStack):
 		self.wdgError=QWidget()
 		errorLay=QGridLayout()
 		self.wdgError.setLayout(errorLay)
-		self.lblBkg=QLabel()
+		self.lblBkg=QLabel(i18n.get("APPUNKNOWN"))
 		errorLay.addWidget(self.lblBkg,0,0,1,1)
 		self.wdgError.setVisible(False)
 		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
@@ -311,10 +334,6 @@ class details(confStack):
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
-		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
-		versions=self.app.get('versions',{})
-		bundles=list(self.app.get('bundle',{}).keys())
-		self._updateScreenControls(bundles)
 		homepage=self.app.get('homepage','')
 		text=''
 		if homepage:
@@ -323,6 +342,18 @@ class details(confStack):
 			if len(homepage)>30:
 				desc="{}...".format(homepage[0:30])
 			text='<a href={0}>Homepage: {1}</a> '.format(homepage,desc)
+			self.lblHomepage.setText(text)
+		self.lblDesc.label.setOpenExternalLinks(False)
+		description=html.unescape(self.app.get('description','').replace("***","\n"))
+		if "FORBIDDEN" in self.app.get("categories",[]):
+			description="<h2>{0}</h2>{1} <a href={2}>{2}</a><hr>\n{3}".format(i18n.get("FORBIDDEN"),i18n.get("INFO"),homepage,description)
+			self.lblDesc.label.setOpenExternalLinks(True)
+		self.lblDesc.setText(description)
+
+		versions=self.app.get('versions',{})
+		bundles=list(self.app.get('bundle',{}).keys())
+		self._updateScreenControls(bundles)
+		text=''
 		applicense=self.app.get('license','')
 		if applicense:
 			text+="<strong>{}</strong>".format(applicense)
@@ -338,55 +369,105 @@ class details(confStack):
 		self._setLauncherOptions()
 	#def _updateScreen
 
+	def _getLauncherForApp(self):
+		#Best effort for get launcher
+		self.appmenu.set_desktop_system()
+		cats=self.appmenu.get_categories()
+		launcher=""
+		for cat in cats:
+			apps=self.appmenu.get_apps_from_category(cat.lower())
+			for app in apps:
+				appsplit=app.split(".")
+				if len(appsplit)>2:
+					searchapp=appsplit[-2]
+				else:
+					searchapp=appsplit[0]
+				namesplit=self.app["pkgname"].split("-")
+				allitems=namesplit+[searchapp]
+				if len(allitems)!=len(set(allitems)):
+					launcher=app
+					break
+			if len(launcher)>0:
+				break
+		return(launcher)
+	#def _getLauncherForApp
+
 	def _onError(self):
+		self._debug("Error detected")
 		qpal=QtGui.QPalette()
 		color=qpal.color(qpal.Dark)
-		self.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
-		self.wdgError.setVisible(True)
-		self.lstInfo.setVisible(False)
-		self.btnInstall.setVisible(False)
-		self.btnRemove.setVisible(False)
-		self.btnLaunch.setVisible(False)
+		#self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		#self.wdgError.setVisible(True)
+		print(self.app)
+		if "FORBIDDEN" not in self.app.get("categories",[]):
+			self.app["categories"]=["FORBIDDEN"]
+		#self.lstInfo.setVisible(False)
+		#self.btnInstall.setVisible(False)
+		#self.btnRemove.setVisible(False)
+		#self.btnLaunch.setVisible(False)
 		#self.blur=QGraphicsBlurEffect() 
 		#self.blur.setBlurRadius(15) 
 		#self.opacity=QGraphicsOpacityEffect()
 		#self.lblBkg.setGraphicsEffect(self.blur)
 		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
-		self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
-		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
-		self.app["pkgname"]="rebost"
-		self.app["description"]=i18n.get("APPUNKNOWN")
+		#self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
+		#self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
+		#self.app["pkgname"]="rebost"
+		#self.app["description"]=i18n.get("APPUNKNOWN")
 	#def _onError
 
 	def _setLauncherOptions(self):
-		item=self.lstInfo.currentItem()
+		self.btnInstall.setEnabled(True)
+		self.btnRemove.setEnabled(True)
+		self.btnLaunch.setEnabled(True)
+		self.btnZomando.setEnabled(True)
 		bundle=""
 		release=""
-		rgb=(0,0,0,0)
+		tooltip=""
+		item=self.lstInfo.currentItem()
 		if item==None:
+			print("Err: This app has not install option")
 			self._onError()
-			return()
+			bundles=self.app.get("bundle",{})
+			if len(bundles)>0:
+				bundle=bundles.pop(0)
+			else:
+				bundle="package"
+			self.lstInfo.insertItem(0,bundle)
+			item=self.lstInfo.item(0)
+			#return()
 		bundle=item.text().lower().split(" ")[-1]
+		release=item.text().lower().split(" ")[0]
+		tooltip=item.text()
+		self._setListState(item)
 		if bundle=="package":
-			bundle=""
-		if self.lstInfo.count()>1:
+			bundle="app" # Only for show purposes. "App" is friendly than "package"
+		if self.lstInfo.count()>0:
 			self.btnInstall.setText("{0} {1}".format(i18n.get("INSTALL"),bundle))
 			self.btnRemove.setText("{0} {1}".format(i18n.get("REMOVE"),bundle))
 			self.btnLaunch.setText("{0} {1}".format(i18n.get("RUN"),bundle))
-		release=item.text().lower().split(" ")[0]
 		self.btnInstall.setToolTip("{0}: {1}\n{2}".format(i18n.get("RELEASE"),release,bundle.capitalize()))
-		self.btnRemove.setToolTip(item.text())
-		self.btnLaunch.setToolTip(item.text())
-		self._setListState(item)
+		self.btnRemove.setToolTip(tooltip)
+		self.btnLaunch.setToolTip(tooltip)
+		if "FORBIDDEN" in self.app.get("categories",[]):
+			self.btnInstall.setEnabled(False)
+			self.btnRemove.setEnabled(False)
+			self.btnLaunch.setEnabled(False)
+			self.btnZomando.setEnabled(False)
 	#def _setLauncherOptions
 
 	def _setListState(self,item):
-		rgb=item.background().color().getRgb()
-		if rgb[0]==R and rgb[1]==G and rgb[2]==B and rgb[3]==A:
+		bcurrent=item.background().color()
+		bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark)).toRgb()
+		if bcurrent==bcolor:
+			rgb=bcurrent.getRgb()
 			self.btnInstall.setVisible(False)
 			if self.app.get("bundle",{}).get("zomando","")!="":
 				self.btnLaunch.setVisible(False)
-				self.btnRemove.setVisible(False)
+				if "zomando" in item.text():
+					self.btnRemove.setVisible(False)
+				else:
+					self.btnRemove.setVisible(True)
 			else:
 				self.btnRemove.setVisible(True)
 				self.btnLaunch.setVisible(True)
@@ -398,9 +479,9 @@ class details(confStack):
 			else:
 				self._onError()
 				return()
-			if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
-				self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
-				self.lstInfo.setCurrentRow(1)
+	#		if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
+		#		self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
+	#			self.lstInfo.setCurrentRow(1)
 			self.lstInfo.setStyleSheet("")
 			self.btnInstall.setVisible(True)
 			self.btnRemove.setVisible(False)
@@ -423,9 +504,8 @@ class details(confStack):
 				pkgState=self.app.get('state',{}).get("package",'1')
 				if pkgState.isdigit()==True:
 					pkgState=int(pkgState)
-				if pkgState==0:
-					bundles.remove('package')
 		states=0
+		self.btnZomando.setVisible(False)
 		for bundle in bundles:
 			state=(self.app.get('state',{}).get(bundle,'1'))
 			if state.isdigit()==True:
@@ -436,8 +516,8 @@ class details(confStack):
 			if bundle=="zomando" and (pkgState==0 or state==0):
 				self.btnZomando.setVisible(True)
 				continue
-			elif bundle=="zomando":
-				continue
+		#	elif bundle=="zomando":
+		#		continue
 		self._setReleasesInfo()
 	#def _updateScreenControls
 
@@ -452,24 +532,17 @@ class details(confStack):
 			version=self.app.get('versions',{}).get(i,'')
 			version=version.split("+")[0]
 			release=QListWidgetItem("{} {}".format(version,i))
-			idx=priority.index(i)
-			if i in uninstalled:
-				idx+=len(installed)
-			else:
-				release.setBackground(QtGui.QColor().fromRgb(R,G,B,A))
-			self.lstInfo.insertItem(idx,release)
-		if len(bundles)<=1 or "zomando" in bundles.keys():
-			self.lstInfo.setVisible(False)
-			if len(bundles)==1:
-				self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),self.app.get("name","")))
-			elif "zomando" in bundles.keys():
-				self.lstInfo.setVisible(False)
-				self.btnInstall.setVisible(False)
-				self.btnLaunch.setVisible(False)
-			else:
-				self.btnInstall.setEnabled(False)
-		else:
-			self.lstInfo.setVisible(True)
+			if i in priority:
+				idx=priority.index(i)
+				if i in uninstalled:
+					idx+=len(installed)
+				else:
+					#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
+					bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
+					release.setBackground(bcolor)
+				self.lstInfo.insertItem(idx,release)
+		if len(bundles)<0:
+			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 		self.lstInfo.setCurrentRow(0)
 	#def _setReleasesInfo
@@ -479,6 +552,11 @@ class details(confStack):
 		uninstalled=[]
 		for bundle in bundles.keys():
 			state=self.app.get("state",{}).get(bundle,1)
+			if bundle=="zomando":
+				if "package" in bundles.keys():
+					continue
+				if os.path.isfile(bundles[bundle]):
+					state="0"
 			if state.isdigit()==False:
 				state="1"
 			if int(state)==0: #installed
@@ -492,6 +570,7 @@ class details(confStack):
 		#Reload config if app has been epified
 		if len(self.app)>0:
 			self.wdgError.setVisible(False)
+			self.lstInfo.setVisible(True)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]

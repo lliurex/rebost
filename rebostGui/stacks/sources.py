@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 import sys
 import os,subprocess,time,shutil
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
+from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox,QProgressBar
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+#from appconfig.appConfigStack import appConfigStack as confStack
+from appconfig import appConfig
+from QtExtraWidgets import QStackedWindowItem
 from rebost import store
 import json
 import random
@@ -14,25 +15,83 @@ _ = gettext.gettext
 QString=type("")
 
 i18n={
-	"CONFIG":_("Sources"),
-	"DESCRIPTION":_("Show software sources"),
-	"MENUDESCRIPTION":_("Configure software sources"),
-	"TOOLTIP":_(""),
-	"RELOAD":_("Reload catalogues"),
-	"RELOAD_TOOLTIP":_("Reload info from sources"),
 	"CCACHE":_("Clear cache"),
 	"CCACHE_TOOLTIP":_("Remove all files from cache, as per exemple icons or another related stuff"),
+	"CONFIG":_("Sources"),
+	"DESC":_("Show software sources"),
+	"MENU":_("Configure software sources"),
+	"PROGRESS":_("Configuring software sources"),
+	"RELOAD":_("Reload catalogues"),
+	"RELOAD_TOOLTIP":_("Reload info from sources"),
 	"RESET":_("Restart database"),
 	"RESET_TOOLTIP":_("Forces a refresh of all the info from sources resetting all previous stored information"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials"),
-	"SOURCE_FP":_("Include flatpaks"),
-	"SOURCE_SN":_("Include snaps"),
 	"SOURCE_AI":_("Include appimages"),
-	"SOURCE_PK":_("Include native packages")
+	"SOURCE_FP":_("Include flatpaks"),
+	"SOURCE_PK":_("Include native packages"),
+	"SOURCE_SN":_("Include snaps"),
+	"TOOLTIP":_("Configuration")
 	}
 
+class thWriteConfig(QThread):
+	def __init__(self,parent,appconfig,chkSnap,chkFlatpak,chkApt,chkImage):
+		QThread.__init__(self,parent)
+		self.parent=parent
+		self.appconfig=appconfig
+		self.chkSnap=chkSnap
+		self.chkFlatpak=chkFlatpak
+		self.chkApt=chkApt
+		self.chkImage=chkImage
+	#def __init__
+
+	def run(self):
+		self.appconfig.level="system"
+		self.appconfig.saveChanges('config','system',level='system')
+		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
+			key=""
+			if wdg==self.chkApt:
+				key="packageKit"
+			elif wdg==self.chkFlatpak:
+				key="flatpak"
+			elif wdg==self.chkImage:
+				key="appimage"
+			elif wdg==self.chkSnap:
+				key="snap"
+			data=wdg.isChecked()
+			if len(key)>0:
+				self.appconfig.saveChanges(key,data,level=self.appconfig.level)
+	#def run
+#class thWriteConfig
+	
+class progressBar(QThread):
+	def __init__(self,parent,progress):
+		QThread.__init__(self,parent)
+		self.parent=parent
+		self.progress=progress
+		self.visible=True
+	#def __init__
+
+	def setMode(self,state):
+		self.visible=state
+	#def setMode
+
+	def run(self):
+		lay=self.parent.layout()
+		for x in range(lay.rowCount()):
+			for y in range(lay.columnCount()):
+				wdg=lay.itemAtPosition(x,y)
+				if wdg:
+					wdg=wdg.widget()
+					if wdg:
+						wdg.setEnabled(not self.visible)
+		self.parent.btnAccept.setVisible(not self.visible)
+		self.parent.btnCancel.setVisible(not self.visible)
+		self.progress.setEnabled(self.visible)
+		self.progress.setVisible(self.visible)
+	#def run
+#class progressBar(QThread):
+
 class reloadCatalogue(QThread):
-	active=Signal()
 	def __init__(self,rc,force,parent=None):
 		QThread.__init__(self,parent)
 		self.rc=rc
@@ -45,59 +104,34 @@ class reloadCatalogue(QThread):
 		except:
 			time.sleep(1)
 			self.rc.update(force=self.force)
-		self.active.emit()
 	#def run
 #class reloadCatalogue
 
-class setWaiting(QThread):
-	def __init__(self,widget,parent=None):
-		self.widget=widget
-		if parent==None:
-			self.parent=parent
-		self.oldcursor=widget.cursor()
-	#def __init__
-
-	def run(self):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.widget.setCursor(cursor)
-		
-		for wdg in self.widget.findChildren(QPushButton):
-			wdg.setEnabled(False)
-		for wdg in self.widget.findChildren(QCheckBox):
-			wdg.setEnabled(False)
-		QApplication.processEvents()
-		return(True)
-	#def run
-	
-	def stop(self):
-		for wdg in self.widget.findChildren(QPushButton):
-			wdg.setEnabled(True)
-		for wdg in self.widget.findChildren(QCheckBox):
-			wdg.setEnabled(True)
-		self.widget.setCursor(self.oldcursor)
-	#def stop
-#class setWaiting
-	
-class sources(confStack):
+class sources(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
-		self._debug("details load")
-		self.menu_description=i18n.get('MENUDESCRIPTION')
-		self.description=i18n.get('DESCRIPTION')
-		self.icon=('application-x-desktop')
-		self.tooltip=i18n.get('TOOLTIP')
+		self._debug("sources load")
+		self.setProps(shortDesc=i18n.get("MENU"),
+			longDesc=i18n.get("DESC"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=2,
+			visible=True)
 		self.index=2
 		self.enabled=True
 		self.visible=False
 		self.rc=store.client()
+		self.appconfig=appConfig.appConfig()
+		self.appconfig.setConfig(confDirs={'system':os.path.join('/usr/share',"rebost"),'user':os.path.join(os.environ['HOME'],'.config',"rebost")},confFile="store.json")
 		self.changed=[]
 		self.config={}
 		self.app={}
 		self.level='system'
 		self.oldcursor=self.cursor()
+		self.proc=""
 	#def __init__
 
-	def _load_screen(self):
+	def __initScreen__(self):
 		self.box=QGridLayout()
 		icn=QtGui.QIcon.fromTheme("go-previous")
 		self.btnBack=QPushButton()
@@ -130,9 +164,29 @@ class sources(confStack):
 		btnReset.setToolTip(i18n.get("RESET_TOOLTIP"))
 		btnReset.clicked.connect(lambda x:self._resetDB(True))
 		self.box.addWidget(btnReset,3,2,1,1)
+		self.progressWidget=QWidget()
+		lay=QGridLayout()
+		self.progress=self._createProgressWidget()
 		self.box.setRowStretch(self.box.rowCount(), 1)
+		self.box.addWidget(self.progress,self.box.rowCount(),1,1,2)
+		self.progress.setVisible(False)
 		self.setLayout(self.box)
+		self.btnAccept.clicked.connect(self.writeConfig)
 	#def _load_screen
+
+	def _createProgressWidget(self):
+		widget=QWidget()
+		pg=QProgressBar()
+		pg.setTextVisible(True)
+		pg.setFormat(i18n.get("PROGRESS"));
+		pg.setMinimum(0)
+		pg.setMaximum(0)
+		lbl=QLabel(i18n["PROGRESS"])
+		lay=QGridLayout()
+		lay.addWidget(lbl,0,0,1,1)
+		lay.addWidget(pg,1,0,1,1)
+		widget.setLayout(lay)
+		return(widget)
 
 	def _clearCache(self):
 		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
@@ -151,7 +205,6 @@ class sources(confStack):
 			self.setCursor(cursor)
 		else:
 			self.setCursor(self.oldcursor)
-		QApplication.processEvents()
 		for wdg in self.findChildren(QPushButton):
 			wdg.setEnabled(state)
 		for wdg in self.findChildren(QCheckBox):
@@ -178,14 +231,20 @@ class sources(confStack):
 	#def _reload
 		
 	def _reloadCatalogue(self,force=False):
-		reloadRebost=reloadCatalogue(self.rc,force)
-		if self.changes:
-			self.writeConfig()
-		reloadRebost.active.connect(self._endReloadCatalogue)
-		reloadRebost.run()
+		self.proc=reloadCatalogue(self.rc,force)
+		self.procp=progressBar(self,self.progress)
+		self.proc.finished.connect(self._endReloadCatalogue)
+		self.proc.started.connect(self._beginReloadCatalogue)
+		self.proc.start()
 	#def _reloadCatalogue
 
+	def _beginReloadCatalogue(self):
+		self.procp.start()
+		#if self.changes:
+		#	self.writeConfig()
+
 	def _endReloadCatalogue(self):
+		self.proc.wait()
 		self.rc=None
 		try:
 			self.rc=store.client()
@@ -195,21 +254,23 @@ class sources(confStack):
 				self.rc=store.client()
 			except:
 				print("UNKNOWN ERROR")
-		time.sleep(2)
+		self.procp.setMode(False)
+		self.procp.start()
 		self.updateScreen()
 	#def _endreloadCatalogue
 
 	def _return(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=1,parms="1")
+		self.app={}
+		self.parent.setCurrentStack(1,parms="1")
 		self.setCursor(self.oldcursor)
 	#def _return
 
 	def updateScreen(self):
 		self.changes=True
 		self.refresh=True
-		self.config=self.getConfig()
+		self.config=self.appconfig.getConfig()
 		self.chkSnap.setChecked(True)
 		self.chkFlatpak.setChecked(True)
 		self.chkImage.setChecked(True)
@@ -228,21 +289,11 @@ class sources(confStack):
 		pass
 
 	def writeConfig(self):
-		self.level="system"
-		self.saveChanges('config','system',level='system')
-		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
-			key=""
-			if wdg==self.chkApt:
-				key="packageKit"
-			elif wdg==self.chkFlatpak:
-				key="flatpak"
-			elif wdg==self.chkImage:
-				key="appimage"
-			elif wdg==self.chkSnap:
-				key="snap"
-			data=wdg.isChecked()
-			if len(key)>0:
-				self.saveChanges(key,data,level=self.level)
-		self._resetDB()
+		self.config=thWriteConfig(self,self.appconfig,self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage)
+		self.config.finished.connect(self._endWriteConfig)
+		self.config.start()
 	#def writeConfig
+
+	def _endWriteConfig(self):
+		self.config.wait()
 

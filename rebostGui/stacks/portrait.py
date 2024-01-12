@@ -4,9 +4,10 @@ import os
 from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+from QtExtraWidgets import QSearchBox,QCheckableComboBox,QTableTouchWidget,QScreenShotContainer,QStackedWindowItem,QInfoLabel
 from rebost import store 
+from appconfig import appConfig
+import subprocess
 import json
 import random
 import gettext
@@ -14,20 +15,22 @@ _ = gettext.gettext
 QString=type("")
 
 i18n={
-	"CONFIG":_("Portrait"),
-	"DESCRIPTION":_("Show applications"),
-	"MENUDESCRIPTION":_("Navigate through all applications"),
-	"TOOLTIP":_(""),
-	"SEARCH":_("Search"),
 	"ALL":_("All"),
-	"FILTERS":_("Filters"),
 	"AVAILABLE":_("Available"),
+	"CONFIG":_("Portrait"),
+	"DESC":_("Navigate through all applications"),
+	"FILTERS":_("Filters"),
 	"INSTALLED":_("Installed"),
-	"UPGRADABLE":_("Upgradables")
+	"LLXUP":_("Launch LliurexUp"),
+	"MENU":_("Show applications"),
+	"SEARCH":_("Search"),
+	"TOOLTIP":_("Portrait"),
+	"UPGRADABLE":_("Upgradables"),
+	"UPGRADES":_("There're upgrades available")
 	}
 
 class QPushButtonRebostApp(QPushButton):
-	clicked=Signal("PyObject")
+	clicked=Signal("PyObject","PyObject")
 	def __init__(self,strapp,parent=None):
 		QPushButton.__init__(self, parent)
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
@@ -41,18 +44,7 @@ class QPushButtonRebostApp(QPushButton):
 		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
-		icn=''
-		if os.path.isfile(img):
-			icn=QtGui.QPixmap.fromImage(img)
-		elif img=='':
-			icn2=QtGui.QIcon.fromTheme(self.app.get('pkgname'))
-			icn=icn2.pixmap(128,128)
-		if icn:
-			self.load(icn)
-		elif img.startswith('http'):
-			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
-			self.scr.start()
-			self.scr.imageLoaded.connect(self.load)
+		self.loadImg(self.app)
 		self.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
 		lay=QHBoxLayout()
 		lay.addStretch()
@@ -61,11 +53,72 @@ class QPushButtonRebostApp(QPushButton):
 		self.setDefault(True)
 		self.setLayout(lay)
 	#def __init__
+
+	def loadImg(self,app):
+		img=app.get('icon','')
+		aux=QScreenShotContainer()
+		self.scr=aux.loadScreenShot(img,self.cacheDir)
+		icn=''
+		if os.path.isfile(img):
+			icn=QtGui.QPixmap.fromImage(img)
+		elif img=='':
+			icn2=QtGui.QIcon.fromTheme(app.get('pkgname'))
+			icn=icn2.pixmap(128,128)
+		elif "flathub" in img:
+			tmp=img.split("/")
+			if "icons" in tmp:
+				idx=tmp.index("icons")
+				prefix=tmp[:idx-1]
+				iconPath=os.path.join("/".join(prefix),"active","/".join(tmp[idx:]))
+				if os.path.isfile(iconPath):
+					icn=QtGui.QPixmap.fromImage(iconPath)
+
+		if icn:
+			wsize=128
+			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
+				wsize=235
+			self.icon.setPixmap(icn.scaled(wsize,128))
+		elif img.startswith('http'):
+			print("Searching {}".format(img))
+			self.scr.start()
+			self.scr.imageLoaded.connect(self.load)
+		else:
+			print("NOT: {}".format(icn))
+		if "0" not in str(self.app.get('state',1)):
+			#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
+			self._applyDecoration()
+		if "FORBIDDEN" in self.app.get("categories",[]):
+			self._applyDecoration(forbidden=True)
+	#def loadImg
+
+	def _applyDecoration(self,forbidden=False):
+		self.setObjectName("rebostapp")
+		self.setAttribute(Qt.WA_StyledBackground, True)
+		if forbidden==False:
+			bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Mid))
+			color=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Base))
+		else:
+			bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Light))
+			color=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
+		self.setAutoFillBackground(True)
+		pal=self.palette()
+		#pal.setColor(QPalette.Window,bcolor)
+		rgbColor="{0},{1},{2}".format(color.red(),color.green(),color.blue())
+		rgbBcolor="{0},{1},{2}".format(bcolor.red(),bcolor.green(),bcolor.blue())
+		self.setStyleSheet("""#rebostapp {
+			background-color: rgb(%s); 
+			border-style: solid; 
+			border-color: rgb(%s); 
+			border-width: 1px; 
+			border-radius: 2px;}"""%(rgbColor,rgbBcolor))
+
+	def _removeDecoration(self):
+		self.setObjectName("")
+		self.setStyleSheet("")
+
 	
 	def load(self,*args):
 		img=args[0]
-		if "0" in str(self.app.get('state',1)):
-			self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 		self.icon.setPixmap(img.scaled(128,128))
 	#def load
 	
@@ -75,24 +128,28 @@ class QPushButtonRebostApp(QPushButton):
 
 	def keyPressEvent(self,ev):
 		if ev.key() in [Qt.Key_Return,Qt.Key_Enter,Qt.Key_Space]:
-			self.clicked.emit(self.app)
+			self.clicked.emit(self,self.app)
 		ev.ignore()
 	#def keyPressEvent(self,ev):
 
 	def mousePressEvent(self,*args):
-		self.clicked.emit(self.app)
+		self.clicked.emit(self,self.app)
 	#def mousePressEvent
 #class QPushButtonRebostApp
 
-class portrait(confStack):
+class portrait(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
 		self.enabled=True
 		self._debug("portrait load")
-		self.menu_description=i18n.get('MENUDESCRIPTION')
-		self.description=i18n.get('DESCRIPTION')
-		self.icon=('application-x-desktop')
-		self.tooltip=i18n.get('TOOLTIP')
+		self.setProps(shortDesc=i18n.get("DESC"),
+			longDesc=i18n.get("MENU"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=1,
+			visible=True)
+		self.appconfig=appConfig.appConfig()
+		self.appconfig.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],'.config/rebost')},confFile="store.json")
 		self.i18nCat={}
 		self.config={}
 		self.index=1
@@ -105,12 +162,12 @@ class portrait(confStack):
 		self.rc=store.client()
 		self.hideControlButtons()
 		self.changed=[]
-		self.level='user'
+		self.level='system'
 		self.oldcursor=self.cursor()
 	#def __init__
 
-	def _load_screen(self):
-		self.config=self.getConfig()
+	def __initScreen__(self):
+		self.config=self.appconfig.getConfig()
 		self.box=QGridLayout()
 		self.setLayout(self.box)
 		wdg=QWidget()
@@ -126,7 +183,7 @@ class portrait(confStack):
 		self._populateCategories()
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		self.btnFilters=appconfigControls.QCheckableComboBox()
+		self.btnFilters=QCheckableComboBox()
 		#self.btnFilters.clicked.connect(self._filterView)
 		self.btnFilters.activated.connect(self._selectFilters)
 		self._loadFilters()
@@ -134,14 +191,14 @@ class portrait(confStack):
 		hbox.addWidget(self.btnFilters)
 		wdg.setLayout(hbox)
 		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
-		self.searchBox=appconfigControls.QSearchBox()
+		self.searchBox=QSearchBox()
 		self.searchBox.setToolTip(i18n["SEARCH"])
 		self.searchBox.setPlaceholderText(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
 		self.searchBox.clicked.connect(self._searchAppsBtn)
-		self.table=appconfigControls.QTableTouchWidget()
+		self.table=QTableTouchWidget()
 		self.table.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.table.setColumnCount(3)
 		self.table.setShowGrid(False)
@@ -157,8 +214,18 @@ class portrait(confStack):
 		icn=QtGui.QIcon.fromTheme("settings-configure")
 		btnSettings.setIcon(icn)
 		btnSettings.clicked.connect(self._gotoSettings)
-		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
+		self.box.addWidget(btnSettings,2,1,1,1,Qt.Alignment(-1))
+		self.lblInfo=QInfoLabel()
+		self.lblInfo.setActionText(i18n.get("LLXUP"))
+		self.lblInfo.setActionIcon("lliurex-up")
+		self.lblInfo.setText(i18n.get("UPGRADES"))
+		self.lblInfo.clicked.connect(self._launchLlxUp)
+		self.box.addWidget(self.lblInfo,2,0,1,1)
+		self._getUpgradables()
 	#def _load_screen
+
+	def _launchLlxUp(self):
+		subprocess.run(["pkexec","lliurex-up"])
 
 	def _loadFilters(self):
 		self.btnFilters.clear()
@@ -209,6 +276,13 @@ class portrait(confStack):
 		self.appsRaw=apps
 		return(apps)
 	#def _getAppList
+
+	def _getUpgradables(self):
+		self.lblInfo.setVisible(False)
+		apps=json.loads(self.rc.getUpgradableApps())
+		if len(apps)>0:
+			self.lblInfo.setVisible(True)
+	#def _getUpgradables
 
 	def _shuffleApps(self):
 		random.shuffle(self.apps)
@@ -404,24 +478,26 @@ class portrait(confStack):
 		cont-=1
 	#def _loadData
 
-	def _loadDetails(self,*args):
+	def _loadDetails(self,*args,**kwargs):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
-		app=self.rc.showApp(args[0].get('name',''))
-		self.stack.gotoStack(idx=3,parms=app)
+		self.wdg=args[0]
+		app=self.rc.showApp(args[-1].get('name',''))
+		self.setChanged(False)
+		self.parent.setCurrentStack(idx=3,parms=app)
 	#def _loadDetails
 
 	def _gotoSettings(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=2,parms="")
+		self.parent.setCurrentStack(idx=2,parms="")
 	#def _gotoSettings
 
 	def updateScreen(self):
 		self._loadData(self.appsLoaded,self.appsToLoad)
-		self.table.show()
+		#self.table.show()
 		self.setCursor(self.oldcursor)
 	#def _udpate_screen
 
@@ -433,13 +509,27 @@ class portrait(confStack):
 		self.appsSeen=[]
 	#def resetScreen
 
-	def setParms(self,*args):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
-		if len(args)>=1:
-			self._populateCategories()
-			self.oldSearch=""
-			self._searchApps()
+	def setParms(self,*args,**kwargs):
+		for arg in args:
+			if isinstance(arg,dict):
+				for key,item in arg.items():
+					kwargs[key]=item
+		if kwargs.get("refresh",False)==False:
+			cursor=QtGui.QCursor(Qt.WaitCursor)
+			self.setCursor(cursor)
+			if len(args)>=1:
+				self._populateCategories()
+				self.oldSearch=""
+				self._searchApps()
+		else:
+			app=kwargs.get("app",{})
+			if "FORBIDDEN" in app.get("categories",[]):
+				self.wdg._applyDecoration(forbidden=True)
+			elif "0" not in str(app.get('state',1)):
+				#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
+				self.wdg._applyDecoration()
+			else:
+				self.wdg._removeDecoration()
 	#def setParms
 
 	def _updateConfig(self,key):

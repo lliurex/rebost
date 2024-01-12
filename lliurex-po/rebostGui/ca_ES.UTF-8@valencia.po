@@ -7,116 +7,164 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-11 09:41+0100\n"
-"PO-Revision-Date: 2023-01-11 09:41+0100\n"
+"POT-Creation-Date: 2024-02-11 19:07+0100\n"
+"PO-Revision-Date: 2024-02-11 19:08+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.3\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
 
-#: ../rebostGui/stacks/details.py:18
+#: ../rebostGui/stacks/details.py:23
+msgid ""
+"The app could not be loaded. Perhaps it's not in LliureX catalogue and thus "
+"it can't be installed"
+msgstr ""
+"No es pot carregar la app. Pot ser no estiga inclosa com autoritzada a "
+"Lliurex"
+
+#: ../rebostGui/stacks/details.py:24
+msgid "Choose"
+msgstr "Triar"
+
+#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:37
 msgid "Details"
 msgstr "Detalls"
 
-#: ../rebostGui/stacks/details.py:19
-msgid "Show application detail"
-msgstr "Mostra els detalls"
-
-#: ../rebostGui/stacks/details.py:20 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/portrait.py:21
 msgid "Navigate through all applications"
 msgstr "Mostra totes les aplicacions"
 
-#: ../rebostGui/stacks/details.py:22
+#: ../rebostGui/stacks/details.py:27
+msgid "Error opening"
+msgstr "Error carregant"
+
+#: ../rebostGui/stacks/details.py:28
+msgid "Unknown error"
+msgstr "Error desconegut"
+
+#: ../rebostGui/stacks/details.py:29
+msgid "App unauthorized"
+msgstr "App no autoritzada"
+
+#: ../rebostGui/stacks/details.py:30
+msgid "Format"
+msgstr "Format"
+
+#: ../rebostGui/stacks/details.py:31
+msgid "For more info go to"
+msgstr "Per a més informació anar a"
+
+#: ../rebostGui/stacks/details.py:32
 msgid "Install"
 msgstr "Instal·la"
 
-#: ../rebostGui/stacks/details.py:23
-msgid "Open"
-msgstr "Obri"
+#: ../rebostGui/stacks/details.py:33
+msgid "Show application detail"
+msgstr "Mostra els detalls"
 
-#: ../rebostGui/stacks/details.py:24
+#: ../rebostGui/stacks/details.py:34
+msgid "Release"
+msgstr "Versió"
+
+#: ../rebostGui/stacks/details.py:35
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../rebostGui/stacks/details.py:25
+#: ../rebostGui/stacks/details.py:36
+msgid "Open"
+msgstr "Obri"
+
+#: ../rebostGui/stacks/details.py:38
 msgid "Upgrade"
 msgstr "Actualitza"
 
-#: ../rebostGui/stacks/details.py:26
+#: ../rebostGui/stacks/details.py:39
 msgid "Zommand not found. Open Zero-Center?"
 msgstr "No trobat. Obrir el Zero-Center?"
 
-#: ../rebostGui/stacks/portrait.py:17
-msgid "Portrait"
-msgstr "Portada"
-
 #: ../rebostGui/stacks/portrait.py:18
-msgid "Show applications"
-msgstr "Mostra les aplicacions"
-
-#: ../rebostGui/stacks/portrait.py:21
-msgid "Search"
-msgstr "Cerca"
-
-#: ../rebostGui/stacks/portrait.py:22
 msgid "All"
 msgstr "Tot"
 
-#: ../rebostGui/stacks/portrait.py:23
-msgid "Filters"
-msgstr "Filtres"
-
-#: ../rebostGui/stacks/portrait.py:24
+#: ../rebostGui/stacks/portrait.py:19
 msgid "Available"
 msgstr "Disponibles"
 
-#: ../rebostGui/stacks/portrait.py:25
+#: ../rebostGui/stacks/portrait.py:20 ../rebostGui/stacks/portrait.py:27
+msgid "Portrait"
+msgstr "Portada"
+
+#: ../rebostGui/stacks/portrait.py:22
+msgid "Filters"
+msgstr "Filtres"
+
+#: ../rebostGui/stacks/portrait.py:23
 msgid "Installed"
 msgstr "Instal·lats"
 
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Launch LliurexUp"
+msgstr "LliurexUp"
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Show applications"
+msgstr "Mostra les aplicacions"
+
 #: ../rebostGui/stacks/portrait.py:26
+msgid "Search"
+msgstr "Cerca"
+
+#: ../rebostGui/stacks/portrait.py:28
 msgid "Upgradables"
 msgstr "Actualitzables"
 
-#: ../rebostGui/stacks/sources.py:17
-msgid "Sources"
-msgstr "Origens"
+#: ../rebostGui/stacks/portrait.py:29
+msgid "There're upgrades available"
+msgstr "Hi han actualitzacions pendents"
 
 #: ../rebostGui/stacks/sources.py:18
-msgid "Show software sources"
-msgstr "Mostra els origens del programari"
-
-#: ../rebostGui/stacks/sources.py:19
-msgid "Configure software sources"
-msgstr "Configura els origens"
-
-#: ../rebostGui/stacks/sources.py:21
-msgid "Reload catalogues"
-msgstr "Carrega els catàlegs"
-
-#: ../rebostGui/stacks/sources.py:22
-msgid "Reload info from sources"
-msgstr "Recarrega la informació del catàleg"
-
-#: ../rebostGui/stacks/sources.py:23
 msgid "Clear cache"
 msgstr "Neteja cau"
 
-#: ../rebostGui/stacks/sources.py:24
+#: ../rebostGui/stacks/sources.py:19
 msgid ""
 "Remove all files from cache, as per exemple icons or another related stuff"
 msgstr ""
 "Elimina tots els fitxers de la memoria cau, com puguen ser icones, imatges..."
 
+#: ../rebostGui/stacks/sources.py:20
+msgid "Sources"
+msgstr "Origens"
+
+#: ../rebostGui/stacks/sources.py:21
+msgid "Show software sources"
+msgstr "Mostra els origens del programari"
+
+#: ../rebostGui/stacks/sources.py:22
+msgid "Configure software sources"
+msgstr "Configura els origens"
+
+#: ../rebostGui/stacks/sources.py:23
+msgid "Configuring software sources"
+msgstr "Configura els origens"
+
+#: ../rebostGui/stacks/sources.py:24
+msgid "Reload catalogues"
+msgstr "Carrega els catàlegs"
+
 #: ../rebostGui/stacks/sources.py:25
+msgid "Reload info from sources"
+msgstr "Recarrega la informació del catàleg"
+
+#: ../rebostGui/stacks/sources.py:26
 msgid "Restart database"
 msgstr "Reinicialitzar catàleg"
 
-#: ../rebostGui/stacks/sources.py:26
+#: ../rebostGui/stacks/sources.py:27
 msgid ""
 "Forces a refresh of all the info from sources resetting all previous stored "
 "information"
@@ -124,40 +172,35 @@ msgstr ""
 "Refresca la informació desde els proveïdors esborrant la informació "
 "emmagatzemada"
 
-#: ../rebostGui/stacks/sources.py:27
+#: ../rebostGui/stacks/sources.py:28
 msgid "Service could not be reloaded. Check credentials"
 msgstr "El servei no pot recarregar-se. Comprove les credencials"
 
-#: ../rebostGui/stacks/sources.py:28
-msgid "Include flatpaks"
-msgstr "Incloure flatpaks"
-
 #: ../rebostGui/stacks/sources.py:29
-msgid "Include snaps"
-msgstr "Incloure snaps"
-
-#: ../rebostGui/stacks/sources.py:30
 msgid "Include appimages"
 msgstr "Incloure appimages"
+
+#: ../rebostGui/stacks/sources.py:30
+msgid "Include flatpaks"
+msgstr "Incloure flatpaks"
 
 #: ../rebostGui/stacks/sources.py:31
 msgid "Include native packages"
 msgstr "Incloure paqueteria nadiua"
+
+#: ../rebostGui/stacks/sources.py:32
+msgid "Include snaps"
+msgstr "Incloure snaps"
+
+#: ../rebostGui/stacks/sources.py:33
+msgid "Configuration"
+msgstr "Configuració"
 
 msgid "2DGraphics"
 msgstr "Gràfics 2D"
 
 msgid "3DGraphics"
 msgstr "Gràfics 3D"
-
-msgid "Accessibility"
-msgstr "Accesibilitat"
-
-msgid "Animation"
-msgstr "Animació"
-
-msgid "Archiving"
-msgstr "Compressió"
 
 msgid "Art"
 msgstr "Art"
@@ -174,56 +217,17 @@ msgstr "Video i só"
 msgid "AudioVideoEditing"
 msgstr "Edició de só i video"
 
-msgid "Biology"
-msgstr "Biologia"
-
-msgid "Calculator"
-msgstr "Cálcul"
-
-msgid "Calendar"
-msgstr "Calendari"
-
 msgid "Chart"
 msgstr "Gràfiques"
 
 msgid "Chemistry"
 msgstr "Química"
 
-msgid "Clock"
-msgstr "Rellotge"
-
-msgid "Compression"
-msgstr "Compressió"
-
 msgid "ComputerScience"
 msgstr "Ciencia computacional"
 
-msgid "Core"
-msgstr "Sistema"
-
-msgid "DataVisualization"
-msgstr "Visualització de dades"
-
-msgid "Database"
-msgstr "Bases de dades"
-
-msgid "Debugger"
-msgstr "Debug"
-
 msgid "Development"
 msgstr "Desenvolupament"
-
-msgid "Dictionary"
-msgstr "Diccionari"
-
-msgid "DiscBurning"
-msgstr "Grabació de discs"
-
-msgid "Documentation"
-msgstr "Documentació"
-
-msgid "Economy"
-msgstr "Economia"
 
 msgid "Education"
 msgstr "Educació"
@@ -237,23 +241,17 @@ msgstr "Electrónica"
 msgid "Engineering"
 msgstr "Enginyeria"
 
+msgid "FORBIDDEN"
+msgstr "Bloquejada"
+
 msgid "FP"
 msgstr "FP"
 
-msgid "FileTools"
-msgstr "Eines de fitxers"
-
-msgid "Finance"
-msgstr "Finances"
-
-msgid "GUIDesigner"
-msgstr "Disseny d'interficies"
+msgid "Game"
+msgstr "Joc"
 
 msgid "Geography"
 msgstr "Geografia"
-
-msgid "Geology"
-msgstr "Geologia"
 
 msgid "Geoscience"
 msgstr "Geociencia"
@@ -261,35 +259,26 @@ msgstr "Geociencia"
 msgid "Graphics"
 msgstr "Gràfics"
 
-msgid "HamRadio"
-msgstr "Radio"
-
-msgid "HexEditor"
-msgstr "Editor hexadecimal"
-
-msgid "Humanities"
-msgstr "Humanitats"
-
 msgid "IDE"
 msgstr "IDE"
 
-msgid "ImageProcessing"
-msgstr "Procesament d'imatges"
+msgid "Internet"
+msgstr "Internet"
 
-msgid "Jukebox"
-msgstr "Reproductors de música"
+msgid "KidsGame"
+msgstr "Jocs infantils"
 
 msgid "Languages"
 msgstr "Idiomes"
 
-msgid "LearnToCode"
-msgstr "Lliçons de programació"
-
-msgid "Literature"
-msgstr "Literatura"
+msgid "LliureX-Infantil"
+msgstr "Lliurex-Infantil"
 
 msgid "Lliurex"
 msgstr "LliureX"
+
+msgid "LogicGame"
+msgstr "Jocs de lògica"
 
 msgid "Maps"
 msgstr "Mapes"
@@ -297,17 +286,11 @@ msgstr "Mapes"
 msgid "Math"
 msgstr "Matemàtiques"
 
-msgid "MedicalSoftware"
-msgstr "Programari mèdic"
-
 msgid "Midi"
 msgstr "Midi"
 
 msgid "Mixer"
 msgstr "Mescladors"
-
-msgid "Monitor"
-msgstr "Monitors"
 
 msgid "Multimedia"
 msgstr "Multimèdia"
@@ -318,35 +301,17 @@ msgstr "Música"
 msgid "Network"
 msgstr "Xarxes"
 
-msgid "NumericalAnalysis"
-msgstr "Anàlisi numéric"
-
 msgid "OCR"
 msgstr "OCR"
 
 msgid "Office"
 msgstr "Oficina"
 
-msgid "Photography"
-msgstr "Fotografia"
-
 msgid "Physics"
 msgstr "Física"
 
-msgid "Presentation"
-msgstr "Presentacions"
-
-msgid "Productivity"
-msgstr "Productivitat"
-
-msgid "Profiling"
-msgstr "Perfils"
-
-msgid "ProjectManagement"
-msgstr "Gestió de projectes"
-
-msgid "Publishing"
-msgstr "Publicacions"
+msgid "Player"
+msgstr "Jugador"
 
 msgid "RasterGraphics"
 msgstr "Gràfics raster"
@@ -363,32 +328,23 @@ msgstr "Escaneig"
 msgid "Science"
 msgstr "Ciència"
 
-msgid "Security"
-msgstr "Seguretat"
-
 msgid "Sequencer"
 msgstr "Secuenciadors"
+
+msgid "Services"
+msgstr "Serveis"
 
 msgid "Software"
 msgstr "Programari"
 
-msgid "Spirituality"
-msgstr "Espiritualitat"
+msgid "System"
+msgstr "Sistema"
 
-msgid "Sports"
-msgstr "Esports"
-
-msgid "Spreadsheet"
-msgstr "Fulles de càlcul"
+msgid "TV"
+msgstr "TV"
 
 msgid "TextEditor"
 msgstr "Editors de text"
-
-msgid "TextTools"
-msgstr "Eines de text"
-
-msgid "Translation"
-msgstr "Traducció"
 
 msgid "Utility"
 msgstr "Utilitat"
@@ -402,23 +358,218 @@ msgstr "Video"
 msgid "Viewer"
 msgstr "Visors"
 
-msgid "WebDevelopment"
-msgstr "Desenvolupament web"
+msgid "WebBrowser"
+msgstr "Fullejadors web"
 
-msgid "Webdevelopment"
-msgstr "Desenvolupament web"
-
-msgid "WordProcessor"
-msgstr "Processadors de text"
-
-msgid "X-CSuite"
-msgstr "X-CSuite"
+msgid "X-Utilities"
+msgstr "Utilitats"
 
 msgid "Zomando"
 msgstr "Zomandament"
 
+msgid "accessories"
+msgstr "accesoris"
+
+msgid "admin-tools"
+msgstr "eines d'administració"
+
+msgid "collections"
+msgstr "col·leccions"
+
+msgid "communication"
+msgstr "comunicacions"
+
+msgid "desktop-gnome"
+msgstr "escriptori gnome"
+
+msgid "desktop-kde"
+msgstr "escriptori kde"
+
+msgid "desktop-other"
+msgstr "escriptori altres"
+
+msgid "education"
+msgstr "educació"
+
+msgid "electronics"
+msgstr "electrónica"
+
+msgid "games"
+msgstr "jocs"
+
+msgid "graphics"
+msgstr "gràfics"
+
+msgid "internet"
+msgstr "internet"
+
+msgid "multimedia"
+msgstr "multimèdia"
+
+msgid "network"
+msgstr "xarxa"
+
+msgid "other"
+msgstr "altres"
+
+msgid "programming"
+msgstr "programació"
+
+msgid "publishing"
+msgstr "publicació"
+
 msgid "resources"
 msgstr "eines"
+
+msgid "science"
+msgstr "ciència"
+
+msgid "software"
+msgstr "programari"
+
+msgid "system"
+msgstr "sustema"
+
+msgid "unknown"
+msgstr "desconegut"
+
+#~ msgid "Accessibility"
+#~ msgstr "Accesibilitat"
+
+#~ msgid "Animation"
+#~ msgstr "Animació"
+
+#~ msgid "Archiving"
+#~ msgstr "Compressió"
+
+#~ msgid "Biology"
+#~ msgstr "Biologia"
+
+#~ msgid "Calculator"
+#~ msgstr "Cálcul"
+
+#~ msgid "Calendar"
+#~ msgstr "Calendari"
+
+#~ msgid "Clock"
+#~ msgstr "Rellotge"
+
+#~ msgid "Compression"
+#~ msgstr "Compressió"
+
+#~ msgid "Core"
+#~ msgstr "Sistema"
+
+#~ msgid "DataVisualization"
+#~ msgstr "Visualització de dades"
+
+#~ msgid "Database"
+#~ msgstr "Bases de dades"
+
+#~ msgid "Debugger"
+#~ msgstr "Debug"
+
+#~ msgid "Dictionary"
+#~ msgstr "Diccionari"
+
+#~ msgid "DiscBurning"
+#~ msgstr "Grabació de discs"
+
+#~ msgid "Documentation"
+#~ msgstr "Documentació"
+
+#~ msgid "Economy"
+#~ msgstr "Economia"
+
+#~ msgid "FileTools"
+#~ msgstr "Eines de fitxers"
+
+#~ msgid "Finance"
+#~ msgstr "Finances"
+
+#~ msgid "GUIDesigner"
+#~ msgstr "Disseny d'interficies"
+
+#~ msgid "Geology"
+#~ msgstr "Geologia"
+
+#~ msgid "HamRadio"
+#~ msgstr "Radio"
+
+#~ msgid "HexEditor"
+#~ msgstr "Editor hexadecimal"
+
+#~ msgid "Humanities"
+#~ msgstr "Humanitats"
+
+#~ msgid "ImageProcessing"
+#~ msgstr "Procesament d'imatges"
+
+#~ msgid "Jukebox"
+#~ msgstr "Reproductors de música"
+
+#~ msgid "LearnToCode"
+#~ msgstr "Lliçons de programació"
+
+#~ msgid "Literature"
+#~ msgstr "Literatura"
+
+#~ msgid "MedicalSoftware"
+#~ msgstr "Programari mèdic"
+
+#~ msgid "Monitor"
+#~ msgstr "Monitors"
+
+#~ msgid "NumericalAnalysis"
+#~ msgstr "Anàlisi numéric"
+
+#~ msgid "Photography"
+#~ msgstr "Fotografia"
+
+#~ msgid "Presentation"
+#~ msgstr "Presentacions"
+
+#~ msgid "Productivity"
+#~ msgstr "Productivitat"
+
+#~ msgid "Profiling"
+#~ msgstr "Perfils"
+
+#~ msgid "ProjectManagement"
+#~ msgstr "Gestió de projectes"
+
+#~ msgid "Publishing"
+#~ msgstr "Publicacions"
+
+#~ msgid "Security"
+#~ msgstr "Seguretat"
+
+#~ msgid "Spirituality"
+#~ msgstr "Espiritualitat"
+
+#~ msgid "Sports"
+#~ msgstr "Esports"
+
+#~ msgid "Spreadsheet"
+#~ msgstr "Fulles de càlcul"
+
+#~ msgid "TextTools"
+#~ msgstr "Eines de text"
+
+#~ msgid "Translation"
+#~ msgstr "Traducció"
+
+#~ msgid "WebDevelopment"
+#~ msgstr "Desenvolupament web"
+
+#~ msgid "Webdevelopment"
+#~ msgstr "Desenvolupament web"
+
+#~ msgid "WordProcessor"
+#~ msgstr "Processadors de text"
+
+#~ msgid "X-CSuite"
+#~ msgstr "X-CSuite"
 
 #~ msgid "ActionGame"
 #~ msgstr "Jocs d'acció"
@@ -464,9 +615,6 @@ msgstr "eines"
 
 #~ msgid "Communication & News"
 #~ msgstr "Comunicació i noticies"
-
-#~ msgid "Configuration"
-#~ msgstr "Configuració"
 
 #~ msgid "ConsoleOnly"
 #~ msgstr "Consola"
@@ -519,9 +667,6 @@ msgstr "eines"
 #~ msgid "GTK"
 #~ msgstr "Gtk"
 
-#~ msgid "Game"
-#~ msgstr "Joc"
-
 #~ msgid "Games"
 #~ msgstr "Jocs"
 
@@ -534,23 +679,11 @@ msgstr "eines"
 #~ msgid "InstantMessaging"
 #~ msgstr "Missatgeria instantànea"
 
-#~ msgid "Internet"
-#~ msgstr "Internet"
-
 #~ msgid "Java"
 #~ msgstr "Java"
 
 #~ msgid "KDE"
 #~ msgstr "Kde"
-
-#~ msgid "KidsGame"
-#~ msgstr "Jocs infantils"
-
-#~ msgid "LliureX-Administration"
-#~ msgstr "Adinistració del LliureX"
-
-#~ msgid "LogicGame"
-#~ msgstr "Jocs de lògica"
 
 #~ msgid "MMORPG"
 #~ msgstr "MMORPG"
@@ -572,9 +705,6 @@ msgstr "eines"
 
 #~ msgid "ParallelComputing"
 #~ msgstr "Computació paralela"
-
-#~ msgid "Player"
-#~ msgstr "Jugador"
 
 #~ msgid "Players"
 #~ msgstr "Jugadors"
@@ -600,9 +730,6 @@ msgstr "eines"
 #~ msgid "RolePlaying"
 #~ msgstr "Jocs de rol"
 
-#~ msgid "Services"
-#~ msgstr "Serveis"
-
 #~ msgid "Settings"
 #~ msgstr "Configuracions"
 
@@ -624,12 +751,6 @@ msgstr "eines"
 #~ msgid "Support"
 #~ msgstr "Ajuda"
 
-#~ msgid "System"
-#~ msgstr "Sistema"
-
-#~ msgid "TV"
-#~ msgstr "TV"
-
 #~ msgid "Telephony"
 #~ msgstr "Telefonia"
 
@@ -642,14 +763,8 @@ msgstr "eines"
 #~ msgid "Tuner"
 #~ msgstr "Sintonitzadors"
 
-#~ msgid "Utilities"
-#~ msgstr "Utilitats"
-
 #~ msgid "VideoConference"
 #~ msgstr "Videoconferencia"
-
-#~ msgid "WebBrowser"
-#~ msgstr "Fullejadors web"
 
 #~ msgid "X-Tool"
 #~ msgstr "X-Tool"
@@ -657,29 +772,8 @@ msgstr "eines"
 #~ msgid "XFCE"
 #~ msgstr "Xfce"
 
-#~ msgid "accessories"
-#~ msgstr "accesoris"
-
-#~ msgid "admin-tools"
-#~ msgstr "eines d'administració"
-
-#~ msgid "collections"
-#~ msgstr "col·leccions"
-
-#~ msgid "communication"
-#~ msgstr "comunicacions"
-
 #~ msgid "configuration"
 #~ msgstr "configuració"
-
-#~ msgid "desktop-gnome"
-#~ msgstr "escriptori gnome"
-
-#~ msgid "desktop-kde"
-#~ msgstr "escriptori kde"
-
-#~ msgid "desktop-other"
-#~ msgstr "escriptori altres"
 
 #~ msgid "desktop-xfce"
 #~ msgstr "escriptori xfce"
@@ -687,53 +781,11 @@ msgstr "eines"
 #~ msgid "documentation"
 #~ msgstr "documentació"
 
-#~ msgid "education"
-#~ msgstr "educació"
-
-#~ msgid "electronics"
-#~ msgstr "electrónica"
-
 #~ msgid "fonts"
 #~ msgstr "eines de lletres"
-
-#~ msgid "games"
-#~ msgstr "jocs"
-
-#~ msgid "graphics"
-#~ msgstr "gràfics"
-
-#~ msgid "internet"
-#~ msgstr "internet"
 
 #~ msgid "legacy"
 #~ msgstr "antics"
 
-#~ msgid "multimedia"
-#~ msgstr "multimèdia"
-
-#~ msgid "network"
-#~ msgstr "xarxa"
-
-#~ msgid "other"
-#~ msgstr "altres"
-
-#~ msgid "programming"
-#~ msgstr "programació"
-
-#~ msgid "publishing"
-#~ msgstr "publicació"
-
-#~ msgid "science"
-#~ msgstr "ciència"
-
 #~ msgid "servers"
 #~ msgstr "servidors"
-
-#~ msgid "software"
-#~ msgstr "programari"
-
-#~ msgid "system"
-#~ msgstr "sustema"
-
-#~ msgid "unknown"
-#~ msgstr "desconegut"

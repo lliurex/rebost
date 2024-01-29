@@ -294,7 +294,7 @@ class details(QStackedWindowItem):
 		layResources.addWidget(self.screenShot)
 		layResources.addWidget(self.lblHomepage)
 		self.box.addWidget(resources,4,0,1,3,Qt.AlignTop)
-		self.box.setSpacing(0)
+		#self.box.setSpacing(0)
 		self.setLayout(self.box)
 		self.box.setColumnStretch(0,0)
 		self.box.setColumnStretch(1,0)

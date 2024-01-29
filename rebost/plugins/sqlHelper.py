@@ -13,7 +13,7 @@ import appimageHelper
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.gui=False
 		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
@@ -216,9 +216,35 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
+	def _filterUpgradables(self,rows,user):
+		filterData=[]
+		for pkgname,strpkg in rows:
+			pkg=json.loads(strpkg)
+			states=pkg.get('state',{})
+			installed=pkg.get('installed',{})
+			if isinstance(installed,dict)==False:
+				installed={}
+			versions=pkg.get('versions',{})
+			for bundle,state in states.items():
+				if state=="0":
+					if bundle!="zomando":
+						if bundle=='appimage':
+							self._debug("Upgrading {} info...".format(pkg.get('pkgname','')))
+							ret=self._showPackage(pkg.get('pkgname'),user)
+							retname,retdata=ret[0]
+							app=json.loads(retdata)
+							versions=app.get('versions',{})
+							self._debug(app)
+						installedStr=installed.get(bundle,0)
+						if ((installedStr!=versions.get(bundle,0)) and (installedStr!=0)):
+							filterData.append(strpkg)
+		return(filterData)
+	#def _filterUpgradables
+
 	def _listPackages(self,category='',limit=0,**kwargs):
 		installed=kwargs.get('installed',False)
 		upgradable=kwargs.get('upgradable',False)
+		user=kwargs.get('user',"")
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -251,6 +277,8 @@ class sqlHelper():
 			query="PRAGMA case_sensitive_like = 0"
 			cursor.execute(query)
 		self.closeConnection(db)
+		if upgradable==True:
+			rows=self._filterUpgradables(rows,user)
 		return(rows)
 	#def _listPackages
 

@@ -414,6 +414,7 @@ class portrait(QStackedWindowItem):
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
 		app=self.rc.showApp(args[0].get('name',''))
+		self.setChanged(False)
 		self.parent.setCurrentStack(idx=3,parms=app)
 	#def _loadDetails
 
@@ -425,7 +426,7 @@ class portrait(QStackedWindowItem):
 
 	def updateScreen(self):
 		self._loadData(self.appsLoaded,self.appsToLoad)
-		self.table.show()
+		#self.table.show()
 		self.setCursor(self.oldcursor)
 	#def _udpate_screen
 

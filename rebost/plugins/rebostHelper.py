@@ -11,6 +11,7 @@ import logging
 import tempfile
 import subprocess
 import time
+import flatpakHelper
 
 DBG=False
 path="/var/log/rebost.log"
@@ -377,12 +378,12 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
-		try:
-			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
-		except Exception as e:
-			_debug("Helper: {}".format(e))
-			print("Generate_epi error {}".format(e))
-			retCode=1
+#		try:
+		_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
+#		except Exception as e:
+#			_debug("Helper: {}".format(e))
+#			print("Generate_epi error {}".format(e))
+#			retCode=1
 		if os.path.isfile(epiScript):
 			os.chmod(epiScript,0o755)
 	return(epiScript)

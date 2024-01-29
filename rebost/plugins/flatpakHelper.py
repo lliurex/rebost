@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -53,6 +53,8 @@ class flatpakHelper():
 		if update:
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			#Check state of packages
+			rebostPkgList=self._generate_store(rebostPkgList)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
@@ -60,6 +62,7 @@ class flatpakHelper():
 				f.write(storeMd5)
 		else:
 			self._debug("Skip update")
+	#def _loadStore(self):
 
 	def _chkNeedUpdate(self,store):
 		update=True
@@ -132,7 +135,12 @@ class flatpakHelper():
 		return(srcDir,flInst)
 	#def _get_flatpak_metadata
 
-	def _generate_store(self,store,flInst,srcDir):
+	def _generate_store(self,flInst,rebostPkgList):
+		installedApps=flInst.list_installed_refs()
+		print(installedApps)
+		return(rebostPkgList)
+
+	def _generate_store2(self,store,flInst,srcDir):
 		added=[]
 		rebostPkgList=[]
 		for pkg in store.get_apps():

@@ -54,7 +54,18 @@ class flatpakHelper():
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			#Check state of packages
-			rebostPkgList=self._generate_store(rebostPkgList)
+			installedRefs=self._getInstalledRefs()
+			installed=[]
+			for i in installedRefs:
+				installed.append(i.get_name().lower())
+			for pkg in rebostPkgList:
+				if pkg["id"] in installed:
+					installed.remove(pkg["id"])
+					pkg["installed"].update({"flatpak":pkg["versions"]["flatpak"]})
+					pkg["state"].update({"flatpak":"0"})
+					if len(installed)==0:
+						print("ALL PROCESSED!!")
+						break
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
@@ -87,6 +98,7 @@ class flatpakHelper():
 		progress=0
 		flInst=''
 		store=appstream.Store()
+		tmpStore=appstream.Store()
 		#metadata=appstream.Metadata()
 		(srcDir,flInst)=self._get_flatpak_metadata()
 		if srcDir=='':
@@ -97,17 +109,21 @@ class flatpakHelper():
 			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
 			#	fcontent=f.read()
 			#store.from_xml(fcontent)
-			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
+			tmpStore.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
 		#self._debug("Formatting flatpak metadata")
-		for app in store.get_apps():
+		for app in tmpStore.get_apps():
+			if app.get_kind() not in [appstream.AppKind.DESKTOP,appstream.AppKind.ADDON,appstream.AppKind.WEB_APP]:
+				continue
 			idx=app.get_id()
 			icon=self._get_app_icons(srcDir,idx)
 			if icon:
 				app.add_icon(icon)
+				store.add_app(app)
 		self._debug("End loading flatpak metadata")
 		return(store)
+	#def _get_flatpak_catalogue
 
 	def _get_flatpak_metadata(self):
 		#Get all the remotes, copy appstream to wrkdir
@@ -135,10 +151,18 @@ class flatpakHelper():
 		return(srcDir,flInst)
 	#def _get_flatpak_metadata
 
-	def _generate_store(self,flInst,rebostPkgList):
-		installedApps=flInst.list_installed_refs()
-		print(installedApps)
-		return(rebostPkgList)
+	def _getInstalledRefs(self):
+		flInst=None
+		installedApps=[]
+		try:
+			flInst=Flatpak.get_system_installations()
+		except Exception as e:
+			print("Error getting flatpak remote: {}".format(e))
+		if isinstance(flInst,list):
+			for inst in flInst:
+				installedApps.extend(inst.list_installed_refs())
+		return(installedApps)
+	#def _getInstalledRefs
 
 	def _generate_store2(self,store,flInst,srcDir):
 		added=[]

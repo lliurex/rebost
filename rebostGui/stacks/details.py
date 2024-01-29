@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import sys
 import os
-from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
+from PySide2.QtWidgets import QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+#from appconfig.appConfigStack import appConfigStack as confStack
+from QtExtraWidgets import QScreenShotContainer,QScrollLabel,QStackedWindowItem
 from rebost import store
 import subprocess
 import json
@@ -23,11 +23,11 @@ i18n={
 	"APPUNKNOWN":_("The app could not be loaded. Perhaps it's not in LliureX catalogue and thus it can't be installed"),
 	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
-	"DESCRIPTION":_("Show application detail"),
+	"MENU":_("Show application detail"),
 	"ERRUNKNOWN":_("Unknown error"),
 	"FORMAT":_("Format"),
 	"INSTALL":_("Install"),
-	"MENUDESCRIPTION":_("Navigate through all applications"),
+	"DESC":_("Navigate through all applications"),
 	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
 	"RUN":_("Open"),
@@ -73,7 +73,8 @@ class QLabelRebostApp(QLabel):
 
 	def loadImg(self,app):
 		img=app.get('icon','')
-		self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
+		aux=QScreenShotContainer()
+		self.scr=aux.loadScreenShot(img,self.cacheDir)
 		icn=''
 		if os.path.isfile(img):
 			icn=QtGui.QPixmap.fromImage(img)
@@ -96,10 +97,16 @@ class QLabelRebostApp(QLabel):
 	#def load
 #class QLabelRebostApp
 
-class details(confStack):
+class details(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
 		self._debug("details load")
+		self.setProps(shortDesc=i18n.get("MENU"),
+			longDesc=i18n.get("DESC"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=3,
+			visible=True)
 		self.menu_description=i18n.get('MENUDESCRIPTION')
 		self.description=i18n.get('DESCRIPTION')
 		self.icon=('application-x-desktop')
@@ -121,7 +128,7 @@ class details(confStack):
 
 	def _return(self):
 		self.setWindowTitle("LliureX Rebost")
-		self.stack.gotoStack(idx=1,parms="")
+		self.parent.setCurrentStack(1)
 	#def _return
 
 	def _processStreams(self,args):
@@ -227,7 +234,7 @@ class details(confStack):
 		self.updateScreen()
 	#def _getEpiResults
 
-	def _load_screen(self):
+	def __initScreen__(self):
 		self.box=QGridLayout()
 		self.btnBack=QPushButton()
 		self.btnBack.setIcon(QtGui.QIcon.fromTheme("go-previous"))
@@ -270,7 +277,7 @@ class details(confStack):
 		self.lstInfo=QListWidget()
 		self.lstInfo.currentRowChanged.connect(self._setLauncherOptions)	
 		layInfo.addWidget(self.lstInfo)
-		self.lblDesc=appconfigControls.QScrollLabel()
+		self.lblDesc=QScrollLabel()
 		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
 		layInfo.addWidget(self.lblDesc)
@@ -281,7 +288,7 @@ class details(confStack):
 		resources.setLayout(layResources)
 		self.lblHomepage=QLabel('<a href="http://lliurex.net">Homepage: lliurex.net</a>')
 		self.lblHomepage.setOpenExternalLinks(True)
-		self.screenShot=appconfigControls.QScreenShotContainer()
+		self.screenShot=QScreenShotContainer()
 		self.screenShot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.screenShot.setStyleSheet("margin:0px;padding:0px;")
 		layResources.addWidget(self.screenShot)

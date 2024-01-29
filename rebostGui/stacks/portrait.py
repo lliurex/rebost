@@ -4,9 +4,9 @@ import os
 from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+from QtExtraWidgets import QSearchBox,QCheckableComboBox,QTableTouchWidget,QScreenShotContainer,QStackedWindowItem
 from rebost import store 
+from appconfig import appConfig
 import json
 import random
 import gettext
@@ -15,8 +15,8 @@ QString=type("")
 
 i18n={
 	"CONFIG":_("Portrait"),
-	"DESCRIPTION":_("Show applications"),
-	"MENUDESCRIPTION":_("Navigate through all applications"),
+	"MENU":_("Show applications"),
+	"DESC":_("Navigate through all applications"),
 	"TOOLTIP":_(""),
 	"SEARCH":_("Search"),
 	"ALL":_("All"),
@@ -50,7 +50,8 @@ class QPushButtonRebostApp(QPushButton):
 		if icn:
 			self.load(icn)
 		elif img.startswith('http'):
-			self.scr=appconfigControls.loadScreenShot(img,self.cacheDir)
+			aux=QScreenShotContainer()
+			self.scr=aux.loadScreenShot(img,self.cacheDir)
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
 		self.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
@@ -84,15 +85,18 @@ class QPushButtonRebostApp(QPushButton):
 	#def mousePressEvent
 #class QPushButtonRebostApp
 
-class portrait(confStack):
+class portrait(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
 		self.enabled=True
 		self._debug("portrait load")
-		self.menu_description=i18n.get('MENUDESCRIPTION')
-		self.description=i18n.get('DESCRIPTION')
-		self.icon=('application-x-desktop')
-		self.tooltip=i18n.get('TOOLTIP')
+		self.setProps(shortDesc=i18n.get("DESC"),
+			longDesc=i18n.get("MENU"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=1,
+			visible=True)
+		self.appconfig=appConfig.appConfig()
 		self.i18nCat={}
 		self.config={}
 		self.index=1
@@ -109,8 +113,8 @@ class portrait(confStack):
 		self.oldcursor=self.cursor()
 	#def __init__
 
-	def _load_screen(self):
-		self.config=self.getConfig()
+	def __initScreen__(self):
+		self.config=self.appconfig.getConfig()
 		self.box=QGridLayout()
 		self.setLayout(self.box)
 		wdg=QWidget()
@@ -126,7 +130,7 @@ class portrait(confStack):
 		self._populateCategories()
 		self.apps=self._getAppList()
 		self._shuffleApps()
-		self.btnFilters=appconfigControls.QCheckableComboBox()
+		self.btnFilters=QCheckableComboBox()
 		#self.btnFilters.clicked.connect(self._filterView)
 		self.btnFilters.activated.connect(self._selectFilters)
 		self._loadFilters()
@@ -134,14 +138,14 @@ class portrait(confStack):
 		hbox.addWidget(self.btnFilters)
 		wdg.setLayout(hbox)
 		self.box.addWidget(wdg,0,0,1,1,Qt.AlignLeft)
-		self.searchBox=appconfigControls.QSearchBox()
+		self.searchBox=QSearchBox()
 		self.searchBox.setToolTip(i18n["SEARCH"])
 		self.searchBox.setPlaceholderText(i18n["SEARCH"])
 		self.box.addWidget(self.searchBox,0,1,1,1,Qt.AlignRight)
 		self.searchBox.returnPressed.connect(self._searchApps)
 		self.searchBox.textChanged.connect(self._resetSearchBtnIcon)
 		self.searchBox.clicked.connect(self._searchAppsBtn)
-		self.table=appconfigControls.QTableTouchWidget()
+		self.table=QTableTouchWidget()
 		self.table.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.table.setColumnCount(3)
 		self.table.setShowGrid(False)
@@ -410,13 +414,13 @@ class portrait(confStack):
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
 		app=self.rc.showApp(args[0].get('name',''))
-		self.stack.gotoStack(idx=3,parms=app)
+		self.parent.setCurrentStack(idx=3,parms=app)
 	#def _loadDetails
 
 	def _gotoSettings(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=2,parms="")
+		self.parent.setCurrentStack(idx=2,parms="")
 	#def _gotoSettings
 
 	def updateScreen(self):

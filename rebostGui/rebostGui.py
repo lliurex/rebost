@@ -6,27 +6,23 @@ import json
 from PySide2.QtWidgets import QApplication,QDialog,QGridLayout,QLabel,QPushButton,QLayout,QSizePolicy,QDesktopWidget
 from PySide2.QtCore import Qt
 from PySide2 import QtGui
-from appconfig.appConfigScreen import appConfigScreen as appConfig
-from appconfig import appconfigControls
+from QtExtraWidgets import QStackedWindow
 import gettext
 import time
 _ = gettext.gettext
 
 app=QApplication(["RebostGui"])
-config=appConfig("RebostGui",{'app':app})
-config.setWindowTitle("Lliurex Rebost")
-config.setRsrcPath("/usr/share/rebost/rsrc")
-config.setIcon('rebost')
-config.setWiki('https://wiki.edu.gva.es/lliurex/tiki-index.php?page=Accesibilidad%20en%20Lliurex:%20Access%20Helper')
-config.setBanner('rebost_banner.svg')
-config.hideNavMenu(True)
-#config.setBackgroundImage('repoman_login.svg')
-config.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],".config/rebost")},confFile="store.json")
-config.Show()
+config=QStackedWindow()
+config.disableNavBar(True)
+if os.path.islink(__file__)==True:
+	abspath=os.path.join(os.path.dirname(__file__),os.path.dirname(os.readlink(__file__)))
+else:
+	abspath=os.path.dirname(__file__)
+config.addStacksFromFolder(os.path.join(abspath,"stacks"))
+config.show()
 config.setMinimumWidth(config.sizeHint().width()*1.5)
 config.setMinimumHeight(config.sizeHint().height()*1.1)
 if len(sys.argv)>1:
 	if ("://") in sys.argv[1] or os.path.isfile(sys.argv[1]):
-		config.gotoStack(3,parms=sys.argv[1])
-
+		config.setCurrentStack(3,parms=sys.argv[1])
 app.exec_()

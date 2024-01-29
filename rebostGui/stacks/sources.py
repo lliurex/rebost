@@ -4,8 +4,9 @@ import os,subprocess,time,shutil
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
-from appconfig.appConfigStack import appConfigStack as confStack
-from appconfig import appconfigControls
+#from appconfig.appConfigStack import appConfigStack as confStack
+from appconfig import appConfig
+from QtExtraWidgets import QStackedWindowItem
 from rebost import store
 import json
 import random
@@ -15,8 +16,8 @@ QString=type("")
 
 i18n={
 	"CONFIG":_("Sources"),
-	"DESCRIPTION":_("Show software sources"),
-	"MENUDESCRIPTION":_("Configure software sources"),
+	"DESC":_("Show software sources"),
+	"MENU":_("Configure software sources"),
 	"TOOLTIP":_(""),
 	"RELOAD":_("Reload catalogues"),
 	"RELOAD_TOOLTIP":_("Reload info from sources"),
@@ -78,18 +79,21 @@ class setWaiting(QThread):
 	#def stop
 #class setWaiting
 	
-class sources(confStack):
+class sources(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
-		self._debug("details load")
-		self.menu_description=i18n.get('MENUDESCRIPTION')
-		self.description=i18n.get('DESCRIPTION')
-		self.icon=('application-x-desktop')
-		self.tooltip=i18n.get('TOOLTIP')
+		self._debug("sources load")
+		self.setProps(shortDesc=i18n.get("MENU"),
+			longDesc=i18n.get("DESC"),
+			icon="application-x-desktop",
+			tooltip=i18n.get("TOOLTIP"),
+			index=2,
+			visible=True)
 		self.index=2
 		self.enabled=True
 		self.visible=False
 		self.rc=store.client()
+		self.appconfig=appConfig.appConfig()
 		self.changed=[]
 		self.config={}
 		self.app={}
@@ -97,7 +101,7 @@ class sources(confStack):
 		self.oldcursor=self.cursor()
 	#def __init__
 
-	def _load_screen(self):
+	def __initScreen__(self):
 		self.box=QGridLayout()
 		icn=QtGui.QIcon.fromTheme("go-previous")
 		self.btnBack=QPushButton()
@@ -186,6 +190,7 @@ class sources(confStack):
 	#def _reloadCatalogue
 
 	def _endReloadCatalogue(self):
+		print("****")
 		self.rc=None
 		try:
 			self.rc=store.client()
@@ -202,14 +207,14 @@ class sources(confStack):
 	def _return(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
-		self.stack.gotoStack(idx=1,parms="1")
+		self.parent.setCurrentStack(1,parms="1")
 		self.setCursor(self.oldcursor)
 	#def _return
 
 	def updateScreen(self):
 		self.changes=True
 		self.refresh=True
-		self.config=self.getConfig()
+		self.config=self.appconfig.getConfig()
 		self.chkSnap.setChecked(True)
 		self.chkFlatpak.setChecked(True)
 		self.chkImage.setChecked(True)

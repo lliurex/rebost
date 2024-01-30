@@ -13,6 +13,8 @@ _ = gettext.gettext
 
 app=QApplication(["RebostGui"])
 config=QStackedWindow()
+icn=QtGui.QIcon.fromTheme("rebost")
+config.setWindowIcon(icn)
 config.disableNavBar(True)
 if os.path.islink(__file__)==True:
 	abspath=os.path.join(os.path.dirname(__file__),os.path.dirname(os.readlink(__file__)))

@@ -4,9 +4,10 @@ import os
 from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal
-from QtExtraWidgets import QSearchBox,QCheckableComboBox,QTableTouchWidget,QScreenShotContainer,QStackedWindowItem
+from QtExtraWidgets import QSearchBox,QCheckableComboBox,QTableTouchWidget,QScreenShotContainer,QStackedWindowItem,QInfoLabel
 from rebost import store 
 from appconfig import appConfig
+import subprocess
 import json
 import random
 import gettext
@@ -14,16 +15,18 @@ _ = gettext.gettext
 QString=type("")
 
 i18n={
-	"CONFIG":_("Portrait"),
-	"MENU":_("Show applications"),
-	"DESC":_("Navigate through all applications"),
-	"TOOLTIP":_(""),
-	"SEARCH":_("Search"),
 	"ALL":_("All"),
-	"FILTERS":_("Filters"),
 	"AVAILABLE":_("Available"),
+	"CONFIG":_("Portrait"),
+	"DESC":_("Navigate through all applications"),
+	"FILTERS":_("Filters"),
 	"INSTALLED":_("Installed"),
-	"UPGRADABLE":_("Upgradables")
+	"LLXUP":_("Launch LliurexUp"),
+	"MENU":_("Show applications"),
+	"SEARCH":_("Search"),
+	"TOOLTIP":_(""),
+	"UPGRADABLE":_("Upgradables"),
+	"UPGRADES":_("There're upgrades available")
 	}
 
 class QPushButtonRebostApp(QPushButton):
@@ -41,19 +44,7 @@ class QPushButtonRebostApp(QPushButton):
 		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
-		icn=''
-		if os.path.isfile(img):
-			icn=QtGui.QPixmap.fromImage(img)
-		elif img=='':
-			icn2=QtGui.QIcon.fromTheme(self.app.get('pkgname'))
-			icn=icn2.pixmap(128,128)
-		if icn:
-			self.load(icn)
-		elif img.startswith('http'):
-			aux=QScreenShotContainer()
-			self.scr=aux.loadScreenShot(img,self.cacheDir)
-			self.scr.start()
-			self.scr.imageLoaded.connect(self.load)
+		self.loadImg(self.app)
 		self.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
 		lay=QHBoxLayout()
 		lay.addStretch()
@@ -62,6 +53,40 @@ class QPushButtonRebostApp(QPushButton):
 		self.setDefault(True)
 		self.setLayout(lay)
 	#def __init__
+
+	def loadImg(self,app):
+		img=app.get('icon','')
+		aux=QScreenShotContainer()
+		self.scr=aux.loadScreenShot(img,self.cacheDir)
+		icn=''
+		if os.path.isfile(img):
+			icn=QtGui.QPixmap.fromImage(img)
+		elif img=='':
+			icn2=QtGui.QIcon.fromTheme(app.get('pkgname'))
+			icn=icn2.pixmap(128,128)
+		elif "flathub" in img:
+			tmp=img.split("/")
+			if "icons" in tmp:
+				idx=tmp.index("icons")
+				prefix=tmp[:idx-1]
+				iconPath=os.path.join("/".join(prefix),"active","/".join(tmp[idx:]))
+				if os.path.isfile(iconPath):
+					icn=QtGui.QPixmap.fromImage(iconPath)
+			else:
+				print(tmp)
+
+		if icn:
+			wsize=128
+			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
+				wsize=235
+			self.icon.setPixmap(icn.scaled(wsize,128))
+		elif img.startswith('http'):
+			print("Searching {}".format(img))
+			self.scr.start()
+			self.scr.imageLoaded.connect(self.load)
+		else:
+			print("NOT: {}".format(icn))
+	#def loadImg
 	
 	def load(self,*args):
 		img=args[0]
@@ -161,8 +186,17 @@ class portrait(QStackedWindowItem):
 		icn=QtGui.QIcon.fromTheme("settings-configure")
 		btnSettings.setIcon(icn)
 		btnSettings.clicked.connect(self._gotoSettings)
-		self.box.addWidget(btnSettings,2,1,1,1,Qt.AlignRight)
+		self.box.addWidget(btnSettings,2,1,1,1,Qt.Alignment(-1))
+		self.lblInfo=QInfoLabel()
+		self.lblInfo.setActionText("UPGRADE")
+		self.lblInfo.setText(i18n.get("UPGRADES"))
+		self.lblInfo.clicked.connect(self._launchLlxUp)
+		self.box.addWidget(self.lblInfo,2,0,1,1,Qt.Alignment(1))
+		self._getUpgradables()
 	#def _load_screen
+
+	def _launchLlxUp(self):
+		subprocess.run(["pkexec","lliurex-up"])
 
 	def _loadFilters(self):
 		self.btnFilters.clear()
@@ -213,6 +247,13 @@ class portrait(QStackedWindowItem):
 		self.appsRaw=apps
 		return(apps)
 	#def _getAppList
+
+	def _getUpgradables(self):
+		self.lblInfo.setVisible(False)
+		apps=json.loads(self.rc.getUpgradableApps())
+		if len(apps)>0:
+			self.lblInfo.setVisible(True)
+	#def _getUpgradables
 
 	def _shuffleApps(self):
 		random.shuffle(self.apps)

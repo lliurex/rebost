@@ -222,6 +222,7 @@ class sqlHelper():
 			pkg=json.loads(strpkg)
 			states=pkg.get('state',{})
 			installed=pkg.get('installed',{})
+			print(installed)
 			if isinstance(installed,dict)==False:
 				installed={}
 			versions=pkg.get('versions',{})
@@ -236,6 +237,14 @@ class sqlHelper():
 							versions=app.get('versions',{})
 							self._debug(app)
 						installedStr=installed.get(bundle,0)
+						if bundle=='flatpak':
+							print("aaaaaaaaaaaaaaaaaaaaa")
+							print(installed)
+							print("aaaaaaaaaaaaaaaaaaaaa")
+							print("|||@@@")
+							print(versions)
+							print(installedStr)
+							print("|||@@@")
 						if ((installedStr!=versions.get(bundle,0)) and (installedStr!=0)):
 							filterData.append(strpkg)
 		return(filterData)
@@ -266,7 +275,7 @@ class sqlHelper():
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
-		if (len(rows)<limit) or (len(rows)==0):
+		if len(rows)<limit or len(rows)==0 and (upgradable==False and installed==False):
 			query="PRAGMA case_sensitive_like = 1"
 			cursor.execute(query)
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
@@ -539,10 +548,14 @@ class sqlHelper():
 			cat2=categories[-2]
 		if isinstance(pkgdataJson['versions'],dict):
 			states=pkgdataJson.get('state')
-			pkgdataJson['installed']={}
+			#pkgdataJson['installed']={}
 			for bun,state in states.items():
 				if state=="0":
-					pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get(bun,0)
+					if bun not in pkgdataJson["installed"].keys():
+						pkgdataJson['installed'][bun]=pkgdataJson.get('versions',{}).get(bun,0)
+				else:
+					if bun in pkgdataJson["installed"].keys():
+						pkgdataJson["installed"].pop(bun)
 		pkgdata=str(json.dumps(pkgdataJson))
 		return([pkgname,pkgdata,cat0,cat1,cat2],categories)
 	#def _processPkgData

@@ -55,16 +55,30 @@ class flatpakHelper():
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			#Check state of packages
 			installedRefs=self._getInstalledRefs()
-			installed=[]
+			installed={}
 			for i in installedRefs:
-				installed.append(i.get_name().lower())
+				installed[i.get_name().lower()]=i.get_appdata_version()
+			upgradableRefs=self._getUpgradableRefs()
+			upgradable={}
+			for i in upgradableRefs:
+				upgradable[i.get_name().lower()]=i.get_appdata_version()
+				a=i.load_metadata()
+				print(a.__dict__)
 			for pkg in rebostPkgList:
 				if pkg["id"] in installed:
-					installed.remove(pkg["id"])
-					pkg["installed"].update({"flatpak":pkg["versions"]["flatpak"]})
+					local=installed.pop(pkg["id"])
+					if local==None:
+						local="runtime"
+					pkg["installed"].update({"flatpak":local})
 					pkg["state"].update({"flatpak":"0"})
+					if pkg["id"] in upgradable.keys():
+						remote=upgradable.pop(pkg["id"])
+						if remote==local and remote!=None:
+							remote+="+1"
+						elif remote==None:
+							remote="runtime+1"
+						pkg["versions"].update({"flatpak":remote})
 					if len(installed)==0:
-						print("ALL PROCESSED!!")
 						break
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
@@ -114,13 +128,13 @@ class flatpakHelper():
 			print(e)
 		#self._debug("Formatting flatpak metadata")
 		for app in tmpStore.get_apps():
-			if app.get_kind() not in [appstream.AppKind.DESKTOP,appstream.AppKind.ADDON,appstream.AppKind.WEB_APP]:
-				continue
+			#if app.get_kind() not in [appstream.AppKind.DESKTOP,appstream.AppKind.ADDON,appstream.AppKind.WEB_APP]:
+			#	continue
 			idx=app.get_id()
 			icon=self._get_app_icons(srcDir,idx)
 			if icon:
 				app.add_icon(icon)
-				store.add_app(app)
+			store.add_app(app)
 		self._debug("End loading flatpak metadata")
 		return(store)
 	#def _get_flatpak_catalogue
@@ -162,6 +176,19 @@ class flatpakHelper():
 			for inst in flInst:
 				installedApps.extend(inst.list_installed_refs())
 		return(installedApps)
+	#def _getInstalledRefs
+
+	def _getUpgradableRefs(self):
+		flInst=None
+		upgradableApps=[]
+		try:
+			flInst=Flatpak.get_system_installations()
+		except Exception as e:
+			print("Error getting flatpak remote: {}".format(e))
+		if isinstance(flInst,list):
+			for inst in flInst:
+				upgradableApps.extend(inst.list_installed_refs_for_update())
+		return(upgradableApps)
 	#def _getInstalledRefs
 
 	def _generate_store2(self,store,flInst,srcDir):
@@ -246,6 +273,11 @@ class flatpakHelper():
 		if iconPath!='':
 			icon=appstream.Icon()
 			icon.set_kind(appstream.IconKind.LOCAL)
+			tmp=iconPath.split("/")
+			idx=tmp.index("icons")
+			if idx>0 and "flatpak" in iconPath:
+				prefix=tmp[:idx-1]
+				iconPath=os.path.join("/".join(prefix),"active","/".join(tmp[idx:]))
 			icon.set_filename(iconPath)
 		return(icon)
 	#def _get_app_icons

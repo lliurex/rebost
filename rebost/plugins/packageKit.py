@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import gi
+import gi,shutil
 from gi.repository import Gio
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
@@ -57,14 +57,13 @@ class packageKit():
 				pkcon.refresh_cache(False,None,self._load_callback,None)
 			except Exception as e:
 				print(e)
-		#pkList=pkcon.get_packages(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
 		pkList=pkcon.get_packages(packagekit.FilterEnum.GUI, None, self._load_callback, None)
 		pkgSack=pkList.get_package_sack()
 		#Needed for controlling updates
 		gioFile=Gio.file_new_tmp()
 		pkgSack.to_file(gioFile[0])
 		gPath=gioFile[0].get_path()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.GUI, None, self._load_callback, None)
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		newMd5=""
 		pkgIds=self._getChanges(gPath)
@@ -98,6 +97,7 @@ class packageKit():
 				oldPkgList=f.readlines()
 		with open(gPath,'r') as f:
 			newPkgList=f.readlines()
+		shutil.copy(gPath,"/tmp/a")
 		pkgList= list(set(newPkgList)-set(oldPkgList))
 		with open(self.pkgFile,'w') as f:
 			f.writelines(newPkgList)
@@ -228,7 +228,7 @@ class packageKit():
 		for pkg in pkgList.get_details_array():
 			dismiss=["admin-tools","other","system"]
 			cat=pkg.get_group().to_string(pkg.get_group()).lower().strip()
-			if (cat in dismiss)==False:
+			if (cat in dismiss)==False or "lliurex" in pkg.get_url():
 				pkgId=pkg.get_package_id().split(";")
 				name=pkgId[0]
 				if name.startswith("zero-lliurex")==False:

@@ -36,6 +36,7 @@ class QPushButtonRebostApp(QPushButton):
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		if os.path.exists(self.cacheDir)==False:
 			os.makedirs(self.cacheDir)
+		self.setObjectName("rebostapp")
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setToolTip("<p>{0}</p>".format(self.app.get('summary',self.app.get('name'))))
@@ -86,12 +87,30 @@ class QPushButtonRebostApp(QPushButton):
 			self.scr.imageLoaded.connect(self.load)
 		else:
 			print("NOT: {}".format(icn))
+		if "0" not in str(self.app.get('state',1)):
+			#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
+			self._applyDecoration()
 	#def loadImg
+
+	def _applyDecoration(self):
+		self.setAttribute(Qt.WA_StyledBackground, True)
+		bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Mid))
+		color=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Base))
+		self.setAutoFillBackground(True)
+		pal=self.palette()
+		#pal.setColor(QPalette.Window,bcolor)
+		rgbColor="{0},{1},{2}".format(color.red(),color.green(),color.blue())
+		rgbBcolor="{0},{1},{2}".format(bcolor.red(),bcolor.green(),bcolor.blue())
+		self.setStyleSheet("""#rebostapp {
+			background-color: rgb(%s); 
+			border-style: solid; 
+			border-color: rgb(%s); 
+			border-width: 1px; 
+			border-radius: 2px;}"""%(rgbColor,rgbBcolor))
+
 	
 	def load(self,*args):
 		img=args[0]
-		if "0" in str(self.app.get('state',1)):
-			self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 		self.icon.setPixmap(img.scaled(128,128))
 	#def load
 	
@@ -188,10 +207,11 @@ class portrait(QStackedWindowItem):
 		btnSettings.clicked.connect(self._gotoSettings)
 		self.box.addWidget(btnSettings,2,1,1,1,Qt.Alignment(-1))
 		self.lblInfo=QInfoLabel()
-		self.lblInfo.setActionText("UPGRADE")
+		self.lblInfo.setActionText(i18n.get("LLXUP"))
+		self.lblInfo.setActionIcon("lliurex-up")
 		self.lblInfo.setText(i18n.get("UPGRADES"))
 		self.lblInfo.clicked.connect(self._launchLlxUp)
-		self.box.addWidget(self.lblInfo,2,0,1,1,Qt.Alignment(1))
+		self.box.addWidget(self.lblInfo,2,0,1,1)
 		self._getUpgradables()
 	#def _load_screen
 

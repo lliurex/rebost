@@ -25,6 +25,7 @@ i18n={
 	"CONFIG":_("Details"),
 	"MENU":_("Show application detail"),
 	"ERRUNKNOWN":_("Unknown error"),
+	"ERRLAUNCH":_("Error opening"),
 	"FORMAT":_("Format"),
 	"INSTALL":_("Install"),
 	"DESC":_("Navigate through all applications"),
@@ -187,7 +188,9 @@ class details(QStackedWindowItem):
 
 	def _runApp(self):
 		bundle=self.lstInfo.currentItem().text().lower().split(" ")[-1]
-		self.helper.runApp(self.app,bundle)
+		proc=self.helper.runApp(self.app,bundle)
+		if proc.returncode!=0:
+			self.showMsg("{} {}".format(i18n.get("ERRLAUNCH"),self.app["name"]))
 	#def _runApp
 
 	def _genericEpiInstall(self):
@@ -305,7 +308,7 @@ class details(QStackedWindowItem):
 		self.wdgError=QWidget()
 		errorLay=QGridLayout()
 		self.wdgError.setLayout(errorLay)
-		self.lblBkg=QLabel()
+		self.lblBkg=QLabel(i18n.get("APPUNKNOWN"))
 		errorLay.addWidget(self.lblBkg,0,0,1,1)
 		self.wdgError.setVisible(False)
 		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
@@ -346,9 +349,10 @@ class details(QStackedWindowItem):
 	#def _updateScreen
 
 	def _onError(self):
+		self._debug("Error detected")
 		qpal=QtGui.QPalette()
 		color=qpal.color(qpal.Dark)
-		self.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
 		self.wdgError.setVisible(True)
 		self.lstInfo.setVisible(False)
 		self.btnInstall.setVisible(False)
@@ -369,14 +373,13 @@ class details(QStackedWindowItem):
 		item=self.lstInfo.currentItem()
 		bundle=""
 		release=""
-		rgb=(0,0,0,0)
 		if item==None:
 			self._onError()
 			return()
 		bundle=item.text().lower().split(" ")[-1]
 		if bundle=="package":
-			bundle=""
-		if self.lstInfo.count()>1:
+			bundle="app" # Only for show purposes. "App" is friendly than "package"
+		if self.lstInfo.count()>0:
 			self.btnInstall.setText("{0} {1}".format(i18n.get("INSTALL"),bundle))
 			self.btnRemove.setText("{0} {1}".format(i18n.get("REMOVE"),bundle))
 			self.btnLaunch.setText("{0} {1}".format(i18n.get("RUN"),bundle))
@@ -388,12 +391,17 @@ class details(QStackedWindowItem):
 	#def _setLauncherOptions
 
 	def _setListState(self,item):
-		rgb=item.background().color().getRgb()
-		if rgb[0]==R and rgb[1]==G and rgb[2]==B and rgb[3]==A:
+		bcurrent=item.background().color()
+		bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark)).toRgb()
+		if bcurrent==bcolor:
+			rgb=bcurrent.getRgb()
 			self.btnInstall.setVisible(False)
 			if self.app.get("bundle",{}).get("zomando","")!="":
 				self.btnLaunch.setVisible(False)
-				self.btnRemove.setVisible(False)
+				if "zomando" in item.text():
+					self.btnRemove.setVisible(False)
+				else:
+					self.btnRemove.setVisible(True)
 			else:
 				self.btnRemove.setVisible(True)
 				self.btnLaunch.setVisible(True)
@@ -405,9 +413,9 @@ class details(QStackedWindowItem):
 			else:
 				self._onError()
 				return()
-			if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
-				self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
-				self.lstInfo.setCurrentRow(1)
+	#		if pkgState==1 and self.app.get("bundle",{}).get("zomando","")!="":
+		#		self.btnInstall.setText("{}".format(i18n.get("INSTALL")))
+	#			self.lstInfo.setCurrentRow(1)
 			self.lstInfo.setStyleSheet("")
 			self.btnInstall.setVisible(True)
 			self.btnRemove.setVisible(False)
@@ -430,9 +438,10 @@ class details(QStackedWindowItem):
 				pkgState=self.app.get('state',{}).get("package",'1')
 				if pkgState.isdigit()==True:
 					pkgState=int(pkgState)
-				if pkgState==0:
-					bundles.remove('package')
+		#		if pkgState==0:
+		#			bundles.remove('package')
 		states=0
+		self.btnZomando.setVisible(False)
 		for bundle in bundles:
 			state=(self.app.get('state',{}).get(bundle,'1'))
 			if state.isdigit()==True:
@@ -463,20 +472,12 @@ class details(QStackedWindowItem):
 			if i in uninstalled:
 				idx+=len(installed)
 			else:
-				release.setBackground(QtGui.QColor().fromRgb(R,G,B,A))
+				#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
+				bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
+				release.setBackground(bcolor)
 			self.lstInfo.insertItem(idx,release)
-		if len(bundles)<=1 or "zomando" in bundles.keys():
-			self.lstInfo.setVisible(False)
-			if len(bundles)==1:
-				self.btnInstall.setText("{} {}".format(i18n.get("INSTALL"),self.app.get("name","")))
-			elif "zomando" in bundles.keys():
-				self.lstInfo.setVisible(False)
-				self.btnInstall.setVisible(False)
-				self.btnLaunch.setVisible(False)
-			else:
-				self.btnInstall.setEnabled(False)
-		else:
-			self.lstInfo.setVisible(True)
+		if len(bundles)<0:
+			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 		self.lstInfo.setCurrentRow(0)
 	#def _setReleasesInfo
@@ -485,12 +486,14 @@ class details(QStackedWindowItem):
 		installed=[]
 		uninstalled=[]
 		for bundle in bundles.keys():
+			if bundle=="zomando" and "package" in bundles.keys():
+				continue
 			state=self.app.get("state",{}).get(bundle,1)
 			if state.isdigit()==False:
 				state="1"
 			if int(state)==0: #installed
 				installed.append(bundle)
-			else:
+			elif bundle!="zomando":
 				uninstalled.append(bundle)
 		return(installed,uninstalled)
 	#def _classifyBundles

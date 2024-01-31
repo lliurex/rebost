@@ -477,7 +477,8 @@ def _get_package_commands(rebostpkg,user):
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
 	installCmd="apt install -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")

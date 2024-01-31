@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil
+import os,shutil,distro
 import html2text
 import gi
 gi.require_version('AppStream', '1.0')
@@ -276,10 +276,12 @@ def _componentGetHomepage(component):
 #def _componentGetHomepage
 
 def _componentFillInfo(component,pkg):
-	versionArray=["0.0"]
+	versionArray=[]
 	for release in component.get_releases():
 		versionArray.append(release.get_version())
-		versionArray.sort()
+	if len(versionArray)==0:
+		versionArray=["0.9~{}".format(distro.codename())]
+	versionArray.sort()
 	if len(component.get_bundles())>0:
 		for i in component.get_bundles():
 			if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:

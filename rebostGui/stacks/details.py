@@ -128,8 +128,8 @@ class details(QStackedWindowItem):
 	#def __init__
 
 	def _return(self):
-		self.setWindowTitle("LliureX Rebost")
-		self.parent.setCurrentStack(1)
+		self.parent.setWindowTitle("LliureX Rebost")
+		self.parent.setCurrentStack(1,parms={"refresh":True,"app":self.app})
 	#def _return
 
 	def _processStreams(self,args):
@@ -171,7 +171,7 @@ class details(QStackedWindowItem):
 		if len(self.app)<=0:
 			self._processStreams(args[0])
 		else:
-			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
+			self.parent.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
 					continue
@@ -502,6 +502,7 @@ class details(QStackedWindowItem):
 		#Reload config if app has been epified
 		if len(self.app)>0:
 			self.wdgError.setVisible(False)
+			self.lstInfo.setVisible(True)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]

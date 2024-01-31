@@ -14,7 +14,7 @@ wrap=Gio.SimpleAsyncResult()
 
 class flatpakHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self._debug("Loaded")
 		self.enabled=True
@@ -53,6 +53,33 @@ class flatpakHelper():
 		if update:
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			#Check state of packages
+			installedRefs=self._getInstalledRefs()
+			installed={}
+			for i in installedRefs:
+				installed[i.get_name().lower()]=i.get_appdata_version()
+			upgradableRefs=self._getUpgradableRefs()
+			upgradable={}
+			for i in upgradableRefs:
+				upgradable[i.get_name().lower()]=i.get_appdata_version()
+				a=i.load_metadata()
+				print(a.__dict__)
+			for pkg in rebostPkgList:
+				if pkg["id"] in installed:
+					local=installed.pop(pkg["id"])
+					if local==None:
+						local="runtime"
+					pkg["installed"].update({"flatpak":local})
+					pkg["state"].update({"flatpak":"0"})
+					if pkg["id"] in upgradable.keys():
+						remote=upgradable.pop(pkg["id"])
+						if remote==local and remote!=None:
+							remote+="+1"
+						elif remote==None:
+							remote="runtime+1"
+						pkg["versions"].update({"flatpak":remote})
+					if len(installed)==0:
+						break
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
@@ -60,6 +87,7 @@ class flatpakHelper():
 				f.write(storeMd5)
 		else:
 			self._debug("Skip update")
+	#def _loadStore(self):
 
 	def _chkNeedUpdate(self,store):
 		update=True
@@ -84,6 +112,7 @@ class flatpakHelper():
 		progress=0
 		flInst=''
 		store=appstream.Store()
+		tmpStore=appstream.Store()
 		#metadata=appstream.Metadata()
 		(srcDir,flInst)=self._get_flatpak_metadata()
 		if srcDir=='':
@@ -94,17 +123,21 @@ class flatpakHelper():
 			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
 			#	fcontent=f.read()
 			#store.from_xml(fcontent)
-			store.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
+			tmpStore.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
 		except Exception as e:
 			print(e)
 		#self._debug("Formatting flatpak metadata")
-		for app in store.get_apps():
+		for app in tmpStore.get_apps():
+			#if app.get_kind() not in [appstream.AppKind.DESKTOP,appstream.AppKind.ADDON,appstream.AppKind.WEB_APP]:
+			#	continue
 			idx=app.get_id()
 			icon=self._get_app_icons(srcDir,idx)
 			if icon:
 				app.add_icon(icon)
+			store.add_app(app)
 		self._debug("End loading flatpak metadata")
 		return(store)
+	#def _get_flatpak_catalogue
 
 	def _get_flatpak_metadata(self):
 		#Get all the remotes, copy appstream to wrkdir
@@ -132,7 +165,33 @@ class flatpakHelper():
 		return(srcDir,flInst)
 	#def _get_flatpak_metadata
 
-	def _generate_store(self,store,flInst,srcDir):
+	def _getInstalledRefs(self):
+		flInst=None
+		installedApps=[]
+		try:
+			flInst=Flatpak.get_system_installations()
+		except Exception as e:
+			print("Error getting flatpak remote: {}".format(e))
+		if isinstance(flInst,list):
+			for inst in flInst:
+				installedApps.extend(inst.list_installed_refs())
+		return(installedApps)
+	#def _getInstalledRefs
+
+	def _getUpgradableRefs(self):
+		flInst=None
+		upgradableApps=[]
+		try:
+			flInst=Flatpak.get_system_installations()
+		except Exception as e:
+			print("Error getting flatpak remote: {}".format(e))
+		if isinstance(flInst,list):
+			for inst in flInst:
+				upgradableApps.extend(inst.list_installed_refs_for_update())
+		return(upgradableApps)
+	#def _getInstalledRefs
+
+	def _generate_store2(self,store,flInst,srcDir):
 		added=[]
 		rebostPkgList=[]
 		for pkg in store.get_apps():
@@ -214,6 +273,11 @@ class flatpakHelper():
 		if iconPath!='':
 			icon=appstream.Icon()
 			icon.set_kind(appstream.IconKind.LOCAL)
+			tmp=iconPath.split("/")
+			idx=tmp.index("icons")
+			if idx>0 and "flatpak" in iconPath:
+				prefix=tmp[:idx-1]
+				iconPath=os.path.join("/".join(prefix),"active","/".join(tmp[idx:]))
 			icon.set_filename(iconPath)
 		return(icon)
 	#def _get_app_icons

@@ -166,32 +166,9 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
-	def getUpgradableApps(self,user):
+	def getUpgradableApps(self,user=""):
 		action='list'
-		ret=self.rebost.execute(action,installed=True,upgradable=True)
-		data=json.loads(ret)
-		filterData=[]
-		for strpkg in data:
-			pkg=json.loads(strpkg)
-			states=pkg.get('state',{})
-			installed=pkg.get('installed',{})
-			if isinstance(installed,dict)==False:
-				installed={}
-			versions=pkg.get('versions',{})
-			for bundle,state in states.items():
-				if state=="0":
-					if bundle!="zomando":
-						if bundle=='appimage':
-							self._debug("Upgrading {} info...".format(pkg.get('pkgname','')))
-							ret=self.show(pkg.get('pkgname'),user)
-							apps=json.loads(ret)
-							app=json.loads(apps[0])
-							versions=app.get('versions',{})
-							self._debug(app)
-						installedStr=installed.get(bundle,0)
-						if ((installedStr!=versions.get(bundle,0)) and (installedStr!=0)):
-							filterData.append(strpkg)
-		ret=json.dumps(filterData)
+		ret=self.rebost.execute(action,installed=True,upgradable=True,user=user)
 		return (ret)
 	#def getUpgradableApps(self):
 	

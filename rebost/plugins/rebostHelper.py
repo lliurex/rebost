@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil
+import os,shutil,distro
 import html2text
 import gi
 gi.require_version('AppStream', '1.0')
@@ -11,6 +11,7 @@ import logging
 import tempfile
 import subprocess
 import time
+import flatpakHelper
 
 DBG=False
 path="/var/log/rebost.log"
@@ -275,10 +276,12 @@ def _componentGetHomepage(component):
 #def _componentGetHomepage
 
 def _componentFillInfo(component,pkg):
-	versionArray=["0.0"]
+	versionArray=[]
 	for release in component.get_releases():
 		versionArray.append(release.get_version())
-		versionArray.sort()
+	if len(versionArray)==0:
+		versionArray=["0.9~{}".format(distro.codename())]
+	versionArray.sort()
 	if len(component.get_bundles())>0:
 		for i in component.get_bundles():
 			if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
@@ -377,12 +380,12 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
-		try:
-			_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
-		except Exception as e:
-			_debug("Helper: {}".format(e))
-			print("Generate_epi error {}".format(e))
-			retCode=1
+#		try:
+		_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
+#		except Exception as e:
+#			_debug("Helper: {}".format(e))
+#			print("Generate_epi error {}".format(e))
+#			retCode=1
 		if os.path.isfile(epiScript):
 			os.chmod(epiScript,0o755)
 	return(epiScript)

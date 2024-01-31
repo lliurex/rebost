@@ -304,16 +304,9 @@ class appimageHelper():
 		if version=="":
 			version="0.1"
 		rebostPkg['versions'].update({'appimage':"{}".format(version)})
-		if installerUrl:
-			rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
-			if rebostPkg.get('icon','')!='' and not os.path.isfile(rebostPkg.get('icon')):
-				rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
-		#Uncomment for remove bundle if not url 
-		else:
-			rebostPkg['bundle'].pop('appimage',None)
-		#rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'])
-		#rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-		#rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name']).strip()
+		rebostPkg['bundle'].update({'appimage':"{}".format(installerUrl)})
+		if rebostPkg.get('icon','')!='' and not os.path.isfile(rebostPkg.get('icon')):
+			rebostPkg['icon']=self._download_file(rebostPkg['icon'],rebostPkg['name'],self.iconDir)
 		return (json.dumps(rebostPkg))
 
 	def _get_releases(self,baseUrl):

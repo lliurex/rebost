@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,distro
 import json
 import tempfile
 import rebostHelper
@@ -103,7 +103,8 @@ class zomandoHelper():
 			rebostPkg['license']="GPL-3"
 			rebostPkg['homepage']="https://www.github.com/lliurex"
 			rebostPkg['bundle'].update({'zomando':'{}'.format(zmd)})
-			rebostPkg['versions']={'zomando':'1'}
+			release=distro.codename()
+			rebostPkg['versions']={'zomando':'1.0~{}'.format(release)}
 		else:
 			rebostPkg=None
 		return(rebostPkg)

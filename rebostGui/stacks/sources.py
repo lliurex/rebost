@@ -94,6 +94,7 @@ class sources(QStackedWindowItem):
 		self.visible=False
 		self.rc=store.client()
 		self.appconfig=appConfig.appConfig()
+		self.appconfig.setConfig(confDirs={'system':os.path.join('/usr/share',"rebost"),'user':os.path.join(os.environ['HOME'],'.config',"rebost")},confFile="store.json")
 		self.changed=[]
 		self.config={}
 		self.app={}
@@ -136,6 +137,7 @@ class sources(QStackedWindowItem):
 		self.box.addWidget(btnReset,3,2,1,1)
 		self.box.setRowStretch(self.box.rowCount(), 1)
 		self.setLayout(self.box)
+		self.btnAccept.clicked.connect(self.writeConfig)
 	#def _load_screen
 
 	def _clearCache(self):
@@ -233,8 +235,8 @@ class sources(QStackedWindowItem):
 		pass
 
 	def writeConfig(self):
-		self.level="system"
-		self.saveChanges('config','system',level='system')
+		self.appconfig.level="system"
+		self.appconfig.saveChanges('config','system',level='system')
 		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
 			key=""
 			if wdg==self.chkApt:
@@ -247,7 +249,7 @@ class sources(QStackedWindowItem):
 				key="snap"
 			data=wdg.isChecked()
 			if len(key)>0:
-				self.saveChanges(key,data,level=self.level)
+				self.appconfig.saveChanges(key,data,level=self.level)
 		self._resetDB()
 	#def writeConfig
 

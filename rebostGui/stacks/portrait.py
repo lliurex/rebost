@@ -30,13 +30,12 @@ i18n={
 	}
 
 class QPushButtonRebostApp(QPushButton):
-	clicked=Signal("PyObject")
+	clicked=Signal("PyObject","PyObject")
 	def __init__(self,strapp,parent=None):
 		QPushButton.__init__(self, parent)
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		if os.path.exists(self.cacheDir)==False:
 			os.makedirs(self.cacheDir)
-		self.setObjectName("rebostapp")
 		self.app=json.loads(strapp)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setToolTip("<p>{0}</p>".format(self.app.get('summary',self.app.get('name'))))
@@ -73,8 +72,6 @@ class QPushButtonRebostApp(QPushButton):
 				iconPath=os.path.join("/".join(prefix),"active","/".join(tmp[idx:]))
 				if os.path.isfile(iconPath):
 					icn=QtGui.QPixmap.fromImage(iconPath)
-			else:
-				print(tmp)
 
 		if icn:
 			wsize=128
@@ -93,6 +90,7 @@ class QPushButtonRebostApp(QPushButton):
 	#def loadImg
 
 	def _applyDecoration(self):
+		self.setObjectName("rebostapp")
 		self.setAttribute(Qt.WA_StyledBackground, True)
 		bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Mid))
 		color=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.Base))
@@ -108,6 +106,10 @@ class QPushButtonRebostApp(QPushButton):
 			border-width: 1px; 
 			border-radius: 2px;}"""%(rgbColor,rgbBcolor))
 
+	def _removeDecoration(self):
+		self.setObjectName("")
+		self.setStyleSheet("")
+
 	
 	def load(self,*args):
 		img=args[0]
@@ -120,12 +122,12 @@ class QPushButtonRebostApp(QPushButton):
 
 	def keyPressEvent(self,ev):
 		if ev.key() in [Qt.Key_Return,Qt.Key_Enter,Qt.Key_Space]:
-			self.clicked.emit(self.app)
+			self.clicked.emit(self,self.app)
 		ev.ignore()
 	#def keyPressEvent(self,ev):
 
 	def mousePressEvent(self,*args):
-		self.clicked.emit(self.app)
+		self.clicked.emit(self,self.app)
 	#def mousePressEvent
 #class QPushButtonRebostApp
 
@@ -141,6 +143,7 @@ class portrait(QStackedWindowItem):
 			index=1,
 			visible=True)
 		self.appconfig=appConfig.appConfig()
+		self.appconfig.setConfig(confDirs={'system':os.path.join('/usr/share',"rebost"),'user':os.path.join(os.environ['HOME'],'.config',"rebost")},confFile="store.json")
 		self.i18nCat={}
 		self.config={}
 		self.index=1
@@ -469,12 +472,13 @@ class portrait(QStackedWindowItem):
 		cont-=1
 	#def _loadData
 
-	def _loadDetails(self,*args):
+	def _loadDetails(self,*args,**kwargs):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
-		app=self.rc.showApp(args[0].get('name',''))
+		self.wdg=args[0]
+		app=self.rc.showApp(args[-1].get('name',''))
 		self.setChanged(False)
 		self.parent.setCurrentStack(idx=3,parms=app)
 	#def _loadDetails
@@ -499,13 +503,25 @@ class portrait(QStackedWindowItem):
 		self.appsSeen=[]
 	#def resetScreen
 
-	def setParms(self,*args):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
-		if len(args)>=1:
-			self._populateCategories()
-			self.oldSearch=""
-			self._searchApps()
+	def setParms(self,*args,**kwargs):
+		for arg in args:
+			if isinstance(arg,dict):
+				for key,item in arg.items():
+					kwargs[key]=item
+		if kwargs.get("refresh",False)==False:
+			cursor=QtGui.QCursor(Qt.WaitCursor)
+			self.setCursor(cursor)
+			if len(args)>=1:
+				self._populateCategories()
+				self.oldSearch=""
+				self._searchApps()
+		else:
+			app=kwargs.get("app",{})
+			if "0" not in str(app.get('state',1)):
+				#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
+				self.wdg._applyDecoration()
+			else:
+				self.wdg._removeDecoration()
 	#def setParms
 
 	def _updateConfig(self,key):

@@ -176,9 +176,9 @@ class Rebost():
 					delPlugin="flatpakHelper"
 				elif key.lower() in ["apt","package","packagekit"]:
 					delPlugin="packageKit"
-					if "appstreamHelper" in self.pluginInfo.keys():
-						del(self.pluginInfo["appstreamHelper"])
-						self._disable("appstream")
+					#if "appstreamHelper" in self.pluginInfo.keys():
+					#	del(self.pluginInfo["appstreamHelper"])
+					#	self._disable("appstream")
 				elif key=="appimage":
 					delPlugin="appimageHelper"
 				if delPlugin in self.pluginInfo.keys():
@@ -275,21 +275,27 @@ class Rebost():
 				network=self._chkNetwork()
 				if network==True or priority==100:
 					actionDict[priority]=newDict.copy()
+				else:
+					print("Error autostart {}: Network error".format(plugin))
+					actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
-				postactionDict[plugin]=postactions
+				priority=info.get('priority',0)
+				newDictPost=actionDict.get(priority,{})
+				newDictPost[plugin]=postactions
+				postactionDict[priority]=newDictPost.copy()
 		#Launch actions by priority
 		actionList=list(actionDict.keys())
 		actionList.sort(reverse=False)
 		procList=[]
 		for priority in actionList:
 			for plugin,actions in actionDict[priority].items():
-					for action in actions:
-						try:
-							procList.append(self._execute(action,'','',plugin=plugin,th=False))
-						except Exception as e:
-							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
-							self._log("Error launching {} from {}: {}".format(action,plugin,e))
-							print("Error launching {} from {}: {}".format(action,plugin,e))
+				for action in actions:
+					try:
+						procList.append(self._execute(action,'','',plugin=plugin,th=False))
+					except Exception as e:
+						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+						self._log("Error launching {} from {}: {}".format(action,plugin,e))
+						print("Error launching {} from {}: {}".format(action,plugin,e))
 		for proc in procList:
 			if isinstance(proc,threading.Thread):
 				proc.join()
@@ -297,13 +303,18 @@ class Rebost():
 				proc.join()
 		self._debug("postactions: {}".format(postactionDict))
 		if len(postactionDict)>0:
-			self._debug("Launching postactions")
-			for plugin,actions in postactionDict.items():
-				for action in actions:
-					try:
-						self._execute(action,'','',plugin=plugin,th=True)
-					except Exception as e:
-						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+			actionList=list(postactionDict.keys())
+			actionList.sort(reverse=False)
+			procList=[]
+			for priority in actionList:
+				self._debug("Launching postactions")
+				for plugin,actions in postactionDict[priority].items():
+					for action in actions:
+						try:
+							pr=self._execute(action,'','',plugin=plugin,th=True)
+							pr.join()
+						except Exception as e:
+							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
@@ -325,9 +336,6 @@ class Rebost():
 			if hasattr(self,action):
 				plugin="core"
 				rebostPkgList.extend(self._executeCoreAction(action))
-				print("**")
-				print(rebostPkgList)
-				print("**")
 		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))

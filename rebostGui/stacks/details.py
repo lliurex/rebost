@@ -374,6 +374,8 @@ class details(QStackedWindowItem):
 		bundle=""
 		release=""
 		if item==None:
+			print("PPRORORORO")
+			print("PPRORORORO")
 			self._onError()
 			return()
 		bundle=item.text().lower().split(" ")[-1]
@@ -452,8 +454,8 @@ class details(QStackedWindowItem):
 			if bundle=="zomando" and (pkgState==0 or state==0):
 				self.btnZomando.setVisible(True)
 				continue
-			elif bundle=="zomando":
-				continue
+		#	elif bundle=="zomando":
+		#		continue
 		self._setReleasesInfo()
 	#def _updateScreenControls
 
@@ -486,14 +488,17 @@ class details(QStackedWindowItem):
 		installed=[]
 		uninstalled=[]
 		for bundle in bundles.keys():
-			if bundle=="zomando" and "package" in bundles.keys():
-				continue
 			state=self.app.get("state",{}).get(bundle,1)
+			if bundle=="zomando":
+				if "package" in bundles.keys():
+					continue
+				if os.path.isfile(bundles[bundle]):
+					state="0"
 			if state.isdigit()==False:
 				state="1"
 			if int(state)==0: #installed
 				installed.append(bundle)
-			elif bundle!="zomando":
+			else:
 				uninstalled.append(bundle)
 		return(installed,uninstalled)
 	#def _classifyBundles

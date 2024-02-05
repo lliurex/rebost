@@ -21,7 +21,7 @@ class flatpakHelper():
 		self.packagekind="flatpak"
 		self.actions=["load"]
 		self.autostartActions=["load"]
-		self.priority=1
+		self.priority=2
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
 		self.lastUpdate="/usr/share/rebost/tmp/fp.lu"
 	#def __init__
@@ -63,7 +63,6 @@ class flatpakHelper():
 			for i in upgradableRefs:
 				upgradable[i.get_name().lower()]=i.get_appdata_version()
 				a=i.load_metadata()
-				print(a.__dict__)
 			for pkg in rebostPkgList:
 				if pkg["id"] in installed:
 					local=installed.pop(pkg["id"])

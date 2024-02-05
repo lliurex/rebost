@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #import rebostClient
 from rebost import store
+import html
 import json
 import os,sys
 import subprocess
@@ -120,7 +121,9 @@ def _printInstall(result,pid):
 
 def _printSearch(result):
 	#msg=(f"{result['pkgname']} - {result['summary']}")
-	msg=("{} - {}".format(result['pkgname'],result['summary']))
+	data=html.unescape(result["summary"])
+	#msg=("{} - {}".format(result['pkgname'],result['summary']))
+	msg=("{} - {}".format(result['pkgname'],data))
 	if (result['bundle']):
 		bundleStr=''
 		for bundle in sorted(result['bundle'].keys()):
@@ -139,7 +142,7 @@ def _printSearch(result):
 			if bundle=='zomando':
 				bundleStr+=f" {color.GREEN}zomando{state}{color.END}"
 
-		msg=(f"{result['pkgname']} [{bundleStr} ] - {result['summary']}")
+		msg=(f"{result['pkgname']} [{bundleStr} ] - {data}")
 		msg=msg.rstrip("\n")
 	return(msg)
 
@@ -178,7 +181,11 @@ def _printShow(result):
 	cat=" ".join(result['categories'])
 	msg+=f"Categories: {cat}\n"
 	msg+="\n"
-	msg+=f"{result['description']}"
+	data=html.unescape(result["summary"])
+	msg+=f"{data}"
+	msg+="\n"
+	data=html.unescape(result["description"]).replace("***","\n  -")
+	msg+=f"{data}"
 	return(msg)
 
 def _processArgs(*args):

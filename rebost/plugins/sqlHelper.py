@@ -16,9 +16,9 @@ class sqlHelper():
 		self.dbg=True
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","search","load","list",'commitInstall','getCategories','disableFilters']
+		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export']
 		self.packagekind="*"
-		self.priority=100
+		self.priority=0
 		self.postAutostartActions=["load"]
 		self.store=None
 		self.wrkDir="/usr/share/rebost"
@@ -42,6 +42,7 @@ class sqlHelper():
 			self.includelistFilter=rebostHelper.getFiltersList(includelist=True)
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
 		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
+		self.restricted=True
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -80,14 +81,19 @@ class sqlHelper():
 			rs=self._searchPackage(parms)
 		if action=='list':
 			rs=self._listPackages(parms,extraParms,**kwargs)
-		if action=='show':
-			rs=self._showPackage(parms,extraParms)
+		if action=='show' or action=="match":
+			onlymatch=False
+			if action=="match":
+				onlymatch=True
+			rs=self._showPackage(parms,extraParms,onlymatch=onlymatch)
 		if action=='load':
 			rs=self.consolidateSqlTables()
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
 			rs=self._getCategories()
+		if action=='export':
+			rs=self._exportRebost()
 		if action=='disableFilters':
 			self.includelist=not(self.includelist)
 			if os.path.isfile(self.lastUpdate)==True:
@@ -132,41 +138,43 @@ class sqlHelper():
 		return(rows)
 	#def _searchPackage
 
-	def _showPackage(self,pkgname,user=''):
+	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
 		rowsTmp=cursor.fetchall()
-		rows=[]
-		for row in rowsTmp:
-			(pkg,data)=row
-			rebostPkg=json.loads(data)
-			bundles=rebostPkg.get('bundle',{}).copy()
-			#Update state for bundles as they can be installed outside rebost
-			for bundle in bundles.keys():
-				if bundle=='appimage':
-					bundleurl=bundles.get(bundle,'')
-					rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
-				#Get state from epi
-				rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
-			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
-			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-			if "flatpak" in rebostPkg['icon'] and os.path.exists(rebostPkg['icon'])==False:
-				fpath=os.path.dirname(rebostPkg['icon'])
-				spath=fpath.split("/")
-				idx=0
-				if "icons" in spath:
-					idx=spath.index("icons")-1
-					fpath="/".join(spath[0:idx])
-				if os.path.isdir(fpath) and idx>0:
-					for d in os.listdir(fpath):
-						if os.path.isdir(os.path.join(fpath,d,"icons")):
-							rebostPkg['icon']=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
-			row=(pkg,json.dumps(rebostPkg))
-			rows.append(row)
+		rows=rowsTmp.copy()
+		if onlymatch==False:
+			rows=[]
+			for row in rowsTmp:
+				(pkg,data)=row
+				rebostPkg=json.loads(data)
+				bundles=rebostPkg.get('bundle',{}).copy()
+				#Update state for bundles as they can be installed outside rebost
+				for bundle in bundles.keys():
+					if bundle=='appimage':
+						bundleurl=bundles.get(bundle,'')
+						rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
+					#Get state from epi
+					rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
+				rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
+				rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+				rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+				if "flatpak" in rebostPkg['icon'] and os.path.exists(rebostPkg['icon'])==False:
+					fpath=os.path.dirname(rebostPkg['icon'])
+					spath=fpath.split("/")
+					idx=0
+					if "icons" in spath:
+						idx=spath.index("icons")-1
+						fpath="/".join(spath[0:idx])
+					if os.path.isdir(fpath) and idx>0:
+						for d in os.listdir(fpath):
+							if os.path.isdir(os.path.join(fpath,d,"icons")):
+								rebostPkg['icon']=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
+				row=(pkg,json.dumps(rebostPkg))
+				rows.append(row)
 		self.closeConnection(db)
 		return(rows)
 	#def _showPackage
@@ -205,6 +213,20 @@ class sqlHelper():
 		return(rebostPkg)
 	#def _getStateFromEpi
 
+	def _exportRebost(self):
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		query="SELECT pkg,data FROM {} ORDER BY pkg".format(table)
+		#self._debug(query)
+		cursor.execute(query)
+		rows=cursor.fetchall()
+		rebostPkgList=[]
+		for row in rows:
+			rebostPkgList.append(json.loads(row[1]))
+		self.closeConnection(db)
+		return(rebostHelper.rebostToAppstream(rebostPkgList))
+	#def _exportRebost
+
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
@@ -222,7 +244,6 @@ class sqlHelper():
 			pkg=json.loads(strpkg)
 			states=pkg.get('state',{})
 			installed=pkg.get('installed',{})
-			print(installed)
 			if isinstance(installed,dict)==False:
 				installed={}
 			versions=pkg.get('versions',{})
@@ -237,14 +258,6 @@ class sqlHelper():
 							versions=app.get('versions',{})
 							self._debug(app)
 						installedStr=installed.get(bundle,0)
-						if bundle=='flatpak':
-							print("aaaaaaaaaaaaaaaaaaaaa")
-							print(installed)
-							print("aaaaaaaaaaaaaaaaaaaaa")
-							print("|||@@@")
-							print(versions)
-							print(installedStr)
-							print("|||@@@")
 						if ((installedStr!=versions.get(bundle,0)) and (installedStr!=0)):
 							filterData.append(strpkg)
 		return(filterData)
@@ -328,7 +341,6 @@ class sqlHelper():
 
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
-		consolidate_table="packagekit.db"
 		main_tmp_table=os.path.basename(self.main_table).replace(".db","")
 		#Update?
 		update=self._chkNeedUpdate()
@@ -338,19 +350,26 @@ class sqlHelper():
 			return([])
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
-		if os.path.isfile(os.path.join(self.wrkDir,consolidate_table)) and sources.get("package",True)==True:
-			fsize=os.path.getsize(os.path.join(self.wrkDir,consolidate_table))
-			fupdate.write("{0}: {1}".format(consolidate_table,fsize))
-			#self.copyBaseTable()
+		consolidate_table="appstream"
+		if len(consolidate_table)>0:
+			consolidate_table_path=os.path.join(self.wrkDir,"{}.db".format(consolidate_table))
+			if consolidate_table in sources:
+				sources.pop(consolidate_table)
+			if os.path.isfile(consolidate_table_path):
+				self._debug("Setting {} as main table".format(consolidate_table))
+				fsize=os.path.getsize(consolidate_table_path)
+				fupdate.write("{0}: {1}".format(consolidate_table,fsize))
+				self.copyBaseTable(consolidate_table)
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		tables=["appstream","flatpak","snap","appimage","packagekit","zomandos"]
+		tables=["flatpak","snap","appimage","packagekit"]
 		include=[]
 		for source in sources.keys():
 			if source in tables:
 				if sources[source]==False:
 					idx=tables.index(source)
 					tables.pop(idx)
+		tables.insert(0,"zomandos")
 		for table in tables:
 			include.append("{}.db".format(table))
 		allCategories=[]
@@ -381,6 +400,9 @@ class sqlHelper():
 		retval=(0,[])
 		f=os.path.join(self.wrkDir,fname)
 		if os.path.isfile(f):
+			restricted=self.restricted
+			if "zomandos"==fname.replace(".db",""):
+				restricted=False
 			fsize=os.path.getsize(f)
 			fupdate.write("\n{0}:{1}".format(fname,fsize))
 			allData=self._getAllData(f)
@@ -393,7 +415,7 @@ class sqlHelper():
 				self._debug("Fetch from {0} to {1}. Max {2}".format(offset,limit,count))
 				query=[]
 				for data in allData[offset:limit]:
-					processedPkg=self._addPkgToQuery(tmpdb,cursor,data,fname)
+					processedPkg=self._addPkgToQuery(tmpdb,cursor,data,fname,restricted)
 					if processedPkg!=([],[]):
 						pkgData=processedPkg[0]
 						categories=processedPkg[1]
@@ -434,20 +456,23 @@ class sqlHelper():
 		self.closeConnection(db_cat)
 	#def _processCategories
 
-	def _addPkgToQuery(self,table,cursor,data,fname):
+	def _addPkgToQuery(self,table,cursor,data,fname,restricted=True):
 		(cat0,cat1,cat2)=(None,None,None)
 		retval=([],[])
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
-		banList=self._applyFilters(pkgname,pkgdataJson)
-		if banList==True:
-			return(retval)
+		self.filters=False
+		if self.filters:
+			banList=self._applyFilters(pkgname,pkgdataJson)
+			if banList==True:
+				return(retval)
 		fetchquery="SELECT * FROM {0} WHERE pkg = '{1}'".format(table,pkgname)
 		row=cursor.execute(fetchquery).fetchone()
 		if row:
 			pkgdataJson=self._mergePackage(pkgdataJson,row,fname).copy()
-		if len(pkgdataJson.get('bundle',{}))>0:
-			retval=self._processPkgData(pkgname,pkgdataJson)
+		if restricted==False or row:
+			if len(pkgdataJson.get('bundle',{}))>0:
+				retval=self._processPkgData(pkgname,pkgdataJson)
 		return(retval)
 	#def _addPkgToQuery
 
@@ -474,21 +499,20 @@ class sqlHelper():
 	 #def _applyFilters
 
 	def _checkBanList(self,pkgname,data,banList=False):
-		filters=self.banlistFilter.get('banlist',{})
-		categories=data.get('categories')
-		banC=list(set(filters.get('categories',[])))
-		fcategories=list(set(categories))
+		filtersBan=self.banlistFilter.get('banlist',{})
+		categorySet=list(set(data.get('categories',[])))
+		filterBanCats=list(set(filtersBan.get('categories',[])))
 		#REM: len==len(set) -> no matching categories
-		if len(banC+fcategories)!=len(set(banC+fcategories)):
+		if len(filterBanCats+categorySet)!=len(set(filterBanCats+categorySet)):
 			banList=True
-		apps=filters.get('apps',[]) 
-		globs=[ c for c in apps if "*" in c]
-		apps=[ c for c in apps if not "*" in c]
+		filterBanApps=filtersBan.get('apps',[]) 
+		filterBanGlobs=[ c for c in filterBanApps if "*" in c]
+		filtersBanApps=[ c for c in filterBanApps if not "*" in c]
 		if banList==False:
-			if pkgname in apps:
+			if pkgname in filterBanApps:
 				banList=True
 			else:
-				for glob in globs:
+				for glob in filterBanGlobs:
 					if pkgname.startswith(glob.replace("*","")):
 						banList=True
 					elif pkgname.endswith(glob.replace("*","")):
@@ -499,48 +523,53 @@ class sqlHelper():
 	def _checkIncludeList(self,pkgname,data,banList=False):
 		includeList=False
 		categorySet=list(set(data.get('categories',[])))
-		filters=self.includelistFilter.get('includelist',{})
-		bfilters=self.includelistFilter.get('banlist',{})
-		whiteC=list(set(filters.get('categories',[])))
-		apps=filters.get('apps',[]) 
-		globs=[ c for c in apps if "*" in c]
-		apps=[ c for c in apps if not "*" in c]
-		if len(apps+globs)==0 and len(whiteC)==0:
+		filterInclude=self.includelistFilter.get('includelist',{})
+		filterBan=self.includelistFilter.get('banlist',{})
+		filterIncludeCats=list(set(filterInclude.get('categories',[])))
+		filterIncludeApps=filterInclude.get('apps',[]) 
+		filterIncludeGlobs=[ c for c in filterIncludeApps if "*" in c]
+		filterIncludeApps=[ c for c in filterIncludeApps if not "*" in c]
+		if len(filterIncludeApps+filterIncludeGlobs)==0 and len(filterIncludeCats)==0:
 			includeList=not(banList)
 		else:
-			if pkgname in apps:
+			if pkgname in filterIncludeApps:
 				includeList=True
 			else:
-				for glob in globs:
+				for glob in filterIncludeGlobs:
 					if pkgname.startswith(glob.replace("*","")):
 						includeList=True
+						break
 					elif pkgname.endswith(glob.replace("*","")):
 						includeList=True
-			if includeList==False:
-				if len(bfilters)>0:
-					includeList=not(banList)
-			if len(whiteC)>0 and includeList==False:
-				if len(whiteC+categorySet)!=len(set(whiteC+categorySet)):
+						break
+#			if includeList==False:
+#				if len(filterBan)>0:
+#					includeList=not(banList)
+			if len(filterIncludeCats)>0 and includeList==False and banList==False:
+				if len(filterIncludeCats+categorySet)!=len(set(filterIncludeCats+categorySet)):
 					includeList=True
 		return(includeList)
 	#def _checkIncludeList
 
 	def _processPkgData(self,pkgname,pkgdataJson):
-		categories=pkgdataJson.get('categories',[])
+		if pkgname.startswith("zero-"):
+			if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
+				print("DISCARD {}".format(pkgname))
+				return([],[])
+		categories=pkgdataJson.get('categories',[]).copy()
 		if "Lliurex" in categories:
 			idx=categories.index("Lliurex")
 			if idx!=0:
-				pkgdataJson['categories'][0]=categories[idx]
-				pkgdataJson['categories'][idx]=categories[0]
+				pkgdataJson['categories'].pop(idx)
+				pkgdataJson['categories'].insert(0,categories[idx])
 			categories=pkgdataJson.get('categories',[])
-		categoriesSet=list(set(categories)-set(self.noShowCategories))
-		categories=categoriesSet
+		categories=list(set(categories)-set(self.noShowCategories))
 			
 		while len(categories)<3:
 			categories.append("")
 		if ("Lliurex" in categories):
 			cat0="Lliurex"
-			cat1=categories[0]
+			cat1=categories[1]
 			cat2=categories[-1]
 		else:
 			cat0=categories[0]
@@ -624,18 +653,21 @@ class sqlHelper():
 			elif isinstance(item,list) and isinstance(mergepkgdataJson.get(key,''),list):
 				if len(item)>0:
 					mergepkgdataJson[key].extend(item)
-					mergepkgdataJson[key] = list(set(mergepkgdataJson[key]))
+					tmp=[]
+					for i in list(set(mergepkgdataJson[key])):
+						if i:
+							tmp.append(i)
+					mergepkgdataJson[key]=tmp
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
 				if len(item)>len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
 		return(mergepkgdataJson)
 	#def _mergePackage
 
-	def copyBaseTable(self):
+	def copyBaseTable(self,consolidate_table):
 		rebost_db=sqlite3.connect(self.main_tmp_table)
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
-		consolidate_table="packagekit"
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)

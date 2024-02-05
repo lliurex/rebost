@@ -60,10 +60,9 @@ def rebostPkg(*kwargs):
 	return(pkg)
 #def rebostPkg
 
-def rebostPkgList_to_sqlite(rebostPkgList,table,drop=True,sanitize=True):
+def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
-	drop=False
 	if drop:
 		if os.path.isfile(tablePath):
 			os.remove(tablePath)
@@ -164,6 +163,8 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 					break
 		elif "/flatpak/" in rebostPkg["icon"] and os.path.isfile(rebostPkg["icon"])==False:
 			rebostPkg["icon"]=self._fixFlatpakIconPath(rebostPkg['icon'])
+		for bun in rebostPkg["bundle"].keys():
+			rebostPkg["bundle"][bun]=str(rebostPkg["bundle"][bun])
 			
 		#fix LliureX category:
 		lliurex=list(filter(lambda cat: 'lliurex' in str(cat).lower(), categories))
@@ -205,6 +206,36 @@ def _sanitizeString(data,scape=False,unescape=False):
 			data=html.unescape(data)
 	return(data)
 #def _sanitizeString
+
+def rebostToAppstream(rebostPkgList,fname=""):
+	if len(fname)==0:
+		fname="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+	store=appstream.Metadata()
+	for rebostPkg in rebostPkgList:
+		app=appstream.Component()
+		app.set_id(rebostPkg["id"])
+		app.set_name(rebostPkg["name"])
+		app.set_description(rebostPkg["description"],None)
+		app.set_summary(rebostPkg["summary"],None)
+		app.set_pkgname(rebostPkg["pkgname"])
+		app.set_kind(appstream.ComponentKind.GENERIC)
+		icon=appstream.Icon()
+		if "://" in rebostPkg["icon"]:
+			icon.set_url(rebostPkg["icon"])
+			icon.set_kind(appstream.IconKind.REMOTE)
+		else:
+			icon.set_filename(rebostPkg["icon"])
+			icon.set_kind(appstream.IconKind.CACHED)
+		app.add_icon(icon)
+		screenshot=appstream.Screenshot()
+		#for img in rebostPkg["screenshots"]
+			#screenshot.dd
+		store.add_component(app)
+	xml=store.components_to_catalog(appstream.FormatKind.YAML)
+	with open(fname,"w") as f:
+		f.write(xml)
+	return(fname)
+#def rebostToAppstream
 
 def appstream_to_rebost(appstreamCatalogue):
 	rebostPkgList=[]
@@ -476,7 +507,10 @@ def _get_package_commands(rebostpkg,user):
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
-	installCmd="apt install -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
+
+	installCmd="export DEBIAN_FRONTEND=noninteractive"
+	installCmdLine.append("export DEBIAN_PRIORITY=critical")
+	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(rebostpkg['pkgname']))
 	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))

@@ -22,8 +22,8 @@ else:
 	abspath=os.path.dirname(__file__)
 config.addStacksFromFolder(os.path.join(abspath,"stacks"))
 config.show()
-config.setMinimumWidth(config.sizeHint().width()*1.5)
-config.setMinimumHeight(config.sizeHint().height()*1.1)
+config.setMinimumWidth(960)
+config.setMinimumHeight(600)
 if len(sys.argv)>1:
 	if ("://") in sys.argv[1] or os.path.isfile(sys.argv[1]):
 		config.setCurrentStack(3,parms=sys.argv[1])

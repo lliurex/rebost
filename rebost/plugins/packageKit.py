@@ -13,14 +13,15 @@ class packageKit():
 	def __init__(self,*args,**kwargs):
 		self.dbg=False
 		logging.basicConfig(format='%(message)s')
-		self.enabled=True
-		self.onlyLliurex=False
+		self.enabled=False
+		self.onlyLliurex=True
 		self._debug("Loaded")
 		self.packagekind="package"
 		self.actions=["load"]
 		self.autostartActions=["load"]
-		self.priority=0
+		self.priority=2
 		self.result=''
+		self.onlyFillMaster=False
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
 		self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
@@ -36,6 +37,9 @@ class packageKit():
 			dbg="packagekit: {}".format(msg)
 			rebostHelper._debug(dbg)
 	#def _debug
+
+	def setOnlyFillMasterTable(self,force=True):
+		self.onlyFillMaster=Force
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
@@ -57,17 +61,28 @@ class packageKit():
 				pkcon.refresh_cache(False,None,self._load_callback,None)
 			except Exception as e:
 				print(e)
-		pkList=pkcon.get_packages(packagekit.FilterEnum.GUI, None, self._load_callback, None)
-		pkgSack=pkList.get_package_sack()
-		#Needed for controlling updates
-		gioFile=Gio.file_new_tmp()
-		pkgSack.to_file(gioFile[0])
-		gPath=gioFile[0].get_path()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+				print("**")
+		gPath=""
+		for pkfilter in [packagekit.FilterEnum.NONE]:
+			pkList=pkcon.get_packages(pkfilter, None, self._load_callback, None)
+			pkgSack=pkList.get_package_sack()
+			#Needed for controlling updates
+			gioFile=Gio.file_new_tmp()
+			pkgSack.to_file(gioFile[0])
+			if gPath=="":
+				gPath=gioFile[0].get_path()
+			else:
+				gPath2=gioFile[0].get_path()
+				ids=""
+				with open(gPath2,"r") as f:
+					ids=f.read()
+				with open(gPath,"a") as f:
+					f.write(ids)
+			#gioFile[0].delete()
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.APPLICATION, None, self._load_callback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		newMd5=""
 		pkgIds=self._getChanges(gPath)
-		gioFile[0].delete()
 		if (len(pkgIds)>0) or (pkgUpdateSack.get_size()>0):
 			pkgUpdateIds={}
 			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
@@ -231,8 +246,8 @@ class packageKit():
 			if (cat in dismiss)==False or "lliurex" in pkg.get_url():
 				pkgId=pkg.get_package_id().split(";")
 				name=pkgId[0]
-				if name.startswith("zero-lliurex")==False:
-					rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+				#if name.startswith("zero-lliurex")==False:
+				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
 	#def _generateRebostPkgList
 

@@ -111,24 +111,29 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 def rebostPkg_to_sqlite(rebostPkg,table):
 	wrkDir="/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
+	if tablePath.endswith(".db")==False:
+		tablePath+=".db"
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	cursor.execute(query)
-	query=[]
-	query.append(_rebostPkg_fill_data(rebostPkg))
+	query=_rebostPkg_fill_data(rebostPkg)
 	if query:
-		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
+		queryMany="INSERT or REPLACE INTO {} VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')".format(table,query[0],query[1],query[2],query[3],query[4])
 		try:
-			_debug("Helper: INSERTING {} for {}".format(len(query),table))
-			cursor.executemany(queryMany,query)
+			_debug("Helper: INSERT package for {}".format(table))
+			cursor.execute(queryMany)
 		except sqlite3.OperationalError as e:
-			if "locked" in e:
-				time.sleep(0.1)
-				cursor.executemany(queryMany,query)
-		db.commit()
+			time.sleep(0.1)
+			cursor.execute(queryMany)
+		try:
+			db.commit()
+		except sqlite3.OperationalError as e:
+			time.sleep(0.1)
+			db.commit()
 	db.close()
+	cursor=None
 #def rebostPkgList_to_sqlite
 
 def _rebostPkg_fill_data(rebostPkg,sanitize=True):
@@ -324,6 +329,9 @@ def _componentFillInfo(component,pkg):
 					bundle="package"
 				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
 				pkg['versions']={bundle:versionArray[-1]}
+			if i.get_kind()==1: #appstream.BundleKind.LIMBA
+					pkgid=component.get_id()
+					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
@@ -613,7 +621,7 @@ def get_table_pkgarray(table,pkgarray):
 			pass
 		db.close()
 	return ret
-#def get_table_state
+#def get_table_pkgarray
 
 def get_table_state(pkg,bundle):
 	tablePath="/usr/share/rebost/installed.db"

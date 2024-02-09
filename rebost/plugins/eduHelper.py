@@ -133,6 +133,7 @@ class eduHelper():
 			with open(MAP,"r") as f:
 				appmap=json.loads(f.read())
 		app=eduapp["app"]
+		pkgname=app
 		if app in appmap:
 			pkgname=appmap[app]
 		rebostPkg["name"]=app

@@ -11,7 +11,7 @@ class zomandoHelper():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		logging.basicConfig(format='%(message)s')
-		self.enabled=True
+		self.enabled=False
 		self.packagekind="zomando"
 		self.actions=["load"]
 		self.autostartActions=["load"]

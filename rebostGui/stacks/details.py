@@ -128,8 +128,8 @@ class details(QStackedWindowItem):
 	#def __init__
 
 	def _return(self):
-		self.setWindowTitle("LliureX Rebost")
-		self.parent.setCurrentStack(1)
+		self.parent.setWindowTitle("LliureX Rebost")
+		self.parent.setCurrentStack(1,parms={"refresh":True,"app":self.app})
 	#def _return
 
 	def _processStreams(self,args):
@@ -171,7 +171,7 @@ class details(QStackedWindowItem):
 		if len(self.app)<=0:
 			self._processStreams(args[0])
 		else:
-			self.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
+			self.parent.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
 					continue
@@ -374,6 +374,7 @@ class details(QStackedWindowItem):
 		bundle=""
 		release=""
 		if item==None:
+			print("Err: This app has not a install option")
 			self._onError()
 			return()
 		bundle=item.text().lower().split(" ")[-1]
@@ -452,8 +453,8 @@ class details(QStackedWindowItem):
 			if bundle=="zomando" and (pkgState==0 or state==0):
 				self.btnZomando.setVisible(True)
 				continue
-			elif bundle=="zomando":
-				continue
+		#	elif bundle=="zomando":
+		#		continue
 		self._setReleasesInfo()
 	#def _updateScreenControls
 
@@ -468,14 +469,15 @@ class details(QStackedWindowItem):
 			version=self.app.get('versions',{}).get(i,'')
 			version=version.split("+")[0]
 			release=QListWidgetItem("{} {}".format(version,i))
-			idx=priority.index(i)
-			if i in uninstalled:
-				idx+=len(installed)
-			else:
-				#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
-				bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
-				release.setBackground(bcolor)
-			self.lstInfo.insertItem(idx,release)
+			if i in priority:
+				idx=priority.index(i)
+				if i in uninstalled:
+					idx+=len(installed)
+				else:
+					#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
+					bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
+					release.setBackground(bcolor)
+				self.lstInfo.insertItem(idx,release)
 		if len(bundles)<0:
 			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
@@ -486,14 +488,17 @@ class details(QStackedWindowItem):
 		installed=[]
 		uninstalled=[]
 		for bundle in bundles.keys():
-			if bundle=="zomando" and "package" in bundles.keys():
-				continue
 			state=self.app.get("state",{}).get(bundle,1)
+			if bundle=="zomando":
+				if "package" in bundles.keys():
+					continue
+				if os.path.isfile(bundles[bundle]):
+					state="0"
 			if state.isdigit()==False:
 				state="1"
 			if int(state)==0: #installed
 				installed.append(bundle)
-			elif bundle!="zomando":
+			else:
 				uninstalled.append(bundle)
 		return(installed,uninstalled)
 	#def _classifyBundles
@@ -502,6 +507,7 @@ class details(QStackedWindowItem):
 		#Reload config if app has been epified
 		if len(self.app)>0:
 			self.wdgError.setVisible(False)
+			self.lstInfo.setVisible(True)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:
 					self.app=json.loads(self.rc.showApp(self.app.get('name','')))[0]

@@ -19,11 +19,13 @@ class packageKit():
 		self.packagekind="package"
 		self.actions=["load"]
 		self.autostartActions=["load"]
-		self.priority=0
+		self.priority=2
 		self.result=''
+		self.restricted=True
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
 		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
-		self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
+		#self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
+		self.pkgFile="/usr/share/rebost/lists.d/eduapps.map"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -37,6 +39,9 @@ class packageKit():
 			rebostHelper._debug(dbg)
 	#def _debug
 
+	def setOnlyFillMasterTable(self,force=True):
+		self.onlyFillMaster=Force
+
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		self._debug(action)
 		rs='[{}]'
@@ -47,33 +52,54 @@ class packageKit():
 
 	def _loadStore(self,*args):
 		action="load"
-		self._debug("Getting pkg list")
 		pkcon=packagekit.Client()
-		try:
-			pkcon.refresh_cache(False,None,self._load_callback,None)
-		except:
-			self._debug("apt seems blocked. Retrying...")
-			try:
-				pkcon.refresh_cache(False,None,self._load_callback,None)
-			except Exception as e:
-				print(e)
-		pkList=pkcon.get_packages(packagekit.FilterEnum.GUI, None, self._load_callback, None)
-		pkgSack=pkList.get_package_sack()
+		self._refreshPk(pkcon)
+		if self.restricted==False:
+			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
+			pklists=self._loadFullCatalogue(pkcon,flags)
+		else:
+			pklists=self._loadRestrictedCatalogue(pkcon,self.pkgFile)
+		tmppkgIds=[]
+		pkgIds=[]
+		for pkgSack in pklists:
+			tmppkgIds.append(pkgSack.get_ids())
+		if self.restricted==True:
+			restrictIds=self._readFilterFile(self.pkgFile)
+			for pkglist in tmppkgIds:
+				for pkg in pkglist:
+					pkgname=pkg.split(";")[0]
+					if pkgname not in restrictIds:
+						pkgSack.remove_package_by_id(pkg)
+		for pkgSack in pklists:
+			pkgIds.extend(pkgSack.get_ids())
+
 		#Needed for controlling updates
-		gioFile=Gio.file_new_tmp()
-		pkgSack.to_file(gioFile[0])
-		gPath=gioFile[0].get_path()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.NONE, None, self._load_callback, None)
+		'''
+		gPath=""
+		for pkgSack in pklists:
+			gioFile=Gio.file_new_tmp()
+			pkgSack.to_file(gioFile[0])
+			if gPath=="":
+				gPath=gioFile[0].get_path()
+			else:
+				gPath2=gioFile[0].get_path()
+				ids=""
+				with open(gPath2,"r") as f:
+					ids=f.read()
+				with open(gPath,"a") as f:
+					f.write(ids)
+		#gioFile[0].delete()
+		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.APPLICATION, None, self._loadCallback, None)
 		pkgUpdateSack=pkUpdates.get_package_sack()
 		newMd5=""
-		pkgIds=self._getChanges(gPath)
-		gioFile[0].delete()
-		if (len(pkgIds)>0) or (pkgUpdateSack.get_size()>0):
+		'''
+		#pkgIds=self._getChanges(gPath)
+		if (len(pkgIds)>0):
 			pkgUpdateIds={}
-			pkgUpdateIdsArray=pkgUpdateSack.get_ids()
-			for pkgId in pkgUpdateIdsArray:
-				pkgInfo=pkgId.split(";")
-				pkgUpdateIds[pkgInfo[0]]={'release':pkgInfo[1],'origin':pkgInfo[-1]}
+		#	pkgUpdateIdsArray=pkgUpdateSack.get_ids()
+		#	for pkgId in pkgUpdateIdsArray:
+		#		pkgInfo=pkgId.split(";")
+		#		pkgUpdateIds[pkgInfo[0]]={'release':pkgInfo[1],'origin':pkgInfo[-1]}
 			self._debug("End Getting pkg list")
 			self._processPackages(pkcon,pkgIds,pkgUpdateIds)
 			self._debug("PKG loaded")
@@ -87,6 +113,59 @@ class packageKit():
 			self._debug("Skip update")
 		return()
 	#def _loadStore
+
+	def _refreshPk(self,pkcon):
+		self._debug("Refresh cache..")
+		try:
+			pkcon.refresh_cache(False,None,self._loadCallback,None)
+		except:
+			self._debug("apt seems blocked. Retrying...")
+			try:
+				pkcon.refresh_cache(False,None,self._loadCallback,None)
+			except Exception as e:
+				print(e)
+				print("**")
+	#def _refreshPk
+
+	def _loadFullCatalogue(self,pkcon,flags=None):
+		self._debug("Getting pkg list")
+		pklists=[]
+		if flags==None:
+			flags=[packagekit.FilterEnum.NONE]
+		if isinstance(flags,list)==False:
+			flags=list(flags)
+		for flag in flags:
+			pkList=pkcon.get_packages(flag, None, self._loadCallback, None)
+			pkgSack=pkList.get_package_sack()
+			pklists.append(pkgSack)
+		return (pklists)
+	#def _loadFullCatalogue
+
+	def _loadRestrictedCatalogue(self,pkcon,pkgfile):
+		pklists=[]
+		self._debug("Getting restricted pkg list from {}".format(pkgfile))
+		searchList=self._readFilterFile(pkgfile)
+		if len(searchList)>0:
+			pkList=pkcon.search_names(packagekit.FilterEnum.NONE,",".join(searchList),None,self._loadCallback,None)
+			pkgSack=pkList.get_package_sack()
+			pklists.append(pkgSack)
+		self._debug("Processing obtained list")
+		return (pklists)
+	#def _loadRestrictedCatalogue
+
+	def _readFilterFile(self,pkgfile):
+		searchList=[]
+		if os.path.exists(pkgfile)==False:
+			self._debug("File not found: {}".format(pkgfile))
+		else:
+			with open(pkgfile,"r") as f:
+				jcontent=json.loads(f.read())
+			searchList=[]
+			for key,item in jcontent.items():
+				if item not in searchList:
+					searchList.append(item)
+		return(searchList)
+	#def _readFilterFile
 
 	def _getChanges(self,gPath):
 		#Compare old file with new file. Extract changes and update db
@@ -126,7 +205,7 @@ class packageKit():
 			# Perhaps it's possible to use pkg.group property but isn't working
 			pkDetails=[]
 			if selected:
-				pkDetails=pkcon.get_details(selected, None, self._load_callback, None)
+				pkDetails=pkcon.get_details(selected, None, self._loadCallback, None)
 				if pkDetails:
 					self._debug("Sending to SQL")
 					data=self._generateRebostPkgList(pkDetails,pkgUpdateIds)
@@ -225,18 +304,20 @@ class packageKit():
 
 	def _generateRebostPkgList(self,pkgList,updateInfo):
 		rebostPkgList=[]
-		for pkg in pkgList.get_details_array():
+		arr=pkgList.get_details_array()
+		for pkg in arr:
 			dismiss=["admin-tools","other","system"]
+			dismiss=[]#admin-tools","other","system"]
 			cat=pkg.get_group().to_string(pkg.get_group()).lower().strip()
 			if (cat in dismiss)==False or "lliurex" in pkg.get_url():
 				pkgId=pkg.get_package_id().split(";")
 				name=pkgId[0]
-				if name.startswith("zero-lliurex")==False:
-					rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+				#if name.startswith("zero-lliurex")==False:
+				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
 		return(rebostPkgList)
 	#def _generateRebostPkgList
 
-	def _load_callback(self,*args):
+	def _loadCallback(self,*args):
 		return
 
 def main():

@@ -9,11 +9,11 @@ import random
 import gettext
 import threading
 import shutil
-from bs4 import BeautifulSoup
 import rebostHelper
 from queue import Queue
 import html2text
 import hashlib
+from bs4 import BeautifulSoup
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
@@ -22,7 +22,7 @@ class appimageHelper():
 		self.packagekind="appimage"
 		self.actions=["load"]
 		self.autostartActions=["load"]
-		self.priority=1
+		self.priority=2
 		self.store=None
 		self.user=''
 		if kwargs:
@@ -77,7 +77,7 @@ class appimageHelper():
 			appimageJson=self._fetch_repo(repo_info['url'])
 			update=self._chkNeedUpdate(appimageJson,repo_name)
 			if update:
-				if appimageJson and repo_info['type']=='json':
+				if appimageJson and repo_info.get("type","")=='json':
 					self._process_appimage_json(appimageJson,repo_name,searchDirs=searchDirs)
 					updateFile=self.lastUpdate.replace("ai","ai_{}".format(repo_name))
 					appMd5=hashlib.md5(appimageJson.encode("utf-8")).hexdigest()

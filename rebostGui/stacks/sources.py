@@ -209,6 +209,7 @@ class sources(QStackedWindowItem):
 	def _return(self):
 		cursor=QtGui.QCursor(Qt.WaitCursor)
 		self.setCursor(cursor)
+		self.app={}
 		self.parent.setCurrentStack(1,parms="1")
 		self.setCursor(self.oldcursor)
 	#def _return

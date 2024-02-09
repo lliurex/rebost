@@ -46,11 +46,15 @@ class appstreamHelper():
 
 	def _loadStore(self):
 		self._debug("Get apps")
-		store=self._get_restricted_appstream_catalogue()
-		fullStore=self._get_appstream_catalogue()
+		restrictedYml="/usr/share/rebost-data/yaml/eduapps.yml"
+		store=self._get_appstream_catalogue_from_files([restrictedYml])
+		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"]#,"/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
+		fullstore=self._get_appstream_catalogue_from_files(storeYml)
 		update=self._chkNeedUpdate(store)
 		if update:
-			store=self._generate_store(store,fullStore)
+			if len(store.get_apps())<=0:
+				store=fullstore
+			store=self._generate_store(store,fullstore)
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
@@ -78,19 +82,22 @@ class appstreamHelper():
 		return(update)
 	#def _chkNeedUpdate
 
-	def _get_restricted_appstream_catalogue(self):
+	def _get_appstream_catalogue_from_files(self, storeYmlFiles=[]):
 		store=appstream.Store()
 		sections=[]
 		progress=0
 		iconDir="/usr/share/rebost-data/icons"
-		storeYml="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
-		if os.path.isfile(storeYml):
-			storeFile=Gio.File.new_for_path(storeYml)
-			try:
-				store.from_file(storeFile,iconDir,None)
-			except Exception as e:
-				print(e)
-				pass
+		for storeYml in storeYmlFiles:
+			if storeYml=="":
+				continue
+				#storeYml="/usr/share/rebost-data/yaml/lliurex_restricted.yml"
+			if os.path.isfile(storeYml):
+				storeFile=Gio.File.new_for_path(storeYml)
+				try:
+					store.from_file(storeFile,iconDir,None)
+				except Exception as e:
+					print(e)
+					pass
 		self._debug("End loading appstream metadata")
 		return(store)
 	#def _get_restricted_appstream_catalogue
@@ -104,15 +111,16 @@ class appstreamHelper():
 		return(store)
 	#def _get_appstream_catalogue
 
-	def _generate_store(self,tmpstore,fullstore):
+	def _generate_store(self,restrictedstore,fullstore=None):
 		added=[]
 		store=appstream.Store()
 		rebostPkgList=[]
 		iconDb=self._populate_icon_db()
-		for pkg in tmpstore.get_apps():
-			fullPkg=fullstore.get_app_by_pkgname(pkg.get_pkgname_default())
-			if fullPkg:
-				pkg=fullPkg
+		for pkg in restrictedstore.get_apps():
+			if fullstore:
+				fullPkg=fullstore.get_app_by_pkgname(pkg.get_pkgname_default())
+				if fullPkg:
+					pkg=fullPkg
 			idx=pkg.get_id()
 			#appstream has his own cache dir for icons so if present use it
 			icondefault=pkg.get_icon_default()
@@ -131,7 +139,7 @@ class appstreamHelper():
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()
 				bundle.set_id("{}".format(pkg.get_id()))
-				bundle.set_kind(appstream.BundleKind.PACKAGE)
+				bundle.set_kind(appstream.BundleKind.LIMBA)
 				pkg.add_bundle(bundle)
 			if pkg.get_id() not in added:
 				#Validate is time-consuming so disable...

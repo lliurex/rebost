@@ -1,3 +1,11 @@
+rebost (1.5.0-1lliurex24) jammy; urgency=medium
+
+  * Restricted catalogue through appstream
+  * Filters disabled by default as catalogue restriction is a lot faster
+  * Add plugin for appsedu catalogued apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 09 Feb 2024 10:40:06 +0100
+
 rebost (1.4.3-1lliurex23) jammy; urgency=medium
 
   * Improve zomando management

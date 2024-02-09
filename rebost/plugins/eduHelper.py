@@ -327,6 +327,7 @@ class eduHelper():
 		print("Found: {}".format(includeApps))
 		print("NotFound: {}".format(notFound))
 		rebostHelper.rebostToAppstream(includeApps)
+		#Uncomment for filter creation
 		#try:
 		#	with open(FILTER,"w") as f:
 		#		f.write("\n".join(includeApps))

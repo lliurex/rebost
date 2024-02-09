@@ -1,10 +1,16 @@
 #!/usr/bin/python3
-#import rebostHelper
+#########
+##
+# THIS SCRIPT TRIES TO MAP EDUAPPS WITH REAL APPS
+# IT'S A BEST EFFORT. ** RESULTS MUST BE REVISITED **
+##
+#######
 import time,os
 import json
 import re
 from rebost import store
 import rebostHelper
+import urllib
 from urllib.request import Request
 from urllib.request import urlretrieve
 import random
@@ -13,14 +19,14 @@ from bs4 import BeautifulSoup as bs
 import html2text
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-FILTER="/usr/share/rebost/lists.d/include/apps/eduapps.conf"
+EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
 
 def _debug(msg):
 	print("eduApps: {}".format(msg))
 
 def processEduApps():
-	if os.path.exists(FILTER):
-		os.unlink(FILTER)
+	if os.path.exists(EDUAPPS_MAP):
+		os.unlink(EDUAPPS_MAP)
 	rebost=store.client()
 	eduApps=_getEduApps()
 	searchDict=_generateTags(eduApps)
@@ -63,7 +69,9 @@ def _extractTags(app):
 def _processApps(rebost,searchDict):
 	notFound=[]
 	includeApps=[]
+	mapApp={}
 	for app,searchtags in searchDict.items():
+		mapApp[app]=app
 		tags=searchtags.get("tags",[])
 		extratags=searchtags.get("extratags",[])
 		found=False
@@ -83,6 +91,7 @@ def _processApps(rebost,searchDict):
 				pkgname=candidate.get("pkgname")
 				if pkgname not in includeApps:
 					includeApps.append(pkgname)
+					mapApp[app]=pkgname
 				found=True
 				break
 		if found==False:
@@ -95,25 +104,26 @@ def _processApps(rebost,searchDict):
 					pkgname=candidate.get("pkgname")
 					if pkgname not in includeApps:
 						includeApps.append(pkgname)
+						mapApp[app]=pkgname
 					found=True
 					break
 		if found==False:
 			notFound.append(app)
 	if len(notFound)>0:
-		(includeApps,notFound)=_lazySearch(rebost,searchDict,includeApps,notFound)
+		(includeApps,notFound,mapApp)=_lazySearch(rebost,searchDict,includeApps,notFound,mapApp)
 	if len(notFound)>0:
 		print("Rest: {}".format(len(notFound)))
 	print("Found: {}".format(includeApps))
 	print("NotFound: {}".format(notFound))
 	try:
-		with open(FILTER,"w") as f:
-			f.write("\n".join(includeApps))
+		with open(EDUAPPS_MAP,"w") as f:
+			json.dump(mapApp, f,ensure_ascii=True, indent=4, sort_keys=True)
 	except PermissionError as e:
-		print("Error writing {}".format(FILTER))
+		print("Error writing {}".format(EDUAPPS_MAP))
 		print(e)
-	rebost.restart()
+	#rebost.restart()
 
-def _lazySearch(rebost,searchDict,includeApps,pendingApps):
+def _lazySearch(rebost,searchDict,includeApps,pendingApps,mapApp):
 	notFound=[]
 	for app in pendingApps:
 		searchtags=searchDict.get(app,{}).copy()
@@ -129,6 +139,7 @@ def _lazySearch(rebost,searchDict,includeApps,pendingApps):
 				pkgname=candidate.get("pkgname")
 				if pkgname not in includeApps:
 					includeApps.append(pkgname)
+					mapApp[app]=pkgname
 				found=True
 				break
 		if found==False:
@@ -140,33 +151,28 @@ def _lazySearch(rebost,searchDict,includeApps,pendingApps):
 					pkgname=candidate.get("pkgname")
 					if pkgname not in includeApps:
 						includeApps.append(pkgname)
+						mapApp[app]=pkgname
 					found=True
 					break
 		if found==False:
 			notFound.append(app)
-	return(includeApps,notFound)
+	return(includeApps,notFound,mapApp)
 
 def _getEduApps():
 	_debug("Fetching {}".format(EDUAPPS_URL))
 	rawcontent=_fetchCatalogue()
 	bscontent=bs(rawcontent,"html.parser")
-	b=bscontent.find_all("td",["column-2","column-7"])
+	b=bscontent.find_all("td","column-2")
 	eduApps=[]
 	candidate=None
 	for i in b:
 		c=i.find("a")
-		#print(c)
 		if c:
-			if c.text.lower()!="lliurex":
-				candidate=c.text
-				continue
-		c=i.text
-		if c.lower().startswith("autori"):
-			if candidate:
-				eduApps.append(candidate)
-				candidate=None
-		else:
-			print("Reject: {}".format(candidate))
+			href=c['href']
+			candidate=os.path.basename(href.strip("/"))
+		if candidate:
+			eduApps.append(candidate)
+			candidate=None
 	return(eduApps)
 #def getEduApps
 
@@ -185,6 +191,7 @@ def _fetchCatalogue():
 		print(app)
 	for app in notFound:
 		print(app)
+
 regex=re.compile("[^\\w -]")
 if __name__=="__main__":
 	processEduApps()

@@ -374,8 +374,7 @@ class details(QStackedWindowItem):
 		bundle=""
 		release=""
 		if item==None:
-			print("PPRORORORO")
-			print("PPRORORORO")
+			print("Err: This app has not a install option")
 			self._onError()
 			return()
 		bundle=item.text().lower().split(" ")[-1]
@@ -470,14 +469,15 @@ class details(QStackedWindowItem):
 			version=self.app.get('versions',{}).get(i,'')
 			version=version.split("+")[0]
 			release=QListWidgetItem("{} {}".format(version,i))
-			idx=priority.index(i)
-			if i in uninstalled:
-				idx+=len(installed)
-			else:
-				#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
-				bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
-				release.setBackground(bcolor)
-			self.lstInfo.insertItem(idx,release)
+			if i in priority:
+				idx=priority.index(i)
+				if i in uninstalled:
+					idx+=len(installed)
+				else:
+					#bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Active,QtGui.QPalette.AlternateBase))
+					bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
+					release.setBackground(bcolor)
+				self.lstInfo.insertItem(idx,release)
 		if len(bundles)<0:
 			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)

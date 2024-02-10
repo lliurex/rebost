@@ -42,7 +42,7 @@ class sqlHelper():
 			self.includelistFilter=rebostHelper.getFiltersList(includelist=True)
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
 		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
-		self.restricted=True
+		self.restricted=False
 		self.mainTableForRestrict="eduapps"
 	#def __init__
 
@@ -141,7 +141,7 @@ class sqlHelper():
 
 	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -216,7 +216,7 @@ class sqlHelper():
 
 	def _exportRebost(self):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} ORDER BY pkg".format(table)
 		#self._debug(query)
 		cursor.execute(query)
@@ -230,7 +230,7 @@ class sqlHelper():
 
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT,alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -271,7 +271,7 @@ class sqlHelper():
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		fetch=''
 		order="ORDER BY pkg"
 		if isinstance(limit,int)==False:
@@ -309,7 +309,7 @@ class sqlHelper():
 		#self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		self._log("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
 		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
@@ -360,7 +360,7 @@ class sqlHelper():
 				fsize=os.path.getsize(restrictTablePath)
 				fupdate.write("{0}: {1}".format(self.mainTableForRestrict,fsize))
 				self.copyBaseTable(self.mainTableForRestrict)
-		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
+		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"],tableName=main_tmp_table)
 		#Begin merge
 		tables=["flatpak","snap","appimage","packagekit"]
 		include=[]
@@ -434,13 +434,13 @@ class sqlHelper():
 						removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
 						cursor.execute(removequery)
 						db.commit()
-				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(tmpdb)
+				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
 					db.commit()
 				except Exception as e:
 					self._debug(e)
-					self._debug(query)
+					#self._debug(query)
 				offset=limit+1
 				if offset>count:
 					offset=count
@@ -479,15 +479,16 @@ class sqlHelper():
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
 				return(processedpkg)
-		bypkgname=True
-		query="data LIKE '%\"pkgname\": \"{0}\"%'".format(pkgname)
+		query="alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 		row=cursor.execute(fetchquery).fetchone()
+		bypkgname=True
 		if not(row):
+			bypkgname=False
 			query="pkg = '{0}'".format(pkgname)
+			#query="data LIKE '%\"pkgname\": \"{0}\"%'".format(pkgname)
 			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 			row=cursor.execute(fetchquery).fetchone()
-			bypkgname=False
 		if row:
 			pkgdataJson=self._mergePackage(pkgdataJson,row,fname)
 		if restricted==False or row:
@@ -620,12 +621,13 @@ class sqlHelper():
 		pkgdataJson['description']=rebostHelper._sanitizeString(pkgdataJson['description'],unescape=True)
 		pkgdataJson['summary']=rebostHelper._sanitizeString(pkgdataJson['summary'])
 		pkgdataJson['name']=rebostHelper._sanitizeString(pkgdataJson['name'])
+		alias=pkgdataJson.get("alias","")
 		pkgdata=str(json.dumps(pkgdataJson))
-		return([pkgname,pkgdata,cat0,cat1,cat2],categories)
+		return([pkgname,pkgdata,cat0,cat1,cat2,alias],categories)
 	#def _processPkgData
 
 	def _mergePackage(self,pkgdataJson,row,fname):
-		(pkg,data,cat0,cat1,cat2)=row
+		(pkg,data,cat0,cat1,cat2,alias)=row
 		mergepkgdataJson=json.loads(data)
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		edudesc=""
@@ -668,7 +670,7 @@ class sqlHelper():
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg FROM {};".format(table)
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -710,7 +712,7 @@ class sqlHelper():
 		allData=[]
 		table=os.path.basename(f).replace(".db","")
 		self._debug("Accesing {}".format(f))
-		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {}".format(table)
 		cursor.execute(query)
 		allData=cursor.fetchall()
@@ -724,10 +726,10 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT,alias TEXT);".format(table)
 		cursor.execute(query)
 		cursor.execute("ATTACH DATABASE '/usr/share/rebost/{}.db' AS pk;".format(consolidate_table))
-		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2) SELECT * from pk.{1};".format(table,consolidate_table))
+		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()
 	#def copyBaseTable

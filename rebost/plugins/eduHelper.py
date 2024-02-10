@@ -135,7 +135,8 @@ class eduHelper():
 		app=eduapp["app"]
 		pkgname=app
 		if app in appmap:
-			pkgname=appmap[app]
+			if app!=appmap[app]:
+				rebostPkg["alias"]=appmap[app]
 		rebostPkg["name"]=app
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
@@ -188,7 +189,6 @@ class eduHelper():
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-
 		return(rebostPkg)
 	#def _getAppDetail(self,eduapp):
 

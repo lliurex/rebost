@@ -69,7 +69,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	db=sqlite3.connect(tablePath)
 	table=table.replace('.db','')
 	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT, alias TEXT);".format(table)
 	_debug("Helper: {}".format(query))
 	cursor.execute(query)
 	query=[]
@@ -96,7 +96,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 		#if len(rebostPkgList)%20==0:
 		#	time.sleep(0.001)
 	if query:
-		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(table)
+		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(table)
 		try:
 			_debug("Helper: INSERTING {} for {}".format(len(query),table))
 			cursor.executemany(queryMany,query)
@@ -120,7 +120,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	cursor.execute(query)
 	query=_rebostPkg_fill_data(rebostPkg)
 	if query:
-		queryMany="INSERT or REPLACE INTO {} VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')".format(table,query[0],query[1],query[2],query[3],query[4])
+		queryMany="INSERT or REPLACE INTO {} VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')".format(table,query[0],query[1],query[2],query[3],query[4],query[5])
 		try:
 			_debug("Helper: INSERT package for {}".format(table))
 			cursor.execute(queryMany)
@@ -139,6 +139,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	if isinstance(rebostPkg['license'],list)==False:
 		rebostPkg['license']=""
+	alias=""
 	categories=rebostPkg.get('categories',[])
 	categories.extend(["","",""])
 	name=rebostPkg.get('name','')
@@ -178,8 +179,9 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 			if idx>0:
 				categories.pop(idx)
 				categories.insert(0,"Lliurex")
+	alias=rebostPkg.get("alias","")
 	(cat0,cat1,cat2)=categories[0:3]
-	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2])
+	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 
 def _fixFlatpakIconPath(self,icon):

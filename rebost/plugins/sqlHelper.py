@@ -21,15 +21,15 @@ class sqlHelper():
 		self.priority=0
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.wrkDir="/usr/share/rebost"
-		self.softwareBanList=os.path.join(self.wrkDir,"lists.d/banned")
-		self.softwareIncludeList=os.path.join(self.wrkDir,"lists.d/include")
-		self.bannedWordsList=os.path.join(self.wrkDir,"lists.d/words")
-		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
-		self.installed_table=os.path.join(self.wrkDir,"installed.db")
-		self.categories_table=os.path.join(self.wrkDir,"categories.db")
-		self.proc_table=os.path.join(self.wrkDir,"rebostPrc.db")
-		self.main_tmp_table=os.path.join(self.wrkDir,"tmpStore.db")
+		self.rebostPath="/usr/share/rebost"
+		self.softwareBanList=os.path.join(self.rebostPath,"lists.d/banned")
+		self.softwareIncludeList=os.path.join(self.rebostPath,"lists.d/include")
+		self.bannedWordsList=os.path.join(self.rebostPath,"lists.d/words")
+		self.main_table=os.path.join(self.rebostPath,"rebostStore.db")
+		self.installed_table=os.path.join(self.rebostPath,"installed.db")
+		self.categories_table=os.path.join(self.rebostPath,"categories.db")
+		self.proc_table=os.path.join(self.rebostPath,"rebostPrc.db")
+		self.main_tmp_table=os.path.join(self.rebostPath,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
@@ -42,8 +42,9 @@ class sqlHelper():
 			self.includelistFilter=rebostHelper.getFiltersList(includelist=True)
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
 		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
-		self.restricted=False
+		self.restricted=True
 		self.mainTableForRestrict="eduapps"
+		self._chkDbIntegrity()
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -75,6 +76,32 @@ class sqlHelper():
 				wordbanlist=fwordlist
 		return (wordbanlist)
 	#def _getWordsFilter
+
+	def _chkDbIntegrity(self):
+		integrity=True
+		testQueries=["SELECT alias from %% LIMIT 1"]
+		include=["packagekit.db","eduapps.db","appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		for fname in include:
+			self._debug("Testing integrity for fname")
+			f=os.path.join(self.rebostPath,fname)
+			dbname=fname.replace(".db","")
+			for testQuery in testQueries:
+				(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
+				query=testQuery.replace("%%",dbname)
+				try:
+					cursor.execute(query)
+					cursor.fetchone()
+				except Exception as e:
+					print(e)
+					self._debug("Integrity check failed")
+					self._debug("Purge {}".format(f))
+					os.unlink(f)
+					integrity=False
+		self.closeConnection(db)
+		if integrity==False:
+			for i in os.scandir(os.path.join(self.rebostPath,"tmp")):
+				os.unlink(i.path)
+		return(integrity)
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -352,7 +379,7 @@ class sqlHelper():
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
 		if len(self.mainTableForRestrict)>0:
-			restrictTablePath=os.path.join(self.wrkDir,"{}.db".format(self.mainTableForRestrict))
+			restrictTablePath=os.path.join(self.rebostPath,"{}.db".format(self.mainTableForRestrict))
 			if self.mainTableForRestrict in sources:
 				sources.pop(self.mainTableForRestrict)
 			if os.path.isfile(restrictTablePath):
@@ -388,7 +415,7 @@ class sqlHelper():
 	#def consolidateSqlTables
 
 	def _getEnabledSources(self):
-		config=os.path.join(self.wrkDir,"store.json")
+		config=os.path.join(self.rebostPath,"store.json")
 		fcontent={}
 		if os.path.isfile(config):
 			with open(config,'r') as f:
@@ -399,7 +426,7 @@ class sqlHelper():
 	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
 		allCategories=[]
 		retval=(0,[])
-		f=os.path.join(self.wrkDir,fname)
+		f=os.path.join(self.rebostPath,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
 			if "zomandos"==fname.replace(".db",""):
@@ -693,7 +720,7 @@ class sqlHelper():
 			with open(self.lastUpdate,'r') as f:
 				fcontent=f.readlines()
 			for fname in include:
-				f=os.path.join(self.wrkDir,fname)
+				f=os.path.join(self.rebostPath,fname)
 				fsize=0
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)

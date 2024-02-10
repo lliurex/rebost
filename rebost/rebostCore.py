@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import os,shutil
+import os
 import multiprocessing
 import threading
 import time
@@ -26,6 +26,8 @@ class Rebost():
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
+		self.rebostPath="/usr/share/rebost/"
+		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -202,17 +204,7 @@ class Rebost():
 		swEnabled=False
 		tmpPath="/usr/share/rebost/tmp"
 		if os.path.isdir(tmpPath):
-			prefix=""
-			if bundle=="apt" or bundle=="package":
-				prefix="pk"
-			elif bundle=="snap":
-				prefix="sn"
-			elif bundle=="flatpak":
-				prefix="fp"
-			elif bundle=="appimage":
-				prefix="ai"
-			elif bundle=="appstream":
-				prefix="ai"
+			prefix=bundle[0]+bundle[3]
 			if prefix:
 				for f in os.listdir(tmpPath):
 					if f.startswith(prefix):
@@ -231,16 +223,7 @@ class Rebost():
 		swRemoved=False
 		if os.path.isdir(tmpPath):
 			prefix=""
-			if bundle=="apt" or bundle=="packageKit":
-				prefix="pk"
-			elif bundle=="snap":
-				prefix="sn"
-			elif bundle=="flatpak":
-				prefix="fp"
-			elif bundle=="appimage":
-				prefix="ai"
-			elif bundle=="appstream":
-				prefix="as"
+			prefix=bundle[0]+bundle[3]
 			if prefix:
 				for f in os.listdir(tmpPath):
 					if f.startswith(prefix):
@@ -459,18 +442,16 @@ class Rebost():
 			print("Critical error. Restarting rebost service now")
 			self.run()
 		return(state)
+	#def getFiltersEnabled(self):
 
 	def getProgress(self):
 		rs=self.plugins['rebostPrcMan'].execute(action='progress')
 		return(json.dumps(rs))
 	#def getProgress(self):
 
-	def forceUpdate(self,force=False):
-		self._debug("Rebost forcing update...")
-		rebostPath="/usr/share/rebost/"
-		rebostTmpPath="/usr/share/rebost/tmp"
+	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		for i in os.scandir(rebostTmpPath):
+		for i in os.scandir(self.rebostPathTmp):
 			try:
 				os.remove(i.path)
 			except Exception as e:
@@ -478,13 +459,18 @@ class Rebost():
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.scandir(rebostPath):
+			for i in os.scandir(self.rebostPath):
 				if i.path.endswith(".db"):
 					try:
 						os.remove(i.path)
 					except Exception as e:
 						print(e)
 						self._debug(e)
+	#def _cleanData
+
+	def forceUpdate(self,force=False):
+		self._debug("Rebost forcing update...")
+		self._cleanData(force=force)
 		return(self.restart())
 	#def getProgress(self):
 

@@ -203,7 +203,7 @@ class Rebost():
 	def _enable(self,bundle):
 		swEnabled=False
 		tmpPath="/usr/share/rebost/tmp"
-		if os.path.isdir(tmpPath):
+		if os.path.isdir(tmpPath) and len(bundle)>=4:
 			prefix=bundle[0]+bundle[3]
 			if prefix:
 				for f in os.listdir(tmpPath):
@@ -221,7 +221,7 @@ class Rebost():
 		if os.path.isfile(dbPath):
 			os.remove(dbPath)
 		swRemoved=False
-		if os.path.isdir(tmpPath):
+		if os.path.isdir(tmpPath) and len(bundle)>=4:
 			prefix=""
 			prefix=bundle[0]+bundle[3]
 			if prefix:

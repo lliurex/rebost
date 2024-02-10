@@ -105,7 +105,6 @@ class eduHelper():
 				columnAuth=column.text
 				full=True
 			if full==True:
-				print(columnName)
 				for data in columnName:
 					href=data["href"]
 					candidate=os.path.basename(href.strip("/"))
@@ -137,7 +136,7 @@ class eduHelper():
 		if app in appmap:
 			if app!=appmap[app]:
 				rebostPkg["alias"]=appmap[app]
-		rebostPkg["name"]=app
+		rebostPkg["name"]=app.rstrip("-2")
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
 		rebostPkg["bundle"]={"eduapp":pkgname}

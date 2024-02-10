@@ -26,7 +26,7 @@ class eduHelper():
 		self.autostartActions=["load"]
 		self.regex=re.compile("[^\\w -]")
 		self.priority=1
-		self.lastUpdate="/usr/share/rebost/tmp/ea.lu"
+		self.lastUpdate="/usr/share/rebost/tmp/eh.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -105,7 +105,6 @@ class eduHelper():
 				columnAuth=column.text
 				full=True
 			if full==True:
-				print(columnName)
 				for data in columnName:
 					href=data["href"]
 					candidate=os.path.basename(href.strip("/"))
@@ -135,8 +134,9 @@ class eduHelper():
 		app=eduapp["app"]
 		pkgname=app
 		if app in appmap:
-			pkgname=appmap[app]
-		rebostPkg["name"]=app
+			if app!=appmap[app]:
+				rebostPkg["alias"]=appmap[app]
+		rebostPkg["name"]=app.rstrip("-2")
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
 		rebostPkg["bundle"]={"eduapp":pkgname}
@@ -188,7 +188,6 @@ class eduHelper():
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
-
 		return(rebostPkg)
 	#def _getAppDetail(self,eduapp):
 

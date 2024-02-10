@@ -21,7 +21,7 @@ class snapHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=2
-		self.lastUpdate="/usr/share/rebost/tmp/sn.lu"
+		self.lastUpdate="/usr/share/rebost/tmp/sp.lu"
 		self.snap=Snapd.Client()
 	#def __init__
 
@@ -71,7 +71,7 @@ class snapHelper():
 				print(e)
 				break
 			if self._chkNeedUpdate(len(apps),section):
-				updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
+				updateFile=self.lastUpdate.replace("sp","sp_{}".format(section))
 				with open(updateFile,'w') as f:
 					f.write(str(len(apps)))
 				update=True
@@ -86,7 +86,7 @@ class snapHelper():
 		update=True
 		appMd5=""
 		lastUpdate=""
-		updateFile=self.lastUpdate.replace("sn","sn_{}".format(section))
+		updateFile=self.lastUpdate.replace("sp","sp_{}".format(section))
 		if os.path.isfile(updateFile)==False:
 			if os.path.isdir(os.path.dirname(updateFile))==False:
 				os.makedirs(os.path.dirname(updateFile))

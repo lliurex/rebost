@@ -21,15 +21,15 @@ class sqlHelper():
 		self.priority=0
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.wrkDir="/usr/share/rebost"
-		self.softwareBanList=os.path.join(self.wrkDir,"lists.d/banned")
-		self.softwareIncludeList=os.path.join(self.wrkDir,"lists.d/include")
-		self.bannedWordsList=os.path.join(self.wrkDir,"lists.d/words")
-		self.main_table=os.path.join(self.wrkDir,"rebostStore.db")
-		self.installed_table=os.path.join(self.wrkDir,"installed.db")
-		self.categories_table=os.path.join(self.wrkDir,"categories.db")
-		self.proc_table=os.path.join(self.wrkDir,"rebostPrc.db")
-		self.main_tmp_table=os.path.join(self.wrkDir,"tmpStore.db")
+		self.rebostPath="/usr/share/rebost"
+		self.softwareBanList=os.path.join(self.rebostPath,"lists.d/banned")
+		self.softwareIncludeList=os.path.join(self.rebostPath,"lists.d/include")
+		self.bannedWordsList=os.path.join(self.rebostPath,"lists.d/words")
+		self.main_table=os.path.join(self.rebostPath,"rebostStore.db")
+		self.installed_table=os.path.join(self.rebostPath,"installed.db")
+		self.categories_table=os.path.join(self.rebostPath,"categories.db")
+		self.proc_table=os.path.join(self.rebostPath,"rebostPrc.db")
+		self.main_tmp_table=os.path.join(self.rebostPath,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
@@ -44,6 +44,7 @@ class sqlHelper():
 		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 		self.restricted=True
 		self.mainTableForRestrict="eduapps"
+		self._chkDbIntegrity()
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -75,6 +76,32 @@ class sqlHelper():
 				wordbanlist=fwordlist
 		return (wordbanlist)
 	#def _getWordsFilter
+
+	def _chkDbIntegrity(self):
+		integrity=True
+		testQueries=["SELECT alias from %% LIMIT 1"]
+		include=["packagekit.db","eduapps.db","appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
+		for fname in include:
+			self._debug("Testing integrity for fname")
+			f=os.path.join(self.rebostPath,fname)
+			dbname=fname.replace(".db","")
+			for testQuery in testQueries:
+				(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
+				query=testQuery.replace("%%",dbname)
+				try:
+					cursor.execute(query)
+					cursor.fetchone()
+				except Exception as e:
+					print(e)
+					self._debug("Integrity check failed")
+					self._debug("Purge {}".format(f))
+					os.unlink(f)
+					integrity=False
+		self.closeConnection(db)
+		if integrity==False:
+			for i in os.scandir(os.path.join(self.rebostPath,"tmp")):
+				os.unlink(i.path)
+		return(integrity)
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -141,7 +168,7 @@ class sqlHelper():
 
 	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -216,7 +243,7 @@ class sqlHelper():
 
 	def _exportRebost(self):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} ORDER BY pkg".format(table)
 		#self._debug(query)
 		cursor.execute(query)
@@ -230,7 +257,7 @@ class sqlHelper():
 
 	def _searchPackage(self,pkgname):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT,alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
 		cursor.execute(query)
@@ -271,7 +298,7 @@ class sqlHelper():
 		if isinstance(category,list):
 			category=category[0]
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		fetch=''
 		order="ORDER BY pkg"
 		if isinstance(limit,int)==False:
@@ -309,7 +336,7 @@ class sqlHelper():
 		#self._debug("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		self._log("Setting status of {} {} as {}".format(pkgname,bundle,state))
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
 		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
 		#self._debug(query)
@@ -352,7 +379,7 @@ class sqlHelper():
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
 		if len(self.mainTableForRestrict)>0:
-			restrictTablePath=os.path.join(self.wrkDir,"{}.db".format(self.mainTableForRestrict))
+			restrictTablePath=os.path.join(self.rebostPath,"{}.db".format(self.mainTableForRestrict))
 			if self.mainTableForRestrict in sources:
 				sources.pop(self.mainTableForRestrict)
 			if os.path.isfile(restrictTablePath):
@@ -360,7 +387,7 @@ class sqlHelper():
 				fsize=os.path.getsize(restrictTablePath)
 				fupdate.write("{0}: {1}".format(self.mainTableForRestrict,fsize))
 				self.copyBaseTable(self.mainTableForRestrict)
-		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"],tableName=main_tmp_table)
+		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"],tableName=main_tmp_table)
 		#Begin merge
 		tables=["flatpak","snap","appimage","packagekit"]
 		include=[]
@@ -369,10 +396,10 @@ class sqlHelper():
 				if sources[source]==False:
 					idx=tables.index(source)
 					tables.pop(idx)
-		tables.insert(0,"appstream")
-		tables.insert(0,"zomandos")
 		for table in tables:
 			include.append("{}.db".format(table))
+		include.insert(0,"appstream.db")
+		include.insert(0,"zomandos.db")
 		allCategories=[]
 		for fname in include:
 			(count,categories)=self._processDatabase(fname,main_db,main_cursor,main_tmp_table,fupdate)
@@ -388,7 +415,7 @@ class sqlHelper():
 	#def consolidateSqlTables
 
 	def _getEnabledSources(self):
-		config=os.path.join(self.wrkDir,"store.json")
+		config=os.path.join(self.rebostPath,"store.json")
 		fcontent={}
 		if os.path.isfile(config):
 			with open(config,'r') as f:
@@ -399,7 +426,7 @@ class sqlHelper():
 	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
 		allCategories=[]
 		retval=(0,[])
-		f=os.path.join(self.wrkDir,fname)
+		f=os.path.join(self.rebostPath,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
 			if "zomandos"==fname.replace(".db",""):
@@ -417,7 +444,7 @@ class sqlHelper():
 				query=[]
 				removequery=[]
 				for data in allData[offset:limit]:
-					(processedPkg,aliasPkg)=self._addPkgToQuery(tmpdb,cursor,data,fname,restricted)
+					(processedPkg,aliasPkg)=self._addPkgToQuery(tmpdb,cursor,data,restricted)
 					if processedPkg!=([],[]):
 						pkgData=processedPkg[0]
 						categories=processedPkg[1]
@@ -425,22 +452,22 @@ class sqlHelper():
 							allCategories.extend(categories)
 						query.append(pkgData)
 					if aliasPkg!=([],[]):
-						app=json.loads(aliasPkg[1])
-						dataContent=aliasPkg[1]
-						alias=aliasPkg[0]
+						app=aliasPkg[0]
+						dataContent=aliasPkg[0][1]
+						alias=aliasPkg[0][0]
 						#Ensure all single quotes are duplicated or sql will fail
 						dataContent=dataContent.replace("''","'")
 						dataContent=dataContent.replace("'","''")
 						removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
 						cursor.execute(removequery)
 						db.commit()
-				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?)".format(tmpdb)
+				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
 					db.commit()
 				except Exception as e:
 					self._debug(e)
-					self._debug(query)
+					#self._debug(query)
 				offset=limit+1
 				if offset>count:
 					offset=count
@@ -468,7 +495,7 @@ class sqlHelper():
 		self.closeConnection(db_cat)
 	#def _processCategories
 
-	def _addPkgToQuery(self,table,cursor,data,fname,restricted=True):
+	def _addPkgToQuery(self,table,cursor,data,restricted=True):
 		(cat0,cat1,cat2)=(None,None,None)
 		processedpkg=([],[])
 		aliaspkg=([],[])
@@ -479,33 +506,32 @@ class sqlHelper():
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
 				return(processedpkg)
-		bypkgname=True
-		query="data LIKE '%\"pkgname\": \"{0}\"%'".format(pkgname)
+		bypkgalias=True
+		query="alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 		row=cursor.execute(fetchquery).fetchone()
 		if not(row):
+			bypkgalias=False
 			query="pkg = '{0}'".format(pkgname)
 			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 			row=cursor.execute(fetchquery).fetchone()
-			bypkgname=False
 		if row:
-			pkgdataJson=self._mergePackage(pkgdataJson,row,fname)
-		if restricted==False or row:
-			#if len(pkgdataJson.get('bundle',{}))<=0:
-			#	pkgdataJson['bundle'].update({"package":""})
+			if bypkgalias==True:
+				alias=row[0]
+				aliasdata=json.loads(row[1])
+				aliaspkgdataJson=pkgdataJson.copy()
+				aliaspkgdataJson["name"]=alias
+				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
+				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
+				query="pkg = '{0}'".format(pkgname)
+				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
+				row=cursor.execute(fetchquery).fetchone()
+			if row:
+				pkgdataJson=self._mergePackage(pkgdataJson,row)
 			processedpkg=self._processPkgData(pkgname,pkgdataJson)
-		if bypkgname==True and row:
-			#aliasdata=pkgdataJson.copy()
-			alias=row[0]
-			data=processedpkg[0][1]
-			data=data.replace("'","\'")
-			aliasdata=json.loads(data)
-			aliasdata["name"]=alias
-			#aliasdata['description']=rebostHelper._sanitizeString(aliasdata['description'],unescape=True)
-			#aliasdata['summary']=rebostHelper._sanitizeString(aliasdata['summary'])
-			#aliasdata['name']=rebostHelper._sanitizeString(aliasdata['name'])
-			#aliaspkg=(alias,aliasdata)
-			aliaspkg=(alias,str(json.dumps(aliasdata)))
+		elif restricted==False:
+			processedpkg=self._processPkgData(pkgname,pkgdataJson)
+
 		return(processedpkg,aliaspkg)
 	#def _addPkgToQuery
 
@@ -583,10 +609,10 @@ class sqlHelper():
 
 	def _processPkgData(self,pkgname,pkgdataJson):
 	#REM This code removes a candidate zmd package with no zomando associated
-	#	if pkgname.startswith("zero-"):
-	#		if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
-	#			print("DISCARD {}".format(pkgname))
-	#			return([],[])
+		if pkgname.startswith("zero-"):
+			if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
+				self._debug("DISCARD {}".format(pkgname))
+				return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
 		if "Lliurex" in categories:
 			idx=categories.index("Lliurex")
@@ -620,25 +646,24 @@ class sqlHelper():
 		pkgdataJson['description']=rebostHelper._sanitizeString(pkgdataJson['description'],unescape=True)
 		pkgdataJson['summary']=rebostHelper._sanitizeString(pkgdataJson['summary'])
 		pkgdataJson['name']=rebostHelper._sanitizeString(pkgdataJson['name'])
+		alias=pkgdataJson.get("alias","")
 		pkgdata=str(json.dumps(pkgdataJson))
-		return([pkgname,pkgdata,cat0,cat1,cat2],categories)
+		return([pkgname,pkgdata,cat0,cat1,cat2,alias],categories)
 	#def _processPkgData
 
-	def _mergePackage(self,pkgdataJson,row,fname):
-		(pkg,data,cat0,cat1,cat2)=row
+	def _mergePackage(self,pkgdataJson,row):
+		(pkg,data,cat0,cat1,cat2,alias)=row
 		mergepkgdataJson=json.loads(data)
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
-		edudesc=""
-		edusum=""
-		eduname=""
 		if len(eduapp)>0:
 			mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
-			#	edudesc=mergepkgdataJson["description"]
-			#	edusum=mergepkgdataJson["summary"]
-				eduico=mergepkgdataJson["icon"]
-				eduname=mergepkgdataJson["name"]
+		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
+		return(mergepkgdataJson)
+	#def _mergePackage
+
+	def _mergeData(self,pkgdataJson,mergepkgdataJson):
 		for key,item in pkgdataJson.items():
 			if not key in mergepkgdataJson.keys():
 				mergepkgdataJson[key]=item
@@ -654,21 +679,15 @@ class sqlHelper():
 							tmp.append(i)
 					mergepkgdataJson[key]=tmp
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				if len(item)>len(mergepkgdataJson.get(key,'')):
+				#If icon exists use it
+				if len(item)>=len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
-		if edudesc!="":
-		#	mergepkgdataJson["description"]=edudesc
-		#	mergepkgdataJson["summary"]=edusum
-			if len(eduico)>0:
-				mergepkgdataJson["icon"]=eduico
-			if len(eduname)>0:
-				mergepkgdataJson["name"]=eduname
 		return(mergepkgdataJson)
-	#def _mergePackage
+	#def _mergeData
 
 	def _generateCompletion(self):
 		table=os.path.basename(self.main_table).replace(".db","")
-		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg FROM {};".format(table)
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -691,7 +710,7 @@ class sqlHelper():
 			with open(self.lastUpdate,'r') as f:
 				fcontent=f.readlines()
 			for fname in include:
-				f=os.path.join(self.wrkDir,fname)
+				f=os.path.join(self.rebostPath,fname)
 				fsize=0
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)
@@ -710,7 +729,7 @@ class sqlHelper():
 		allData=[]
 		table=os.path.basename(f).replace(".db","")
 		self._debug("Accesing {}".format(f))
-		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT"])
+		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {}".format(table)
 		cursor.execute(query)
 		allData=cursor.fetchall()
@@ -724,10 +743,10 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		query="DROP TABLE IF EXISTS {}".format(table)
 		cursor.execute(query)
-		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT);".format(table)
+		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT,alias TEXT);".format(table)
 		cursor.execute(query)
 		cursor.execute("ATTACH DATABASE '/usr/share/rebost/{}.db' AS pk;".format(consolidate_table))
-		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2) SELECT * from pk.{1};".format(table,consolidate_table))
+		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()
 	#def copyBaseTable

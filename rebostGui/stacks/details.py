@@ -33,7 +33,7 @@ i18n={
 	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
 	"RUN":_("Open"),
-	"TOOLTIP":_(""),
+	"TOOLTIP":_("Details"),
 	"UPGRADE":_("Upgrade"),
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
 	}
@@ -448,8 +448,6 @@ class details(QStackedWindowItem):
 				pkgState=self.app.get('state',{}).get("package",'1')
 				if pkgState.isdigit()==True:
 					pkgState=int(pkgState)
-		#		if pkgState==0:
-		#			bundles.remove('package')
 		states=0
 		self.btnZomando.setVisible(False)
 		for bundle in bundles:

@@ -24,7 +24,7 @@ i18n={
 	"LLXUP":_("Launch LliurexUp"),
 	"MENU":_("Show applications"),
 	"SEARCH":_("Search"),
-	"TOOLTIP":_(""),
+	"TOOLTIP":_("Portrait"),
 	"UPGRADABLE":_("Upgradables"),
 	"UPGRADES":_("There're upgrades available")
 	}
@@ -149,7 +149,7 @@ class portrait(QStackedWindowItem):
 			index=1,
 			visible=True)
 		self.appconfig=appConfig.appConfig()
-		self.appconfig.setConfig(confDirs={'system':os.path.join('/usr/share',"rebost"),'user':os.path.join(os.environ['HOME'],'.config',"rebost")},confFile="store.json")
+		self.appconfig.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],'.config/rebost')},confFile="store.json")
 		self.i18nCat={}
 		self.config={}
 		self.index=1
@@ -162,7 +162,7 @@ class portrait(QStackedWindowItem):
 		self.rc=store.client()
 		self.hideControlButtons()
 		self.changed=[]
-		self.level='user'
+		self.level='system'
 		self.oldcursor=self.cursor()
 	#def __init__
 

@@ -136,6 +136,8 @@ class eduHelper():
 		if app in appmap:
 			if app!=appmap[app]:
 				rebostPkg["alias"]=appmap[app]
+		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),app)
+		rebostPkg["homepage"]=appUrl
 		rebostPkg["name"]=app.rstrip("-2")
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)

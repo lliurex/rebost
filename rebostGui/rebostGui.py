@@ -9,7 +9,7 @@ from PySide2 import QtGui
 from QtExtraWidgets import QStackedWindow
 import gettext
 import time
-gettext.textdomain('rebostGui')
+gettext.textdomain('rebostgui')
 _ = gettext.gettext
 
 app=QApplication(["RebostGui"])

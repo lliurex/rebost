@@ -6,7 +6,6 @@ import json
 import rebostHelper
 import html
 import sqlite3
-import subprocess
 from shutil import copyfile
 import time
 import appimageHelper

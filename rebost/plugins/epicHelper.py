@@ -53,18 +53,23 @@ class epicHelper():
 		action="load"
 		epicList=self._getEpicZomandos()
 		rebostPkgList=self._generateRebostFromEpic(epicList)
+		self._debug("Sending {} to sql".format(len(rebostPkgList)))
 		rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'zomandos.db')
 	#def _loadStore
 
 	def _getEpicZomandos(self):
 		cmd=[EPIC,"showlist"]
 		epicList=[]
-		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
+		renv = os.environ.copy()
+		if len(renv.get("USER",""))==0:
+			renv["USER"]="root"
+		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,env=renv)
 		output=proc.stdout
-		idx=output.index("EPIC:")
-		rawEpicList=output[idx:].replace("EPIC:","")
-		for epic in rawEpicList.split(","):
-			epicList.append(epic.strip())
+		if "EPIC:" in output:
+			idx=output.index("EPIC:")
+			rawEpicList=output[idx:].replace("EPIC:","")
+			for epic in rawEpicList.split(","):
+				epicList.append(epic.strip())
 		return(epicList)
 	#def _getEpicZomandos
 	

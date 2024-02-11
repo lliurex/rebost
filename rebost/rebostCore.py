@@ -27,6 +27,7 @@ class Rebost():
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.rebostPath="/usr/share/rebost/"
+		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
 		self.process={}
 		self.store=appstream.Store()
@@ -143,8 +144,9 @@ class Rebost():
 	#def _loadPluginInfo
 
 	def _writeConfig(self,config):
+		return()
 		cfg=self._readConfig()
-		cfgFile="/usr/share/rebost/store.json"
+		cfgFile=self.confFile
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
@@ -157,6 +159,17 @@ class Rebost():
 	#def _writeConfig
 
 	def _processConfig(self):
+		cfg=self._readConfig()
+		for plugin,state in cfg.get("plugins",{}).items():
+			if state==True:
+				self._enable(plugin)
+			else:
+				self._disable(plugin)
+		self.restricted=cfg.get("restricted",True)
+		self.mainTableForRestrict=cfg.get("maintable","")
+	#def _processConfig
+
+	def _processConfig2(self):
 		cfg=self._readConfig()
 		sw_pkg=False
 		if "enabled" not in cfg.keys():
@@ -189,10 +202,9 @@ class Rebost():
 	#def _processConfig
 
 	def _readConfig(self):
-		cfgFile="/usr/share/rebost/store.json"
 		cfg={}
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'r') as f:
+		if os.path.isfile(self.confFile):
+			with open(self.confFile,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:
@@ -216,22 +228,28 @@ class Rebost():
 	#def _enable
 
 	def _disable(self,bundle):
-		tmpPath="/usr/share/rebost/tmp"
-		dbPath=os.path.join("/usr/share/rebost","{}.db".format(bundle.lower()))
-		if os.path.isfile(dbPath):
-			os.remove(dbPath)
-		swRemoved=False
-		if os.path.isdir(tmpPath) and len(bundle)>=4:
-			prefix=""
-			prefix=bundle[0]+bundle[3]
-			if prefix:
-				for f in os.listdir(tmpPath):
-					if f.startswith(prefix):
-						os.remove(os.path.join(tmpPath,f))
-						swRemoved=True
-		if swRemoved==True:
-			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
-				os.remove(os.path.join(tmpPath,"sq.lu"))
+		disable=[]
+		for plugin,data in self.pluginInfo.items():
+			if data.get("packagekind","")==bundle:
+				disable.append(plugin)
+		tables={"eduapp":"eduapps.db","zomando":"zomandos.db","package":"packagekit.db","flatpak":"flatpak.db","snap":"snap.db","appimage":"appimage.db"}
+		for plugin in disable:
+			self._debug("Config disable {}".format(plugin))
+			del(self.pluginInfo[plugin])
+			table=tables.get(bundle,"")
+			if len(table)>0:
+				self._debug("Deleting table {}".format(table))
+				tpath=os.path.join(self.rebostPathTmp,table)
+				if os.path.isfile(tpath):
+					os.remove(tpath)
+				prefix=plugin[0]+plugin[3]
+				fprefix=os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower()))
+				if os.path.isfile(fprefix):
+					os.remove(fprefix)
+		if len(disable)>0:
+			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
+				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
+		return()
 	#def _disable
 
 	def _chkNetwork(self):

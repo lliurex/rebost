@@ -246,7 +246,7 @@ class Rebost():
 					actionDict[priority]=newDict.copy()
 				else:
 					print("Error autostart {}: Network error".format(plugin))
-					actionDict[priority]=newDict.copy()
+					#actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
 				priority=info.get('priority',0)
 				newDictPost=actionDict.get(priority,{})

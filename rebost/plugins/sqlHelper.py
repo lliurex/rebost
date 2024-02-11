@@ -102,6 +102,7 @@ class sqlHelper():
 			for i in os.scandir(os.path.join(self.rebostPath,"tmp")):
 				os.unlink(i.path)
 		return(integrity)
+	#def _chkDbIntegrity
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'

@@ -100,7 +100,7 @@ class Rebost():
 						else:
 							print("{} will set its status".format(plugin))
 					else:
-						self._debug("Plugin disabled: %s"%plugin)
+						self._debug("Plugin disabled: {}".format(plugin))
 						disabledPlugins[plugin.replace(".py","")]=False
 		if len(disabledPlugins)>0:
 			self._writeConfig(disabledPlugins)
@@ -167,38 +167,6 @@ class Rebost():
 				self._disable(plugin)
 		self.restricted=cfg.get("restricted",True)
 		self.mainTableForRestrict=cfg.get("maintable","")
-	#def _processConfig
-
-	def _processConfig2(self):
-		cfg=self._readConfig()
-		sw_pkg=False
-		if "enabled" not in cfg.keys():
-			cfg["packageKit"]=True
-			cfg["enabled"]=True
-			self._writeConfig(cfg)
-		for key,value in cfg.items():
-			if value=="enabled":
-				continue
-			if value==True:
-				self._enable(key)
-				if key.lower() in ["apt","package","packagekit"]:
-					self._enable("appstream")
-			else:
-				delPlugin=key
-				if key=="snap":
-					delPlugin="snapHelper"
-				elif key=="flatpak":
-					delPlugin="flatpakHelper"
-				elif key.lower() in ["apt","package","packagekit"]:
-					delPlugin="packageKit"
-					#if "appstreamHelper" in self.pluginInfo.keys():
-					#	del(self.pluginInfo["appstreamHelper"])
-					#	self._disable("appstream")
-				elif key=="appimage":
-					delPlugin="appimageHelper"
-				if delPlugin in self.pluginInfo.keys():
-					del(self.pluginInfo[delPlugin])
-				self._disable(key)
 	#def _processConfig
 
 	def _readConfig(self):
@@ -381,7 +349,7 @@ class Rebost():
 			else:
 				store.append(app)
 		self._debug("End sanitize")
-		return((json.dumps(store)))
+		return(json.dumps(store))
 	#def _sanitizeStore
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):

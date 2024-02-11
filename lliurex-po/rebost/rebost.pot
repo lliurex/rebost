@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-01 09:41+0100\n"
+"POT-Creation-Date: 2024-02-11 17:57+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,168 +17,168 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../rebost/rebostCli.py:17
+#: ../rebost/rebostCli.py:18
 msgid "ocurred when attempting to"
 msgstr ""
 
-#: ../rebost/rebostCli.py:18
+#: ../rebost/rebostCli.py:19
 msgid "an"
 msgstr ""
 
-#: ../rebost/rebostCli.py:19
+#: ../rebost/rebostCli.py:20
 msgid "Package"
 msgstr ""
 
-#: ../rebost/rebostCli.py:20
+#: ../rebost/rebostCli.py:21
 msgid "pkgname"
 msgstr ""
 
-#: ../rebost/rebostCli.py:21
+#: ../rebost/rebostCli.py:22
 msgid "action"
 msgstr ""
 
-#: ../rebost/rebostCli.py:22
+#: ../rebost/rebostCli.py:23
 msgid "install"
 msgstr ""
 
-#: ../rebost/rebostCli.py:23
+#: ../rebost/rebostCli.py:24
 msgid "installed"
 msgstr ""
 
-#: ../rebost/rebostCli.py:24
+#: ../rebost/rebostCli.py:25
 msgid "remove"
 msgstr ""
 
-#: ../rebost/rebostCli.py:25
+#: ../rebost/rebostCli.py:26
 msgid "removed"
 msgstr ""
 
-#: ../rebost/rebostCli.py:26
+#: ../rebost/rebostCli.py:27
 msgid "Versions"
 msgstr ""
 
-#: ../rebost/rebostCli.py:27
+#: ../rebost/rebostCli.py:28
 msgid "Categories"
 msgstr ""
 
-#: ../rebost/rebostCli.py:28
+#: ../rebost/rebostCli.py:29
 msgid "unknown"
 msgstr ""
 
-#: ../rebost/rebostCli.py:29
+#: ../rebost/rebostCli.py:30
 msgid "unknown status"
 msgstr ""
 
-#: ../rebost/rebostCli.py:30
+#: ../rebost/rebostCli.py:31
 msgid "Unknown option"
 msgstr ""
 
-#: ../rebost/rebostCli.py:31
+#: ../rebost/rebostCli.py:32
 msgid "Usage"
 msgstr ""
 
-#: ../rebost/rebostCli.py:32
+#: ../rebost/rebostCli.py:33
 msgid "query"
 msgstr ""
 
-#: ../rebost/rebostCli.py:33
+#: ../rebost/rebostCli.py:34
 msgid "format"
 msgstr ""
 
-#: ../rebost/rebostCli.py:34
+#: ../rebost/rebostCli.py:35
 msgid "optional"
 msgstr ""
 
-#: ../rebost/rebostCli.py:35
+#: ../rebost/rebostCli.py:36
 msgid "Searchs packages using pkgname as query"
 msgstr ""
 
-#: ../rebost/rebostCli.py:36
-msgid "Shows info related to one package"
-msgstr ""
-
 #: ../rebost/rebostCli.py:37
-msgid ""
-"Install one package. If package comes from many formats one must be specified"
+msgid "Shows info related to one package"
 msgstr ""
 
 #: ../rebost/rebostCli.py:38
 msgid ""
-"Remove one package. If package comes from many formats one must be specified"
+"Install one package. If package comes from many formats one must be specified"
 msgstr ""
 
 #: ../rebost/rebostCli.py:39
-msgid "Examples"
+msgid ""
+"Remove one package. If package comes from many formats one must be specified"
 msgstr ""
 
 #: ../rebost/rebostCli.py:40
-msgid "Install firefox-esr as appimage"
+msgid "Examples"
 msgstr ""
 
 #: ../rebost/rebostCli.py:41
-msgid "Remove chromium snap"
+msgid "Install firefox-esr as appimage"
 msgstr ""
 
 #: ../rebost/rebostCli.py:42
-msgid "Show info related to"
+msgid "Remove chromium snap"
 msgstr ""
 
 #: ../rebost/rebostCli.py:43
-msgid "Search for packages containing"
+msgid "Show info related to"
 msgstr ""
 
 #: ../rebost/rebostCli.py:44
-msgid "Must be"
+msgid "Search for packages containing"
 msgstr ""
 
 #: ../rebost/rebostCli.py:45
-msgid "not"
+msgid "Must be"
 msgstr ""
 
 #: ../rebost/rebostCli.py:46
-msgid "found"
+msgid "not"
 msgstr ""
 
 #: ../rebost/rebostCli.py:47
-msgid "for"
+msgid "found"
 msgstr ""
 
 #: ../rebost/rebostCli.py:48
-msgid "available"
+msgid "for"
 msgstr ""
 
 #: ../rebost/rebostCli.py:49
-msgid "from:"
+msgid "available"
 msgstr ""
 
 #: ../rebost/rebostCli.py:50
-msgid "from"
+msgid "from:"
 msgstr ""
 
 #: ../rebost/rebostCli.py:51
-msgid "many"
+msgid "from"
 msgstr ""
 
 #: ../rebost/rebostCli.py:52
-msgid "sources."
+msgid "many"
 msgstr ""
 
 #: ../rebost/rebostCli.py:53
-msgid "please"
+msgid "sources."
 msgstr ""
 
 #: ../rebost/rebostCli.py:54
-msgid "choose"
+msgid "please"
 msgstr ""
 
 #: ../rebost/rebostCli.py:55
-msgid "one"
+msgid "choose"
 msgstr ""
 
 #: ../rebost/rebostCli.py:56
-msgid "as"
+msgid "one"
 msgstr ""
 
 #: ../rebost/rebostCli.py:57
+msgid "as"
+msgstr ""
+
+#: ../rebost/rebostCli.py:58
 msgid "only"
 msgstr ""

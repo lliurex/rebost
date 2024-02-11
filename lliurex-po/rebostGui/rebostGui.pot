@@ -3,14 +3,12 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/portrait.py:20
-#: ../rebostGui/stacks/sources.py:20
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-01 09:41+0100\n"
+"POT-Creation-Date: 2024-02-11 17:57+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,142 +18,172 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../rebostGui/stacks/details.py:23
-msgid "Details"
+msgid ""
+"The app could not be loaded. Perhaps it's not in LliureX catalogue and thus "
+"it can't be installed"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:24
-msgid "Show application detail"
+msgid "Choose"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/portrait.py:19
+#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:36
+msgid "Details"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/portrait.py:21
 msgid "Navigate through all applications"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:27
-msgid "Install"
+msgid "Error opening"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:28
-msgid "Choose"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:29
-msgid "Open"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:30
-msgid "Remove"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:31
-msgid "Upgrade"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:32
-msgid "Zommand not found. Open Zero-Center?"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:33
-msgid "Format"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:34
-msgid "Release"
-msgstr ""
-
-#: ../rebostGui/stacks/details.py:35
 msgid "Unknown error"
 msgstr ""
 
-#: ../rebostGui/stacks/portrait.py:17
-msgid "Portrait"
+#: ../rebostGui/stacks/details.py:29
+msgid "App unauthorized"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:30
+msgid "Format"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:31
+msgid "Install"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:32
+msgid "Show application detail"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:33
+msgid "Release"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:34
+msgid "Remove"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:35
+msgid "Open"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:37
+msgid "Upgrade"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:38
+msgid "Zommand not found. Open Zero-Center?"
 msgstr ""
 
 #: ../rebostGui/stacks/portrait.py:18
-msgid "Show applications"
-msgstr ""
-
-#: ../rebostGui/stacks/portrait.py:21
-msgid "Search"
-msgstr ""
-
-#: ../rebostGui/stacks/portrait.py:22
 msgid "All"
 msgstr ""
 
-#: ../rebostGui/stacks/portrait.py:23
-msgid "Filters"
-msgstr ""
-
-#: ../rebostGui/stacks/portrait.py:24
+#: ../rebostGui/stacks/portrait.py:19
 msgid "Available"
 msgstr ""
 
-#: ../rebostGui/stacks/portrait.py:25
+#: ../rebostGui/stacks/portrait.py:20 ../rebostGui/stacks/portrait.py:27
+msgid "Portrait"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:22
+msgid "Filters"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:23
 msgid "Installed"
 msgstr ""
 
+#: ../rebostGui/stacks/portrait.py:24
+msgid "Launch LliurexUp"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:25
+msgid "Show applications"
+msgstr ""
+
 #: ../rebostGui/stacks/portrait.py:26
+msgid "Search"
+msgstr ""
+
+#: ../rebostGui/stacks/portrait.py:28
 msgid "Upgradables"
 msgstr ""
 
-#: ../rebostGui/stacks/sources.py:17
-msgid "Sources"
+#: ../rebostGui/stacks/portrait.py:29
+msgid "There're upgrades available"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:18
-msgid "Show software sources"
-msgstr ""
-
-#: ../rebostGui/stacks/sources.py:19
-msgid "Configure software sources"
-msgstr ""
-
-#: ../rebostGui/stacks/sources.py:21
-msgid "Reload catalogues"
-msgstr ""
-
-#: ../rebostGui/stacks/sources.py:22
-msgid "Reload info from sources"
-msgstr ""
-
-#: ../rebostGui/stacks/sources.py:23
 msgid "Clear cache"
 msgstr ""
 
-#: ../rebostGui/stacks/sources.py:24
+#: ../rebostGui/stacks/sources.py:19
 msgid ""
 "Remove all files from cache, as per exemple icons or another related stuff"
 msgstr ""
 
+#: ../rebostGui/stacks/sources.py:20
+msgid "Sources"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:21
+msgid "Show software sources"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:22
+msgid "Configure software sources"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:23
+msgid "Configuring software sources"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:24
+msgid "Reload catalogues"
+msgstr ""
+
 #: ../rebostGui/stacks/sources.py:25
-msgid "Restart database"
+msgid "Reload info from sources"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:26
+msgid "Restart database"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:27
 msgid ""
 "Forces a refresh of all the info from sources resetting all previous stored "
 "information"
 msgstr ""
 
-#: ../rebostGui/stacks/sources.py:27
+#: ../rebostGui/stacks/sources.py:28
 msgid "Service could not be reloaded. Check credentials"
 msgstr ""
 
-#: ../rebostGui/stacks/sources.py:28
-msgid "Include flatpaks"
-msgstr ""
-
 #: ../rebostGui/stacks/sources.py:29
-msgid "Include snaps"
+msgid "Include appimages"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:30
-msgid "Include appimages"
+msgid "Include flatpaks"
 msgstr ""
 
 #: ../rebostGui/stacks/sources.py:31
 msgid "Include native packages"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:32
+msgid "Include snaps"
+msgstr ""
+
+#: ../rebostGui/stacks/sources.py:33
+msgid "Configuration"
 msgstr ""
 
 msgid "2DGraphics"
@@ -164,25 +192,7 @@ msgstr ""
 msgid "3DGraphics"
 msgstr ""
 
-msgid "Accessibility"
-msgstr ""
-
-msgid "Administration"
-msgstr ""
-
-msgid "Animation"
-msgstr ""
-
-msgid "Application"
-msgstr ""
-
-msgid "Archiving"
-msgstr ""
-
 msgid "Art"
-msgstr ""
-
-msgid "ArtificialIntelligence"
 msgstr ""
 
 msgid "Astronomy"
@@ -197,61 +207,16 @@ msgstr ""
 msgid "AudioVideoEditing"
 msgstr ""
 
-msgid "Biology"
-msgstr ""
-
-msgid "Calculator"
-msgstr ""
-
-msgid "Calendar"
-msgstr ""
-
 msgid "Chart"
 msgstr ""
 
 msgid "Chemistry"
 msgstr ""
 
-msgid "Clock"
-msgstr ""
-
-msgid "Compression"
-msgstr ""
-
 msgid "ComputerScience"
 msgstr ""
 
-msgid "Core"
-msgstr ""
-
-msgid "DataVisualization"
-msgstr ""
-
-msgid "Database"
-msgstr ""
-
-msgid "Debugger"
-msgstr ""
-
-msgid "DesktopSettings"
-msgstr ""
-
-msgid "Developer Tools"
-msgstr ""
-
 msgid "Development"
-msgstr ""
-
-msgid "Dictionary"
-msgstr ""
-
-msgid "DiscBurning"
-msgstr ""
-
-msgid "Documentation"
-msgstr ""
-
-msgid "Economy"
 msgstr ""
 
 msgid "Education"
@@ -266,37 +231,16 @@ msgstr ""
 msgid "Engineering"
 msgstr ""
 
+msgid "FORBIDDEN"
+msgstr ""
+
 msgid "FP"
 msgstr ""
 
-msgid "FileManager"
-msgstr ""
-
-msgid "FileTools"
-msgstr ""
-
-msgid "FileTransfer"
-msgstr ""
-
-msgid "Filesystem"
-msgstr ""
-
-msgid "Finance"
-msgstr ""
-
-msgid "Finances"
-msgstr ""
-
-msgid "FlowChart"
-msgstr ""
-
-msgid "GUIDesigner"
+msgid "Game"
 msgstr ""
 
 msgid "Geography"
-msgstr ""
-
-msgid "Geology"
 msgstr ""
 
 msgid "Geoscience"
@@ -305,49 +249,16 @@ msgstr ""
 msgid "Graphics"
 msgstr ""
 
-msgid "Graphics;2DGraphics;"
-msgstr ""
-
-msgid "HamRadio"
-msgstr ""
-
-msgid "HardwareSettings"
-msgstr ""
-
-msgid "Health"
-msgstr ""
-
-msgid "HexEditor"
-msgstr ""
-
-msgid "Humanities"
-msgstr ""
-
 msgid "IDE"
-msgstr ""
-
-msgid "Image"
-msgstr ""
-
-msgid "ImageProcessing"
 msgstr ""
 
 msgid "Internet"
 msgstr ""
 
-msgid "Jukebox"
+msgid "KidsGame"
 msgstr ""
 
 msgid "Languages"
-msgstr ""
-
-msgid "LearnToCode"
-msgstr ""
-
-msgid "Literature"
-msgstr ""
-
-msgid "LliureX-Administration"
 msgstr ""
 
 msgid "LliureX-Infantil"
@@ -356,22 +267,19 @@ msgstr ""
 msgid "Lliurex"
 msgstr ""
 
+msgid "LogicGame"
+msgstr ""
+
 msgid "Maps"
 msgstr ""
 
 msgid "Math"
 msgstr ""
 
-msgid "MedicalSoftware"
-msgstr ""
-
 msgid "Midi"
 msgstr ""
 
 msgid "Mixer"
-msgstr ""
-
-msgid "Monitor"
 msgstr ""
 
 msgid "Multimedia"
@@ -383,40 +291,16 @@ msgstr ""
 msgid "Network"
 msgstr ""
 
-msgid "News"
-msgstr ""
-
-msgid "NumericalAnalysis"
-msgstr ""
-
 msgid "OCR"
 msgstr ""
 
 msgid "Office"
 msgstr ""
 
-msgid "P2P"
-msgstr ""
-
-msgid "Photography"
-msgstr ""
-
 msgid "Physics"
 msgstr ""
 
-msgid "Presentation"
-msgstr ""
-
-msgid "Productivity"
-msgstr ""
-
-msgid "Profiling"
-msgstr ""
-
-msgid "ProjectManagement"
-msgstr ""
-
-msgid "Publishing"
+msgid "Player"
 msgstr ""
 
 msgid "RasterGraphics"
@@ -434,37 +318,22 @@ msgstr ""
 msgid "Science"
 msgstr ""
 
-msgid "Security"
-msgstr ""
-
 msgid "Sequencer"
 msgstr ""
 
-msgid "Settings"
+msgid "Services"
 msgstr ""
 
 msgid "Software"
 msgstr ""
 
-msgid "Spirituality"
+msgid "System"
 msgstr ""
 
-msgid "Sports"
-msgstr ""
-
-msgid "Spreadsheet"
+msgid "TV"
 msgstr ""
 
 msgid "TextEditor"
-msgstr ""
-
-msgid "TextTools"
-msgstr ""
-
-msgid "Translation"
-msgstr ""
-
-msgid "Utilities"
 msgstr ""
 
 msgid "Utility"
@@ -479,28 +348,7 @@ msgstr ""
 msgid "Viewer"
 msgstr ""
 
-msgid "Web Browser"
-msgstr ""
-
 msgid "WebBrowser"
-msgstr ""
-
-msgid "WebDevelopment"
-msgstr ""
-
-msgid "Wellness"
-msgstr ""
-
-msgid "WordProcessor"
-msgstr ""
-
-msgid "X-CSuite"
-msgstr ""
-
-msgid "X-KDE-Utilities-File"
-msgstr ""
-
-msgid "X-Tool"
 msgstr ""
 
 msgid "X-Utilities"
@@ -510,6 +358,9 @@ msgid "Zomando"
 msgstr ""
 
 msgid "accessories"
+msgstr ""
+
+msgid "admin-tools"
 msgstr ""
 
 msgid "collections"
@@ -527,13 +378,10 @@ msgstr ""
 msgid "desktop-other"
 msgstr ""
 
-msgid "documentation"
-msgstr ""
-
 msgid "education"
 msgstr ""
 
-msgid "fonts"
+msgid "electronics"
 msgstr ""
 
 msgid "games"
@@ -545,16 +393,13 @@ msgstr ""
 msgid "internet"
 msgstr ""
 
-msgid "legacy"
-msgstr ""
-
-msgid "localization"
-msgstr ""
-
 msgid "multimedia"
 msgstr ""
 
 msgid "network"
+msgstr ""
+
+msgid "other"
 msgstr ""
 
 msgid "programming"
@@ -567,6 +412,12 @@ msgid "resources"
 msgstr ""
 
 msgid "science"
+msgstr ""
+
+msgid "software"
+msgstr ""
+
+msgid "system"
 msgstr ""
 
 msgid "unknown"

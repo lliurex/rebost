@@ -33,7 +33,7 @@ i18n={
 	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
 	"RUN":_("Open"),
-	"TOOLTIP":_(""),
+	"TOOLTIP":_("Details"),
 	"UPGRADE":_("Upgrade"),
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
 	}

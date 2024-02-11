@@ -30,7 +30,7 @@ i18n={
 	"SOURCE_FP":_("Include flatpaks"),
 	"SOURCE_PK":_("Include native packages"),
 	"SOURCE_SN":_("Include snaps"),
-	"TOOLTIP":_("")
+	"TOOLTIP":_("Configuration")
 	}
 
 class thWriteConfig(QThread):

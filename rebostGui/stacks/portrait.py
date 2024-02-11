@@ -24,7 +24,7 @@ i18n={
 	"LLXUP":_("Launch LliurexUp"),
 	"MENU":_("Show applications"),
 	"SEARCH":_("Search"),
-	"TOOLTIP":_(""),
+	"TOOLTIP":_("Portrait"),
 	"UPGRADABLE":_("Upgradables"),
 	"UPGRADES":_("There're upgrades available")
 	}

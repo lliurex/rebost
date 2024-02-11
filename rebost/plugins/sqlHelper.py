@@ -614,7 +614,13 @@ class sqlHelper():
 				self._debug("DISCARD {}".format(pkgname))
 				return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
-		if "Lliurex" in categories:
+		if "FORBIDDEN" in categories:
+			self._debug("Set app {} as FORBIDDEN".format(pkgname))
+			categories.remove("FORBIDDEN")
+			categories.insert(0,"FORBIDDEN")
+			for item in pkgdataJson.get("bundle",""):
+				item=""
+		elif "Lliurex" in categories:
 			idx=categories.index("Lliurex")
 			if idx!=0:
 				pkgdataJson['categories'].pop(idx)

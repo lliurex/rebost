@@ -194,7 +194,20 @@ class rebostPrcMan():
 					bundles=rebostpkg.get('bundle',"not found")
 				else:
 					self._debug(e)
-
+			try:
+				cats=json.loads(rebostpkg).get('categories',[])
+			except Exception as e:
+				print(e)
+				if isinstance(rebostpkg,dict):
+					cats=rebostpkg.get('categories',[])
+				else:
+					self._debug(e)
+			forbidden=False
+			if "FORBIDDEN" in cats:
+				rebostpkg=''
+				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'Forbidden {}, app unauthorized'.format(package)})]
+				forbidden=True
+				bundles=[]
 			if len(bundles)>0:
 				self.failProc+=1
 				if not (bundle and bundle in bundles):
@@ -207,7 +220,7 @@ class rebostPrcMan():
 							rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'available from many sources, please choose one from: {}'.format("|".join(list(bundles.keys())))})]
 						else:
 							bundle=list(bundles.keys())[0]
-			else:
+			elif forbidden==False:
 				rebostpkg=''
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'not available as {}'.format(bundles)})]
 		else:

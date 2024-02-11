@@ -471,7 +471,7 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 		f.write("\t\techo \"0\"\n")
 		f.write("\t\t;;\n")
 		f.write("\tgetInfo)\n")
-		f.write("\t\techo \"%s\"\n"%rebostpkg['description'])
+		f.write("\t\techo \"{}\"\n".format(_sanitizeString(rebostpkg['description'],scape=True)))
 		f.write("\t\t;;\n")
 		f.write("\tgetStatus)\n")
 		f.write("\t\tgetStatus\n")

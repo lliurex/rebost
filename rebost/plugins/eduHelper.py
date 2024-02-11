@@ -136,13 +136,16 @@ class eduHelper():
 		if app in appmap:
 			if app!=appmap[app]:
 				rebostPkg["alias"]=appmap[app]
+		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),app)
+		rebostPkg["homepage"]=appUrl
 		rebostPkg["name"]=app.rstrip("-2")
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
 		rebostPkg["bundle"]={"eduapp":pkgname}
 		rebostPkg["icon"]=eduapp["icon"]
 		if eduapp["auth"].lower().startswith("autori")==False:
-			rebostPkg["categories"].append("FORBIDDEN")
+			self._debug("Set {} as FORBIDDEN".format(pkgname))
+			rebostPkg["categories"].insert(0,"FORBIDDEN")
 		if getDetail==True:
 			appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),eduapp)
 			rawcontent=self._fetchCatalogue(appUrl)

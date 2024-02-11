@@ -102,6 +102,7 @@ class sqlHelper():
 			for i in os.scandir(os.path.join(self.rebostPath,"tmp")):
 				os.unlink(i.path)
 		return(integrity)
+	#def _chkDbIntegrity
 
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
 		rs='[{}]'
@@ -521,7 +522,16 @@ class sqlHelper():
 				aliasdata=json.loads(row[1])
 				aliaspkgdataJson=pkgdataJson.copy()
 				aliaspkgdataJson["name"]=alias
+				aliasdesc=""
+				#eduapps rejected by needs webscrap of detail url
+				#for the moment it's disabled because is time-consuming
+				#However when the info gets loaded then this should work
+				if "FORBIDDEN" in aliasdata["categories"]:
+					aliasdesc=aliasdata["description"]
 				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
+				if len(aliasdesc)>0:
+					if aliasdesc!=aliaspkgdataJson["description"]:
+						aliaspkgdataJson["description"]=aliasdesc
 				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
 				query="pkg = '{0}'".format(pkgname)
 				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
@@ -614,7 +624,13 @@ class sqlHelper():
 				self._debug("DISCARD {}".format(pkgname))
 				return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
-		if "Lliurex" in categories:
+		if "FORBIDDEN" in categories:
+			self._debug("Set app {} as FORBIDDEN".format(pkgname))
+			categories.remove("FORBIDDEN")
+			categories.insert(0,"FORBIDDEN")
+			for item in pkgdataJson.get("bundle",""):
+				item=""
+		elif "Lliurex" in categories:
 			idx=categories.index("Lliurex")
 			if idx!=0:
 				pkgdataJson['categories'].pop(idx)

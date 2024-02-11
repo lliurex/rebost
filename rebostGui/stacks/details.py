@@ -28,6 +28,7 @@ i18n={
 	"ERRUNKNOWN":_("Unknown error"),
 	"FORBIDDEN":_("App unauthorized"),
 	"FORMAT":_("Format"),
+	"INFO":_("For more info go to"),
 	"INSTALL":_("Install"),
 	"MENU":_("Show application detail"),
 	"RELEASE":_("Release"),
@@ -334,7 +335,7 @@ class details(QStackedWindowItem):
 		self.lblDesc.label.setOpenExternalLinks(False)
 		description=html.unescape(self.app.get('description','').replace("***","\n"))
 		if "FORBIDDEN" in self.app.get("categories",[]):
-			description="<h2>{0}</h2>Check <a href={1}>{1}</a><hr>\n{2}".format(i18n.get("FORBIDDEN"),homepage,description)
+			description="<h2>{0}</h2>{1} <a href={2}>{2}</a><hr>\n{3}".format(i18n.get("FORBIDDEN"),i18n.get("INFO"),homepage,description)
 			self.lblDesc.label.setOpenExternalLinks(True)
 		self.lblDesc.setText(description)
 

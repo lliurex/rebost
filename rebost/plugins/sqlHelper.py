@@ -522,7 +522,16 @@ class sqlHelper():
 				aliasdata=json.loads(row[1])
 				aliaspkgdataJson=pkgdataJson.copy()
 				aliaspkgdataJson["name"]=alias
+				aliasdesc=""
+				#eduapps rejected by needs webscrap of detail url
+				#for the moment it's disabled because is time-consuming
+				#However when the info gets loaded then this should work
+				if "FORBIDDEN" in aliasdata["categories"]:
+					aliasdesc=aliasdata["description"]
 				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
+				if len(aliasdesc)>0:
+					if aliasdesc!=aliaspkgdataJson["description"]:
+						aliaspkgdataJson["description"]=aliasdesc
 				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
 				query="pkg = '{0}'".format(pkgname)
 				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)

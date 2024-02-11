@@ -23,12 +23,13 @@ i18n={
 	"APPUNKNOWN":_("The app could not be loaded. Perhaps it's not in LliureX catalogue and thus it can't be installed"),
 	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
-	"MENU":_("Show application detail"),
-	"ERRUNKNOWN":_("Unknown error"),
+	"DESC":_("Navigate through all applications"),
 	"ERRLAUNCH":_("Error opening"),
+	"ERRUNKNOWN":_("Unknown error"),
+	"FORBIDDEN":_("App unauthorized"),
 	"FORMAT":_("Format"),
 	"INSTALL":_("Install"),
-	"DESC":_("Navigate through all applications"),
+	"MENU":_("Show application detail"),
 	"RELEASE":_("Release"),
 	"REMOVE":_("Remove"),
 	"RUN":_("Open"),
@@ -321,7 +322,11 @@ class details(QStackedWindowItem):
 		self.lblIcon.setPixmap(icn.scaled(128,128))
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
-		self.lblDesc.setText(html.unescape(self.app.get('description','').replace("***","\n")))
+		description=html.unescape(self.app.get('description','').replace("***","\n"))
+		if "FORBIDDEN" in self.app.get("categories",[]):
+			description="<h2>{0}</h2><hr>\n{1}".format(i18n.get("FORBIDDEN"),description)
+		self.lblDesc.setText(description)
+
 		versions=self.app.get('versions',{})
 		bundles=list(self.app.get('bundle',{}).keys())
 		self._updateScreenControls(bundles)

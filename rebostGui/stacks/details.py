@@ -448,8 +448,6 @@ class details(QStackedWindowItem):
 				pkgState=self.app.get('state',{}).get("package",'1')
 				if pkgState.isdigit()==True:
 					pkgState=int(pkgState)
-		#		if pkgState==0:
-		#			bundles.remove('package')
 		states=0
 		self.btnZomando.setVisible(False)
 		for bundle in bundles:

@@ -15,21 +15,22 @@ _ = gettext.gettext
 QString=type("")
 
 i18n={
+	"CCACHE":_("Clear cache"),
+	"CCACHE_TOOLTIP":_("Remove all files from cache, as per exemple icons or another related stuff"),
 	"CONFIG":_("Sources"),
 	"DESC":_("Show software sources"),
 	"MENU":_("Configure software sources"),
-	"TOOLTIP":_(""),
+	"PROGRESS":_("Configuring software sources"),
 	"RELOAD":_("Reload catalogues"),
 	"RELOAD_TOOLTIP":_("Reload info from sources"),
-	"CCACHE":_("Clear cache"),
-	"CCACHE_TOOLTIP":_("Remove all files from cache, as per exemple icons or another related stuff"),
 	"RESET":_("Restart database"),
 	"RESET_TOOLTIP":_("Forces a refresh of all the info from sources resetting all previous stored information"),
 	"RESTARTFAILED":_("Service could not be reloaded. Check credentials"),
-	"SOURCE_FP":_("Include flatpaks"),
-	"SOURCE_SN":_("Include snaps"),
 	"SOURCE_AI":_("Include appimages"),
-	"SOURCE_PK":_("Include native packages")
+	"SOURCE_FP":_("Include flatpaks"),
+	"SOURCE_PK":_("Include native packages"),
+	"SOURCE_SN":_("Include snaps"),
+	"TOOLTIP":_("")
 	}
 
 class thWriteConfig(QThread):
@@ -68,9 +69,11 @@ class progressBar(QThread):
 		self.parent=parent
 		self.progress=progress
 		self.visible=True
+	#def __init__
 
 	def setMode(self,state):
 		self.visible=state
+	#def setMode
 
 	def run(self):
 		lay=self.parent.layout()
@@ -85,6 +88,7 @@ class progressBar(QThread):
 		self.parent.btnCancel.setVisible(not self.visible)
 		self.progress.setEnabled(self.visible)
 		self.progress.setVisible(self.visible)
+	#def run
 #class progressBar(QThread):
 
 class reloadCatalogue(QThread):
@@ -160,15 +164,29 @@ class sources(QStackedWindowItem):
 		btnReset.setToolTip(i18n.get("RESET_TOOLTIP"))
 		btnReset.clicked.connect(lambda x:self._resetDB(True))
 		self.box.addWidget(btnReset,3,2,1,1)
-		self.progress=QProgressBar()
-		self.progress.setMinimum(0)
-		self.progress.setMaximum(0)
+		self.progressWidget=QWidget()
+		lay=QGridLayout()
+		self.progress=self._createProgressWidget()
 		self.box.setRowStretch(self.box.rowCount(), 1)
 		self.box.addWidget(self.progress,self.box.rowCount(),1,1,2)
 		self.progress.setVisible(False)
 		self.setLayout(self.box)
 		self.btnAccept.clicked.connect(self.writeConfig)
 	#def _load_screen
+
+	def _createProgressWidget(self):
+		widget=QWidget()
+		pg=QProgressBar()
+		pg.setTextVisible(True)
+		pg.setFormat(i18n.get("PROGRESS"));
+		pg.setMinimum(0)
+		pg.setMaximum(0)
+		lbl=QLabel(i18n["PROGRESS"])
+		lay=QGridLayout()
+		lay.addWidget(lbl,0,0,1,1)
+		lay.addWidget(pg,1,0,1,1)
+		widget.setLayout(lay)
+		return(widget)
 
 	def _clearCache(self):
 		cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")

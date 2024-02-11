@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os,subprocess,time,shutil
-from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox
+from PySide2.QtWidgets import QApplication, QLabel, QWidget, QPushButton,QGridLayout,QTableWidget,QHeaderView,QHBoxLayout,QCheckBox,QProgressBar
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSignalMapper,QSize,QThread,Signal
 #from appconfig.appConfigStack import appConfigStack as confStack
@@ -32,8 +32,62 @@ i18n={
 	"SOURCE_PK":_("Include native packages")
 	}
 
+class thWriteConfig(QThread):
+	def __init__(self,parent,appconfig,chkSnap,chkFlatpak,chkApt,chkImage):
+		QThread.__init__(self,parent)
+		self.parent=parent
+		self.appconfig=appconfig
+		self.chkSnap=chkSnap
+		self.chkFlatpak=chkFlatpak
+		self.chkApt=chkApt
+		self.chkImage=chkImage
+	#def __init__
+
+	def run(self):
+		self.appconfig.level="system"
+		self.appconfig.saveChanges('config','system',level='system')
+		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
+			key=""
+			if wdg==self.chkApt:
+				key="packageKit"
+			elif wdg==self.chkFlatpak:
+				key="flatpak"
+			elif wdg==self.chkImage:
+				key="appimage"
+			elif wdg==self.chkSnap:
+				key="snap"
+			data=wdg.isChecked()
+			if len(key)>0:
+				self.appconfig.saveChanges(key,data,level=self.appconfig.level)
+	#def run
+#class thWriteConfig
+	
+class progressBar(QThread):
+	def __init__(self,parent,progress):
+		QThread.__init__(self,parent)
+		self.parent=parent
+		self.progress=progress
+		self.visible=True
+
+	def setMode(self,state):
+		self.visible=state
+
+	def run(self):
+		lay=self.parent.layout()
+		for x in range(lay.rowCount()):
+			for y in range(lay.columnCount()):
+				wdg=lay.itemAtPosition(x,y)
+				if wdg:
+					wdg=wdg.widget()
+					if wdg:
+						wdg.setEnabled(not self.visible)
+		self.parent.btnAccept.setVisible(not self.visible)
+		self.parent.btnCancel.setVisible(not self.visible)
+		self.progress.setEnabled(self.visible)
+		self.progress.setVisible(self.visible)
+#class progressBar(QThread):
+
 class reloadCatalogue(QThread):
-	active=Signal()
 	def __init__(self,rc,force,parent=None):
 		QThread.__init__(self,parent)
 		self.rc=rc
@@ -46,39 +100,9 @@ class reloadCatalogue(QThread):
 		except:
 			time.sleep(1)
 			self.rc.update(force=self.force)
-		self.active.emit()
 	#def run
 #class reloadCatalogue
 
-class setWaiting(QThread):
-	def __init__(self,widget,parent=None):
-		self.widget=widget
-		if parent==None:
-			self.parent=parent
-		self.oldcursor=widget.cursor()
-	#def __init__
-
-	def run(self):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.widget.setCursor(cursor)
-		
-		for wdg in self.widget.findChildren(QPushButton):
-			wdg.setEnabled(False)
-		for wdg in self.widget.findChildren(QCheckBox):
-			wdg.setEnabled(False)
-		QApplication.processEvents()
-		return(True)
-	#def run
-	
-	def stop(self):
-		for wdg in self.widget.findChildren(QPushButton):
-			wdg.setEnabled(True)
-		for wdg in self.widget.findChildren(QCheckBox):
-			wdg.setEnabled(True)
-		self.widget.setCursor(self.oldcursor)
-	#def stop
-#class setWaiting
-	
 class sources(QStackedWindowItem):
 	def __init_stack__(self):
 		self.dbg=False
@@ -100,6 +124,7 @@ class sources(QStackedWindowItem):
 		self.app={}
 		self.level='system'
 		self.oldcursor=self.cursor()
+		self.proc=""
 	#def __init__
 
 	def __initScreen__(self):
@@ -135,7 +160,12 @@ class sources(QStackedWindowItem):
 		btnReset.setToolTip(i18n.get("RESET_TOOLTIP"))
 		btnReset.clicked.connect(lambda x:self._resetDB(True))
 		self.box.addWidget(btnReset,3,2,1,1)
+		self.progress=QProgressBar()
+		self.progress.setMinimum(0)
+		self.progress.setMaximum(0)
 		self.box.setRowStretch(self.box.rowCount(), 1)
+		self.box.addWidget(self.progress,self.box.rowCount(),1,1,2)
+		self.progress.setVisible(False)
 		self.setLayout(self.box)
 		self.btnAccept.clicked.connect(self.writeConfig)
 	#def _load_screen
@@ -157,7 +187,6 @@ class sources(QStackedWindowItem):
 			self.setCursor(cursor)
 		else:
 			self.setCursor(self.oldcursor)
-		QApplication.processEvents()
 		for wdg in self.findChildren(QPushButton):
 			wdg.setEnabled(state)
 		for wdg in self.findChildren(QCheckBox):
@@ -184,15 +213,20 @@ class sources(QStackedWindowItem):
 	#def _reload
 		
 	def _reloadCatalogue(self,force=False):
-		reloadRebost=reloadCatalogue(self.rc,force)
-		if self.changes:
-			self.writeConfig()
-		reloadRebost.active.connect(self._endReloadCatalogue)
-		reloadRebost.run()
+		self.proc=reloadCatalogue(self.rc,force)
+		self.procp=progressBar(self,self.progress)
+		self.proc.finished.connect(self._endReloadCatalogue)
+		self.proc.started.connect(self._beginReloadCatalogue)
+		self.proc.start()
 	#def _reloadCatalogue
 
+	def _beginReloadCatalogue(self):
+		self.procp.start()
+		#if self.changes:
+		#	self.writeConfig()
+
 	def _endReloadCatalogue(self):
-		print("****")
+		self.proc.wait()
 		self.rc=None
 		try:
 			self.rc=store.client()
@@ -202,7 +236,8 @@ class sources(QStackedWindowItem):
 				self.rc=store.client()
 			except:
 				print("UNKNOWN ERROR")
-		time.sleep(2)
+		self.procp.setMode(False)
+		self.procp.start()
 		self.updateScreen()
 	#def _endreloadCatalogue
 
@@ -236,21 +271,11 @@ class sources(QStackedWindowItem):
 		pass
 
 	def writeConfig(self):
-		self.appconfig.level="system"
-		self.appconfig.saveChanges('config','system',level='system')
-		for wdg in [self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage]:
-			key=""
-			if wdg==self.chkApt:
-				key="packageKit"
-			elif wdg==self.chkFlatpak:
-				key="flatpak"
-			elif wdg==self.chkImage:
-				key="appimage"
-			elif wdg==self.chkSnap:
-				key="snap"
-			data=wdg.isChecked()
-			if len(key)>0:
-				self.appconfig.saveChanges(key,data,level=self.level)
-		self._resetDB()
+		self.config=thWriteConfig(self,self.appconfig,self.chkSnap,self.chkFlatpak,self.chkApt,self.chkImage)
+		self.config.finished.connect(self._endWriteConfig)
+		self.config.start()
 	#def writeConfig
+
+	def _endWriteConfig(self):
+		self.config.wait()
 

@@ -523,7 +523,9 @@ class portrait(QStackedWindowItem):
 				self._searchApps()
 		else:
 			app=kwargs.get("app",{})
-			if "0" not in str(app.get('state',1)):
+			if "FORBIDDEN" in app.get("categories",[]):
+				self.wdg._applyDecoration(forbidden=True)
+			elif "0" not in str(app.get('state',1)):
 				#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 				self.wdg._applyDecoration()
 			else:

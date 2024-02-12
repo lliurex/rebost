@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-11 17:57+0100\n"
-"PO-Revision-Date: 2024-02-11 18:05+0100\n"
+"POT-Creation-Date: 2024-02-11 19:07+0100\n"
+"PO-Revision-Date: 2024-02-11 19:08+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -30,7 +30,7 @@ msgstr ""
 msgid "Choose"
 msgstr "Triar"
 
-#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:36
+#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:37
 msgid "Details"
 msgstr "Detalls"
 
@@ -55,30 +55,34 @@ msgid "Format"
 msgstr "Format"
 
 #: ../rebostGui/stacks/details.py:31
+msgid "For more info go to"
+msgstr "Per a més informació anar a"
+
+#: ../rebostGui/stacks/details.py:32
 msgid "Install"
 msgstr "Instal·la"
 
-#: ../rebostGui/stacks/details.py:32
+#: ../rebostGui/stacks/details.py:33
 msgid "Show application detail"
 msgstr "Mostra els detalls"
 
-#: ../rebostGui/stacks/details.py:33
+#: ../rebostGui/stacks/details.py:34
 msgid "Release"
 msgstr "Versió"
 
-#: ../rebostGui/stacks/details.py:34
+#: ../rebostGui/stacks/details.py:35
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../rebostGui/stacks/details.py:35
+#: ../rebostGui/stacks/details.py:36
 msgid "Open"
 msgstr "Obri"
 
-#: ../rebostGui/stacks/details.py:37
+#: ../rebostGui/stacks/details.py:38
 msgid "Upgrade"
 msgstr "Actualitza"
 
-#: ../rebostGui/stacks/details.py:38
+#: ../rebostGui/stacks/details.py:39
 msgid "Zommand not found. Open Zero-Center?"
 msgstr "No trobat. Obrir el Zero-Center?"
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-11 17:57+0100\n"
+"POT-Creation-Date: 2024-02-11 19:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,7 +27,7 @@ msgstr ""
 msgid "Choose"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:36
+#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:37
 msgid "Details"
 msgstr ""
 
@@ -52,30 +52,34 @@ msgid "Format"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:31
-msgid "Install"
+msgid "For more info go to"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:32
-msgid "Show application detail"
+msgid "Install"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:33
-msgid "Release"
+msgid "Show application detail"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:34
-msgid "Remove"
+msgid "Release"
 msgstr ""
 
 #: ../rebostGui/stacks/details.py:35
+msgid "Remove"
+msgstr ""
+
+#: ../rebostGui/stacks/details.py:36
 msgid "Open"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:37
+#: ../rebostGui/stacks/details.py:38
 msgid "Upgrade"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:38
+#: ../rebostGui/stacks/details.py:39
 msgid "Zommand not found. Open Zero-Center?"
 msgstr ""
 

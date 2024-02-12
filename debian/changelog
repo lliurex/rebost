@@ -1,4 +1,4 @@
-rebost (1.5.0-2lliurex23) jammy; urgency=medium
+rebost (1.5.1-0lliurex23) jammy; urgency=medium
 
   * Restricted catalogue through appstream
   * Filters disabled by default as catalogue restriction is a lot faster

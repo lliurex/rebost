@@ -396,47 +396,59 @@ class details(QStackedWindowItem):
 		self._debug("Error detected")
 		qpal=QtGui.QPalette()
 		color=qpal.color(qpal.Dark)
-		self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
-		self.wdgError.setVisible(True)
-		self.lstInfo.setVisible(False)
-		self.btnInstall.setVisible(False)
-		self.btnRemove.setVisible(False)
-		self.btnLaunch.setVisible(False)
+		#self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		#self.wdgError.setVisible(True)
+		print(self.app)
+		if "FORBIDDEN" not in self.app.get("categories",[]):
+			self.app["categories"]=["FORBIDDEN"]
+		#self.lstInfo.setVisible(False)
+		#self.btnInstall.setVisible(False)
+		#self.btnRemove.setVisible(False)
+		#self.btnLaunch.setVisible(False)
 		#self.blur=QGraphicsBlurEffect() 
 		#self.blur.setBlurRadius(15) 
 		#self.opacity=QGraphicsOpacityEffect()
 		#self.lblBkg.setGraphicsEffect(self.blur)
 		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
-		self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
-		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
-		self.app["pkgname"]="rebost"
-		self.app["description"]=i18n.get("APPUNKNOWN")
+		#self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
+		#self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
+		#self.app["pkgname"]="rebost"
+		#self.app["description"]=i18n.get("APPUNKNOWN")
 	#def _onError
 
 	def _setLauncherOptions(self):
-		item=self.lstInfo.currentItem()
 		self.btnInstall.setEnabled(True)
 		self.btnRemove.setEnabled(True)
 		self.btnLaunch.setEnabled(True)
 		self.btnZomando.setEnabled(True)
 		bundle=""
 		release=""
+		tooltip=""
+		item=self.lstInfo.currentItem()
 		if item==None:
-			print("Err: This app has not a install option")
+			print("Err: This app has not install option")
 			self._onError()
-			return()
+			bundles=self.app.get("bundle",{})
+			if len(bundles)>0:
+				bundle=bundles.pop(0)
+			else:
+				bundle="package"
+			self.lstInfo.insertItem(0,bundle)
+			item=self.lstInfo.item(0)
+			#return()
 		bundle=item.text().lower().split(" ")[-1]
+		release=item.text().lower().split(" ")[0]
+		tooltip=item.text()
+		self._setListState(item)
 		if bundle=="package":
 			bundle="app" # Only for show purposes. "App" is friendly than "package"
 		if self.lstInfo.count()>0:
 			self.btnInstall.setText("{0} {1}".format(i18n.get("INSTALL"),bundle))
 			self.btnRemove.setText("{0} {1}".format(i18n.get("REMOVE"),bundle))
 			self.btnLaunch.setText("{0} {1}".format(i18n.get("RUN"),bundle))
-		release=item.text().lower().split(" ")[0]
 		self.btnInstall.setToolTip("{0}: {1}\n{2}".format(i18n.get("RELEASE"),release,bundle.capitalize()))
-		self.btnRemove.setToolTip(item.text())
-		self.btnLaunch.setToolTip(item.text())
-		self._setListState(item)
+		self.btnRemove.setToolTip(tooltip)
+		self.btnLaunch.setToolTip(tooltip)
 		if "FORBIDDEN" in self.app.get("categories",[]):
 			self.btnInstall.setEnabled(False)
 			self.btnRemove.setEnabled(False)

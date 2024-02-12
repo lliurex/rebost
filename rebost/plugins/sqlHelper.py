@@ -521,6 +521,9 @@ class sqlHelper():
 				aliasdata=json.loads(row[1])
 				aliaspkgdataJson=pkgdataJson.copy()
 				aliaspkgdataJson["name"]=alias
+				aliasname=""
+				if "Zomando" not in aliaspkgdataJson.get("categories"):
+					aliasname=aliasdata["name"]
 				aliasdesc=""
 				#eduapps rejected by needs webscrap of detail url
 				#for the moment it's disabled because is time-consuming
@@ -531,6 +534,9 @@ class sqlHelper():
 				if len(aliasdesc)>0:
 					if aliasdesc!=aliaspkgdataJson["description"]:
 						aliaspkgdataJson["description"]=aliasdesc
+			
+				elif len(aliasname)>0:
+					aliaspkgdataJson["name"]=pkgname
 				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
 				query="pkg = '{0}'".format(pkgname)
 				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)

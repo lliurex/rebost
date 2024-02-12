@@ -38,8 +38,10 @@ class helper():
 			cmd=self._getCmdFromZmd(zmdPath)
 			#subprocess.run(["pkexec",zmdPath])
 			try:
+				subprocess.run(["xhost","+"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 				proc=subprocess.run(cmd)
 				ret=proc.returncode
+				subprocess.run(["xhost","-"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			except Exception as e:
 				print(e)
 				ret=-1
@@ -91,10 +93,12 @@ class helper():
 	#	dlg.exec()
 	#def _zmdNotFound(self,zmd):
 
-	def runApp(self,app,bundle): #TODO: QTHREAD
+	def runApp(self,app,bundle,launcher=""): #TODO: QTHREAD
+		if len(launcher)>0:
+			cmd=["gtk-launch",launcher]
 		#bundle=self.cmbOpen.currentText().lower().split(" ")[0]
-		if bundle=="package":
-			cmd=["gtk-launch",app.get("name",'')]
+		elif bundle=="package":
+			cmd=["gtk-launch",app.get("id",'')]
 		elif bundle=="flatpak":
 			cmd=["flatpak","run",app.get("bundle",{}).get("flatpak","")]
 		elif bundle=="snap":
@@ -103,7 +107,7 @@ class helper():
 			cmd=["gtk-launch","{}-appimage".format(app.get("name",''))]
 		proc=subprocess.run(cmd)
 		if proc.returncode!=0:
-			cmd=["gtk-launch",app.get("id",'')]
+			cmd=["gtk-launch",app.get("name",'')]
 			proc=subprocess.run(cmd)
 		return(proc)
 	#def runApp(self,app,bundle)

@@ -6,6 +6,7 @@ from PySide2 import QtGui
 from PySide2.QtCore import Qt,QSize,Signal,QThread
 #from appconfig.appConfigStack import appConfigStack as confStack
 from QtExtraWidgets import QScreenShotContainer,QScrollLabel,QStackedWindowItem
+from app2menu import App2Menu as app2menu
 from rebost import store
 import subprocess
 import json
@@ -60,7 +61,12 @@ class epiClass(QThread):
 	def run(self):
 		launched=False
 		if self.app and self.args:
-			subprocess.run(self.args)
+			try:
+				subprocess.run(["xhost","+"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+				proc=subprocess.run(self.args,stderr=subprocess.PIPE,universal_newlines=True)
+				subprocess.run(["xhost","-"])
+			except Exception as e:
+				print(e)
 			self.epiEnded.emit(self.app)
 			launched=True
 		return launched
@@ -127,6 +133,8 @@ class details(QStackedWindowItem):
 		self.helper=libhelper.helper()
 		self.epi=epiClass()
 		self.oldcursor=self.cursor()
+		self.appmenu=app2menu.app2menu()
+		self.launcher=""
 	#def __init__
 
 	def _return(self):
@@ -192,7 +200,10 @@ class details(QStackedWindowItem):
 		bundle=self.lstInfo.currentItem().text().lower().split(" ")[-1]
 		proc=self.helper.runApp(self.app,bundle)
 		if proc.returncode!=0:
-			self.showMsg("{} {}".format(i18n.get("ERRLAUNCH"),self.app["name"]))
+			launcher=self._getLauncherForApp()
+			proc=self.helper.runApp(self.app,bundle,launcher=launcher)
+			if proc.returncode!=0:
+				self.showMsg("{} {}".format(i18n.get("ERRLAUNCH"),self.app["name"]))
 	#def _runApp
 
 	def _genericEpiInstall(self):
@@ -318,6 +329,7 @@ class details(QStackedWindowItem):
 
 	def updateScreen(self):
 		self._initScreen()
+		self.launcher=self._getLauncherForApp()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
 		icn=self._getIconFromApp(self.app)
 		self.lblIcon.setPixmap(icn.scaled(128,128))
@@ -357,6 +369,29 @@ class details(QStackedWindowItem):
 				print(e)
 		self._setLauncherOptions()
 	#def _updateScreen
+
+	def _getLauncherForApp(self):
+		#Best effort for get launcher
+		self.appmenu.set_desktop_system()
+		cats=self.appmenu.get_categories()
+		launcher=""
+		for cat in cats:
+			apps=self.appmenu.get_apps_from_category(cat.lower())
+			for app in apps:
+				appsplit=app.split(".")
+				if len(appsplit)>2:
+					searchapp=appsplit[-2]
+				else:
+					searchapp=appsplit[0]
+				namesplit=self.app["pkgname"].split("-")
+				allitems=namesplit+[searchapp]
+				if len(allitems)!=len(set(allitems)):
+					launcher=app
+					break
+			if len(launcher)>0:
+				break
+		return(launcher)
+	#def _getLauncherForApp
 
 	def _onError(self):
 		self._debug("Error detected")

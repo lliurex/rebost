@@ -416,6 +416,10 @@ class details(QStackedWindowItem):
 
 	def _setLauncherOptions(self):
 		item=self.lstInfo.currentItem()
+		self.btnInstall.setEnabled(True)
+		self.btnRemove.setEnabled(True)
+		self.btnLaunch.setEnabled(True)
+		self.btnZomando.setEnabled(True)
 		bundle=""
 		release=""
 		if item==None:
@@ -434,6 +438,11 @@ class details(QStackedWindowItem):
 		self.btnRemove.setToolTip(item.text())
 		self.btnLaunch.setToolTip(item.text())
 		self._setListState(item)
+		if "FORBIDDEN" in self.app.get("categories",[]):
+			self.btnInstall.setEnabled(False)
+			self.btnRemove.setEnabled(False)
+			self.btnLaunch.setEnabled(False)
+			self.btnZomando.setEnabled(False)
 	#def _setLauncherOptions
 
 	def _setListState(self,item):

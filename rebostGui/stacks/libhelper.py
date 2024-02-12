@@ -38,8 +38,10 @@ class helper():
 			cmd=self._getCmdFromZmd(zmdPath)
 			#subprocess.run(["pkexec",zmdPath])
 			try:
+				subprocess.run(["xhost","+"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 				proc=subprocess.run(cmd)
 				ret=proc.returncode
+				subprocess.run(["xhost","-"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			except Exception as e:
 				print(e)
 				ret=-1

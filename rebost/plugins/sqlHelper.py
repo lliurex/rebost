@@ -173,6 +173,10 @@ class sqlHelper():
 		#self._debug(query)
 		cursor.execute(query)
 		rowsTmp=cursor.fetchall()
+		if len(rowsTmp)<=0:
+			query="SELECT pkg,data FROM {} WHERE alias = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
+			cursor.execute(query)
+			rowsTmp=cursor.fetchall()
 		rows=rowsTmp.copy()
 		if onlymatch==False:
 			rows=[]
@@ -543,9 +547,11 @@ class sqlHelper():
 				row=cursor.execute(fetchquery).fetchone()
 			if row:
 				pkgdataJson=self._mergePackage(pkgdataJson,row)
-			processedpkg=self._processPkgData(pkgname,pkgdataJson)
+			if len(pkgdataJson.get('bundle',{}))>0:
+				processedpkg=self._processPkgData(pkgname,pkgdataJson)
 		elif restricted==False:
-			processedpkg=self._processPkgData(pkgname,pkgdataJson)
+			if len(pkgdataJson.get('bundle',{}))>0:
+				processedpkg=self._processPkgData(pkgname,pkgdataJson)
 
 		return(processedpkg,aliaspkg)
 	#def _addPkgToQuery

@@ -329,7 +329,6 @@ class details(QStackedWindowItem):
 
 	def updateScreen(self):
 		self._initScreen()
-		self.launcher=self._getLauncherForApp()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
 		icn=self._getIconFromApp(self.app)
 		self.lblIcon.setPixmap(icn.scaled(128,128))

@@ -23,6 +23,7 @@ class snapHelper():
 		self.priority=2
 		self.lastUpdate="/usr/share/rebost/tmp/sp.lu"
 		self.snap=Snapd.Client()
+		self.forceApps=[]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -80,6 +81,13 @@ class snapHelper():
 					if pkg.get_name() not in processed:
 						processed.append(pkg.get_name())
 						rebostPkgList.append(self._process_snap_json(pkg,section))
+		for snap in self.forceApps:
+			searchsnap=self.snap.find_sync(Snapd.FindFlags.MATCH_NAME,snap,None)
+			if searchsnap:
+				pkg=searchsnap[0][0]
+				if pkg.get_name() not in processed:
+					processed.append(pkg.get_name())
+					rebostPkgList.append(self._process_snap_json(pkg,section))
 		return(rebostPkgList,update)
 
 	def _chkNeedUpdate(self,lenApps,section):

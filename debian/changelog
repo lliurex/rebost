@@ -4,6 +4,12 @@ rebost (1.99-0lliurex23) jammy; urgency=medium
 
  -- Juanma1980 <juanma1980@gmail.com>  Sat, 17 Feb 2024 11:09:36 +0100
 
+rebost (1.5.2-0lliurex23) jammy; urgency=medium
+
+  * Add support for include specified apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 13 Feb 2024 11:16:11 +0100
+
 rebost (1.5.1-0lliurex23) jammy; urgency=medium
 
   * Restricted catalogue through appstream

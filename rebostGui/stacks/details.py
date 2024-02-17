@@ -430,7 +430,10 @@ class details(QStackedWindowItem):
 			self._onError()
 			bundles=self.app.get("bundle",{})
 			if len(bundles)>0:
-				bundle=bundles.pop(0)
+				bundle=bundles.popitem()[1]
+				bundle="-------"
+				self._onError()
+				print(bundle)
 			else:
 				bundle="package"
 			self.lstInfo.insertItem(0,bundle)

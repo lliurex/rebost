@@ -1,3 +1,9 @@
+rebost (1.99-0lliurex21) focal; urgency=medium
+
+  * Session DBus
+
+ -- Juanma1980 <juanma1980@gmail.com>  Sat, 17 Feb 2024 11:11:23 +0100
+
 rebost (1.5.1-0lliurex21) focal; urgency=medium
 
   * Backport from jammy

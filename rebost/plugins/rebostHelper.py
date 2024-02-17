@@ -14,7 +14,12 @@ import time
 import flatpakHelper
 
 DBG=False
-path="/var/log/rebost.log"
+WRKDIR="/tmp/rebost"
+path=os.path.join(WRKDIR,"rebost.log")
+if os.path.isdir(os.path.dirname(path))==False:
+	os.makedirs(os.path.dirname(path))
+f=open(path,"w")
+f.close()
 fname = "rebost.log"
 logger = logging.getLogger(fname)
 formatter = logging.Formatter('%(asctime)s %(message)s')
@@ -61,7 +66,7 @@ def rebostPkg(*kwargs):
 #def rebostPkg
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
-	wrkDir="/usr/share/rebost"
+	wrkDir=WRKDIR #"/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
 	if drop:
 		if os.path.isfile(tablePath):
@@ -109,7 +114,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 #def rebostPkgList_to_sqlite
 
 def rebostPkg_to_sqlite(rebostPkg,table):
-	wrkDir="/usr/share/rebost"
+	wrkDir=WRKDIR #"/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
 	if tablePath.endswith(".db")==False:
 		tablePath+=".db"
@@ -592,7 +597,8 @@ def get_epi_status(episcript):
 #def get_epi_status
 
 def get_table_pkg(table,pkg):
-	tablePath=os.path.join("/usr/share/rebost/",table)
+	#tablePath=os.path.join("/usr/share/rebost/",table)
+	tablePath=os.path.join(WRKDIR,table)
 	ret=[]
 	if os.path.isfile(tablePath):
 		tableName=table.replace(".db","").lower()
@@ -609,7 +615,7 @@ def get_table_pkg(table,pkg):
 #def get_table_state
 
 def get_table_pkgarray(table,pkgarray):
-	tablePath=os.path.join("/usr/share/rebost/",table)
+	tablePath=os.path.join(WRKDIR,table)
 	ret=[]
 	if os.path.isfile(tablePath):
 		tableName=table.replace(".db","").lower()
@@ -626,7 +632,7 @@ def get_table_pkgarray(table,pkgarray):
 #def get_table_pkgarray
 
 def get_table_state(pkg,bundle):
-	tablePath="/usr/share/rebost/installed.db"
+	tablePath=os.path.join(WRKDIR,"installed.db")
 	ret=[]
 	if os.path.isfile(tablePath):
 		db=sqlite3.connect(tablePath)
@@ -657,7 +663,7 @@ def check_remove_unsure(package):
 #def check_remove_unsure(package):
 
 def getFiltersList(banlist=False,includelist=False,wordlist=False):
-	wrkDir="/usr/share/rebost"
+	wrkDir=WRKDIR #"/usr/share/rebost"
 	folderbanlist=os.path.join(wrkDir,"lists.d/banned")
 	folderincludelist=os.path.join(wrkDir,"lists.d/include")
 	folderWordlist=os.path.join(wrkDir,"lists.d/words")

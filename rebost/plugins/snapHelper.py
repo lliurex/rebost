@@ -21,7 +21,7 @@ class snapHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=2
-		self.lastUpdate="/usr/share/rebost/tmp/sp.lu"
+		self.lastUpdate="/tmp/rebost/tmp/sp.lu"
 		self.snap=Snapd.Client()
 	#def __init__
 

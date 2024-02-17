@@ -20,7 +20,7 @@ class sqlHelper():
 		self.priority=0
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.rebostPath="/usr/share/rebost"
+		self.rebostPath="/tmp/rebost"
 		self.softwareBanList=os.path.join(self.rebostPath,"lists.d/banned")
 		self.softwareIncludeList=os.path.join(self.rebostPath,"lists.d/include")
 		self.bannedWordsList=os.path.join(self.rebostPath,"lists.d/words")
@@ -32,7 +32,7 @@ class sqlHelper():
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
-		self.lastUpdate="/usr/share/rebost/tmp/sq.lu"
+		self.lastUpdate=os.path.join(self.rebostPath,"tmp","sq.lu")
 		self.banlist=True
 		if self.banlist:
 			self.banlistFilter=rebostHelper.getFiltersList(banlist=True)
@@ -510,8 +510,7 @@ class sqlHelper():
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
 				return(processedpkg)
-		bypkgalias=True
-		query="alias = '{0}'".format(pkgname)
+		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 		row=cursor.execute(fetchquery).fetchone()
 		if not(row):
@@ -520,7 +519,8 @@ class sqlHelper():
 			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 			row=cursor.execute(fetchquery).fetchone()
 		if row:
-			if bypkgalias==True:
+			rowname=row[0]
+			if rowname!=pkgname: #Alias
 				alias=row[0]
 				aliasdata=json.loads(row[1])
 				aliaspkgdataJson=pkgdataJson.copy()
@@ -718,7 +718,7 @@ class sqlHelper():
 		query="SELECT pkg FROM {};".format(table)
 		cursor.execute(query)
 		rows=cursor.fetchall()
-		completionFile="/usr/share/rebost/tmp/bash_completion"
+		completionFile=os.path.join(self.rebostPath,"tmp","bash_completion")
 		if os.path.isdir(os.path.dirname(completionFile)):
 			with open(completionFile,'w') as f:
 				for row in rows:
@@ -772,7 +772,7 @@ class sqlHelper():
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT,alias TEXT);".format(table)
 		cursor.execute(query)
-		cursor.execute("ATTACH DATABASE '/usr/share/rebost/{}.db' AS pk;".format(consolidate_table))
+		cursor.execute("ATTACH DATABASE '{}.db' AS pk;".format(os.path.join(self.rebostPath,consolidate_table)))
 		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()

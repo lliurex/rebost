@@ -23,7 +23,7 @@ class packageKit():
 		self.result=''
 		self.restricted=True
 		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
-		self.lastUpdate="/usr/share/rebost/tmp/pk.lu"
+		self.lastUpdate="/tmp/rebost/tmp/pk.lu"
 		#self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
 		self.pkgFile="/usr/share/rebost/lists.d/eduapps.map"
 	#def __init__
@@ -53,7 +53,7 @@ class packageKit():
 	def _loadStore(self,*args):
 		action="load"
 		pkcon=packagekit.Client()
-		self._refreshPk(pkcon)
+		#self._refreshPk(pkcon)
 		if self.restricted==False:
 			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
 			pklists=self._loadFullCatalogue(pkcon,flags)
@@ -61,8 +61,10 @@ class packageKit():
 			pklists=self._loadRestrictedCatalogue(pkcon,self.pkgFile)
 		tmppkgIds=[]
 		pkgIds=[]
+		print("begin appended sack")
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
+		print("appended sack")
 		if self.restricted==True:
 			restrictIds=self._readFilterFile(self.pkgFile)
 			for pkglist in tmppkgIds:
@@ -70,6 +72,7 @@ class packageKit():
 					pkgname=pkg.split(";")[0]
 					if pkgname not in restrictIds:
 						pkgSack.remove_package_by_id(pkg)
+		print("filtered")
 		for pkgSack in pklists:
 			pkgIds.extend(pkgSack.get_ids())
 
@@ -145,8 +148,11 @@ class packageKit():
 		pklists=[]
 		self._debug("Getting restricted pkg list from {}".format(pkgfile))
 		searchList=self._readFilterFile(pkgfile)
+		print("begin load after filter")
 		if len(searchList)>0:
-			pkList=pkcon.search_names(packagekit.FilterEnum.NONE,",".join(searchList),None,self._loadCallback,None)
+			print("resolve: {}".format(",".join(searchList)))
+			pkList=pkcon.resolve(packagekit.FilterEnum.NONE,searchList,None,self._loadCallback,None)
+			print("Getting packageSack from load")
 			pkgSack=pkList.get_package_sack()
 			pklists.append(pkgSack)
 		self._debug("Processing obtained list")
@@ -240,7 +246,7 @@ class packageKit():
 			pkgDict[pkgName]=pkg
 		#Get rows for ids
 		rows=[]
-		if os.path.isfile("/usr/share/rebost/packagekit.db"):
+		if os.path.isfile("/tmp/rebost/packagekit.db"):
 			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
 		for row in rows:
 			try:

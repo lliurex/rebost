@@ -37,7 +37,7 @@ class appimageHelper():
 			os.makedirs(self.iconDir)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
-		self.lastUpdate="/usr/share/rebost/tmp/ai.lu"
+		self.lastUpdate="/tmp/rebost/tmp/ai.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

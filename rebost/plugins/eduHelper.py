@@ -26,7 +26,7 @@ class eduHelper():
 		self.autostartActions=["load"]
 		self.regex=re.compile("[^\\w -]")
 		self.priority=1
-		self.lastUpdate="/usr/share/rebost/tmp/eh.lu"
+		self.lastUpdate="/tmp/rebost/tmp/eh.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

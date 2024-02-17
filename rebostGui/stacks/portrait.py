@@ -50,6 +50,7 @@ class QPushButtonRebostApp(QPushButton):
 		lay.addStretch()
 		lay.addWidget(self.icon,0)
 		lay.addWidget(self.label,1)
+		self.referrer=None
 		self.setDefault(True)
 		self.setLayout(lay)
 	#def __init__
@@ -483,7 +484,7 @@ class portrait(QStackedWindowItem):
 		self.setCursor(cursor)
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
-		self.wdg=args[0]
+		self.referrer=args[0]
 		app=self.rc.showApp(args[-1].get('name',''))
 		self.setChanged(False)
 		self.parent.setCurrentStack(idx=3,parms=app)
@@ -523,13 +524,15 @@ class portrait(QStackedWindowItem):
 				self._searchApps()
 		else:
 			app=kwargs.get("app",{})
+			if hasattr(self,"referrer")==False:
+				return()
 			if "FORBIDDEN" in app.get("categories",[]):
-				self.wdg._applyDecoration(forbidden=True)
+				self.referrer._applyDecoration(forbidden=True)
 			elif "0" not in str(app.get('state',1)):
 				#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
-				self.wdg._applyDecoration()
-			else:
-				self.wdg._removeDecoration()
+				self.referrer._applyDecoration()
+			elif self.referrer!=None:
+				self.referrer._removeDecoration()
 	#def setParms
 
 	def _updateConfig(self,key):

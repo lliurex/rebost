@@ -23,7 +23,7 @@ class flatpakHelper():
 		self.autostartActions=["load"]
 		self.priority=2
 		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
-		self.lastUpdate="/usr/share/rebost/tmp/ft.lu"
+		self.lastUpdate="/tmp/rebost/tmp/ft.lu"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

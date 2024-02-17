@@ -21,7 +21,7 @@ class appstreamHelper():
 		self.autostartActions=["load"]
 		self.priority=0
 		self.wrkDir='/tmp/.cache/rebost/xml/appstream'
-		self.lastUpdate="/usr/share/rebost/tmp/as.lu"
+		self.lastUpdate="/tmp/rebost/tmp/as.lu"
 		#self._loadStore()
 	#def __init__
 
@@ -185,7 +185,7 @@ class appstreamHelper():
 	#def _set_icon_fname
 
 	def _populate_icon_db(self):
-		appstreamIconDirs=["/var/lib/app-info/icons","/usr/share/rebost/appstream"]
+		appstreamIconDirs=["/var/lib/app-info/icons","/tmp/rebost/appstream"]
 		iconDb={}
 		for appstreamIconDir in appstreamIconDirs:
 			if os.path.isdir(appstreamIconDir)==True:

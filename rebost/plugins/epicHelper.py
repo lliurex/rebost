@@ -68,8 +68,7 @@ class epicHelper():
 		if "EPIC:" in output:
 			idx=output.index("EPIC:")
 			rawEpicList=output[idx:].replace("EPIC:","")
-			for epic in rawEpicList.split(","):
-				epicList.append(epic.strip())
+			epicList=[ epic.strip() for epic in rawEpicList.split(",") ]
 		return(epicList)
 	#def _getEpicZomandos
 	

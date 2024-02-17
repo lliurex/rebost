@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.gui=False
 		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"

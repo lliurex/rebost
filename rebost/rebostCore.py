@@ -31,7 +31,8 @@ class Rebost():
 		self.rebostPath="/usr/share/rebost/"
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
+		self.rebostWrkDir="/tmp/rebost"
+		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		if os.path.exists(self.rebostPathTmp)==False:
 			os.makedirs(self.rebostPathTmp)
 		self.process={}
@@ -246,20 +247,30 @@ class Rebost():
 	#def _chkNetwork
 
 	def _copyCacheToTmp(self):
-		if os.path.exists(os.path.join(self.cache,"rebostStore.db")):
-			if os.path.exists("/tmp/rebost")==True:
+		tmpCache=os.path.join(self.cache,"tmp")
+		if os.path.exists(tmpCache)
+			if os.path.exists(self.rebostPathTmp)==True:
 				return()
-			os.makedirs("/tmp/rebost")
+			os.makedirs(self.rebostPathTmp)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
-					shutil.copy2(db.path,"/tmp/rebost/{}".format(db.name))
+					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
+			for lu in os.scandir(tmpCache):
+				if lu.path.endswith(".lu"):
+					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
 	#def _copyCacheToTmp
 
 	def _copyTmpToCache(self):
-		if os.path.exists("/tmp/rebost/rebostStore.db"):
-			for db in os.scandir("/tmp/rebost"):
+		if os.path.exists(self.rebostPathTmp):
+			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
+			tmpCache=os.path.join(self.cache,"tmp")
+			if os.path.exists(tmpCache)==False:
+				os.makedirs(tmpCache)
+			for lu in os.scandir(self.rebostPathTmp):
+				if lu.path.endswith(".lu"):
+					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
 	#def _copyTmpToCache
 
 	def _autostartActions(self):

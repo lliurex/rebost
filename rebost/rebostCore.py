@@ -33,8 +33,6 @@ class Rebost():
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostWrkDir="/tmp/rebost"
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
-		if os.path.exists(self.rebostPathTmp)==False:
-			os.makedirs(self.rebostPathTmp)
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -248,7 +246,7 @@ class Rebost():
 
 	def _copyCacheToTmp(self):
 		tmpCache=os.path.join(self.cache,"tmp")
-		if os.path.exists(tmpCache)
+		if os.path.exists(tmpCache):
 			if os.path.exists(self.rebostPathTmp)==True:
 				return()
 			os.makedirs(self.rebostPathTmp)
@@ -350,7 +348,7 @@ class Rebost():
 				plugin=plugName
 				break
 		coreAction=False
-		if os.path.exists(os.path.join("/","tmp","rebost","rebostStore.db"))==False:
+		if os.path.exists(self.rebostPathTmp)==False:
 			self.restart()
 		if len(plugin)==0:
 			#search for a local method
@@ -371,6 +369,8 @@ class Rebost():
 			for cat in rebostPkgList:
 				catList.append(cat[0])
 			store=json.dumps(catList)
+		if action=="install" or action=="remove" or action=="test":
+			self._copyTmpToCache()
 		return(store)
 	#def execute
 			

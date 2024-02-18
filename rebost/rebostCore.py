@@ -248,7 +248,7 @@ class Rebost():
 
 	def _copyCacheToTmp(self):
 		tmpCache=os.path.join(self.cache,"tmp")
-		if os.path.exists(tmpCache)
+		if os.path.exists(tmpCache):
 			if os.path.exists(self.rebostPathTmp)==True:
 				return()
 			os.makedirs(self.rebostPathTmp)

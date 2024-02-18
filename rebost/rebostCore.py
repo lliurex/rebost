@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import os
+import os,shutil
 import multiprocessing
 import threading
 import time
@@ -15,15 +15,13 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-<<<<<<< HEAD
 		self.dbg=True
-=======
-		self.dbg=False
-		self.plugins=""
->>>>>>> 9f13ee61bc0a828ba5c4156f899c95f87e63ff41
 		self.gui=False
 		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"
+		home=os.environ.get("HOME","")
+		if len(home)>0:
+			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
 		self.plugins={}
@@ -33,7 +31,13 @@ class Rebost():
 		self.rebostPath="/usr/share/rebost/"
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
+<<<<<<< HEAD
 		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
+=======
+		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
+		if os.path.exists(self.rebostPathTmp)==False:
+			os.makedirs(self.rebostPathTmp)
+>>>>>>> master
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -44,8 +48,10 @@ class Rebost():
 		self._loadPlugins()
 		self._loadPluginInfo()
 		self._processConfig()
+		self._copyCacheToTmp()
 		self._autostartActions()
-		self._log("Autostart ended. Populating data")
+		self._copyTmpToCache()
+		self._log("Autostart ended.")
 	#def run
 
 	def _log(self,msg):
@@ -243,6 +249,23 @@ class Rebost():
 			return False
 	#def _chkNetwork
 
+	def _copyCacheToTmp(self):
+		if os.path.exists(os.path.join(self.cache,"rebostStore.db")):
+			if os.path.exists("/tmp/rebost")==True:
+				return()
+			os.makedirs("/tmp/rebost")
+			for db in os.scandir(self.cache):
+				if db.path.endswith(".db"):
+					shutil.copy2(db.path,"/tmp/rebost/{}".format(db.name))
+	#def _copyCacheToTmp
+
+	def _copyTmpToCache(self):
+		if os.path.exists("/tmp/rebost/rebostStore.db"):
+			for db in os.scandir("/tmp/rebost"):
+				if db.path.endswith(".db"):
+					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
+	#def _copyTmpToCache
+
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}
@@ -320,6 +343,8 @@ class Rebost():
 				plugin=plugName
 				break
 		coreAction=False
+		if os.path.exists(os.path.join("/","tmp","rebost","rebostStore.db"))==False:
+			self.restart()
 		if len(plugin)==0:
 			#search for a local method
 			if hasattr(self,action):

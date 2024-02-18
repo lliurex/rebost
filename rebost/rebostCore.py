@@ -16,7 +16,6 @@ from gi.repository import AppStreamGlib as appstream
 class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
-		self.gui=False
 		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"
 		home=os.environ.get("HOME","")
@@ -32,12 +31,18 @@ class Rebost():
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 <<<<<<< HEAD
+<<<<<<< HEAD
 		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
 =======
 		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
 		if os.path.exists(self.rebostPathTmp)==False:
 			os.makedirs(self.rebostPathTmp)
 >>>>>>> master
+=======
+		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
+		if os.path.exists(self.rebostPathTmp)==False:
+			os.makedirs(self.rebostPathTmp)
+>>>>>>> 64be8db25c78b9a04c5461883645c42bdba286f3
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}

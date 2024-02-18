@@ -215,6 +215,9 @@ class sqlHelper():
 		if not rebostPkg.get("bundle",{}).get("appimage","").lower().endswith(".appimage") and bundleurl!='':
 			dataTmp=self.appimage.fillData(rebostPkg)
 			row=(pkg,dataTmp)
+			#Ensure all single quotes are duplicated or sql will fail
+			dataTmp=dataTmp.replace("''","'")
+			dataTmp=dataTmp.replace("'","''")
 			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
 			try:
 				cursor.execute(query)
@@ -236,7 +239,11 @@ class sqlHelper():
 				self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 		if state!=rebostPkg['state'].get(bundle,''):
 			rebostPkg['state'].update({bundle:state})
-			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
+			#Ensure all single quotes are duplicated or sql will fail
+			dataContent=json.dumps(rebostPkg)
+			dataContent=dataContent.replace("''","'")
+			dataContent=dataContent.replace("'","''")
+			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
 			try:
 				cursor.execute(query)
 			except:

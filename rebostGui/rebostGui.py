@@ -13,19 +13,19 @@ gettext.textdomain('rebostgui')
 _ = gettext.gettext
 
 app=QApplication(["RebostGui"])
-config=QStackedWindow()
+mw=QStackedWindow()
 icn=QtGui.QIcon.fromTheme("rebost")
-config.setWindowIcon(icn)
-config.disableNavBar(True)
+mw.disableNavBar(True)
+mw.setWindowIcon(icn)
 if os.path.islink(__file__)==True:
 	abspath=os.path.join(os.path.dirname(__file__),os.path.dirname(os.readlink(__file__)))
 else:
 	abspath=os.path.dirname(__file__)
-config.addStacksFromFolder(os.path.join(abspath,"stacks"))
-config.show()
-config.setMinimumWidth(960)
-config.setMinimumHeight(600)
+mw.addStacksFromFolder(os.path.join(abspath,"stacks"))
+mw.show()
+mw.setMinimumWidth(960)
+mw.setMinimumHeight(600)
 if len(sys.argv)>1:
 	if ("://") in sys.argv[1] or os.path.isfile(sys.argv[1]):
-		config.setCurrentStack(3,parms=sys.argv[1])
+		mw.setCurrentStack(3,parms=sys.argv[1])
 app.exec_()

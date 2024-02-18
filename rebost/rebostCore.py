@@ -16,6 +16,7 @@ from gi.repository import AppStreamGlib as appstream
 class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=False
+		self.plugins=""
 		self.gui=False
 		self.propagateDbg=True
 		self.cache="/tmp/.cache/rebost"
@@ -27,7 +28,10 @@ class Rebost():
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.rebostPath="/usr/share/rebost/"
 		self.confFile=os.path.join(self.rebostPath,"store.json")
-		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
+		self.includeFile=os.path.join(self.rebostPath,"lists.d")
+		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
+		if os.path.exists(self.rebostPathTmp)==False:
+			os.makedirs(self.rebostPathTmp)
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -166,16 +170,26 @@ class Rebost():
 				self._disable(plugin)
 		self.restricted=cfg.get("restricted",True)
 		self.mainTableForRestrict=cfg.get("maintable","")
+		self.forceApps=cfg.get("forceApps",{})
 	#def _processConfig
 
 	def _readConfig(self):
 		cfg={}
+		include={}
 		if os.path.isfile(self.confFile):
 			with open(self.confFile,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:
 					pass
+		if os.path.isfile(self.includeFile):
+			with open(self.includeFile,'r') as f:
+				try:
+					include=json.loads(f.read())
+				except:
+					pass
+		if len(include)>0:
+			cfg["forceApps"]=include
 		return(cfg)
 	#def _readConfig
 
@@ -234,6 +248,11 @@ class Rebost():
 		actions=[]
 		for plugin,info in self.pluginInfo.items():
 			actions=info.get('autostartActions',[])
+			packagekind=info.get("packagekind","*")
+			if self.forceApps.get(packagekind,{})!={}:
+				if hasattr(self.plugins[plugin],"forceApps"):
+					self.plugins[plugin].forceApps=self.forceApps[packagekind]
+				
 			postactions=info.get('postAutostartActions',[])
 			if len(actions)>0:
 				self._debug("Loading autostart actions for {}".format(plugin))
@@ -299,6 +318,8 @@ class Rebost():
 				plugin=plugName
 				break
 		coreAction=False
+		if os.path.exists(os.path.join("/","tmp","rebost","rebostStore.db"))==False:
+			self.restart()
 		if len(plugin)==0:
 			#search for a local method
 			if hasattr(self,action):

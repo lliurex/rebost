@@ -29,7 +29,9 @@ class Rebost():
 		self.rebostPath="/usr/share/rebost/"
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostPathTmp=os.path.join(self.rebostPath,"tmp")
+		self.rebostPathTmp=os.path.join("/","tmp","rebost","tmp")
+		if os.path.exists(self.rebostPathTmp)==False:
+			os.makedirs(self.rebostPathTmp)
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -316,6 +318,8 @@ class Rebost():
 				plugin=plugName
 				break
 		coreAction=False
+		if os.path.exists(os.path.join("/","tmp","rebost","rebostStore.db"))==False:
+			self.restart()
 		if len(plugin)==0:
 			#search for a local method
 			if hasattr(self,action):

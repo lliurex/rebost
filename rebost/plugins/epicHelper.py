@@ -216,6 +216,7 @@ class epicHelper():
 		pkgList=jepi.get("pkg_list",[])
 		description=rebostPkg.get('description','')
 		origcats=rebostPkg.get('categories',[]).copy()
+		origstate=rebostPkg.get('state',{}).copy()
 		if "Zomando" not in rebostPkg["categories"]:
 			rebostPkg["categories"].insert(0,"Zomando")
 		for pkg in pkgList:
@@ -242,9 +243,11 @@ class epicHelper():
 					rebostTmp["icon"]=pkg.get("customIcon",rebostPkg["icon"])
 			if "Zomando" in rebostTmp["categories"] and rebostTmp["name"]!=rebostPkg["name"]:
 				rebostTmp["categories"].remove("Zomando")
+			rebostTmp["state"].update({"zomando":"1"})
 			#rebostTmp["alias"]=rebostPkg["pkgname"]
 			pkgs.append(rebostTmp)
 		rebostPkg["categories"]=origcats
+		rebostPkg["state"]=origstate
 		rebostPkg['description']=description.strip()
 		pkgs.insert(0,rebostPkg)
 		return(pkgs)
@@ -294,7 +297,8 @@ class epicHelper():
 			rebostTmp["bundle"]={}
 		if bundle!="":
 			rebostTmp["bundle"]={bundle:rebostTmp["name"],"zomando":rebostTmp["bundle"]["zomando"]}
-			rebostTmp["state"]={bundle:"0"}
+			rebostTmp["state"]={bundle:"1"}
+		rebostTmp["state"].update({"zomando":"1"})
 		return(rebostTmp)
 	#def _fillDataFromEpi
 

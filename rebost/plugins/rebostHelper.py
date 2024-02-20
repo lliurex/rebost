@@ -149,8 +149,6 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	if isinstance(rebostPkg['license'],list)==False:
 		rebostPkg['license']=""
 	alias=""
-	categories=rebostPkg.get('categories',[])
-	categories.extend(["","",""])
 	name=rebostPkg.get('name','')
 	if sanitize:
 		name=rebostPkg.get('name','').strip().lower()
@@ -181,15 +179,24 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 		for bun in rebostPkg["bundle"].keys():
 			rebostPkg["bundle"][bun]=str(rebostPkg["bundle"][bun])
 			
-		#fix LliureX category:
-		lliurex=list(filter(lambda cat: 'lliurex' in str(cat).lower(), categories))
-		if lliurex:
-			idx=categories.index(lliurex.pop())
-			if idx>0:
-				categories.pop(idx)
-				categories.insert(0,"Lliurex")
-	alias=rebostPkg.get("alias","")
+	#fix LliureX categories:
+	cats=rebostPkg.get('categories',[])
+	categories=[ c.lower() for c in cats if c ]
+	while len(categories)<3:
+		categories.append("")
+	for c in ["zomando","lliurex"]:
+		if c in categories:
+			categories.remove(c)
+			categories.insert(0,c)
+	categories=[ c.capitalize() for c in categories ]
+	#	llxcat=list(filter(lambda cat: c in str(cat).lower(), categories))
+	#	if llxcat:
+	#		idx=categories.index(llxcat.pop())
+	#		if idx>0:
+	#			categories.pop(idx)
+	#			categories.insert(0,c.capitalize())
 	(cat0,cat1,cat2)=categories[0:3]
+	alias=rebostPkg.get("alias","")
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 

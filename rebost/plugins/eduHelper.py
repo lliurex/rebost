@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #import rebostHelper
-import time,os
+import time,os,stat
 import json
 import re
 from rebost import store
@@ -26,7 +26,12 @@ class eduHelper():
 		self.autostartActions=["load"]
 		self.regex=re.compile("[^\\w -]")
 		self.priority=1
-		self.lastUpdate="/tmp/rebost/tmp/eh.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","eh.lu")
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

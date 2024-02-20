@@ -184,7 +184,7 @@ class epicHelper():
 						cat="Network"
 					elif cat.lower()=="support":
 						cat="Software"
-					if cat not in rebostPkg['categories']:
+					if cat not in rebostPkg['categories'] and len(cat.strip())>0:
 						rebostPkg['categories'].append(cat)
 				elif fline.startswith("Name"):
 					if summary=="":
@@ -200,10 +200,12 @@ class epicHelper():
 							description=fline.split("=")[-1]
 			rebostPkg['summary']=summary
 			rebostPkg['description']=description
-			if "Zomando" not in rebostPkg['categories']:
-				rebostPkg['categories'].append("Zomando")
-			if "Lliurex" not in rebostPkg['categories']:
-				rebostPkg['categories'].insert(0,"Lliurex")
+			if "Zomando" in rebostPkg['categories']:
+				rebostPkg['categories'].remove("Zomando")
+			rebostPkg['categories'].insert(0,"Zomando")
+			if "Lliurex" in rebostPkg['categories']:
+				rebostPkg['categories'].remove("Lliurex")
+			rebostPkg['categories'].insert(0,"Lliurex")
 		return(rebostPkg)
 	#def _getDataFromAppFile
 
@@ -211,35 +213,39 @@ class epicHelper():
 		pkgs=[]
 		zmdPath=rebostPkg["bundle"]["zomando"]
 		jepi=self._getJsonFromZmd(zmdPath)
-		pkgList=jepi.get("pkg_list",[]).copy()
-		if pkgList!=[]:
-			description=rebostPkg.get('description','')
-			for pkg in pkgList:
-				name=pkg.get("name","").strip()
-				if name.lower().startswith("lib"):
-					continue
-				if name.lower().endswith("libs"):
-					continue
-				rebostTmp=rebostPkg.copy()
-				rebostTmp["name"]=self._getNameForPkg(name)
-				rebostTmp["pkgname"]=name
-				cname=pkg.get('custom_name','')
-				if len(cname)<1:
-					cname=pkg.get('name','')
-				description+="\\\\{}".format(cname.strip())
-				rebostTmp["description"]=cname.strip()
-				rebostTmp=self._fillDataFromEpi(rebostTmp,pkg)
-				if pkg.get("custom_icon","")!="":
-					customIcon=os.path.join(jepi.get("epiPathDir",""),pkg.get("custom_icon"))
-					if os.path.exists(customIcon):
-						rebostTmp["icon"]=customIcon
-					else:
-						rebostTmp["icon"]=pkg.get("customIcon",rebostPkg["icon"])
-				if "Zomando" in rebostTmp["categories"]:
-					rebostTmp["categories"].remove("Zomando")
-				#rebostTmp["alias"]=rebostPkg["pkgname"]
-				pkgs.append(rebostTmp)
-			rebostPkg['description']=description.strip()
+		pkgList=jepi.get("pkg_list",[])
+		description=rebostPkg.get('description','')
+		origcats=rebostPkg.get('categories',[]).copy()
+		if "Zomando" not in rebostPkg["categories"]:
+			rebostPkg["categories"].insert(0,"Zomando")
+		for pkg in pkgList:
+			name=pkg.get("name","").strip()
+			if name.lower().startswith("lib"):
+				continue
+			if name.lower().endswith("libs"):
+				continue
+			rebostTmp={}
+			rebostTmp=rebostPkg.copy()
+			rebostTmp["name"]=self._getNameForPkg(name)
+			rebostTmp["pkgname"]=name
+			cname=pkg.get('custom_name','')
+			if len(cname)<1:
+				cname=pkg.get('name','')
+			description+="\\\\{}".format(cname.strip())
+			rebostTmp["description"]=cname.strip()
+			rebostTmp=self._fillDataFromEpi(rebostTmp,pkg)
+			if pkg.get("custom_icon","")!="":
+				customIcon=os.path.join(jepi.get("epiPathDir",""),pkg.get("custom_icon"))
+				if os.path.exists(customIcon):
+					rebostTmp["icon"]=customIcon
+				else:
+					rebostTmp["icon"]=pkg.get("customIcon",rebostPkg["icon"])
+			if "Zomando" in rebostTmp["categories"] and rebostTmp["name"]!=rebostPkg["name"]:
+				rebostTmp["categories"].remove("Zomando")
+			#rebostTmp["alias"]=rebostPkg["pkgname"]
+			pkgs.append(rebostTmp)
+		rebostPkg["categories"]=origcats
+		rebostPkg['description']=description.strip()
 		pkgs.insert(0,rebostPkg)
 		return(pkgs)
 	#def _getZomandoInstalls

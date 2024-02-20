@@ -102,7 +102,6 @@ class packageKit():
 				pkcon.refresh_cache(False,None,self._loadCallback,None)
 			except Exception as e:
 				print(e)
-				print("**")
 	#def _refreshPk
 
 	def _loadFullCatalogue(self,pkcon,flags=None):
@@ -123,11 +122,8 @@ class packageKit():
 		pklists=[]
 		self._debug("Getting restricted pkg list from {}".format(pkgfile))
 		searchList=self._readFilterFile(pkgfile)
-		print("begin load after filter")
 		if len(searchList)>0:
-			print("resolve: {}".format(",".join(searchList)))
 			pkList=pkcon.resolve(packagekit.FilterEnum.NONE,searchList,None,self._loadCallback,None)
-			print("Getting packageSack from load")
 			pkgSack=pkList.get_package_sack()
 			pklists.append(pkgSack)
 		self._debug("Processing obtained list")

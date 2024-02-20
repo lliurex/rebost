@@ -92,9 +92,9 @@ class QLabelRebostApp(QLabel):
 			icn=icn2.pixmap(128,128)
 		if icn:
 			wsize=128
-			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
+			if "/usr/share/banners/lliurex-neu" in img:
 				wsize=235
-			self.setPixmap(icn.scaled(wsize,128))
+			self.setPixmap(icn.scaled(wsize,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)

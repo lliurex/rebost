@@ -28,15 +28,15 @@ class Rebost():
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
+		self.rebostPath="/usr/share/rebost/"
+		self.confFile=os.path.join(self.rebostPath,"store.json")
+		self.includeFile=os.path.join(self.rebostPath,"lists.d")
+		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
 		self.plugins={}
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
-		self.rebostPath="/usr/share/rebost/"
-		self.confFile=os.path.join(self.rebostPath,"store.json")
-		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -503,13 +503,15 @@ class Rebost():
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.scandir(self.rebostPath):
-				if i.path.endswith(".db"):
-					try:
-						os.remove(i.path)
-					except Exception as e:
-						print(e)
-						self._debug(e)
+			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
+			for dbDir in dbDirs:
+				for i in os.scandir(dbDir):
+					if i.path.endswith(".db"):
+						try:
+							os.remove(i.path)
+						except Exception as e:
+							print(e)
+							self._debug(e)
 	#def _cleanData
 
 	def forceUpdate(self,force=False):

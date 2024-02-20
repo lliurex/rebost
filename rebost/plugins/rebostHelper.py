@@ -225,6 +225,8 @@ def _sanitizeString(data,scape=False,unescape=False):
 		data=data.rstrip()
 		if scape:
 			data=html.escape(data).encode('ascii', 'xmlcharrefreplace').decode() 
+			data=data.replace("<","")
+			data=data.replace(">","")
 		if unescape:
 			data=html.unescape(data)
 	return(data)

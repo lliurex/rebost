@@ -45,7 +45,6 @@ class sqlHelper():
 		if self.includelist:
 			self.includelistFilter=rebostHelper.getFiltersList(includelist=True)
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
-		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 		self.restricted=True
 		self.mainTableForRestrict="eduapps"
 		self._chkDbIntegrity()
@@ -659,7 +658,8 @@ class sqlHelper():
 				pkgdataJson['categories'].pop(idx)
 				pkgdataJson['categories'].insert(0,categories[idx])
 			categories=pkgdataJson.get('categories',[])
-		categories=list(set(categories)-set(self.noShowCategories))
+		noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME","desktop-other"]
+		categories=list(set(categories)-set(noShowCategories))
 			
 		while len(categories)<3:
 			categories.append("")
@@ -671,6 +671,10 @@ class sqlHelper():
 			cat0=categories[0]
 			cat1=categories[-1]
 			cat2=categories[-2]
+		if "Zomando" in categories and "Zomando" not in cat0+cat1+cat2:
+			cat2="Zomando"
+		if "FP" in categories and "FP" not in cat0+cat1+cat2:
+			cat1="FP"
 		if isinstance(pkgdataJson['versions'],dict):
 			states=pkgdataJson.get('state')
 			#pkgdataJson['installed']={}

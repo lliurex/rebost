@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import os,shutil
+import os,shutil,stat
 import multiprocessing
 import threading
 import time
@@ -15,10 +15,15 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.gui=False
 		self.propagateDbg=True
-		self.cache="/tmp/.cache/rebost"
+		self.dbCache="/tmp/.cache/rebost"
+		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostWrkDir)==True:
+			shutil.rmtree(self.rebostWrkDir)
+		os.makedirs(self.rebostWrkDir)
+		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
 		home=os.environ.get("HOME","")
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
@@ -31,7 +36,6 @@ class Rebost():
 		self.rebostPath="/usr/share/rebost/"
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostWrkDir="/tmp/rebost"
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.process={}
 		self.store=appstream.Store()
@@ -259,6 +263,8 @@ class Rebost():
 	#def _copyCacheToTmp
 
 	def _copyTmpToCache(self):
+		if os.path.exists(self.cache)==False:
+			os.makedirs(self.cache)
 		if os.path.exists(self.rebostPathTmp):
 			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):

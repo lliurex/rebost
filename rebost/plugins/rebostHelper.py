@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil,distro
+import os,shutil,distro,stat
 import html2text
 import gi
 gi.require_version('AppStream', '1.0')
@@ -14,7 +14,11 @@ import time
 import flatpakHelper
 
 DBG=False
-WRKDIR="/tmp/rebost"
+dbCache="/tmp/.cache/rebost"
+WRKDIR=os.path.join(dbCache,os.environ.get("USER"))
+if os.path.exists(WRKDIR)==False:
+	os.makedirs(WRKDIR)
+os.chmod(WRKDIR,stat.S_IRWXU )
 path=os.path.join(WRKDIR,"rebost.log")
 if os.path.isdir(os.path.dirname(path))==False:
 	os.makedirs(os.path.dirname(path))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,sys
+import os,sys,stat
 import gi
 from gi.repository import Gio
 gi.require_version ('Flatpak', '1.0')
@@ -22,8 +22,13 @@ class flatpakHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=2
-		self.wrkDir='/tmp/.cache/rebost/xml/flatpak'
-		self.lastUpdate="/tmp/rebost/tmp/ft.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.wrkDir=os.path.join(self.rebostCache,"xml","flatpak")
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","ft.lu")
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

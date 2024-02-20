@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,stat
 import json
 import re
 import urllib
@@ -37,7 +37,12 @@ class appimageHelper():
 			os.makedirs(self.iconDir)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
-		self.lastUpdate="/tmp/rebost/tmp/ai.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","ai.lu")
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

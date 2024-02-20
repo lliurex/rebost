@@ -430,7 +430,7 @@ class details(QStackedWindowItem):
 			self._onError()
 			bundles=self.app.get("bundle",{})
 			if len(bundles)>0:
-				bundle=bundles.pop(0)
+				bundle=bundles.popitem()[1]
 			else:
 				bundle="package"
 			self.lstInfo.insertItem(0,bundle)
@@ -513,7 +513,7 @@ class details(QStackedWindowItem):
 			else:
 				state=1
 			states+=state
-			if bundle=="zomando" and (pkgState==0 or state==0):
+			if bundle=="zomando" and ((pkgState==0 or state==0) or (self.app.get("pkgname","x$%&/-1") not in self.app["bundle"]["zomando"])):
 				self.btnZomando.setVisible(True)
 				continue
 		#	elif bundle=="zomando":

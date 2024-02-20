@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import gi,shutil
+import gi,shutil,stat
 from gi.repository import Gio
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
@@ -22,8 +22,13 @@ class packageKit():
 		self.priority=2
 		self.result=''
 		self.restricted=True
-		self.wrkDir="/tmp/.cache/rebost/xml/packageKit"
-		self.lastUpdate="/tmp/rebost/tmp/pk.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.wrkDir=os.path.join(self.rebostCache,"xml","packageKit")
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","pk.lu")
 		#self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
 		self.pkgFile="/usr/share/rebost/lists.d/eduapps.map"
 	#def __init__
@@ -53,7 +58,6 @@ class packageKit():
 	def _loadStore(self,*args):
 		action="load"
 		pkcon=packagekit.Client()
-		#self._refreshPk(pkcon)
 		if self.restricted==False:
 			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
 			pklists=self._loadFullCatalogue(pkcon,flags)
@@ -61,10 +65,8 @@ class packageKit():
 			pklists=self._loadRestrictedCatalogue(pkcon,self.pkgFile)
 		tmppkgIds=[]
 		pkgIds=[]
-		print("begin appended sack")
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
-		print("appended sack")
 		if self.restricted==True:
 			restrictIds=self._readFilterFile(self.pkgFile)
 			for pkglist in tmppkgIds:
@@ -72,37 +74,10 @@ class packageKit():
 					pkgname=pkg.split(";")[0]
 					if pkgname not in restrictIds:
 						pkgSack.remove_package_by_id(pkg)
-		print("filtered")
 		for pkgSack in pklists:
 			pkgIds.extend(pkgSack.get_ids())
-
-		#Needed for controlling updates
-		'''
-		gPath=""
-		for pkgSack in pklists:
-			gioFile=Gio.file_new_tmp()
-			pkgSack.to_file(gioFile[0])
-			if gPath=="":
-				gPath=gioFile[0].get_path()
-			else:
-				gPath2=gioFile[0].get_path()
-				ids=""
-				with open(gPath2,"r") as f:
-					ids=f.read()
-				with open(gPath,"a") as f:
-					f.write(ids)
-		#gioFile[0].delete()
-		pkUpdates=pkcon.get_updates(packagekit.FilterEnum.APPLICATION, None, self._loadCallback, None)
-		pkgUpdateSack=pkUpdates.get_package_sack()
-		newMd5=""
-		'''
-		#pkgIds=self._getChanges(gPath)
 		if (len(pkgIds)>0):
 			pkgUpdateIds={}
-		#	pkgUpdateIdsArray=pkgUpdateSack.get_ids()
-		#	for pkgId in pkgUpdateIdsArray:
-		#		pkgInfo=pkgId.split(";")
-		#		pkgUpdateIds[pkgInfo[0]]={'release':pkgInfo[1],'origin':pkgInfo[-1]}
 			self._debug("End Getting pkg list")
 			self._processPackages(pkcon,pkgIds,pkgUpdateIds)
 			self._debug("PKG loaded")
@@ -169,6 +144,9 @@ class packageKit():
 			searchList=[]
 			for key,item in jcontent.items():
 				if item not in searchList:
+					if item.startswith("zero-"):
+						self._debug("Gettings pkgs from zmd")
+
 					searchList.append(item)
 		return(searchList)
 	#def _readFilterFile
@@ -246,7 +224,7 @@ class packageKit():
 			pkgDict[pkgName]=pkg
 		#Get rows for ids
 		rows=[]
-		if os.path.isfile("/tmp/rebost/packagekit.db"):
+		if os.path.isfile(os.path.join(self.rebostCache,"packagekit.db")):
 			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
 		for row in rows:
 			try:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os,sys,stat
+import os,sys,stat,tempfile
+import xml.etree.ElementTree as ET
 import gi
 from gi.repository import Gio
 gi.require_version ('Flatpak', '1.0')
@@ -122,12 +123,12 @@ class flatpakHelper():
 		if srcDir=='':
 		#When initializing for first time metada needs a reload
 			(srcDir,flInst)=self._get_flatpak_metadata()
+		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
+		fxml=os.path.join(srcDir,"appstream.xml")
 		try:
-			self._debug("Loading flatpak metadata from file at {}".format(srcDir))
-			#with open(os.path.join(srcDir,"appstream.xml"),'r') as f:
-			#	fcontent=f.read()
+			fcontent=self._fixAppstreamXml(fxml)
 			#store.from_xml(fcontent)
-			tmpStore.from_file(Gio.File.parse_name(os.path.join(srcDir,"appstream.xml")))
+			tmpStore.from_file(Gio.File.parse_name(fcontent))
 		except Exception as e:
 			print(e)
 		#self._debug("Formatting flatpak metadata")
@@ -142,6 +143,30 @@ class flatpakHelper():
 		self._debug("End loading flatpak metadata")
 		return(store)
 	#def _get_flatpak_catalogue
+
+	def _fixAppstreamXml(self,fxml):
+		fcontent=""
+		tree = ET.parse(fxml)
+		r=tree.getroot()
+		for description in r.iter('description'):
+			txt=[]
+			for i in list(description):
+				desc=i.text
+				if isinstance(desc,str)==False:
+					desc=""
+				description.remove(i)
+				txt.append(desc.strip())
+			desc="<p>{}</p>".format(rebostHelper._sanitizeString(". ".join(txt),scape=True))
+			try:
+				elem=ET.fromstring(desc)
+			except Exception as e:
+				print(e)
+				print(desc)
+			description.append(elem)
+		tmpfile=tempfile.mktemp()
+		tree.write(tmpfile,xml_declaration="1.0",encoding="UTF-8")
+		return tmpfile
+	#def _fixAppstreamXml
 
 	def _get_flatpak_metadata(self):
 		#Get all the remotes, copy appstream to wrkdir

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,stat
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -20,8 +20,13 @@ class appstreamHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=0
-		self.wrkDir='/tmp/.cache/rebost/xml/appstream'
-		self.lastUpdate="/tmp/rebost/tmp/as.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.wrkDir=os.path.join(self.rebostCache,"xml","appstream")
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","as.lu")
 		#self._loadStore()
 	#def __init__
 
@@ -185,7 +190,7 @@ class appstreamHelper():
 	#def _set_icon_fname
 
 	def _populate_icon_db(self):
-		appstreamIconDirs=["/var/lib/app-info/icons","/tmp/rebost/appstream"]
+		appstreamIconDirs=["/var/lib/app-info/icons","/usr/share/rebost-data/icons"]
 		iconDb={}
 		for appstreamIconDir in appstreamIconDirs:
 			if os.path.isdir(appstreamIconDir)==True:
@@ -194,10 +199,17 @@ class appstreamHelper():
 					if os.path.isdir(pathDir)==True:
 						icon64=os.path.join(pathDir,"64x64")
 						icon128=os.path.join(pathDir,"128x128")
-						iconFiles=os.listdir(icon64)
-						iconDb[icon64]=iconFiles
-						iconFiles=os.listdir(icon128)
-						iconDb[icon128]=iconFiles
+						if os.path.isdir(icon64):
+							iconFiles=os.listdir(icon64)
+							iconDb[icon64]=iconFiles
+						if os.path.isdir(icon128):
+							iconFiles=os.listdir(icon128)
+							iconDb[icon128]=iconFiles
+						for i in os.scandir(pathDir):
+							if i.name.endswith(".png"):
+								if pathDir not in iconDb:
+									iconDb[pathDir]=[]
+								iconDb[pathDir].append(i.path)
 		return(iconDb)
 
 	def _get_app_icons(self,idx,iconDb):

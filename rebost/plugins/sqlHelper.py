@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil
+import os,shutil,stat
 import gi
 from gi.repository import Gio
 import json
@@ -20,19 +20,24 @@ class sqlHelper():
 		self.priority=0
 		self.postAutostartActions=["load"]
 		self.store=None
-		self.rebostPath="/tmp/rebost"
-		self.softwareBanList=os.path.join(self.rebostPath,"lists.d/banned")
-		self.softwareIncludeList=os.path.join(self.rebostPath,"lists.d/include")
-		self.bannedWordsList=os.path.join(self.rebostPath,"lists.d/words")
-		self.main_table=os.path.join(self.rebostPath,"rebostStore.db")
-		self.installed_table=os.path.join(self.rebostPath,"installed.db")
-		self.categories_table=os.path.join(self.rebostPath,"categories.db")
-		self.proc_table=os.path.join(self.rebostPath,"rebostPrc.db")
-		self.main_tmp_table=os.path.join(self.rebostPath,"tmpStore.db")
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		self.rebostData="/usr/share/rebost/"
+		if os.path.exists(self.rebostCache)==False:
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.softwareBanList=os.path.join(self.rebostData,"lists.d/banned")
+		self.softwareIncludeList=os.path.join(self.rebostData,"lists.d/include")
+		self.bannedWordsList=os.path.join(self.rebostData,"lists.d/words")
+		self.main_table=os.path.join(self.rebostCache,"rebostStore.db")
+		self.installed_table=os.path.join(self.rebostCache,"installed.db")
+		self.categories_table=os.path.join(self.rebostCache,"categories.db")
+		self.proc_table=os.path.join(self.rebostCache,"rebostPrc.db")
+		self.main_tmp_table=os.path.join(self.rebostCache,"tmpStore.db")
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
-		self.lastUpdate=os.path.join(self.rebostPath,"tmp","sq.lu")
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sq.lu")
 		self.banlist=True
 		if self.banlist:
 			self.banlistFilter=rebostHelper.getFiltersList(banlist=True)
@@ -40,7 +45,6 @@ class sqlHelper():
 		if self.includelist:
 			self.includelistFilter=rebostHelper.getFiltersList(includelist=True)
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
-		self.noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME"]
 		self.restricted=True
 		self.mainTableForRestrict="eduapps"
 		self._chkDbIntegrity()
@@ -82,7 +86,7 @@ class sqlHelper():
 		include=["packagekit.db","eduapps.db","appimage.db","flatpak.db","snap.db","zomandos.db","appstream.db"]
 		for fname in include:
 			self._debug("Testing integrity for fname")
-			f=os.path.join(self.rebostPath,fname)
+			f=os.path.join(self.rebostCache,fname)
 			dbname=fname.replace(".db","")
 			for testQuery in testQueries:
 				(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
@@ -98,7 +102,7 @@ class sqlHelper():
 					integrity=False
 		self.closeConnection(db)
 		if integrity==False:
-			for i in os.scandir(os.path.join(self.rebostPath,"tmp")):
+			for i in os.scandir(os.path.join(self.rebostCache,"tmp")):
 				os.unlink(i.path)
 		return(integrity)
 	#def _chkDbIntegrity
@@ -215,6 +219,9 @@ class sqlHelper():
 		if not rebostPkg.get("bundle",{}).get("appimage","").lower().endswith(".appimage") and bundleurl!='':
 			dataTmp=self.appimage.fillData(rebostPkg)
 			row=(pkg,dataTmp)
+			#Ensure all single quotes are duplicated or sql will fail
+			dataTmp=dataTmp.replace("''","'")
+			dataTmp=dataTmp.replace("'","''")
 			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
 			try:
 				cursor.execute(query)
@@ -236,7 +243,11 @@ class sqlHelper():
 				self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
 		if state!=rebostPkg['state'].get(bundle,''):
 			rebostPkg['state'].update({bundle:state})
-			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,json.dumps(rebostPkg),pkgname)
+			#Ensure all single quotes are duplicated or sql will fail
+			dataContent=json.dumps(rebostPkg)
+			dataContent=dataContent.replace("''","'")
+			dataContent=dataContent.replace("'","''")
+			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
 			try:
 				cursor.execute(query)
 			except:
@@ -383,7 +394,7 @@ class sqlHelper():
 		sources=self._getEnabledSources()
 		fupdate=open(self.lastUpdate,'w')
 		if len(self.mainTableForRestrict)>0:
-			restrictTablePath=os.path.join(self.rebostPath,"{}.db".format(self.mainTableForRestrict))
+			restrictTablePath=os.path.join(self.rebostCache,"{}.db".format(self.mainTableForRestrict))
 			if self.mainTableForRestrict in sources:
 				sources.pop(self.mainTableForRestrict)
 			if os.path.isfile(restrictTablePath):
@@ -419,7 +430,7 @@ class sqlHelper():
 	#def consolidateSqlTables
 
 	def _getEnabledSources(self):
-		config=os.path.join(self.rebostPath,"store.json")
+		config=os.path.join(self.rebostCache,"store.json")
 		fcontent={}
 		if os.path.isfile(config):
 			with open(config,'r') as f:
@@ -430,7 +441,7 @@ class sqlHelper():
 	def _processDatabase(self,fname,db,cursor,tmpdb,fupdate):
 		allCategories=[]
 		retval=(0,[])
-		f=os.path.join(self.rebostPath,fname)
+		f=os.path.join(self.rebostCache,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
 			if "zomandos"==fname.replace(".db",""):
@@ -647,7 +658,8 @@ class sqlHelper():
 				pkgdataJson['categories'].pop(idx)
 				pkgdataJson['categories'].insert(0,categories[idx])
 			categories=pkgdataJson.get('categories',[])
-		categories=list(set(categories)-set(self.noShowCategories))
+		noShowCategories=["GTK","QT","Qt","Kde","KDE","Java","Gnome","GNOME","desktop-other"]
+		categories=list(set(categories)-set(noShowCategories))
 			
 		while len(categories)<3:
 			categories.append("")
@@ -659,6 +671,10 @@ class sqlHelper():
 			cat0=categories[0]
 			cat1=categories[-1]
 			cat2=categories[-2]
+		if "Zomando" in categories and "Zomando" not in cat0+cat1+cat2:
+			cat2="Zomando"
+		if "FP" in categories and "FP" not in cat0+cat1+cat2:
+			cat1="FP"
 		if isinstance(pkgdataJson['versions'],dict):
 			states=pkgdataJson.get('state')
 			#pkgdataJson['installed']={}
@@ -718,7 +734,7 @@ class sqlHelper():
 		query="SELECT pkg FROM {};".format(table)
 		cursor.execute(query)
 		rows=cursor.fetchall()
-		completionFile=os.path.join(self.rebostPath,"tmp","bash_completion")
+		completionFile=os.path.join(self.rebostCache,"tmp","bash_completion")
 		if os.path.isdir(os.path.dirname(completionFile)):
 			with open(completionFile,'w') as f:
 				for row in rows:
@@ -737,7 +753,7 @@ class sqlHelper():
 			with open(self.lastUpdate,'r') as f:
 				fcontent=f.readlines()
 			for fname in include:
-				f=os.path.join(self.rebostPath,fname)
+				f=os.path.join(self.rebostCache,fname)
 				fsize=0
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)
@@ -772,7 +788,7 @@ class sqlHelper():
 		cursor.execute(query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT,alias TEXT);".format(table)
 		cursor.execute(query)
-		cursor.execute("ATTACH DATABASE '{}.db' AS pk;".format(os.path.join(self.rebostPath,consolidate_table)))
+		cursor.execute("ATTACH DATABASE '{}.db' AS pk;".format(os.path.join(self.rebostCache,consolidate_table)))
 		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table))
 		rebost_db.commit()
 		rebost_db.close()

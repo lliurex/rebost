@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os,shutil,stat
 import gi
 from gi.repository import Gio
 gi.require_version ('Snapd', '1')
@@ -21,7 +21,12 @@ class snapHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.priority=2
-		self.lastUpdate="/tmp/rebost/tmp/sp.lu"
+		dbCache="/tmp/.cache/rebost"
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		if not os.path.exists(self.rebostCache):
+			os.makedirs(self.rebostCache)
+		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sp.lu")
 		self.snap=Snapd.Client()
 		self.forceApps=[]
 	#def __init__

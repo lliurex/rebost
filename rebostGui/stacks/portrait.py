@@ -76,15 +76,12 @@ class QPushButtonRebostApp(QPushButton):
 
 		if icn:
 			wsize=128
-			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
+			if "/usr/share/banners/lliurex-neu" in img:
 				wsize=235
-			self.icon.setPixmap(icn.scaled(wsize,128))
+			self.icon.setPixmap(icn.scaled(wsize,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
 		elif img.startswith('http'):
-			print("Searching {}".format(img))
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
-		else:
-			print("NOT: {}".format(icn))
 		if "0" not in str(self.app.get('state',1)):
 			#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
 			self._applyDecoration()

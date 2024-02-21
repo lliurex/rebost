@@ -2,7 +2,7 @@
 import sys
 import importlib
 import requests
-import os,shutil
+import os,shutil,stat
 import multiprocessing
 import threading
 import time
@@ -17,23 +17,25 @@ class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
 		self.propagateDbg=True
-		self.cache="/tmp/.cache/rebost"
+		self.dbCache="/tmp/.cache/rebost"
+		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
+		if os.path.exists(self.rebostWrkDir)==True:
+			shutil.rmtree(self.rebostWrkDir)
+		os.makedirs(self.rebostWrkDir)
+		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
 		home=os.environ.get("HOME","")
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
+		self.rebostPath="/usr/share/rebost/"
+		self.confFile=os.path.join(self.rebostPath,"store.json")
+		self.includeFile=os.path.join(self.rebostPath,"lists.d")
+		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
 		self.plugins={}
 		self.pluginInfo={}
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
-		self.rebostPath="/usr/share/rebost/"
-		self.confFile=os.path.join(self.rebostPath,"store.json")
-		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostWrkDir="/tmp/rebost"
-		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
-		if os.path.exists(self.rebostPathTmp)==False:
-			os.makedirs(self.rebostPathTmp)
 		self.process={}
 		self.store=appstream.Store()
 		self.config={}
@@ -247,7 +249,7 @@ class Rebost():
 
 	def _copyCacheToTmp(self):
 		tmpCache=os.path.join(self.cache,"tmp")
-		if os.path.exists(tmpCache)
+		if os.path.exists(tmpCache):
 			if os.path.exists(self.rebostPathTmp)==True:
 				return()
 			os.makedirs(self.rebostPathTmp)
@@ -260,6 +262,8 @@ class Rebost():
 	#def _copyCacheToTmp
 
 	def _copyTmpToCache(self):
+		if os.path.exists(self.cache)==False:
+			os.makedirs(self.cache)
 		if os.path.exists(self.rebostPathTmp):
 			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):
@@ -349,7 +353,7 @@ class Rebost():
 				plugin=plugName
 				break
 		coreAction=False
-		if os.path.exists(os.path.join("/","tmp","rebost","rebostStore.db"))==False:
+		if os.path.exists(self.rebostPathTmp)==False:
 			self.restart()
 		if len(plugin)==0:
 			#search for a local method
@@ -370,6 +374,8 @@ class Rebost():
 			for cat in rebostPkgList:
 				catList.append(cat[0])
 			store=json.dumps(catList)
+		if action=="install" or action=="remove" or action=="test":
+			self._copyTmpToCache()
 		return(store)
 	#def execute
 			
@@ -496,13 +502,15 @@ class Rebost():
 				self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
-			for i in os.scandir(self.rebostPath):
-				if i.path.endswith(".db"):
-					try:
-						os.remove(i.path)
-					except Exception as e:
-						print(e)
-						self._debug(e)
+			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
+			for dbDir in dbDirs:
+				for i in os.scandir(dbDir):
+					if i.path.endswith(".db"):
+						try:
+							os.remove(i.path)
+						except Exception as e:
+							print(e)
+							self._debug(e)
 	#def _cleanData
 
 	def forceUpdate(self,force=False):

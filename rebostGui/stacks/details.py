@@ -92,9 +92,9 @@ class QLabelRebostApp(QLabel):
 			icn=icn2.pixmap(128,128)
 		if icn:
 			wsize=128
-			if "Zomando" in app.get("categories","") or "zero" in app.get('pkgname',"").lower():
+			if "/usr/share/banners/lliurex-neu" in img:
 				wsize=235
-			self.setPixmap(icn.scaled(wsize,128))
+			self.setPixmap(icn.scaled(wsize,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
@@ -431,9 +431,6 @@ class details(QStackedWindowItem):
 			bundles=self.app.get("bundle",{})
 			if len(bundles)>0:
 				bundle=bundles.popitem()[1]
-				bundle="-------"
-				self._onError()
-				print(bundle)
 			else:
 				bundle="package"
 			self.lstInfo.insertItem(0,bundle)
@@ -516,7 +513,7 @@ class details(QStackedWindowItem):
 			else:
 				state=1
 			states+=state
-			if bundle=="zomando" and (pkgState==0 or state==0):
+			if bundle=="zomando" and ((pkgState==0 or state==0) or (self.app.get("pkgname","x$%&/-1") not in self.app["bundle"]["zomando"])):
 				self.btnZomando.setVisible(True)
 				continue
 		#	elif bundle=="zomando":

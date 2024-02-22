@@ -12,7 +12,7 @@ import time
 gettext.textdomain('rebostgui')
 _ = gettext.gettext
 
-app=QApplication(["RebostGui"])
+app=QApplication(["LliureX Rebost"])
 mw=QStackedWindow()
 icn=QtGui.QIcon.fromTheme("rebost")
 mw.disableNavBar(True)

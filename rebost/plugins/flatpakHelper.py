@@ -69,22 +69,8 @@ class flatpakHelper():
 			for i in upgradableRefs:
 				upgradable[i.get_name().lower()]=i.get_appdata_version()
 				a=i.load_metadata()
-			for pkg in rebostPkgList:
-				if pkg["id"] in installed:
-					local=installed.pop(pkg["id"])
-					if local==None:
-						local="runtime"
-					pkg["installed"].update({"flatpak":local})
-					pkg["state"].update({"flatpak":"0"})
-					if pkg["id"] in upgradable.keys():
-						remote=upgradable.pop(pkg["id"])
-						if remote==local and remote!=None:
-							remote+="+1"
-						elif remote==None:
-							remote="runtime+1"
-						pkg["versions"].update({"flatpak":remote})
-					if len(installed)==0:
-						break
+			if len(installed)==0:
+				rebostPkgList=self._fillInstalledData(rebostPkgList)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
@@ -93,6 +79,24 @@ class flatpakHelper():
 		else:
 			self._debug("Skip update")
 	#def _loadStore(self):
+
+	def _fillInstalledData(self,rebostPkgList):
+		for pkg in rebostPkgList:
+			if pkg["id"] in installed:
+				local=installed.pop(pkg["id"])
+				if local==None:
+					local="runtime"
+				pkg["installed"].update({"flatpak":local})
+				pkg["state"].update({"flatpak":"0"})
+				if pkg["id"] in upgradable.keys():
+					remote=upgradable.pop(pkg["id"])
+					if remote==local and remote!=None:
+						remote+="+1"
+					elif remote==None:
+						remote="runtime+1"
+					pkg["versions"].update({"flatpak":remote})
+		return(rebostPkgList)
+	#def _fillInstalledData
 
 	def _chkNeedUpdate(self,store):
 		update=True
@@ -118,7 +122,6 @@ class flatpakHelper():
 		flInst=''
 		store=appstream.Store()
 		tmpStore=appstream.Store()
-		#metadata=appstream.Metadata()
 		(srcDir,flInst)=self._get_flatpak_metadata()
 		if srcDir=='':
 		#When initializing for first time metada needs a reload
@@ -126,15 +129,13 @@ class flatpakHelper():
 		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		fxml=os.path.join(srcDir,"appstream.xml")
 		try:
-			fcontent=self._fixAppstreamXml(fxml)
-			#store.from_xml(fcontent)
-			tmpStore.from_file(Gio.File.parse_name(fcontent))
+			tmpStore.from_file(Gio.File.parse_name(fxml))
 		except Exception as e:
-			print(e)
-		#self._debug("Formatting flatpak metadata")
+			print("Flatpak BUG #5434 workaround")
+			fcontent=self._fixAppstreamXml(fxml)
+			tmpStore.from_file(Gio.File.parse_name(fcontent))
+			#store.from_xml(fcontent)
 		for app in tmpStore.get_apps():
-			#if app.get_kind() not in [appstream.AppKind.DESKTOP,appstream.AppKind.ADDON,appstream.AppKind.WEB_APP]:
-			#	continue
 			idx=app.get_id()
 			icon=self._get_app_icons(srcDir,idx)
 			if icon:

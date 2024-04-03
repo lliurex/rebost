@@ -1,11 +1,11 @@
 [Desktop Entry]
 Version=1.0
 Encoding=UTF-8
-Name=Rebost
+Name=Rebost Store
 Comment=Software center
 Exec=/usr/bin/rebost-gui %U
 Icon=rebost
 Type=Application
 GenericName=rebost
-Categories=System;Utilities;Lliurex
+Categories=System;LliureX-Administration;
 MimeType=application/vnd.flatpak.ref;x-scheme-handler/appstream;x-scheme-handler/ocs;x-scheme-handler/ocss;x-scheme-handler/snap;

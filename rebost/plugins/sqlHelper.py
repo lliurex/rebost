@@ -703,6 +703,12 @@ class sqlHelper():
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
 		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
+		#If package comes from eduapps and is not maped then
+		#appstream adds a bundle "eduapps". Replace it as if there's info
+		#in appstream then this pkg is available from repos
+		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
+		if len(eduapp)>0:
+			mergepkgdataJson["bundle"]={"package":eduapp}
 		return(mergepkgdataJson)
 	#def _mergePackage
 
@@ -758,11 +764,11 @@ class sqlHelper():
 				if os.path.isfile(f):
 					fsize=os.path.getsize(f)
 				for f in fcontent:
-					if fname in f:
+					if fname.split(".")[0] in f:
 						fValues=f.split(":")
 						if fValues[-1].strip()!=str(fsize):
 							update=True
-							break
+						break
 				if update:
 					break
 		return(update)

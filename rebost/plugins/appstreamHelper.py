@@ -53,7 +53,7 @@ class appstreamHelper():
 		self._debug("Get apps")
 		restrictedYml="/usr/share/rebost-data/yaml/eduapps.yml"
 		store=self._get_appstream_catalogue_from_files([restrictedYml])
-		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"]#,"/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
+		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml","/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
 		fullstore=self._get_appstream_catalogue_from_files(storeYml)
 		update=self._chkNeedUpdate(store)
 		if update:

@@ -335,6 +335,9 @@ class details(QStackedWindowItem):
 		self.lblIcon.loadImg(self.app)
 		self.lblSummary.setText("<h2>{}</h2>".format(self.app.get('summary','')))
 		homepage=self.app.get('homepage','')
+		bundles=list(self.app.get('bundle',{}).keys())
+		if "eduapp" in bundles:
+			self.app["description"]=i18n.get("APPUNKNOWN")
 		text=''
 		if homepage:
 			homepage=homepage.rstrip("/")
@@ -351,7 +354,6 @@ class details(QStackedWindowItem):
 		self.lblDesc.setText(description)
 
 		versions=self.app.get('versions',{})
-		bundles=list(self.app.get('bundle',{}).keys())
 		self._updateScreenControls(bundles)
 		text=''
 		applicense=self.app.get('license','')
@@ -413,7 +415,7 @@ class details(QStackedWindowItem):
 		#self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
 		#self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
 		#self.app["pkgname"]="rebost"
-		#self.app["description"]=i18n.get("APPUNKNOWN")
+		self.app["description"]=i18n.get("APPUNKNOWN")
 	#def _onError
 
 	def _setLauncherOptions(self):
@@ -449,7 +451,7 @@ class details(QStackedWindowItem):
 		self.btnInstall.setToolTip("{0}: {1}\n{2}".format(i18n.get("RELEASE"),release,bundle.capitalize()))
 		self.btnRemove.setToolTip(tooltip)
 		self.btnLaunch.setToolTip(tooltip)
-		if "FORBIDDEN" in self.app.get("categories",[]):
+		if "FORBIDDEN" in self.app.get("categories",[]) or "eduapp" in bundle:
 			self.btnInstall.setEnabled(False)
 			self.btnRemove.setEnabled(False)
 			self.btnLaunch.setEnabled(False)
@@ -527,7 +529,7 @@ class details(QStackedWindowItem):
 		if isinstance(bundles,dict)==False:
 			return()
 		(installed,uninstalled)=self._classifyBundles(bundles)
-		priority=["zomando","snap","flatpak","appimage","package"]
+		priority=["zomando","snap","flatpak","appimage","package","eduapp"]
 		for i in installed+uninstalled:
 			version=self.app.get('versions',{}).get(i,'')
 			version=version.split("+")[0]
@@ -541,7 +543,9 @@ class details(QStackedWindowItem):
 					bcolor=QtGui.QColor(QtGui.QPalette().color(QtGui.QPalette.Inactive,QtGui.QPalette.Dark))
 					release.setBackground(bcolor)
 				self.lstInfo.insertItem(idx,release)
-		if len(bundles)<0:
+		if "eduapp" in bundles.keys():
+			bundles.pop("eduapp")
+		if len(bundles)<=0:
 			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 		self.lstInfo.setCurrentRow(0)

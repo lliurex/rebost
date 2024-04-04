@@ -352,6 +352,7 @@ def _componentFillInfo(component,pkg):
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
 					pkgid=component.get_id()
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
+					pkg['versions']={"eduapp":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:

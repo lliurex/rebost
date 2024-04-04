@@ -1,3 +1,9 @@
+rebost (1.990-0lliurex23) jammy; urgency=medium
+
+  * Improve eduapps integrations (WIP)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Apr 2024 12:19:54 +0200
+
 rebost (1.99-0lliurex23) jammy; urgency=medium
 
   * Session DBus

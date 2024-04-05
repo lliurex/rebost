@@ -707,8 +707,10 @@ class sqlHelper():
 		#appstream adds a bundle "eduapps". Replace it as if there's info
 		#in appstream then this pkg is available from repos
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
+		eduappv=mergepkgdataJson.get("versions",{}).get("eduapp","")
 		if len(eduapp)>0:
 			mergepkgdataJson["bundle"]={"package":eduapp}
+			mergepkgdataJson["versions"]={"package":eduappv}
 		return(mergepkgdataJson)
 	#def _mergePackage
 

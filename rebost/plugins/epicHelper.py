@@ -27,6 +27,13 @@ class epicHelper():
 		self.appDir="/usr/share/zero-center/applications"
 		self.iconDir="/usr/share/banners/lliurex-neu/"
 		self.locale=locale.getlocale()[0].split("_")[0]
+		cmd=["/usr/bin/lliurex-version","-n"]
+		try:
+			out=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+		except Exception as e:
+			print(e)
+			out=distro.codename()
+		self.release=out.strip()
 		self.n4d=n4d.Client()
 	#def __init__
 
@@ -88,6 +95,8 @@ class epicHelper():
 			rebostPkg['id']="zero.lliurex.{}".format(epic.replace(".epi",""))
 			rebostPkg['pkgname']=os.path.basename(fname).replace(".app","")
 			rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,fname.replace(".app",".zmd"))}
+			rebostPkg['homepage']="https://github.com/lliurex"
+			rebostPkg['versions']={'zomando':self.release}
 			rebostPkgList.extend(self._getDataForAllPackages(fname,rebostPkg))
 		return(rebostPkgList)
 	#def _generateRebostFromEpic

@@ -149,6 +149,7 @@ class portrait(QStackedWindowItem):
 		self.appconfig=appConfig.appConfig()
 		self.appconfig.setConfig(confDirs={'system':'/usr/share/rebost','user':os.path.join(os.environ['HOME'],'.config/rebost')},confFile="store.json")
 		self.i18nCat={}
+		self.catI18n={}
 		self.config={}
 		self.index=1
 		self.appsToLoad=50
@@ -237,6 +238,7 @@ class portrait(QStackedWindowItem):
 	def _populateCategories(self): 
 		self.cmbCategories.clear()
 		self.i18nCat={}
+		self.catI18n={}
 		catList=json.loads(self.rc.execute('getCategories'))
 		self.cmbCategories.addItem(i18n.get('ALL'))
 		seenCats={}
@@ -248,6 +250,7 @@ class portrait(QStackedWindowItem):
 				continue
 			translatedCategories.append(_(cat))
 			self.i18nCat[_(cat)]=cat
+			self.catI18n[cat]=_(cat)
 		translatedCategories.sort()
 
 		for cat in translatedCategories:
@@ -520,16 +523,21 @@ class portrait(QStackedWindowItem):
 				self.oldSearch=""
 				self._searchApps()
 		else:
-			app=kwargs.get("app",{})
 			if hasattr(self,"referrer")==False:
 				return()
-			if "FORBIDDEN" in app.get("categories",[]):
-				self.referrer._applyDecoration(forbidden=True)
-			elif "0" not in str(app.get('state',1)):
-				#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
-				self.referrer._applyDecoration()
-			elif self.referrer!=None:
-				self.referrer._removeDecoration()
+			app=kwargs.get("app",{})
+			cat=kwargs.get("cat",{})
+			if len(cat)>0:
+				self.cmbCategories.setCurrentText(self.catI18n.get(cat,cat))
+				self._loadCategory()
+			else:
+				if "FORBIDDEN" in app.get("categories",[]):
+					self.referrer._applyDecoration(forbidden=True)
+				elif "0" not in str(app.get('state',1)):
+					#self.setStyleSheet("""QPushButton{background-color: rgba(140, 255, 0, 70);}""")
+					self.referrer._applyDecoration()
+				elif self.referrer!=None:
+					self.referrer._removeDecoration()
 	#def setParms
 
 	def _updateConfig(self,key):

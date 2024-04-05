@@ -1,6 +1,14 @@
-rebost (1.990-0lliurex23) jammy; urgency=medium
+rebost (1.991-0lliurex23) jammy; urgency=medium
 
-  * Improve eduapps integrations (WIP)
+  * Eduapps integration 
+  *   Load apps from web and not only from map
+  *   If app is not maped assign as package bundle type
+  * EPI integration:
+  *   Fake version for packages inside zomandos
+  *   Add homepage
+  * GUI:
+  *   Add categories as tags in details
+  *   Fix wait cursor when showing info
 
  -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Apr 2024 12:19:54 +0200
 

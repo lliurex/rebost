@@ -52,7 +52,7 @@ class waitCursor(QThread):
 		if not self.pixmap:
 			self.pixmap=QtGui.QIcon.fromTheme("rebost").pixmap(128,128)
 		self.widget.wdgSplash.setMaximumWidth(1000)
-		self.widget.wdgSplash.setPixmap(self.pixmap.scaled(int(self.parent.width()/1.2),int(self.parent.height()/1.2),Qt.AspectRatioMode.IgnoreAspectRatio,Qt.SmoothTransformation))
+		self.widget.wdgSplash.setPixmap(self.pixmap.scaled(int(self.parent.width()/3.2),int(self.parent.height()/3.2),Qt.AspectRatioMode.IgnoreAspectRatio,Qt.SmoothTransformation))
 	
 	def run(self):
 		if self.pixmap:
@@ -195,8 +195,10 @@ class details(QStackedWindowItem):
 	#def _processStreams
 
 	def setParms(self,*args):
+		self.wdgSplash.setVisible(True)
+		app=self.rc.showApp(args[-1])
 		try:
-			self.app=json.loads(args[0])
+			self.app=json.loads(app)
 		except Exception as e:
 			print(e)
 		if len(self.app)>0:
@@ -205,13 +207,6 @@ class details(QStackedWindowItem):
 					self.app=json.loads(self.app[0])
 				except Exception as e:
 					print(e)
-		self.wdgSplash.setMaximumWidth(1)
-		self.wdgSplash.setVisible(True)
-		self.anim = QPropertyAnimation(self.wdgSplash, b"maximumWidth",parent=self)
-		self.anim.setStartValue(1000)
-		self.anim.setEndValue(0)
-		self.anim.setDuration(1000)
-		self.anim.start()
 		c=waitCursor(self.parent,self,self.app["icon"])
 		c.finished.connect(self._endSetParms)
 		c.start()

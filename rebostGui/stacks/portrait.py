@@ -492,15 +492,14 @@ class portrait(QStackedWindowItem):
 		c=waitCursor(self)
 		c.finished.connect(lambda:self._endLoadDetails(*args))
 		c.start()
-		c.wait()
+	#def _loadDetails(self,*args,**kwargs):
 
 	def _endLoadDetails(self,*args):
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
 		self.referrer=args[0]
-		app=self.rc.showApp(args[-1].get('name',''))
 		self.setChanged(False)
-		self.parent.setCurrentStack(idx=3,parms=app)
+		self.parent.setCurrentStack(idx=3,parms=args[-1].get("name",""))
 	#def _loadDetails
 
 	def _gotoSettings(self):

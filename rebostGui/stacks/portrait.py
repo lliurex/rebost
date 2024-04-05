@@ -3,7 +3,7 @@ import sys
 import os
 from PySide2.QtWidgets import QApplication, QLabel, QPushButton,QGridLayout,QHeaderView,QHBoxLayout,QComboBox,QLineEdit,QWidget,QMenu
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSize,Signal
+from PySide2.QtCore import Qt,QSize,Signal,QThread
 from QtExtraWidgets import QSearchBox,QCheckableComboBox,QTableTouchWidget,QScreenShotContainer,QStackedWindowItem,QInfoLabel
 from rebost import store 
 from appconfig import appConfig
@@ -28,6 +28,15 @@ i18n={
 	"UPGRADABLE":_("Upgradables"),
 	"UPGRADES":_("There're upgrades available")
 	}
+
+class waitCursor(QThread):
+	def __init__(self,parent):
+		QThread.__init__(self, parent)
+		self.parent=parent
+	
+	def run(self):
+		self.parent.setCursor(Qt.WaitCursor)
+#class waitCursor
 
 class QPushButtonRebostApp(QPushButton):
 	clicked=Signal("PyObject","PyObject")
@@ -480,14 +489,17 @@ class portrait(QStackedWindowItem):
 	#def _loadData
 
 	def _loadDetails(self,*args,**kwargs):
-		cursor=QtGui.QCursor(Qt.WaitCursor)
-		self.setCursor(cursor)
+		c=waitCursor(self)
+		c.finished.connect(lambda:self._endLoadDetails(*args))
+		c.start()
+	#def _loadDetails(self,*args,**kwargs):
+
+	def _endLoadDetails(self,*args):
 #		self.stack.gotoStack(idx=3,parms=(args))
 		#Refresh all pkg info
 		self.referrer=args[0]
-		app=self.rc.showApp(args[-1].get('name',''))
 		self.setChanged(False)
-		self.parent.setCurrentStack(idx=3,parms=app)
+		self.parent.setCurrentStack(idx=3,parms=args[-1].get("name",""))
 	#def _loadDetails
 
 	def _gotoSettings(self):

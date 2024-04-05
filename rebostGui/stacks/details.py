@@ -3,7 +3,7 @@ import sys
 import os
 from PySide2.QtWidgets import QLabel, QPushButton,QGridLayout,QSizePolicy,QWidget,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QListWidget,QVBoxLayout,QListWidgetItem,QGraphicsBlurEffect,QGraphicsOpacityEffect
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QSize,Signal,QThread
+from PySide2.QtCore import Qt,QSize,Signal,QThread,QPropertyAnimation, QPoint, QEasingCurve
 #from appconfig.appConfigStack import appConfigStack as confStack
 from QtExtraWidgets import QScreenShotContainer,QScrollLabel,QStackedWindowItem
 from app2menu import App2Menu as app2menu
@@ -41,12 +41,24 @@ i18n={
 	}
 	
 class waitCursor(QThread):
-	def __init__(self,parent,widget):
+	def __init__(self,parent,widget,icon=""):
 		QThread.__init__(self, parent)
 		self.parent=parent
 		self.widget=widget
+		self.pixmap=None
+		if len(icon)>0:
+			if os.path.isfile(icon):
+				self.pixmap=QtGui.QPixmap(icon)
+		if not self.pixmap:
+			self.pixmap=QtGui.QIcon.fromTheme("rebost").pixmap(128,128)
+		self.widget.wdgSplash.setMaximumWidth(1000)
+		self.widget.wdgSplash.setPixmap(self.pixmap.scaled(int(self.parent.width()/1.2),int(self.parent.height()/1.2),Qt.AspectRatioMode.IgnoreAspectRatio,Qt.SmoothTransformation))
 	
 	def run(self):
+		if self.pixmap:
+			qpal=QtGui.QPalette()
+			color=qpal.color(qpal.Dark)
+			self.widget.wdgSplash.setStyleSheet("background-color:rgba(%s,%s,%s,0.5);"%(color.red(),color.green(),color.blue()))
 		self.parent.setCursor(Qt.WaitCursor)
 		self.widget.setCursor(Qt.WaitCursor)
 #class waitCursor
@@ -183,9 +195,6 @@ class details(QStackedWindowItem):
 	#def _processStreams
 
 	def setParms(self,*args):
-		c=waitCursor(self.parent,self)
-		c.finished.connect(self._endSetParms)
-		c.start()
 		try:
 			self.app=json.loads(args[0])
 		except Exception as e:
@@ -196,6 +205,16 @@ class details(QStackedWindowItem):
 					self.app=json.loads(self.app[0])
 				except Exception as e:
 					print(e)
+		self.wdgSplash.setMaximumWidth(1)
+		self.wdgSplash.setVisible(True)
+		self.anim = QPropertyAnimation(self.wdgSplash, b"maximumWidth",parent=self)
+		self.anim.setStartValue(1000)
+		self.anim.setEndValue(0)
+		self.anim.setDuration(1000)
+		self.anim.start()
+		c=waitCursor(self.parent,self,self.app["icon"])
+		c.finished.connect(self._endSetParms)
+		c.start()
 	#def setParms
 
 	def _endSetParms(self):
@@ -212,6 +231,12 @@ class details(QStackedWindowItem):
 					status=self.rc.getAppStatus(name,bundle)
 					self.app['state'][bundle]=str(status)
 		self.setCursor(self.oldcursor)
+		self.anim = QPropertyAnimation(self.wdgSplash, b"maximumWidth",parent=self)
+
+		self.anim.setStartValue(1000)
+		self.anim.setEndValue(0)
+		self.anim.setDuration(100)
+		self.anim.start()
 	#def _endSetParms
 
 	def _runZomando(self):
@@ -345,13 +370,12 @@ class details(QStackedWindowItem):
 		self.box.setRowStretch(3,1)
 		self.box.setRowStretch(4,0)
 		
-		self.wdgError=QWidget()
+		self.wdgSplash=QLabel()
 		errorLay=QGridLayout()
-		self.wdgError.setLayout(errorLay)
-		self.lblBkg=QLabel(i18n.get("APPUNKNOWN"))
+		self.wdgSplash.setLayout(errorLay)
+		self.lblBkg=QLabel()
 		errorLay.addWidget(self.lblBkg,0,0,1,1)
-		self.wdgError.setVisible(False)
-		self.box.addWidget(self.wdgError,1,0,self.box.rowCount()-1,self.box.columnCount())
+		self.box.addWidget(self.wdgSplash,1,0,self.box.rowCount()-1,self.box.columnCount(),Qt.AlignCenter)
 	#def _load_screen
 
 	def updateScreen(self):
@@ -438,7 +462,7 @@ class details(QStackedWindowItem):
 		qpal=QtGui.QPalette()
 		color=qpal.color(qpal.Dark)
 		#self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
-		#self.wdgError.setVisible(True)
+		#self.wdgSplash.setVisible(True)
 		if "FORBIDDEN" not in self.app.get("categories",[]):
 			self.app["categories"]=["FORBIDDEN"]
 		#self.lstInfo.setVisible(False)
@@ -614,7 +638,6 @@ class details(QStackedWindowItem):
 	def _initScreen(self):
 		#Reload config if app has been epified
 		if len(self.app)>0:
-			self.wdgError.setVisible(False)
 			self.lstInfo.setVisible(True)
 			if self.app.get('name','')==self.epi.app.get('name',''):
 				try:

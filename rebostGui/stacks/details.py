@@ -21,7 +21,7 @@ B=0
 A=70
 
 i18n={
-	"APPUNKNOWN":_("The app could not be loaded. Perhaps it's not in LliureX catalogue and thus it can't be installed"),
+	"APPUNKNOWN":_("The app could not be loaded. Until included in LliureX catalogue it can't be installed"),
 	"CHOOSE":_("Choose"),
 	"CONFIG":_("Details"),
 	"DESC":_("Navigate through all applications"),
@@ -141,6 +141,11 @@ class details(QStackedWindowItem):
 		self.parent.setWindowTitle("LliureX Rebost")
 		self.parent.setCurrentStack(1,parms={"refresh":True,"app":self.app})
 	#def _return
+
+	def _tagNav(self,*args):
+		cat=args[0][0].replace("#","")
+		self.parent.setWindowTitle("LliureX Rebost - {}".format(cat))
+		self.parent.setCurrentStack(1,parms={"refresh":True,"cat":cat})
 
 	def _processStreams(self,args):
 		self.app={}
@@ -288,15 +293,18 @@ class details(QStackedWindowItem):
 		self.box.addWidget(launchers,2,0,1,3,Qt.AlignTop|Qt.AlignLeft)
 
 		info=QWidget()
-		layInfo=QHBoxLayout()
+		layInfo=QGridLayout()
 		info.setLayout(layInfo)
 		self.lstInfo=QListWidget()
 		self.lstInfo.currentRowChanged.connect(self._setLauncherOptions)	
-		layInfo.addWidget(self.lstInfo)
+		layInfo.addWidget(self.lstInfo,0,0,1,1)
+		self.lblTags=QScrollLabel()
+		self.lblTags.setStyleSheet("margin:0px;padding:0px;border:0px")
+		layInfo.addWidget(self.lblTags,1,0,1,1)
 		self.lblDesc=QScrollLabel()
 		self.lblDesc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		self.lblDesc.setWordWrap(True)	  
-		layInfo.addWidget(self.lblDesc)
+		layInfo.addWidget(self.lblDesc,0,1,2,1)
 		self.box.addWidget(info,3,0,1,3)
 
 		resources=QWidget()
@@ -363,12 +371,20 @@ class details(QStackedWindowItem):
 		scrs=self.app.get('screenshots',[])
 		if isinstance(scrs,list)==False:
 			scrs=[]
+		if len(scrs)==0:
+			self.screenShot.setVisible(False)
+		else:
+			self.screenShot.setVisible(True)
 		for icn in scrs:
 			try:
 				self.screenShot.addImage(icn)
 			except Exception as e:
 				print(e)
 		self._setLauncherOptions()
+		tags=""
+		for cat in self.app.get("categories",[]):
+			tags+="<a href=\"#{0}\">{0}</a> ".format(cat)
+		self.lblTags.setText(tags)
 	#def _updateScreen
 
 	def _getLauncherForApp(self):
@@ -400,7 +416,6 @@ class details(QStackedWindowItem):
 		color=qpal.color(qpal.Dark)
 		#self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
 		#self.wdgError.setVisible(True)
-		print(self.app)
 		if "FORBIDDEN" not in self.app.get("categories",[]):
 			self.app["categories"]=["FORBIDDEN"]
 		#self.lstInfo.setVisible(False)
@@ -533,6 +548,8 @@ class details(QStackedWindowItem):
 		for i in installed+uninstalled:
 			version=self.app.get('versions',{}).get(i,'')
 			version=version.split("+")[0]
+			if version=="":
+				version="lliurex23"
 			release=QListWidgetItem("{} {}".format(version,i))
 			if i in priority:
 				idx=priority.index(i)
@@ -549,6 +566,7 @@ class details(QStackedWindowItem):
 			self.btnInstall.setEnabled(False)
 		self.lstInfo.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 		self.lstInfo.setCurrentRow(0)
+		self.lblTags.setMaximumWidth(self.lstInfo.sizeHintForColumn(0)+16)
 	#def _setReleasesInfo
 
 	def _classifyBundles(self,bundles):
@@ -592,12 +610,15 @@ class details(QStackedWindowItem):
 			self.screenShot.clear()
 			self.btnZomando.setVisible(False)
 			self.lblHomepage.setText("")
+			self.lblTags.setText("")
+			self.lblTags.linkActivated.connect(self._tagNav)
 			self.app['name']=self.app.get('name','').replace(" ","")
 		else:
 			self._onError()
 	#def _initScreen
 
 	def _updateConfig(self,key):
+		print(key)
 		pass
 
 	def writeConfig(self):

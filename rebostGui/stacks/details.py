@@ -40,6 +40,17 @@ i18n={
 	"ZMDNOTFOUND":_("Zommand not found. Open Zero-Center?"),
 	}
 	
+class waitCursor(QThread):
+	def __init__(self,parent,widget):
+		QThread.__init__(self, parent)
+		self.parent=parent
+		self.widget=widget
+	
+	def run(self):
+		self.parent.setCursor(Qt.WaitCursor)
+		self.widget.setCursor(Qt.WaitCursor)
+#class waitCursor
+
 class epiClass(QThread):
 	epiEnded=Signal("PyObject")
 	def __init__(self,parent=None):
@@ -172,7 +183,9 @@ class details(QStackedWindowItem):
 	#def _processStreams
 
 	def setParms(self,*args):
-		swErr=False
+		c=waitCursor(self.parent,self)
+		c.finished.connect(self._endSetParms)
+		c.start()
 		try:
 			self.app=json.loads(args[0])
 		except Exception as e:
@@ -183,6 +196,10 @@ class details(QStackedWindowItem):
 					self.app=json.loads(self.app[0])
 				except Exception as e:
 					print(e)
+	#def setParms
+
+	def _endSetParms(self):
+		swErr=False
 		if len(self.app)<=0:
 			self._processStreams(args[0])
 		else:
@@ -195,7 +212,7 @@ class details(QStackedWindowItem):
 					status=self.rc.getAppStatus(name,bundle)
 					self.app['state'][bundle]=str(status)
 		self.setCursor(self.oldcursor)
-	#def setParms
+	#def _endSetParms
 
 	def _runZomando(self):
 		self.helper.runZmd(self.app)
@@ -296,6 +313,8 @@ class details(QStackedWindowItem):
 		layInfo=QGridLayout()
 		info.setLayout(layInfo)
 		self.lstInfo=QListWidget()
+		scr=self.lstInfo.horizontalScrollBar()
+		scr.hide()
 		self.lstInfo.currentRowChanged.connect(self._setLauncherOptions)	
 		layInfo.addWidget(self.lstInfo,0,0,1,1)
 		self.lblTags=QScrollLabel()

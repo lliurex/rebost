@@ -157,6 +157,7 @@ class details(QStackedWindowItem):
 		self.epi=epiClass()
 		self.oldcursor=self.cursor()
 		self.appmenu=app2menu.app2menu()
+		self.stream=""
 		self.launcher=""
 	#def __init__
 
@@ -196,19 +197,23 @@ class details(QStackedWindowItem):
 
 	def setParms(self,*args):
 		self.wdgSplash.setVisible(True)
-		app=self.rc.showApp(args[-1])
-		try:
-			self.app=json.loads(app)
-		except Exception as e:
-			print(e)
-		if len(self.app)>0:
-			if isinstance(self.app[0],str):
-				try:
-					self.app=json.loads(self.app[0])
-				except Exception as e:
-					print(e)
+		self.stream=""
+		if "://" in args[-1]:
+			self.stream=args[-1]
+		else:
+			app=self.rc.showApp(args[-1])
+			try:
+				self.app=json.loads(app)
+			except Exception as e:
+				print(e)
+			if len(self.app)>0:
+				if isinstance(self.app[0],str):
+					try:
+						self.app=json.loads(self.app[0])
+					except Exception as e:
+						print(e)
 		icon=""
-		if isinstance(self.app,list)==False:
+		if self.stream=="":
 			icon=self.app.get("icon","")
 		c=waitCursor(self.parent,self,icon)
 		c.finished.connect(self._endSetParms)
@@ -217,9 +222,11 @@ class details(QStackedWindowItem):
 
 	def _endSetParms(self):
 		swErr=False
-		if len(self.app)<=0:
-			self._processStreams(args[0])
-		else:
+		if self.stream!="":
+			self._processStreams(self.stream)
+			self.stream=""
+			self.updateScreen()
+		if len(self.app)>0:
 			self.parent.setWindowTitle("LliureX Rebost - {}".format(self.app.get("name","")))
 			for bundle,name in (self.app.get('bundle',{}).items()):
 				if bundle=='package':
@@ -377,6 +384,8 @@ class details(QStackedWindowItem):
 	#def _load_screen
 
 	def updateScreen(self):
+		if self.stream!="":
+			return
 		self._initScreen()
 		self.lblName.setText("<h1>{}</h1>".format(self.app.get('name')))
 		icn=self._getIconFromApp(self.app)
@@ -459,7 +468,7 @@ class details(QStackedWindowItem):
 		self._debug("Error detected")
 		qpal=QtGui.QPalette()
 		color=qpal.color(qpal.Dark)
-		#self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
+		self.parent.setWindowTitle("LliureX Rebost - {}".format("ERROR"))
 		#self.wdgSplash.setVisible(True)
 		if "FORBIDDEN" not in self.app.get("categories",[]):
 			self.app["categories"]=["FORBIDDEN"]
@@ -467,14 +476,14 @@ class details(QStackedWindowItem):
 		#self.btnInstall.setVisible(False)
 		#self.btnRemove.setVisible(False)
 		#self.btnLaunch.setVisible(False)
-		#self.blur=QGraphicsBlurEffect() 
-		#self.blur.setBlurRadius(15) 
-		#self.opacity=QGraphicsOpacityEffect()
-		#self.lblBkg.setGraphicsEffect(self.blur)
-		#self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
-		#self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
-		#self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
-		#self.app["pkgname"]="rebost"
+		self.blur=QGraphicsBlurEffect() 
+		self.blur.setBlurRadius(15) 
+		self.opacity=QGraphicsOpacityEffect()
+		self.lblBkg.setGraphicsEffect(self.blur)
+		self.lblBkg.setStyleSheet("QLabel{background-color:rgba(%s,%s,%s,0.7);}"%(color.red(),color.green(),color.blue()))
+		self.app["name"]=i18n.get("APPUNKNOWN").split(".")[0]
+		self.app["summary"]=i18n.get("APPUNKNOWN").split(".")[1]
+		self.app["pkgname"]="rebost"
 		self.app["description"]=i18n.get("APPUNKNOWN")
 	#def _onError
 
@@ -662,7 +671,6 @@ class details(QStackedWindowItem):
 	#def _initScreen
 
 	def _updateConfig(self,key):
-		print(key)
 		pass
 
 	def writeConfig(self):

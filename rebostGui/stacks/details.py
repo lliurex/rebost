@@ -383,7 +383,11 @@ class details(QStackedWindowItem):
 		self._setLauncherOptions()
 		tags=""
 		for cat in self.app.get("categories",[]):
-			tags+="<a href=\"#{0}\">{0}</a> ".format(_(cat))
+			if cat.islower():
+				continue
+			icat=_(cat)
+			if icat not in tags:
+				tags+="<a href=\"#{0}\">{0}</a> ".format(icat)
 		self.lblTags.setText(tags)
 	#def _updateScreen
 

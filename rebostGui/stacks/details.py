@@ -207,7 +207,7 @@ class details(QStackedWindowItem):
 					self.app=json.loads(self.app[0])
 				except Exception as e:
 					print(e)
-		c=waitCursor(self.parent,self,self.app["icon"])
+		c=waitCursor(self.parent,self,self.app.get("icon",""))
 		c.finished.connect(self._endSetParms)
 		c.start()
 	#def setParms

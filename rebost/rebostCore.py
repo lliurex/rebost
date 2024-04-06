@@ -24,7 +24,7 @@ class Rebost():
 			shutil.rmtree(self.rebostWrkDir)
 		os.makedirs(self.rebostWrkDir)
 		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
-		home=os.environ.get("HOME","")
+		home=os.environ.get("HOME",self.dbCache)
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
@@ -45,11 +45,16 @@ class Rebost():
 	def run(self):
 		self._log("Starting rebost")
 		self._loadPlugins()
+		self._log("Plugins loaded")
 		self._loadPluginInfo()
+		self._log("Plugins processed")
 		self._processConfig()
+		self._log("Config readed")
 		self._copyCacheToTmp()
+		self._log("Cache enabled")
 		self._autostartActions()
 		self._copyTmpToCache()
+		self._log("Cache restored")
 		self._log("Autostart ended.")
 	#def run
 

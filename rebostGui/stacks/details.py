@@ -121,6 +121,7 @@ class QLabelRebostApp(QLabel):
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
+			self.scr.wait()
 	#def loadImg
 	
 	def load(self,*args):

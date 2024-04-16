@@ -40,7 +40,7 @@ class waitCursor(QThread):
 
 class QPushButtonRebostApp(QPushButton):
 	clicked=Signal("PyObject","PyObject")
-	def __init__(self,strapp,parent=None):
+	def __init__(self,strapp,parent=None,**kwargs):
 		QPushButton.__init__(self, parent)
 		self.cacheDir=os.path.join(os.environ.get('HOME'),".cache","rebost","imgs")
 		if os.path.exists(self.cacheDir)==False:
@@ -53,6 +53,7 @@ class QPushButtonRebostApp(QPushButton):
 		self.label.setWordWrap(True)
 		img=self.app.get('icon','')
 		self.icon=QLabel()
+		self.iconSize=kwargs.get("iconSize",128)
 		self.loadImg(self.app)
 		self.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
 		lay=QHBoxLayout()
@@ -73,7 +74,7 @@ class QPushButtonRebostApp(QPushButton):
 			icn=QtGui.QPixmap.fromImage(img)
 		elif img=='':
 			icn2=QtGui.QIcon.fromTheme(app.get('pkgname'))
-			icn=icn2.pixmap(128,128)
+			icn=icn2.pixmap(self.iconSize,self.iconSize)
 		elif "flathub" in img:
 			tmp=img.split("/")
 			if "icons" in tmp:
@@ -84,10 +85,10 @@ class QPushButtonRebostApp(QPushButton):
 					icn=QtGui.QPixmap.fromImage(iconPath)
 
 		if icn:
-			wsize=128
+			wsize=self.iconSize
 			if "/usr/share/banners/lliurex-neu" in img:
-				wsize=235
-			self.icon.setPixmap(icn.scaled(wsize,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
+				wsize*=2
+			self.icon.setPixmap(icn.scaled(wsize,self.iconSize,Qt.KeepAspectRatio,Qt.SmoothTransformation))
 		elif img.startswith('http'):
 			self.scr.start()
 			self.scr.imageLoaded.connect(self.load)
@@ -126,7 +127,7 @@ class QPushButtonRebostApp(QPushButton):
 	
 	def load(self,*args):
 		img=args[0]
-		self.icon.setPixmap(img.scaled(128,128))
+		self.icon.setPixmap(img.scaled(self.iconSize,self.iconSize))
 	#def load
 	
 	def activate(self):
@@ -213,6 +214,8 @@ class portrait(QStackedWindowItem):
 		self.table.verticalHeader().hide()
 		self.table.horizontalHeader().hide()
 		self.table.verticalScrollBar().valueChanged.connect(self._getMoreData)
+		#self.table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 		self.resetScreen()
 		self.box.addWidget(self.table,1,0,1,2)
 		btnSettings=QPushButton()
@@ -453,9 +456,10 @@ class portrait(QStackedWindowItem):
 		else:
 			apps=applist[idx:idx2]
 		col=0
-		cont=self.appsToLoad
-		rowspan=random.randint(1,3)
-		span=rowspan
+		#self.table.setRowHeight(self.table.rowCount()-1,btn.iconSize+int(btn.iconSize/16))
+		colspan=random.randint(1,3)
+		span=colspan
+		btn=None
 		for strapp in apps:
 			jsonapp=json.loads(strapp)
 			if jsonapp.get('name','') in self.appsSeen:
@@ -465,24 +469,23 @@ class portrait(QStackedWindowItem):
 			btn=QPushButtonRebostApp(strapp)
 			btn.clicked.connect(self._loadDetails)
 			self.table.setCellWidget(row,col,btn)
-			self.table.setRowHeight(row,136)
 			col+=1
 			span=span-1
 			if span==0:
-				if rowspan==3:
-					rowspan=1
-				elif rowspan==1:
-					rowspan=3
-				if rowspan!=1:
-					self.table.setSpan(row,col-1,1,rowspan)
-				rowspan=random.randint(1,3)
-				span=rowspan
+				if colspan==3:
+					colspan=1
+				elif colspan==1:
+					colspan=3
+				if colspan!=1:
+					self.table.setSpan(row,col-1,1,colspan)
+				colspan=random.randint(1,3)
+				span=colspan
+				self.table.setRowHeight(row,btn.iconSize+int(btn.iconSize/16))
 				self.table.setRowCount(self.table.rowCount()+1)
 				col=0
 			self.appsLoaded+=1
-		if cont==0:
-			return
-		cont-=1
+		if btn!=None:
+			self.table.setRowHeight(self.table.rowCount()-1,btn.iconSize+int(btn.iconSize/16))
 	#def _loadData
 
 	def _loadDetails(self,*args,**kwargs):

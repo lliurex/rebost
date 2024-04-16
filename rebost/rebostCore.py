@@ -49,9 +49,12 @@ class Rebost():
 		self._log("Plugins processed")
 		self._processConfig()
 		self._log("Config readed")
-		self._copyCacheToTmp()
-		self._log("Cache enabled")
-		self._beginAutostartActions()
+		if self._copyCacheToTmp()==True:
+			self._log("Cache enabled")
+			self._beginAutostartActions()
+		else:
+			self._log("Cache unavailable")
+			self._autostartActions()
 		self._copyTmpToCache()
 		self._log("Cache restored")
 		self._log("Autostart ended.")
@@ -253,6 +256,7 @@ class Rebost():
 	#def _chkNetwork
 
 	def _copyCacheToTmp(self):
+		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
 			if os.path.exists(self.rebostPathTmp)==True:
@@ -264,6 +268,8 @@ class Rebost():
 			for lu in os.scandir(tmpCache):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
+			copied=True
+		return(copied)
 	#def _copyCacheToTmp
 
 	def _copyTmpToCache(self):

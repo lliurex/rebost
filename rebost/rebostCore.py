@@ -51,7 +51,7 @@ class Rebost():
 		self._log("Config readed")
 		self._copyCacheToTmp()
 		self._log("Cache enabled")
-		self._autostartActions()
+		self._beginAutostartActions()
 		self._copyTmpToCache()
 		self._log("Cache restored")
 		self._log("Autostart ended.")
@@ -281,6 +281,11 @@ class Rebost():
 					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
 	#def _copyTmpToCache
 
+	def _beginAutostartActions(self):
+		proc=multiprocessing.Process(target=self._autostartActions,daemon=False)
+		proc.start()
+	#def _beginAutostartActions
+		
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}

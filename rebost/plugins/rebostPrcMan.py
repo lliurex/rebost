@@ -6,6 +6,7 @@ import rebostHelper
 import subprocess
 import n4d.server.core as n4dcore
 import multiprocessing
+import threading
 import time
 import random
 
@@ -239,21 +240,28 @@ class rebostPrcMan():
 		self._log("Full process log at {}".format(logFile))
 		if self.gui==True:
 			return
-			cmd=["pkexec","/usr/share/rebost/rebost-software-manager.sh",epifile]
+			cmd=["/usr/share/rebost/helper/rebost-software-manager.sh",epifile]
 		else:
 			renv = os.environ.copy()
 			if len(renv.get("USER",""))==0:
 				renv["USER"]=username
-			cmd=["epic",action,"-nc","-u",epifile]
+			cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",epifile,"cli",action]
+			print(cmd)
+			#cmd=["/usr/sbin/epic",action,"-nc","-u",epifile]
 			if action=="remove":
-				cmd=["epic","uninstall","-nc","-u",epifile]
-		#self._debug(cmd)
+				cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",epifile,"cli","uninstall"]
+			#	cmd=["/usr/bin/pkexec","epic","uninstall","-nc","-u",epifile]
+		self._debug(" ".join(cmd))
 		self._log(cmd)
 		f=open(logFile,"w")
-		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True,env=renv)
+		proc=subprocess.Popen(cmd,stdout=f,universal_newlines=True,close_fds=True)
+		self._debug(proc)
 		procQ.put(proc.pid)
 		while proc.poll()==None:
+			print(".")
 			time.sleep(0.01)
+		self._debug(proc)
+		self._debug("########################################################")
 		f.close()
 	#def _mpManagePackage
 
@@ -320,6 +328,7 @@ class rebostPrcMan():
 				elif action!="test":
 					self._debug("Executing {0} query as user {1}".format(action,user))
 					procQ=multiprocessing.Queue()
+					#proc=threading.Thread(target=self._mpManagePackage,args=(action,epifile,usern,procQ,))
 					proc=multiprocessing.Process(target=self._mpManagePackage,args=(action,epifile,usern,procQ,))
 					proc.start()
 					while procQ.empty():
@@ -327,18 +336,20 @@ class rebostPrcMan():
 					pid=procQ.get()
 					rebostPkgList=[(pkgname,{'package':pkgname,'action':action,'status':action,'epi':epifile,'script':episcript,'pid':pid,'bundle':bundle})]
 					self._insertProcess(rebostPkgList)
-					proc.terminate()
+					#proc.terminate()
 		return (rebostPkgList)
 	#def _managePackage
 
 	def _removeTempDir(self,tmpfile):
-			tmpDir=os.path.dirname(tmpfile)
-			if os.path.isdir(tmpDir):
-				try:
-					self._debug("Removing tmp dir {}".format(tmpDir))
-					shutil.rmtree(tmpDir)
-				except Exception as e:
-					self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
+		return
+		tmpDir=os.path.dirname(tmpfile)
+		if os.path.isdir(tmpDir):
+			try:
+				self._debug("Removing tmp dir {}".format(tmpDir))
+				shutil.rmtree(tmpDir)
+			except Exception as e:
+				self._debug("Couldn't remove tmpdir {}: {}".format(tmpDir,e))
+	#def _removeTempDir
 
 def main():
 	obj=rebostPrcMan()

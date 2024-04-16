@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-11 19:07+0100\n"
-"PO-Revision-Date: 2024-02-11 19:08+0100\n"
+"POT-Creation-Date: 2024-04-16 10:10+0200\n"
+"PO-Revision-Date: 2024-04-16 10:17+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -18,71 +18,72 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.0.1\n"
 
-#: ../rebostGui/stacks/details.py:23
-msgid ""
-"The app could not be loaded. Perhaps it's not in LliureX catalogue and thus "
-"it can't be installed"
-msgstr ""
-"No es pot carregar la app. Pot ser no estiga inclosa com autoritzada a "
-"Lliurex"
-
 #: ../rebostGui/stacks/details.py:24
+msgid ""
+"The app could not be loaded. Until included in LliureX catalogue it can't be "
+"installed"
+msgstr ""
+"No es pot carregar la app. Fins que no estiga catalogada a appsedu no estarà "
+"disponible. Mès informació a https://portal.edu.gva.es/appsedu/aplicacions-"
+"lliurex"
+
+#: ../rebostGui/stacks/details.py:25
 msgid "Choose"
 msgstr "Triar"
 
-#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:37
+#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/details.py:38
 msgid "Details"
 msgstr "Detalls"
 
-#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/portrait.py:21
+#: ../rebostGui/stacks/details.py:27 ../rebostGui/stacks/portrait.py:21
 msgid "Navigate through all applications"
 msgstr "Mostra totes les aplicacions"
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:28
 msgid "Error opening"
 msgstr "Error carregant"
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:29
 msgid "Unknown error"
 msgstr "Error desconegut"
 
-#: ../rebostGui/stacks/details.py:29
+#: ../rebostGui/stacks/details.py:30
 msgid "App unauthorized"
 msgstr "App no autoritzada"
 
-#: ../rebostGui/stacks/details.py:30
+#: ../rebostGui/stacks/details.py:31
 msgid "Format"
 msgstr "Format"
 
-#: ../rebostGui/stacks/details.py:31
+#: ../rebostGui/stacks/details.py:32
 msgid "For more info go to"
 msgstr "Per a més informació anar a"
 
-#: ../rebostGui/stacks/details.py:32
+#: ../rebostGui/stacks/details.py:33
 msgid "Install"
 msgstr "Instal·la"
 
-#: ../rebostGui/stacks/details.py:33
+#: ../rebostGui/stacks/details.py:34
 msgid "Show application detail"
 msgstr "Mostra els detalls"
 
-#: ../rebostGui/stacks/details.py:34
+#: ../rebostGui/stacks/details.py:35
 msgid "Release"
 msgstr "Versió"
 
-#: ../rebostGui/stacks/details.py:35
+#: ../rebostGui/stacks/details.py:36
 msgid "Remove"
 msgstr "Elimina"
 
-#: ../rebostGui/stacks/details.py:36
+#: ../rebostGui/stacks/details.py:37
 msgid "Open"
 msgstr "Obri"
 
-#: ../rebostGui/stacks/details.py:38
+#: ../rebostGui/stacks/details.py:39
 msgid "Upgrade"
 msgstr "Actualitza"
 
-#: ../rebostGui/stacks/details.py:39
+#: ../rebostGui/stacks/details.py:40
 msgid "Zommand not found. Open Zero-Center?"
 msgstr "No trobat. Obrir el Zero-Center?"
 
@@ -133,8 +134,7 @@ msgstr "Neteja cau"
 #: ../rebostGui/stacks/sources.py:19
 msgid ""
 "Remove all files from cache, as per exemple icons or another related stuff"
-msgstr ""
-"Elimina tots els fitxers de la memoria cau, com puguen ser icones, imatges..."
+msgstr "Elimina tots els fitxers de la memoria cau, com icones i semblants"
 
 #: ../rebostGui/stacks/sources.py:20
 msgid "Sources"
@@ -202,6 +202,18 @@ msgstr "Gràfics 2D"
 msgid "3DGraphics"
 msgstr "Gràfics 3D"
 
+msgid "Accessibility"
+msgstr "Accesibilitat"
+
+msgid "Administration"
+msgstr "Administració"
+
+msgid "ArcadeGame"
+msgstr "Jocs arcade"
+
+msgid "Archiving"
+msgstr "Compressió"
+
 msgid "Art"
 msgstr "Art"
 
@@ -217,17 +229,32 @@ msgstr "Video i só"
 msgid "AudioVideoEditing"
 msgstr "Edició de só i video"
 
+msgid "Calculator"
+msgstr "Cálcul"
+
 msgid "Chart"
 msgstr "Gràfiques"
 
 msgid "Chemistry"
 msgstr "Química"
 
+msgid "Compression"
+msgstr "Compressió"
+
 msgid "ComputerScience"
 msgstr "Ciencia computacional"
 
+msgid "ConsoleOnly"
+msgstr "Consola"
+
+msgid "Debugger"
+msgstr "Debug"
+
 msgid "Development"
 msgstr "Desenvolupament"
+
+msgid "DiscBurning"
+msgstr "Grabació de discs"
 
 msgid "Education"
 msgstr "Educació"
@@ -238,6 +265,9 @@ msgstr "Electricitat"
 msgid "Electronics"
 msgstr "Electrónica"
 
+msgid "Emulator"
+msgstr "Emuladors"
+
 msgid "Engineering"
 msgstr "Enginyeria"
 
@@ -246,6 +276,21 @@ msgstr "Bloquejada"
 
 msgid "FP"
 msgstr "FP"
+
+msgid "FileManager"
+msgstr "Gestió de fitxers"
+
+msgid "FileTools"
+msgstr "Eines de fitxers"
+
+msgid "FileTransfer"
+msgstr "Transferencia de fitxers"
+
+msgid "Filesystem"
+msgstr "Fitxers"
+
+msgid "Finance"
+msgstr "Finances"
 
 msgid "Game"
 msgstr "Joc"
@@ -262,14 +307,17 @@ msgstr "Gràfics"
 msgid "IDE"
 msgstr "IDE"
 
-msgid "Internet"
-msgstr "Internet"
-
 msgid "KidsGame"
 msgstr "Jocs infantils"
 
 msgid "Languages"
 msgstr "Idiomes"
+
+msgid "LliureX"
+msgstr "LliureX"
+
+msgid "LliureX-Administration"
+msgstr "Administració"
 
 msgid "LliureX-Infantil"
 msgstr "Lliurex-Infantil"
@@ -292,6 +340,9 @@ msgstr "Midi"
 msgid "Mixer"
 msgstr "Mescladors"
 
+msgid "Monitor"
+msgstr "Monitors"
+
 msgid "Multimedia"
 msgstr "Multimèdia"
 
@@ -307,17 +358,32 @@ msgstr "OCR"
 msgid "Office"
 msgstr "Oficina"
 
+msgid "P2P"
+msgstr "P2P"
+
+msgid "PackageManager"
+msgstr "Gestors de paquets"
+
+msgid "Photography"
+msgstr "Fotografia"
+
 msgid "Physics"
 msgstr "Física"
 
 msgid "Player"
-msgstr "Jugador"
+msgstr "Reproductors"
+
+msgid "Publishing"
+msgstr "Publicacions"
 
 msgid "RasterGraphics"
 msgstr "Gràfics raster"
 
 msgid "Recorder"
 msgstr "Gravació"
+
+msgid "RemoteAccess"
+msgstr "Accés remot"
 
 msgid "RevisionControl"
 msgstr "Control de versions"
@@ -334,6 +400,9 @@ msgstr "Secuenciadors"
 msgid "Services"
 msgstr "Serveis"
 
+msgid "Simulation"
+msgstr "Sumulació"
+
 msgid "Software"
 msgstr "Programari"
 
@@ -342,6 +411,9 @@ msgstr "Sistema"
 
 msgid "TV"
 msgstr "TV"
+
+msgid "TerminalEmulator"
+msgstr "Emuladors de terminal"
 
 msgid "TextEditor"
 msgstr "Editors de text"
@@ -360,6 +432,9 @@ msgstr "Visors"
 
 msgid "WebBrowser"
 msgstr "Fullejadors web"
+
+msgid "X-Lliurex"
+msgstr "LliureX"
 
 msgid "X-Utilities"
 msgstr "Utilitats"
@@ -385,14 +460,14 @@ msgstr "escriptori gnome"
 msgid "desktop-kde"
 msgstr "escriptori kde"
 
-msgid "desktop-other"
-msgstr "escriptori altres"
-
 msgid "education"
 msgstr "educació"
 
 msgid "electronics"
 msgstr "electrónica"
+
+msgid "fonts"
+msgstr "eines de lletres"
 
 msgid "games"
 msgstr "jocs"
@@ -433,29 +508,23 @@ msgstr "sustema"
 msgid "unknown"
 msgstr "desconegut"
 
-#~ msgid "Accessibility"
-#~ msgstr "Accesibilitat"
+#~ msgid "Internet"
+#~ msgstr "Internet"
+
+#~ msgid "desktop-other"
+#~ msgstr "escriptori altres"
 
 #~ msgid "Animation"
 #~ msgstr "Animació"
 
-#~ msgid "Archiving"
-#~ msgstr "Compressió"
-
 #~ msgid "Biology"
 #~ msgstr "Biologia"
-
-#~ msgid "Calculator"
-#~ msgstr "Cálcul"
 
 #~ msgid "Calendar"
 #~ msgstr "Calendari"
 
 #~ msgid "Clock"
 #~ msgstr "Rellotge"
-
-#~ msgid "Compression"
-#~ msgstr "Compressió"
 
 #~ msgid "Core"
 #~ msgstr "Sistema"
@@ -466,26 +535,14 @@ msgstr "desconegut"
 #~ msgid "Database"
 #~ msgstr "Bases de dades"
 
-#~ msgid "Debugger"
-#~ msgstr "Debug"
-
 #~ msgid "Dictionary"
 #~ msgstr "Diccionari"
-
-#~ msgid "DiscBurning"
-#~ msgstr "Grabació de discs"
 
 #~ msgid "Documentation"
 #~ msgstr "Documentació"
 
 #~ msgid "Economy"
 #~ msgstr "Economia"
-
-#~ msgid "FileTools"
-#~ msgstr "Eines de fitxers"
-
-#~ msgid "Finance"
-#~ msgstr "Finances"
 
 #~ msgid "GUIDesigner"
 #~ msgstr "Disseny d'interficies"
@@ -517,14 +574,8 @@ msgstr "desconegut"
 #~ msgid "MedicalSoftware"
 #~ msgstr "Programari mèdic"
 
-#~ msgid "Monitor"
-#~ msgstr "Monitors"
-
 #~ msgid "NumericalAnalysis"
 #~ msgstr "Anàlisi numéric"
-
-#~ msgid "Photography"
-#~ msgstr "Fotografia"
 
 #~ msgid "Presentation"
 #~ msgstr "Presentacions"
@@ -537,9 +588,6 @@ msgstr "desconegut"
 
 #~ msgid "ProjectManagement"
 #~ msgstr "Gestió de projectes"
-
-#~ msgid "Publishing"
-#~ msgstr "Publicacions"
 
 #~ msgid "Security"
 #~ msgstr "Seguretat"
@@ -574,9 +622,6 @@ msgstr "desconegut"
 #~ msgid "ActionGame"
 #~ msgstr "Jocs d'acció"
 
-#~ msgid "Administration"
-#~ msgstr "Administració"
-
 #~ msgid "Adventure"
 #~ msgstr "Aventura"
 
@@ -588,9 +633,6 @@ msgstr "desconegut"
 
 #~ msgid "Application"
 #~ msgstr "Aplicació"
-
-#~ msgid "ArcadeGame"
-#~ msgstr "Jocs arcade"
 
 #~ msgid "ArtificialIntelligence"
 #~ msgstr "Inteligencia artificial"
@@ -616,9 +658,6 @@ msgstr "desconegut"
 #~ msgid "Communication & News"
 #~ msgstr "Comunicació i noticies"
 
-#~ msgid "ConsoleOnly"
-#~ msgstr "Consola"
-
 #~ msgid "Construction"
 #~ msgstr "Construció"
 
@@ -637,9 +676,6 @@ msgstr "desconegut"
 #~ msgid "Emulation"
 #~ msgstr "Emulació"
 
-#~ msgid "Emulator"
-#~ msgstr "Emuladors"
-
 #~ msgid "Fantasy"
 #~ msgstr "Fantasia"
 
@@ -648,15 +684,6 @@ msgstr "desconegut"
 
 #~ msgid "Feeds"
 #~ msgstr "Orígens"
-
-#~ msgid "FileManager"
-#~ msgstr "Gestió de fitxers"
-
-#~ msgid "FileTransfer"
-#~ msgstr "Transferencia de fitxers"
-
-#~ msgid "Filesystem"
-#~ msgstr "Fitxers"
 
 #~ msgid "FlowChart"
 #~ msgstr "Gràfiques"
@@ -697,12 +724,6 @@ msgstr "desconegut"
 #~ msgid "News"
 #~ msgstr "Noticies"
 
-#~ msgid "P2P"
-#~ msgstr "P2P"
-
-#~ msgid "PackageManager"
-#~ msgstr "Gestors de paquets"
-
 #~ msgid "ParallelComputing"
 #~ msgstr "Computació paralela"
 
@@ -718,9 +739,6 @@ msgstr "desconegut"
 #~ msgid "Qt"
 #~ msgstr "Qt"
 
-#~ msgid "RemoteAccess"
-#~ msgstr "Accés remot"
-
 #~ msgid "Robotics"
 #~ msgstr "Robótica"
 
@@ -735,9 +753,6 @@ msgstr "desconegut"
 
 #~ msgid "Shooter"
 #~ msgstr "Jocs de tirs"
-
-#~ msgid "Simulation"
-#~ msgstr "Sumulació"
 
 #~ msgid "SportsGame"
 #~ msgstr "Jocs d'esports"
@@ -756,9 +771,6 @@ msgstr "desconegut"
 
 #~ msgid "TelephonyTools"
 #~ msgstr "Eines de telefonia"
-
-#~ msgid "TerminalEmulator"
-#~ msgstr "Emuladors de terminal"
 
 #~ msgid "Tuner"
 #~ msgstr "Sintonitzadors"
@@ -780,9 +792,6 @@ msgstr "desconegut"
 
 #~ msgid "documentation"
 #~ msgstr "documentació"
-
-#~ msgid "fonts"
-#~ msgstr "eines de lletres"
 
 #~ msgid "legacy"
 #~ msgstr "antics"

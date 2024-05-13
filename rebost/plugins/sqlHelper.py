@@ -296,6 +296,8 @@ class sqlHelper():
 						if bundle=='appimage':
 							self._debug("Upgrading {} info...".format(pkg.get('pkgname','')))
 							ret=self._showPackage(pkg.get('pkgname'),user)
+							if len(ret)<=0:
+								continue
 							retname,retdata=ret[0]
 							app=json.loads(retdata)
 							versions=app.get('versions',{})

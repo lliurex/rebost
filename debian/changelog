@@ -1,3 +1,10 @@
+rebost (1.999-0lliurex23) jammy; urgency=medium
+
+  * Threaded start
+  * Full polkit and epi|epic integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 16 Apr 2024 10:21:44 +0200
+
 rebost (1.991-0lliurex23) jammy; urgency=medium
 
   * Eduapps integration 

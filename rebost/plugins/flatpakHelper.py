@@ -70,7 +70,7 @@ class flatpakHelper():
 				upgradable[i.get_name().lower()]=i.get_appdata_version()
 				a=i.load_metadata()
 			if len(installed)==0:
-				rebostPkgList=self._fillInstalledData(rebostPkgList)
+				rebostPkgList=self._fillInstalledData(rebostPkgList,installed)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
@@ -80,7 +80,7 @@ class flatpakHelper():
 			self._debug("Skip update")
 	#def _loadStore(self):
 
-	def _fillInstalledData(self,rebostPkgList):
+	def _fillInstalledData(self,rebostPkgList,installed):
 		for pkg in rebostPkgList:
 			if pkg["id"] in installed:
 				local=installed.pop(pkg["id"])

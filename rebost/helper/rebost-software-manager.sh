@@ -2,7 +2,7 @@
 #License GPL-3
 #Copyright 2021 LliureX Team
 #Parms: $1 -> package; $2 -> cli/gui mode
-if [[ $2 -eq "cli" ]]
+if [[ $2 == "cli" ]]
 then
 	/usr/sbin/epic $3 -nc -d $1 > /tmp/rebost/epigtk.log
 else

@@ -1,0 +1,4 @@
+# Refresh AppStream cache when APT's cache is updated (i.e. apt update)
+APT::Update::Post-Invoke-Success {
+    "service rebost restart";
+};

@@ -1,0 +1,7 @@
+rebost/* /usr/share/rebost
+extras/bash_completion.d/* /etc/bash_completion.d/
+dbus/system.d/* /etc/dbus-1/system.d
+dbus/services/* /usr/share/dbus-1/services
+polkit/net.lliurex.rebost.software.pkla /var/lib/polkit-1/localauthority/10.vendor.d/
+polkit/net.lliurex.rebost.software.policy /usr/share/polkit-1/actions/
+polkit/net.lliurex.rebost.software.rules /usr/share/polkit-1/rules.d/

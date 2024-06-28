@@ -536,13 +536,14 @@ def _get_package_commands(rebostpkg,user):
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
-
+	#FIX PKGNAME
+	pkgname=rebostpkg.get("bundle",{}).get("package",rebostpkg["pkgname"])
 	installCmd="export DEBIAN_FRONTEND=noninteractive"
 	installCmdLine.append("export DEBIAN_PRIORITY=critical")
-	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(rebostpkg['pkgname']))
+	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(pkgname))
 	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(pkgname)
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")

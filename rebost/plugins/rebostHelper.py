@@ -200,7 +200,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 
-def _fixFlatpakIconPath(self,icon):
+def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
 	spath=fpath.split("/")
 	idx=0
@@ -283,7 +283,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-			pkg["icon"]=self._fixFlatpakIconPath(pkg['icon'])
+			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)
@@ -536,13 +536,14 @@ def _get_package_commands(rebostpkg,user):
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
-
+	#FIX PKGNAME
+	pkgname=rebostpkg.get("bundle",{}).get("package",rebostpkg["pkgname"])
 	installCmd="export DEBIAN_FRONTEND=noninteractive"
 	installCmdLine.append("export DEBIAN_PRIORITY=critical")
-	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(rebostpkg['pkgname']))
+	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(pkgname))
 	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(pkgname)
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")

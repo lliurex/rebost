@@ -1,3 +1,9 @@
+rebost (2.0.1-0lliurex23) jammy; urgency=medium
+
+  * Fix icon search for flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 28 Jun 2024 12:14:04 +0200
+
 rebost (2.0-1lliurex23) jammy; urgency=medium
 
   * Remove gui from package

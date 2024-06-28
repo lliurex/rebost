@@ -200,7 +200,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 
-def _fixFlatpakIconPath(self,icon):
+def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
 	spath=fpath.split("/")
 	idx=0
@@ -283,7 +283,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-			pkg["icon"]=self._fixFlatpakIconPath(pkg['icon'])
+			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)

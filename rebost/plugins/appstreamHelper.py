@@ -129,6 +129,12 @@ class appstreamHelper():
 			idx=pkg.get_id()
 			#appstream has his own cache dir for icons so if present use it
 			icondefault=pkg.get_icon_default()
+			#state is not working
+			#Do a best effort, get launchable and check if exists
+			pkg.set_state(2)
+			for i in pkg.get_launchables():
+				if os.path.exists("/usr/share/applications/{}".format(i.get_value())):
+					pkg.set_state(1)
 			fname=None
 			if icondefault:
 				icondefault=self._set_icon_fname(pkg,icondefault)

@@ -706,7 +706,6 @@ class sqlHelper():
 			mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
-		print(eduappSum)
 		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
 		#If package comes from eduapps and is not maped then
 		#appstream adds a bundle "eduapps". Replace it as if there's info

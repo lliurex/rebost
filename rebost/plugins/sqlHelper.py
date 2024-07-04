@@ -714,7 +714,8 @@ class sqlHelper():
 		eduappv=mergepkgdataJson.get("versions",{}).get("eduapp","")
 		if len(eduapp)>0:
 			mergepkgdataJson["bundle"]={"package":eduapp}
-			mergepkgdataJson["versions"]={"package":eduappv}
+			if len(eduappv)>0:
+				mergepkgdataJson["versions"]={"package":eduappv}
 		if len(eduappSum)>0:
 			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 		return(mergepkgdataJson)

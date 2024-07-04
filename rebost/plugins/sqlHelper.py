@@ -542,9 +542,9 @@ class sqlHelper():
 				if "Zomando" not in aliaspkgdataJson.get("categories"):
 					aliasname=aliasdata["name"]
 				aliasdesc=""
-				#eduapps rejected by needs webscrap of detail url
+				#rejected eduapps needs webscrap of detail url
 				#for the moment it's disabled because is time-consuming
-				#However when the info gets loaded then this should work
+				#However when the info gets loaded this should work
 				if "FORBIDDEN" in aliasdata["categories"]:
 					aliasdesc=aliasdata["description"]
 				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
@@ -700,10 +700,13 @@ class sqlHelper():
 		(pkg,data,cat0,cat1,cat2,alias)=row
 		mergepkgdataJson=json.loads(data)
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
+		eduappSum=""
 		if len(eduapp)>0:
+			eduappSum=mergepkgdataJson.get("summary","")
 			mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
+		print(eduappSum)
 		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
 		#If package comes from eduapps and is not maped then
 		#appstream adds a bundle "eduapps". Replace it as if there's info
@@ -713,6 +716,8 @@ class sqlHelper():
 		if len(eduapp)>0:
 			mergepkgdataJson["bundle"]={"package":eduapp}
 			mergepkgdataJson["versions"]={"package":eduappv}
+		if len(eduappSum)>0:
+			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 		return(mergepkgdataJson)
 	#def _mergePackage
 

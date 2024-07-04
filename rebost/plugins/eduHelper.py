@@ -151,6 +151,7 @@ class eduHelper():
 		if eduapp["auth"].lower().startswith("autori")==False:
 			self._debug("Set {} as FORBIDDEN".format(pkgname))
 			rebostPkg["categories"].insert(0,"FORBIDDEN")
+			rebostPkg['summary']=eduapp["auth"]
 		if getDetail==True:
 			appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),eduapp)
 			rawcontent=self._fetchCatalogue(appUrl)
@@ -159,19 +160,15 @@ class eduHelper():
 			for i in b:
 				img=i.find("img")
 				if img:
-					print("Image: {}".format(img["src"]))
 					rebostPkg["icon"]=img["src"]
 				rel=i.find("div","acf-view__versio-field acf-view__field")
 				if rel:
-					print("Release: {}".format(rel.text.strip()))
 					rebostPkg["versions"]={"eduapp":rel.text.strip()}
 					#rebostPkg["icon"]=img["src"]
 				desc=i.find("div","acf-view__descripcio-field acf-view__field")
 				if desc:
-					print("Description: {}".format(desc.text.strip()))
 					rebostPkg["description"]=desc.text.strip()
-					summary=rebostPkg["description"].split(".")[0]
-					rebostPkg['summary']=summary
+					rebostPkg['summary']+=rebostPkg["description"].split(".")[0]
 				homepage=i.find("div","acf-view__url_editor-link acf-view__link")
 				if homepage:
 					print("Homepage: {}".format(homepage.text.strip()))

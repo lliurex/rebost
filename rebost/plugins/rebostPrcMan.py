@@ -204,7 +204,7 @@ class rebostPrcMan():
 				else:
 					self._debug(e)
 			forbidden=False
-			if "FORBIDDEN" in cats:
+			if "Forbidden" in cats:
 				rebostpkg=''
 				rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':package,'done':1,'status':'','msg':'Forbidden {}, app unauthorized'.format(package)})]
 				forbidden=True

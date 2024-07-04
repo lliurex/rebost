@@ -545,7 +545,7 @@ class sqlHelper():
 				#rejected eduapps needs webscrap of detail url
 				#for the moment it's disabled because is time-consuming
 				#However when the info gets loaded this should work
-				if "FORBIDDEN" in aliasdata["categories"]:
+				if "Forbidden" in aliasdata["categories"]:
 					aliasdesc=aliasdata["description"]
 				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
 				if len(aliasdesc)>0:
@@ -648,10 +648,10 @@ class sqlHelper():
 				self._debug("DISCARD {}".format(pkgname))
 				return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
-		if "FORBIDDEN" in categories:
-			self._debug("Set app {} as FORBIDDEN".format(pkgname))
-			categories.remove("FORBIDDEN")
-			categories.insert(0,"FORBIDDEN")
+		if "Forbidden" in categories:
+			self._debug("Set app {} as Forbidden".format(pkgname))
+			categories.remove("Forbidden")
+			categories.insert(0,"Forbidden")
 			for item in pkgdataJson.get("bundle",""):
 				item=""
 		elif "Lliurex" in categories:

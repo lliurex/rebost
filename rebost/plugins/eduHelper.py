@@ -149,8 +149,8 @@ class eduHelper():
 		rebostPkg["bundle"]={"eduapp":pkgname}
 		rebostPkg["icon"]=eduapp["icon"]
 		if eduapp["auth"].lower().startswith("autori")==False:
-			self._debug("Set {} as FORBIDDEN".format(pkgname))
-			rebostPkg["categories"].insert(0,"FORBIDDEN")
+			self._debug("Set {} as Forbidden".format(pkgname))
+			rebostPkg["categories"].insert(0,"Forbidden")
 			rebostPkg['summary']=eduapp["auth"]
 		if getDetail==True:
 			appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),eduapp)

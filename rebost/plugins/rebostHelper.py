@@ -355,6 +355,7 @@ def _componentFillInfo(component,pkg):
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:
 						pkg['state']["package"]="0"
+						pkg['versions']={"package":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:

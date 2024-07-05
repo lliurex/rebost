@@ -461,23 +461,24 @@ class sqlHelper():
 				query=[]
 				removequery=[]
 				for data in allData[offset:limit]:
-					(processedPkg,aliasPkg)=self._addPkgToQuery(tmpdb,cursor,data,restricted)
+					(processedPkg,aliasPkgs)=self._addPkgToQuery(tmpdb,cursor,data,restricted)
 					if processedPkg!=([],[]):
 						pkgData=processedPkg[0]
 						categories=processedPkg[1]
 						if len(categories)>0:
 							allCategories.extend(categories)
 						query.append(pkgData)
-					if aliasPkg!=([],[]):
-						app=aliasPkg[0]
-						dataContent=aliasPkg[0][1]
-						alias=aliasPkg[0][0]
-						#Ensure all single quotes are duplicated or sql will fail
-						dataContent=dataContent.replace("''","'")
-						dataContent=dataContent.replace("'","''")
-						removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
-						cursor.execute(removequery)
-						db.commit()
+					if len(aliasPkgs)>0:
+						for aliasPkg in aliasPkgs:
+							if aliasPkg!=([],[]):
+								dataContent=aliasPkg[0][1]
+								alias=aliasPkg[0][0]
+								#Ensure all single quotes are duplicated or sql will fail
+								dataContent=dataContent.replace("''","'")
+								dataContent=dataContent.replace("'","''")
+								removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
+								cursor.execute(removequery)
+								db.commit()
 				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
@@ -516,6 +517,7 @@ class sqlHelper():
 		(cat0,cat1,cat2)=(None,None,None)
 		processedpkg=([],[])
 		aliaspkg=([],[])
+		aliaspkgs=[]
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
 		self.filters=False
@@ -525,48 +527,52 @@ class sqlHelper():
 				return(processedpkg)
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-		row=cursor.execute(fetchquery).fetchone()
-		if not(row):
+		#row=cursor.execute(fetchquery).fetchone()
+		rows=cursor.execute(fetchquery).fetchall()
+		if len(rows)==0:
 			bypkgalias=False
 			query="pkg = '{0}'".format(pkgname)
 			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-			row=cursor.execute(fetchquery).fetchone()
-		if row:
-			rowname=row[0]
-			if rowname!=pkgname: #Alias
-				alias=row[0]
-				aliasdata=json.loads(row[1])
-				aliaspkgdataJson=pkgdataJson.copy()
-				aliaspkgdataJson["name"]=alias
-				aliasname=""
-				if "Zomando" not in aliaspkgdataJson.get("categories"):
-					aliasname=aliasdata["name"]
-				aliasdesc=""
-				#rejected eduapps needs webscrap of detail url
-				#for the moment it's disabled because is time-consuming
-				#However when the info gets loaded this should work
-				if "Forbidden" in aliasdata["categories"]:
-					aliasdesc=aliasdata["description"]
-				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
-				if len(aliasdesc)>0:
-					if aliasdesc!=aliaspkgdataJson["description"]:
-						aliaspkgdataJson["description"]=aliasdesc
-			
-				elif len(aliasname)>0:
-					aliaspkgdataJson["name"]=pkgname
-				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
-				query="pkg = '{0}'".format(pkgname)
-				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-				row=cursor.execute(fetchquery).fetchone()
-			if row:
-				pkgdataJson=self._mergePackage(pkgdataJson,row)
-			if len(pkgdataJson.get('bundle',{}))>0:
-				processedpkg=self._processPkgData(pkgname,pkgdataJson)
+			rows.append(cursor.execute(fetchquery).fetchone())
+		if len(rows)>0:
+			for row in rows:
+				if row==None:
+					continue
+				rowname=row[0]
+				if rowname!=pkgname: #Alias
+					alias=rowname
+					aliasdata=json.loads(row[1])
+					aliaspkgdataJson=pkgdataJson.copy()
+					aliaspkgdataJson["name"]=alias
+					aliasname=""
+					if "Zomando" not in aliaspkgdataJson.get("categories"):
+						aliasname=aliasdata["name"]
+					aliasdesc=""
+					#rejected eduapps needs webscrap of detail url
+					#for the moment it's disabled because is time-consuming
+					#However when the info gets loaded this should work
+					if "Forbidden" in aliasdata["categories"]:
+						aliasdesc=aliasdata["description"]
+					aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
+					if len(aliasdesc)>0:
+						if aliasdesc!=aliaspkgdataJson["description"]:
+							aliaspkgdataJson["description"]=aliasdesc
+				
+					elif len(aliasname)>0:
+						aliaspkgdataJson["name"]=pkgname
+					aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
+					aliaspkgs.append(aliaspkg)
+					query="pkg = '{0}'".format(pkgname)
+					fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
+					row=cursor.execute(fetchquery).fetchone()
+				if row:
+					pkgdataJson=self._mergePackage(pkgdataJson,row)
+				if len(pkgdataJson.get('bundle',{}))>0:
+					processedpkg=self._processPkgData(pkgname,pkgdataJson)
 		elif restricted==False:
 			if len(pkgdataJson.get('bundle',{}))>0:
 				processedpkg=self._processPkgData(pkgname,pkgdataJson)
-
-		return(processedpkg,aliaspkg)
+		return(processedpkg,aliaspkgs)
 	#def _addPkgToQuery
 
 	def _applyFilters(self,pkgname,pkgdataJson):

@@ -743,9 +743,12 @@ class sqlHelper():
 							tmp.append(i)
 					mergepkgdataJson[key]=tmp
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				#If icon exists use it
 				if len(item)>=len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
+				if key=="icon":
+					if mergepkgdataJson["icon"]=="https://portal.edu.gva.es/appsedu/wp-content/uploads/sites/1964/2024/01/00_Generica-1.png":
+						if os.path.exists(item)==True:
+							mergepkgdataJson["icon"]=item
 		return(mergepkgdataJson)
 	#def _mergeData
 

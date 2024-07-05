@@ -1,6 +1,12 @@
+rebost (2.2-0lliurex23) jammy; urgency=medium
+
+  * Better integration between appsedu, packagekit and appstream
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 05 Jul 2024 11:01:20 +0200
+
 rebost (2.1-0lliurex23) jammy; urgency=medium
 
-  * Enable eduapps stuff
+  * Enable appsedu stuff
 
  -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jul 2024 12:14:19 +0200
 

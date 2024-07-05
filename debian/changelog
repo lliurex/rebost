@@ -1,6 +1,7 @@
 rebost (2.2-0lliurex23) jammy; urgency=medium
 
   * Better integration between appsedu, packagekit and appstream
+  * Support for same alias for multiple applications
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 05 Jul 2024 11:01:20 +0200
 

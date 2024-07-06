@@ -11,6 +11,7 @@ import random
 import gettext
 from bs4 import BeautifulSoup as bs
 import rebostHelper
+import libAppsEdu
 import hashlib
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
@@ -54,14 +55,20 @@ class eduHelper():
 	def _loadStore(self):
 		if os.path.exists(FILTER):
 			os.unlink(FILTER)
-		eduApps=self._getEduApps()
+		#eduApps=self._getEduApps()
+		eduApps=libAppsEdu.getAppsEduCatalogue()
 		self._debug("Loaded {} from eduapps".format(len(eduApps)))
 		rebostPkgList=[]
-		for eduapp in eduApps:
-			rebostPkgList.append(self._appToRebost(eduapp))
+		fnames=os.path.join(self.rebostCache,"appsedu.list")
+		#Generate cache with names
+		with open(fnames,"w") as f:
+			for eduapp in eduApps:
+				rebostPkgList.append(self._appToRebost(eduapp))
+				f.write("{}\n".format(eduapp["app"]))
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
 		if len(rebostPkgList)>0:
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,"eduapps.db")
+
 		#REM
 		return
 		searchDict=self._generateTags(eduApps)

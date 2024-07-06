@@ -11,6 +11,10 @@ import logging
 import tempfile
 import subprocess
 import time
+import urllib
+from bs4 import BeautifulSoup as bs
+from urllib.request import Request
+from urllib.request import urlretrieve
 import flatpakHelper
 
 DBG=False
@@ -34,6 +38,7 @@ logger.addHandler(fh)
 st=logging.StreamHandler()
 st.setLevel(logging.DEBUG)
 st.setFormatter(formatter)
+EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 #logger.addHandler(st)
 
 def setDebugEnabled(dbg):
@@ -68,6 +73,8 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
+
+#---< 
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	wrkDir=WRKDIR #"/usr/share/rebost"

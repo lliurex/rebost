@@ -5,6 +5,7 @@ gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 import json
 import rebostHelper
+import libAppsEdu
 import logging
 import os
 import time
@@ -31,6 +32,8 @@ class packageKit():
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","pk.lu")
 		#self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
 		self.pkgFile="/usr/share/rebost/lists.d/eduapps.map"
+		self.cacheFile=os.path.join(self.rebostCache,"appsedu.list")
+		self.restrictedUrl="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -73,7 +76,7 @@ class packageKit():
 			for pkglist in tmppkgIds:
 				for pkg in pkglist:
 					pkgname=pkg.split(";")[0]
-					if pkgname not in restrictIds:
+					if pkgname not in restrictIds and "lliurex" not in pkgname.lower():
 						pkgSack.remove_package_by_id(pkg)
 		for pkgSack in pklists:
 			pkgIds.extend(pkgSack.get_ids())
@@ -144,8 +147,16 @@ class packageKit():
 						self._debug("Getting pkgs from zmd")
 
 					searchList.append(item)
+		searchList=self._addCacheFile(searchList)
 		return(searchList)
 	#def _readFilterFile
+
+	def _addCacheFile(self,pkglist=[]):
+		eduApps=libAppsEdu._getEduApps()
+		for app in eduApps:
+			if app not in pkglist:
+				pkglist.append(app)
+		return(pkglist)
 
 	def _getChanges(self,gPath):
 		#Compare old file with new file. Extract changes and update db

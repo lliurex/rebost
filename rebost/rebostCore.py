@@ -33,8 +33,12 @@ class Rebost():
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
-		self.rebostPath="/usr/share/rebost/"
+		self.rebostPath=os.path.join(home,".config","rebost")
 		self.confFile=os.path.join(self.rebostPath,"store.json")
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")

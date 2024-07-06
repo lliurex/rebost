@@ -1,0 +1,7 @@
+{
+    "appimage": true,
+    "config": "user",
+    "flatpak": true,
+    "packageKit": true,
+    "snap": true
+}

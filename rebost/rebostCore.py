@@ -21,8 +21,13 @@ class Rebost():
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
 		if os.path.exists(self.rebostWrkDir)==True:
-			shutil.rmtree(self.rebostWrkDir)
-		os.makedirs(self.rebostWrkDir)
+			for f in os.scandir(self.rebostWrkDir):
+				if os.path.isfile(f.path):
+					if f.path.endswith(".db"):
+						os.unlink(f.path)
+			#shutil.rmtree(self.rebostWrkDir)
+		else:
+			os.makedirs(self.rebostWrkDir)
 		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
 		home=os.environ.get("HOME",self.dbCache)
 		if len(home)>0:

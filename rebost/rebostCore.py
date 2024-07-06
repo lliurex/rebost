@@ -187,7 +187,7 @@ class Rebost():
 
 	def _processConfig(self):
 		cfg=self._readConfig()
-		for plugin,state in cfg.get("plugins",{}).items():
+		for plugin,state in cfg.items():
 			if state==True:
 				self._enable(plugin)
 			else:

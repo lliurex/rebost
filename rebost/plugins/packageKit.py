@@ -32,8 +32,6 @@ class packageKit():
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","pk.lu")
 		#self.pkgFile="/usr/share/rebost/tmp/pk.rebost"
 		self.pkgFile="/usr/share/rebost/lists.d/eduapps.map"
-		self.cacheFile=os.path.join(self.rebostCache,"appsedu.list")
-		self.restrictedUrl="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -147,7 +145,7 @@ class packageKit():
 						self._debug("Getting pkgs from zmd")
 
 					searchList.append(item)
-		searchList=self._addCacheFile(searchList)
+		searchList=self._addCacheFile(list(jcontent.keys()))
 		return(searchList)
 	#def _readFilterFile
 
@@ -157,6 +155,7 @@ class packageKit():
 			if app not in pkglist:
 				pkglist.append(app)
 		return(pkglist)
+	#def _addCacheFile
 
 	def _getChanges(self,gPath):
 		#Compare old file with new file. Extract changes and update db
@@ -310,6 +309,7 @@ class packageKit():
 
 	def _loadCallback(self,*args):
 		return
+	#def _loadCallback
 
 def main():
 	obj=packageKit()

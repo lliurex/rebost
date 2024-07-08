@@ -1,6 +1,7 @@
-rebost (2.3-0lliurex23) jammy; urgency=medium
+rebost (2.3-1lliurex23) jammy; urgency=medium
 
   * Use aux lib for appsedu management
+  * Optimize packagekit integration with appsedu
 
  -- Juanma1980 <juanma1980@gmail.com>  Sat, 06 Jul 2024 09:40:41 +0200
 

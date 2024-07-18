@@ -1,3 +1,9 @@
+rebost (2.4-0lliurex23) jammy; urgency=medium
+
+  * Improve network timeout 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 18 Jul 2024 12:17:29 +0200
+
 rebost (2.3-1lliurex23) jammy; urgency=medium
 
   * Use aux lib for appsedu management

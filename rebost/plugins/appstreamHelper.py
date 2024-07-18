@@ -53,7 +53,7 @@ class appstreamHelper():
 		self._debug("Get apps")
 		restrictedYml="/usr/share/rebost-data/yaml/eduapps.yml"
 		store=self._get_appstream_catalogue_from_files([restrictedYml])
-		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"]#,"/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
+		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml","/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
 		fullstore=self._get_appstream_catalogue_from_files(storeYml)
 		update=self._chkNeedUpdate(store)
 		if update:
@@ -129,6 +129,12 @@ class appstreamHelper():
 			idx=pkg.get_id()
 			#appstream has his own cache dir for icons so if present use it
 			icondefault=pkg.get_icon_default()
+			#state is not working
+			#Do a best effort, get launchable and check if exists
+			pkg.set_state(2)
+			for i in pkg.get_launchables():
+				if os.path.exists("/usr/share/applications/{}".format(i.get_value())):
+					pkg.set_state(1)
 			fname=None
 			if icondefault:
 				icondefault=self._set_icon_fname(pkg,icondefault)

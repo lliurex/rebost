@@ -21,15 +21,24 @@ class Rebost():
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
 		if os.path.exists(self.rebostWrkDir)==True:
-			shutil.rmtree(self.rebostWrkDir)
-		os.makedirs(self.rebostWrkDir)
+			for f in os.scandir(self.rebostWrkDir):
+				if os.path.isfile(f.path):
+					if f.path.endswith(".db"):
+						os.unlink(f.path)
+			#shutil.rmtree(self.rebostWrkDir)
+		else:
+			os.makedirs(self.rebostWrkDir)
 		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
-		home=os.environ.get("HOME","")
+		home=os.environ.get("HOME",self.dbCache)
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		self.cacheData=os.path.join("{}".format(self.cache),"xml")
-		self.rebostPath="/usr/share/rebost/"
+		self.rebostPath=os.path.join(home,".config","rebost")
 		self.confFile=os.path.join(self.rebostPath,"store.json")
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -45,11 +54,19 @@ class Rebost():
 	def run(self):
 		self._log("Starting rebost")
 		self._loadPlugins()
+		self._log("Plugins loaded")
 		self._loadPluginInfo()
+		self._log("Plugins processed")
 		self._processConfig()
-		self._copyCacheToTmp()
-		self._autostartActions()
+		self._log("Config readed")
+		if self._copyCacheToTmp()==True:
+			self._log("Cache enabled")
+			self._beginAutostartActions()
+		else:
+			self._log("Cache unavailable")
+			self._autostartActions()
 		self._copyTmpToCache()
+		self._log("Cache restored")
 		self._log("Autostart ended.")
 	#def run
 
@@ -170,7 +187,7 @@ class Rebost():
 
 	def _processConfig(self):
 		cfg=self._readConfig()
-		for plugin,state in cfg.get("plugins",{}).items():
+		for plugin,state in cfg.items():
 			if state==True:
 				self._enable(plugin)
 			else:
@@ -241,14 +258,28 @@ class Rebost():
 	#def _disable
 
 	def _chkNetwork(self):
+		def trace_function(frame, event, arg):
+			if time.time() - start > TOTAL_TIMEOUT:
+				raise Exception('Timed out!') # Use whatever exception you consider appropriate.
+
+			return trace_function
+		##
+		TOTAL_TIMEOUT = 1
+		start = time.time()
+		sys.settrace(trace_function)
+
+		sw=True
 		try:
-			requests.get('https://portal.edu.gva.es/',timeout=1)
-			return True
+			res = requests.get('http://lliurex.net/jammy/', timeout=(1, 2)) # Use whatever timeout values you consider appropriate.
 		except:
-			return False
+			sw=False
+		finally:
+			sys.settrace(None) # Remove the time constraint and continue normally.
+		return sw
 	#def _chkNetwork
 
 	def _copyCacheToTmp(self):
+		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
 			if os.path.exists(self.rebostPathTmp)==True:
@@ -260,6 +291,8 @@ class Rebost():
 			for lu in os.scandir(tmpCache):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
+			copied=True
+		return(copied)
 	#def _copyCacheToTmp
 
 	def _copyTmpToCache(self):
@@ -277,6 +310,11 @@ class Rebost():
 					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
 	#def _copyTmpToCache
 
+	def _beginAutostartActions(self):
+		proc=multiprocessing.Process(target=self._autostartActions,daemon=False)
+		proc.start()
+	#def _beginAutostartActions
+		
 	def _autostartActions(self):
 		actionDict={}
 		postactionDict={}

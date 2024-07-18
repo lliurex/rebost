@@ -2,7 +2,13 @@
 #License GPL-3
 #Copyright 2021 LliureX Team
 #Parms: $1 -> package; $2 -> cli/gui mode
-/usr/sbin/epi-gtk -nc -d $1 > /tmp/rebost/epigtk.log
+if [[ $2 == "cli" ]]
+then
+	/usr/sbin/epic $3 -nc -d $1 > /tmp/rebost/epigtk.log
+else
+	/usr/sbin/epi-gtk -nc -u $1 > /tmp/rebost/epigtk.log
+fi
+
 TMPDIR=$(dirname $1)
 #Check if what is told to remove is also what we want to remove
 ####if [ -e $1 ]

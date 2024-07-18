@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 class appimageHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.enabled=True
 		self.packagekind="appimage"
 		self.actions=["load"]
@@ -25,20 +25,24 @@ class appimageHelper():
 		self.priority=2
 		self.store=None
 		self.user=''
+		dbCache="/tmp/.cache/rebost"
 		if kwargs:
 			self.user=kwargs.get('user','')
-		if self.user:
-			self.appimageDir=os.getenv("HOME")+"/.local/bin"
-		else:
-			self.appimageDir="/opt/appimages"
-		self.wrkDir="/tmp/.cache/rebost/xml/appimage"
-		self.iconDir="/tmp/.cache/rebost/icons"
-		if not os.path.isdir(self.iconDir):
-			os.makedirs(self.iconDir)
+		#if self.user:
+		self.appimageDir=os.path.join(os.getenv("HOME"),".local","bin")
+		userCache=os.path.join(os.getenv("HOME"),".cache","rebost")
+		#else:
+		#	self.appimageDir="/opt/appimages"
+		#	userCache=dbCache
+		self.iconDir=os.path.join(userCache,"icons")
+		self.wrkDir=os.path.join(userCache,"xml","appimage")
+		for d in [self.wrkDir,self.iconDir]:
+			if not os.path.isdir(d):
+				os.makedirs(d)
+				os.chmod(d, 0o0777)
 		self.repos={'appimagehub':{'type':'json','url':'https://appimage.github.io/feed.json','url_info':''}}
 		self.queue=Queue(maxsize=0)
-		dbCache="/tmp/.cache/rebost"
-		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
+		self.rebostCache=os.path.join(dbCache,os.environ.get("USER",""))
 		if os.path.exists(self.rebostCache)==False:
 			os.makedirs(self.rebostCache)
 		os.chmod(self.rebostCache,stat.S_IRWXU )
@@ -118,7 +122,7 @@ class appimageHelper():
 		content=''
 		req=Request(repo, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req,timeout=10) as f:
+			with urllib.request.urlopen(req,timeout=3) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
 			print("Couldn't fetch {}".format(repo))

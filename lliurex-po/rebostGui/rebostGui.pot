@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-11 19:07+0100\n"
+"POT-Creation-Date: 2024-04-16 10:10+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,69 +17,69 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../rebostGui/stacks/details.py:23
+#: ../rebostGui/stacks/details.py:24
 msgid ""
-"The app could not be loaded. Perhaps it's not in LliureX catalogue and thus "
-"it can't be installed"
+"The app could not be loaded. Until included in LliureX catalogue it can't be "
+"installed"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:24
+#: ../rebostGui/stacks/details.py:25
 msgid "Choose"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:25 ../rebostGui/stacks/details.py:37
+#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/details.py:38
 msgid "Details"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:26 ../rebostGui/stacks/portrait.py:21
+#: ../rebostGui/stacks/details.py:27 ../rebostGui/stacks/portrait.py:21
 msgid "Navigate through all applications"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:27
+#: ../rebostGui/stacks/details.py:28
 msgid "Error opening"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:28
+#: ../rebostGui/stacks/details.py:29
 msgid "Unknown error"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:29
+#: ../rebostGui/stacks/details.py:30
 msgid "App unauthorized"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:30
+#: ../rebostGui/stacks/details.py:31
 msgid "Format"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:31
+#: ../rebostGui/stacks/details.py:32
 msgid "For more info go to"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:32
+#: ../rebostGui/stacks/details.py:33
 msgid "Install"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:33
+#: ../rebostGui/stacks/details.py:34
 msgid "Show application detail"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:34
+#: ../rebostGui/stacks/details.py:35
 msgid "Release"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:35
+#: ../rebostGui/stacks/details.py:36
 msgid "Remove"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:36
+#: ../rebostGui/stacks/details.py:37
 msgid "Open"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:38
+#: ../rebostGui/stacks/details.py:39
 msgid "Upgrade"
 msgstr ""
 
-#: ../rebostGui/stacks/details.py:39
+#: ../rebostGui/stacks/details.py:40
 msgid "Zommand not found. Open Zero-Center?"
 msgstr ""
 
@@ -196,6 +196,18 @@ msgstr ""
 msgid "3DGraphics"
 msgstr ""
 
+msgid "Accessibility"
+msgstr ""
+
+msgid "Administration"
+msgstr ""
+
+msgid "ArcadeGame"
+msgstr ""
+
+msgid "Archiving"
+msgstr ""
+
 msgid "Art"
 msgstr ""
 
@@ -211,16 +223,31 @@ msgstr ""
 msgid "AudioVideoEditing"
 msgstr ""
 
+msgid "Calculator"
+msgstr ""
+
 msgid "Chart"
 msgstr ""
 
 msgid "Chemistry"
 msgstr ""
 
+msgid "Compression"
+msgstr ""
+
 msgid "ComputerScience"
 msgstr ""
 
+msgid "ConsoleOnly"
+msgstr ""
+
+msgid "Debugger"
+msgstr ""
+
 msgid "Development"
+msgstr ""
+
+msgid "DiscBurning"
 msgstr ""
 
 msgid "Education"
@@ -232,6 +259,9 @@ msgstr ""
 msgid "Electronics"
 msgstr ""
 
+msgid "Emulator"
+msgstr ""
+
 msgid "Engineering"
 msgstr ""
 
@@ -239,6 +269,21 @@ msgid "FORBIDDEN"
 msgstr ""
 
 msgid "FP"
+msgstr ""
+
+msgid "FileManager"
+msgstr ""
+
+msgid "FileTools"
+msgstr ""
+
+msgid "FileTransfer"
+msgstr ""
+
+msgid "Filesystem"
+msgstr ""
+
+msgid "Finance"
 msgstr ""
 
 msgid "Game"
@@ -256,13 +301,16 @@ msgstr ""
 msgid "IDE"
 msgstr ""
 
-msgid "Internet"
-msgstr ""
-
 msgid "KidsGame"
 msgstr ""
 
 msgid "Languages"
+msgstr ""
+
+msgid "LliureX"
+msgstr ""
+
+msgid "LliureX-Administration"
 msgstr ""
 
 msgid "LliureX-Infantil"
@@ -286,6 +334,9 @@ msgstr ""
 msgid "Mixer"
 msgstr ""
 
+msgid "Monitor"
+msgstr ""
+
 msgid "Multimedia"
 msgstr ""
 
@@ -301,16 +352,31 @@ msgstr ""
 msgid "Office"
 msgstr ""
 
+msgid "P2P"
+msgstr ""
+
+msgid "PackageManager"
+msgstr ""
+
+msgid "Photography"
+msgstr ""
+
 msgid "Physics"
 msgstr ""
 
 msgid "Player"
 msgstr ""
 
+msgid "Publishing"
+msgstr ""
+
 msgid "RasterGraphics"
 msgstr ""
 
 msgid "Recorder"
+msgstr ""
+
+msgid "RemoteAccess"
 msgstr ""
 
 msgid "RevisionControl"
@@ -328,6 +394,9 @@ msgstr ""
 msgid "Services"
 msgstr ""
 
+msgid "Simulation"
+msgstr ""
+
 msgid "Software"
 msgstr ""
 
@@ -335,6 +404,9 @@ msgid "System"
 msgstr ""
 
 msgid "TV"
+msgstr ""
+
+msgid "TerminalEmulator"
 msgstr ""
 
 msgid "TextEditor"
@@ -353,6 +425,9 @@ msgid "Viewer"
 msgstr ""
 
 msgid "WebBrowser"
+msgstr ""
+
+msgid "X-Lliurex"
 msgstr ""
 
 msgid "X-Utilities"
@@ -379,13 +454,13 @@ msgstr ""
 msgid "desktop-kde"
 msgstr ""
 
-msgid "desktop-other"
-msgstr ""
-
 msgid "education"
 msgstr ""
 
 msgid "electronics"
+msgstr ""
+
+msgid "fonts"
 msgstr ""
 
 msgid "games"

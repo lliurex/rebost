@@ -10,7 +10,7 @@ xgettext $GUI_FILES -o rebostGui/rebostGui.pot
 xgettext $CLI_FILES -o rebost/rebost.pot
 
 #Categories
-CAT=$(qdbus --system net.lliurex.rebost /net/lliurex/rebost net.lliurex.rebost.getCategories)
+CAT=$(qdbus net.lliurex.rebost /net/lliurex/rebost net.lliurex.rebost.getCategories)
 if [[ $? -eq 0 ]]
 then
 	CAT=${CAT/[/}

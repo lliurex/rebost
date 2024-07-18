@@ -5,6 +5,7 @@ gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 import json
 import rebostHelper
+import libAppsEdu
 import logging
 import os
 import time
@@ -58,21 +59,22 @@ class packageKit():
 	def _loadStore(self,*args):
 		action="load"
 		pkcon=packagekit.Client()
+		restrictIds=[]
 		if self.restricted==False:
 			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
 			pklists=self._loadFullCatalogue(pkcon,flags)
 		else:
-			pklists=self._loadRestrictedCatalogue(pkcon,self.pkgFile)
+			restrictIds=self._readFilterFile(self.pkgFile)
+			pklists=self._loadRestrictedCatalogue(pkcon,restrictIds)
 		tmppkgIds=[]
 		pkgIds=[]
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
 		if self.restricted==True:
-			restrictIds=self._readFilterFile(self.pkgFile)
 			for pkglist in tmppkgIds:
 				for pkg in pkglist:
 					pkgname=pkg.split(";")[0]
-					if pkgname not in restrictIds:
+					if pkgname not in restrictIds and "lliurex" not in pkgname.lower():
 						pkgSack.remove_package_by_id(pkg)
 		for pkgSack in pklists:
 			pkgIds.extend(pkgSack.get_ids())
@@ -118,12 +120,10 @@ class packageKit():
 		return (pklists)
 	#def _loadFullCatalogue
 
-	def _loadRestrictedCatalogue(self,pkcon,pkgfile):
+	def _loadRestrictedCatalogue(self,pkcon,restrictedList):
 		pklists=[]
-		self._debug("Getting restricted pkg list from {}".format(pkgfile))
-		searchList=self._readFilterFile(pkgfile)
-		if len(searchList)>0:
-			pkList=pkcon.resolve(packagekit.FilterEnum.NONE,searchList,None,self._loadCallback,None)
+		if len(restrictedList)>0:
+			pkList=pkcon.resolve(packagekit.FilterEnum.NONE,restrictedList,None,self._loadCallback,None)
 			pkgSack=pkList.get_package_sack()
 			pklists.append(pkgSack)
 		self._debug("Processing obtained list")
@@ -131,6 +131,7 @@ class packageKit():
 	#def _loadRestrictedCatalogue
 
 	def _readFilterFile(self,pkgfile):
+		self._debug("Getting restricted pkg list from {}".format(pkgfile))
 		searchList=[]
 		if os.path.exists(pkgfile)==False:
 			self._debug("File not found: {}".format(pkgfile))
@@ -141,11 +142,20 @@ class packageKit():
 			for key,item in jcontent.items():
 				if item not in searchList:
 					if item.startswith("zero-"):
-						self._debug("Gettings pkgs from zmd")
+						self._debug("Getting pkgs from zmd")
 
 					searchList.append(item)
+		searchList=self._addCacheFile(list(jcontent.keys()))
 		return(searchList)
 	#def _readFilterFile
+
+	def _addCacheFile(self,pkglist=[]):
+		eduApps=libAppsEdu._getEduApps()
+		for app in eduApps:
+			if app not in pkglist:
+				pkglist.append(app)
+		return(pkglist)
+	#def _addCacheFile
 
 	def _getChanges(self,gPath):
 		#Compare old file with new file. Extract changes and update db
@@ -299,6 +309,7 @@ class packageKit():
 
 	def _loadCallback(self,*args):
 		return
+	#def _loadCallback
 
 def main():
 	obj=packageKit()

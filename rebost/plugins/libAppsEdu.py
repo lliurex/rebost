@@ -3,6 +3,7 @@
 ##
 # THIS SCRIPT TRIES TO MAP EDUAPPS WITH REAL APPS
 # IT'S A BEST EFFORT. ** RESULTS MUST BE REVISITED **
+# IT ALSO MANAGES CACHE AND CATALOGUE DOWNLOAD
 ##
 #######
 import time,os
@@ -20,6 +21,7 @@ import html2text
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
+FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
 
 def _debug(msg):
 	print("eduApps: {}".format(msg))
@@ -176,22 +178,74 @@ def _getEduApps():
 	return(eduApps)
 #def getEduApps
 
-def _fetchCatalogue():
+def _fetchCatalogue(url=""):
+	if len(url)==0:
+		url=EDUAPPS_URL
 	content=''
-	req=Request(EDUAPPS_URL, headers={'User-Agent':'Mozilla/5.0'})
-	try:
-		with urllib.request.urlopen(req,timeout=10) as f:
-			content=(f.read().decode('utf-8'))
-	except Exception as e:
-		print("Couldn't fetch {}".format(EDUAPPS_URL))
-		print("{}".format(e))
+	if not os.path.exists(FCACHE):
+		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+		try:
+			with urllib.request.urlopen(req,timeout=10) as f:
+				content=(f.read().decode('utf-8'))
+		except Exception as e:
+			print("Couldn't fetch {}".format(url))
+			print("{}".format(e))
+		else:
+			print("Writing cache...")
+			with open(FCACHE,"w") as f:
+				f.write(content)
+	else:
+		print("Read catalogue from {}".format(FCACHE))
+		with open(FCACHE,"r") as f:
+			content=f.read()
 	return(content)
+#def _fetchCatalogue
 
-	for app in includeApps:
-		print(app)
-	for app in notFound:
-		print(app)
+def _chkNeedUpdate(urlcontent):
+	update=True
+	return(update)
+#def _chkNeedUpdate
+
+def getAppsEduCatalogue():
+	_debug("Fetching {}".format(EDUAPPS_URL))
+	rawcontent=_fetchCatalogue()
+	if _chkNeedUpdate(rawcontent)==False:
+		_debug("Skip update")
+		#return([])
+	bscontent=bs(rawcontent,"html.parser")
+	appInfo=bscontent.find_all("td",["column-1","column-2","column-7"])
+	eduApps=[]
+	candidate=None
+	columnAuth=None
+	columnName=None
+	columnIcon=None
+	for column in appInfo:
+		full=False
+		if (column.attrs["class"][0]=="column-1"):
+			columnIcon=column.img
+		if (column.attrs["class"][0]=="column-2"):
+			columnName=column.find_all("a",href=True)
+		if (column.attrs["class"][0]=="column-7"):
+			columnAuth=column.text
+			full=True
+		if full==True:
+			for data in columnName:
+				href=data["href"]
+				candidate=os.path.basename(href.strip("/"))
+			if candidate:
+				if columnIcon==None:
+					print("NO ICON FOR {}".format(candidate))
+					continue
+				pkgIcon=columnIcon["src"]
+				if candidate:
+					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth})
+					candidate=None
+			columnAuth=None
+			columnName=None
+			columnIcon=None
+	return(eduApps)
+#def getAppsEduCatalogue
 
 regex=re.compile("[^\\w -]")
-if __name__=="__main__":
-	processEduApps()
+#if __name__=="__main__":
+#	processEduApps()

@@ -11,6 +11,10 @@ import logging
 import tempfile
 import subprocess
 import time
+import urllib
+from bs4 import BeautifulSoup as bs
+from urllib.request import Request
+from urllib.request import urlretrieve
 import flatpakHelper
 
 DBG=False
@@ -34,6 +38,7 @@ logger.addHandler(fh)
 st=logging.StreamHandler()
 st.setLevel(logging.DEBUG)
 st.setFormatter(formatter)
+EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 #logger.addHandler(st)
 
 def setDebugEnabled(dbg):
@@ -68,6 +73,8 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
+
+#---< 
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	wrkDir=WRKDIR #"/usr/share/rebost"
@@ -200,7 +207,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 
-def _fixFlatpakIconPath(self,icon):
+def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
 	spath=fpath.split("/")
 	idx=0
@@ -283,7 +290,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-			pkg["icon"]=self._fixFlatpakIconPath(pkg['icon'])
+			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)
@@ -352,6 +359,10 @@ def _componentFillInfo(component,pkg):
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
 					pkgid=component.get_id()
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
+					pkg['versions']={"eduapp":versionArray[-1]}
+					if int(component.get_state())==1:
+						pkg['state']["package"]="0"
+						pkg['versions']={"package":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
@@ -535,13 +546,14 @@ def _get_package_commands(rebostpkg,user):
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
-
+	#FIX PKGNAME
+	pkgname=rebostpkg.get("bundle",{}).get("package",rebostpkg["pkgname"])
 	installCmd="export DEBIAN_FRONTEND=noninteractive"
 	installCmdLine.append("export DEBIAN_PRIORITY=critical")
-	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(rebostpkg['pkgname']))
+	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(pkgname))
 	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(pkgname)
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")

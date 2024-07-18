@@ -258,11 +258,24 @@ class Rebost():
 	#def _disable
 
 	def _chkNetwork(self):
+		def trace_function(frame, event, arg):
+			if time.time() - start > TOTAL_TIMEOUT:
+				raise Exception('Timed out!') # Use whatever exception you consider appropriate.
+
+			return trace_function
+		##
+		TOTAL_TIMEOUT = 1
+		start = time.time()
+		sys.settrace(trace_function)
+
+		sw=True
 		try:
-			requests.get('https://portal.edu.gva.es/',timeout=1)
-			return True
+			res = requests.get('http://lliurex.net/jammy/', timeout=(1, 2)) # Use whatever timeout values you consider appropriate.
 		except:
-			return False
+			sw=False
+		finally:
+			sys.settrace(None) # Remove the time constraint and continue normally.
+		return sw
 	#def _chkNetwork
 
 	def _copyCacheToTmp(self):

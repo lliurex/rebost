@@ -122,8 +122,9 @@ class appstreamHelper():
 		rebostPkgList=[]
 		iconDb=self._populate_icon_db()
 		for pkg in restrictedstore.get_apps():
+			pkgname=pkg.get_pkgname_default()
 			if fullstore:
-				fullPkg=fullstore.get_app_by_pkgname(pkg.get_pkgname_default())
+				fullPkg=fullstore.get_app_by_pkgname(pkgname)
 				if fullPkg:
 					pkg=fullPkg
 			idx=pkg.get_id()
@@ -149,7 +150,8 @@ class appstreamHelper():
 				pkg.add_icon(icondefault)
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()
-				bundle.set_id("{}".format(pkg.get_id()))
+				#bundle.set_id("{}".format(pkg.get_id()))
+				bundle.set_id("{}".format(pkgname))
 				bundle.set_kind(appstream.BundleKind.LIMBA)
 				pkg.add_bundle(bundle)
 			if pkg.get_id() not in added:

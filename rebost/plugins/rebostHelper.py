@@ -357,7 +357,7 @@ def _componentFillInfo(component,pkg):
 				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
 				pkg['versions']={bundle:versionArray[-1]}
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
-					pkgid=component.get_id()
+					pkgid=component.get_pkgname_default()
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:

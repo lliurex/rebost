@@ -1,3 +1,10 @@
+rebost (2.5-0lliurex23) jammy; urgency=medium
+
+  * Cache reenabled
+  * Improve bundle integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 24 Jul 2024 14:55:45 +0200
+
 rebost (2.4-0lliurex23) jammy; urgency=medium
 
   * Improve network timeout 

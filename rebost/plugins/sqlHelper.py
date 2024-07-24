@@ -833,6 +833,7 @@ class sqlHelper():
 		query="Select * from installed where pkg={0} and bundle={1}".format(pkg,bundle)
 		ret=cursorInstalled.execute(query)
 		return ret
+	#def getTableStatus
 
 def main():
 	obj=sqlHelper()

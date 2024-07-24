@@ -24,6 +24,10 @@ class Rebost():
 				if os.path.isfile(f.path):
 					if f.path.endswith(".db"):
 						os.unlink(f.path)
+				elif os.path.isdir(f.path):
+					for fd in os.scandir(f.path):
+						if os.path.isfile(fd.path):
+							os.unlink(fd.path)
 			#shutil.rmtree(self.rebostWrkDir)
 		else:
 			os.makedirs(self.rebostWrkDir)
@@ -31,7 +35,8 @@ class Rebost():
 		home=os.environ.get("HOME",self.dbCache)
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
-		self.cacheData=os.path.join("{}".format(self.cache),"xml")
+		else:
+			self.cache=seld.rebostWrkDir
 		self.rebostPath=os.path.join(home,".config","rebost")
 		self.confFile=os.path.join(self.rebostPath,"store.json")
 		if os.path.exists(self.confFile)==False:
@@ -281,15 +286,18 @@ class Rebost():
 		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
-			if os.path.exists(self.rebostPathTmp)==True:
+			if os.path.exists(os.path.join(self.rebostPathTmp,"sq.lu"))==True:
 				return()
-			os.makedirs(self.rebostPathTmp)
+			elif os.path.exists(self.rebostPathTmp)==False:
+				os.makedirs(self.rebostPathTmp)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
+					self._debug("Copy: {0} -> {1}".format(db.path,os.path.join(self.rebostWrkDir,db.name)))
 			for lu in os.scandir(tmpCache):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
+					self._debug("Copy: {0} -> {1}".format(lu.path,os.path.join(self.rebostWrkDir,lu.name)))
 			copied=True
 		return(copied)
 	#def _copyCacheToTmp

@@ -355,30 +355,32 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
-		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
-		#self._debug(query)
-		cursor.execute(query)
-		rows=cursor.fetchall()
-		for row in rows:
-			(pkg,dataContent)=row
-			data=json.loads(dataContent)
-			data['state'][bundle]=state
-			release=data['versions'].get(bundle,0)
-			if isinstance(data['installed'],str):
-				data['installed']={}
-			if state!=0:
-				data['installed'].pop(bundle,None)
-			else:
-				data['installed'][bundle]=release
-			dataContent=str(json.dumps(data))
-			#Ensure all single quotes are duplicated or sql will fail
-			dataContent=dataContent.replace("''","'")
-			dataContent=dataContent.replace("'","''")
-			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
-			queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
-			cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
-		#self._debug(query)
+		for f in ["pkg","alias"]:
+			query="SELECT pkg,data FROM {0} WHERE {1}='{2}';".format(table,f,pkgname)
+			#self._debug(query)
 			cursor.execute(query)
+			rows=cursor.fetchall()
+			for row in rows:
+				(pkg,dataContent)=row
+				data=json.loads(dataContent)
+				data['state'][bundle]=state
+				release=data['versions'].get(bundle,0)
+				if isinstance(data['installed'],str):
+					data['installed']={}
+				if state!=0:
+					data['installed'].pop(bundle,None)
+				else:
+					data['installed'][bundle]=release
+				dataContent=str(json.dumps(data))
+				#Ensure all single quotes are duplicated or sql will fail
+				dataContent=dataContent.replace("''","'")
+				dataContent=dataContent.replace("'","''")
+				query="UPDATE {0} SET data='{1}' WHERE {3}='{2}';".format(table,dataContent,pkgname,f)
+				queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
+				cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
+		#self._debug(query)
+				cursor.execute(query)
+		query="SELECT pkg,data FROM {} WHERE alias='{}';".format(table,pkgname)
 		self.closeConnection(db)
 		self.closeConnection(dbInstalled)
 		return(rows)

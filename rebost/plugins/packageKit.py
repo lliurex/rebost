@@ -135,6 +135,7 @@ class packageKit():
 	def _readFilterFile(self,pkgfile):
 		self._debug("Getting restricted pkg list from {}".format(pkgfile))
 		searchList=[]
+		mapedList=[]
 		if os.path.exists(pkgfile)==False:
 			self._debug("File not found: {}".format(pkgfile))
 		else:
@@ -148,20 +149,18 @@ class packageKit():
 				#if item.startswith("zero-"):
 				#	self._debug("Getting pkgs from zmd")
 				searchList.append(item)
-		searchList=self._addCacheFile(searchList)
+				mapedList.append(key)
+		searchList=self._addCacheFile(searchList,mapedList)
 		return(searchList)
 	#def _readFilterFile
 
-	def _addCacheFile(self,pkglist=[]):
+	def _addCacheFile(self,pkglist=[],mapedList=[]):
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
 			app=pkg["app"]
-			if app not in pkglist:
-				self._debug("Append unmaped app  {}".format(app))
-				#REM 
+			if app not in pkglist and app not in mapedList:
 				#At appsedu we found several apps named like "realname-lliurex" so discard "-lliurex" and enjoy
-				if app.endswith("-lliurex"):
-					app="-".join(app.split("-")[:-1])
+				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app)
 		return(pkglist)
 	#def _addCacheFile

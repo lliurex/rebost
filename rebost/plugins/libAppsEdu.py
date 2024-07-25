@@ -227,6 +227,11 @@ def getAppsEduCatalogue():
 			columnName=column.find_all("a",href=True)
 		if (column.attrs["class"][0]=="column-7"):
 			columnAuth=column.text
+			if columnAuth.lower().endswith("sistema"):
+				columnAuth=None
+				columnName=None
+				columnIcon=None
+				continue
 			full=True
 		if full==True:
 			for data in columnName:

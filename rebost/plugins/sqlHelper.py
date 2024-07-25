@@ -522,20 +522,14 @@ class sqlHelper():
 		aliaspkgs=[]
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
-		self.filters=False
+		self.filters=False #Disabled
 		if self.filters:
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
 				return(processedpkg)
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-		#row=cursor.execute(fetchquery).fetchone()
 		rows=cursor.execute(fetchquery).fetchall()
-		if len(rows)==0:
-			bypkgalias=False
-			query="pkg = '{0}'".format(pkgname)
-			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-			rows.append(cursor.execute(fetchquery).fetchone())
 		if len(rows)>0:
 			for row in rows:
 				if row==None:
@@ -547,6 +541,8 @@ class sqlHelper():
 					aliaspkgdataJson=pkgdataJson.copy()
 					aliaspkgdataJson["name"]=alias
 					aliasname=""
+					if len(aliaspkgdataJson.get("icon"))==0:
+						aliaspkgdataJson["icon"]=aliasdata["icon"]
 					if "Zomando" not in aliaspkgdataJson.get("categories"):
 						aliasname=aliasdata["name"]
 					aliasdesc=""
@@ -574,6 +570,17 @@ class sqlHelper():
 		elif restricted==False:
 			if len(pkgdataJson.get('bundle',{}))>0:
 				processedpkg=self._processPkgData(pkgname,pkgdataJson)
+		if len(aliaspkgs)>0:
+			if len(processedpkg[0])>0:
+				fillInfo=json.loads(processedpkg[0][1])
+				aliasInfo=json.loads(aliaspkgs[0][0][1])
+				for key in fillInfo.keys():
+					val=fillInfo.get(key,"")
+					if not val:
+						val=""
+					if len(str(val))==0:
+						fillInfo[key]=aliasInfo.get(key,"")
+				processedpkg[0][1]=json.dumps(fillInfo)
 		return(processedpkg,aliaspkgs)
 	#def _addPkgToQuery
 

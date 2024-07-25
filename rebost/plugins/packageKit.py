@@ -70,9 +70,11 @@ class packageKit():
 		pkgIds=[]
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
+			
 		if self.restricted==True:
 			for pkglist in tmppkgIds:
-				for pkg in pkglist:
+				setlist=list(set(pkglist))
+				for pkg in setlist:
 					pkgname=pkg.split(";")[0]
 					if pkgname not in restrictIds and "lliurex" not in pkgname.lower():
 						pkgSack.remove_package_by_id(pkg)
@@ -87,7 +89,7 @@ class packageKit():
 				with open(self.lastUpdate,'w') as f:
 					f.write(newMd5)
 			except:
-				print("Forcing update")
+				self._debug("Forcing update")
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")
@@ -140,19 +142,26 @@ class packageKit():
 				jcontent=json.loads(f.read())
 			searchList=[]
 			for key,item in jcontent.items():
-				if item not in searchList:
-					if item.startswith("zero-"):
-						self._debug("Getting pkgs from zmd")
-
-					searchList.append(item)
-		searchList=self._addCacheFile(list(jcontent.keys()))
+				if item=="" or item in searchList:
+					self._debug("Discard {}".format(key))
+					continue
+				#if item.startswith("zero-"):
+				#	self._debug("Getting pkgs from zmd")
+				searchList.append(item)
+		searchList=self._addCacheFile(searchList)
 		return(searchList)
 	#def _readFilterFile
 
 	def _addCacheFile(self,pkglist=[]):
-		eduApps=libAppsEdu._getEduApps()
-		for app in eduApps:
+		eduApps=libAppsEdu.getAppsEduCatalogue()
+		for pkg in eduApps:
+			app=pkg["app"]
 			if app not in pkglist:
+				self._debug("Append unmaped app  {}".format(app))
+				#REM 
+				#At appsedu we found several apps named like "realname-lliurex" so discard "-lliurex" and enjoy
+				if app.endswith("-lliurex"):
+					app="-".join(app.split("-")[:-1])
 				pkglist.append(app)
 		return(pkglist)
 	#def _addCacheFile
@@ -219,8 +228,7 @@ class packageKit():
 		pkgDict={}
 		updateSelected=[]
 		if self.onlyLliurex==True:
-			lliurexPkgs=[pkg for pkg in pkgToProcess if "lliurex" in pkg.lower()]
-			pkgToProcess=lliurexPkgs
+			pkgToProcess=[pkg for pkg in pkgToProcess if "lliurex" in pkg.lower()]
 		for pkg in pkgToProcess:
 			#0->Name,1->Release,2->arch,3->origin
 			pkgData=pkg.split(";")
@@ -264,7 +272,7 @@ class packageKit():
 		#updateVersion=updateInfo.get(name,version)
 		rebostPkg['name']=name
 		rebostPkg['pkgname']=rebostPkg['name']
-		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
+		rebostPkg['id']=rebostPkg['name']
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
 		updateVersion=updateInfo.get(name,{}).get('release',"{}".format(version))

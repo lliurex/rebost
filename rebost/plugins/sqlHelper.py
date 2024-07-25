@@ -650,11 +650,11 @@ class sqlHelper():
 	#def _checkIncludeList
 
 	def _processPkgData(self,pkgname,pkgdataJson):
-	#REM This code removes a candidate zmd package with no zomando associated
+	#REM At this point the pkgs has been filtered so this must be a validad one. Don't discard
 		if pkgname.startswith("zero-"):
 			if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
-				self._debug("DISCARD {}".format(pkgname))
-				return([],[])
+				self._debug("Pkg without ZMD {}".format(pkgname))
+				#return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
 		if "Forbidden" in categories:
 			self._debug("Set app {} as Forbidden".format(pkgname))

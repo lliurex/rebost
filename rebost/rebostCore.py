@@ -540,12 +540,16 @@ class Rebost():
 
 	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		for i in os.scandir(self.rebostPathTmp):
-			try:
-				os.remove(i.path)
-			except Exception as e:
-				print(e)
-				self._debug(e)
+		datadirs=[self.rebostPathTmp,os.path.join(self.cache,"tmp")]
+		for d in datadirs:
+			if os.path.isdir(d)==False:
+				continue
+			for i in os.scandir(d):
+				try:
+					os.remove(i.path)
+				except Exception as e:
+					print(e)
+					self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
 			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]

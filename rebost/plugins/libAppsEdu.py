@@ -230,12 +230,17 @@ def getAppsEduCatalogue():
 			columnCats=column.text
 		if (column.attrs["class"][0]=="column-7"):
 			columnAuth=column.text
-			if columnAuth.lower().endswith("sistema"):
-				if "utili" in columnCats.lower():
-					columnAuth=None
-					columnName=None
-					columnIcon=None
-					continue
+			#Some apps should be hidden as are pure system apps (drkonqui...)
+			#or apps included within another (kde-connect related stuff...)
+			#or for some other reason (xterm..)
+			#The 1st approach is based on category and authorizaton status
+			#but there're many apps misscatalogued so disable it ATM
+			#if columnAuth.lower().endswith("sistema"):
+			#	if "utili" in columnCats.lower():
+			#		columnAuth=None
+			#		columnName=None
+			#		columnIcon=None
+			#		continue
 			full=True
 		if full==True:
 			for data in columnName:

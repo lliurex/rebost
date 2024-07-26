@@ -54,6 +54,11 @@ class Rebost():
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
+		signal.signal(signal.SIGUSR2,self._launchRebostUpdated)
+	
+	def _launchRebostUpdated(self,*args,**kwargs):
+		print("LAUNCH SIGNAL USR1")
+		signal.raise_signal(signal.SIGALRM)
 
 	def run(self):
 		self._log("Starting rebost")
@@ -293,12 +298,13 @@ class Rebost():
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
+					if copied==False:
+						copied=True
 					self._debug("Copy: {0} -> {1}".format(db.path,os.path.join(self.rebostWrkDir,db.name)))
 			for lu in os.scandir(tmpCache):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
 					self._debug("Copy: {0} -> {1}".format(lu.path,os.path.join(self.rebostWrkDir,lu.name)))
-			copied=True
 		return(copied)
 	#def _copyCacheToTmp
 
@@ -540,13 +546,14 @@ class Rebost():
 
 	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		datadirs=[self.rebostPathTmp,os.path.join(self.cache,"tmp")]
+		datadirs=[self.rebostPathTmp,os.path.join(self.rebostWrkDir,"tmp")]
 		for d in datadirs:
 			if os.path.isdir(d)==False:
 				continue
 			for i in os.scandir(d):
 				try:
 					os.remove(i.path)
+					self._debug("rm {}".format(i.path))
 				except Exception as e:
 					print(e)
 					self._debug(e)
@@ -558,13 +565,19 @@ class Rebost():
 					if i.path.endswith(".db"):
 						try:
 							os.remove(i.path)
+							self._debug("rm {}".format(i.path))
 						except Exception as e:
 							print(e)
 							self._debug(e)
 	#def _cleanData
 
 	def forceUpdate(self,force=False):
-		self._debug("Rebost forcing update...")
+		if isinstance(force,int):
+			if force==1:
+				force=True
+			else:
+				force=False
+		self._debug("Rebost forcing update. Deep clean: {}".format(force))
 		self._cleanData(force=force)
 		return(self.restart())
 	#def getProgress(self):

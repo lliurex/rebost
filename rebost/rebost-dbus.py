@@ -2,6 +2,7 @@
 import sys
 import zlib
 import json
+import signal
 import dbus,dbus.service,dbus.exceptions
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
@@ -15,6 +16,7 @@ class rebostDbusMethods(dbus.service.Object):
 		self.dbg=True
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
+		signal.signal(signal.SIGALRM, self._launchupdated)
 	#def __init__
 
 	def _debug(self,msg):
@@ -23,9 +25,19 @@ class rebostDbusMethods(dbus.service.Object):
 			print("rebost-dbus: %s"%str(msg))
 	#def _debug
 
+	def _launchupdated(self,*args,**kwargs):
+		self._debug("MOLA MOGOLLON")
+		self.updated()
+
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
 	#def _print
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def updated(self):
+		print("UPDAYED")
+		pass
+	#def dataChanged(self)
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')
@@ -207,6 +219,7 @@ class rebostDbusMethods(dbus.service.Object):
 			print("Critical error relaunching")
 			print(str(e))
 			ret=False
+		self.updated()
 		return (ret)
 	#def restart(self):
 
@@ -234,6 +247,7 @@ class rebostDbusMethods(dbus.service.Object):
 
 	def getPlugins(self):
 		pass
+
 #class rebostDbusMethods
 	
 

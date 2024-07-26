@@ -60,17 +60,16 @@ class packageKit():
 		action="load"
 		pkcon=packagekit.Client()
 		restrictIds=[]
+		tmppkgIds=[]
+		pkgIds=[]
 		if self.restricted==False:
 			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
 			pklists=self._loadFullCatalogue(pkcon,flags)
 		else:
 			restrictIds=self._readFilterFile(self.pkgFile)
 			pklists=self._loadRestrictedCatalogue(pkcon,restrictIds)
-		tmppkgIds=[]
-		pkgIds=[]
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
-			
 		if self.restricted==True:
 			for pkglist in tmppkgIds:
 				setlist=list(set(pkglist))
@@ -143,13 +142,11 @@ class packageKit():
 				jcontent=json.loads(f.read())
 			searchList=[]
 			for key,item in jcontent.items():
+				mapedList.append(key)
 				if item=="" or item in searchList:
 					self._debug("Discard {}".format(key))
 					continue
-				#if item.startswith("zero-"):
-				#	self._debug("Getting pkgs from zmd")
 				searchList.append(item)
-				mapedList.append(key)
 		searchList=self._addCacheFile(searchList,mapedList)
 		return(searchList)
 	#def _readFilterFile
@@ -159,9 +156,8 @@ class packageKit():
 		for pkg in eduApps:
 			app=pkg["app"]
 			if app not in pkglist and app not in mapedList:
-				#At appsedu we found several apps named like "realname-lliurex" so discard "-lliurex" and enjoy
 				self._debug("Append unmaped app  {}".format(app))
-				pkglist.append(app)
+				pkglist.append(app.lower())
 		return(pkglist)
 	#def _addCacheFile
 

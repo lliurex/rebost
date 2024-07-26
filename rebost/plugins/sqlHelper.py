@@ -4,6 +4,7 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
+import signal
 import html
 import sqlite3
 from shutil import copyfile
@@ -430,6 +431,7 @@ class sqlHelper():
 			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
+		signal.raise_signal(signal.SIGUSR2)
 		return([])
 	#def consolidateSqlTables
 

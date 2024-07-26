@@ -561,6 +561,8 @@ class sqlHelper():
 					#However when the info gets loaded this should work
 					if "Forbidden" in aliasdata["categories"]:
 						aliasdesc=aliasdata["description"]
+						if "Forbidden" not in pkgdataJson["categories"]:
+							pkgdataJson["categories"].insert(0,"Forbidden")
 					aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
 					if len(aliasdesc)>0:
 						if aliasdesc!=aliaspkgdataJson["description"]:

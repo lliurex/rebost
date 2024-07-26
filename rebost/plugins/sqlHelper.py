@@ -530,7 +530,17 @@ class sqlHelper():
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 		rows=cursor.execute(fetchquery).fetchall()
-		if len(rows)>0:
+		#rows=0 new app, add . rows>0 already inserted app, merge
+		if len(rows)==0:
+			if "lliurex" in pkgdata.lower():
+				restricted=False
+			if restricted==False:
+				eduapp=pkgdataJson.get("bundle",{}).get("eduapp","")
+				if len(eduapp)>0:
+					pkgdataJson["bundle"]={"package":eduapp}
+				if len(pkgdataJson.get('bundle',{}))>0:
+					processedpkg=self._processPkgData(pkgname,pkgdataJson)
+		else:
 			for row in rows:
 				if row==None:
 					continue
@@ -567,9 +577,6 @@ class sqlHelper():
 					pkgdataJson=self._mergePackage(pkgdataJson,row)
 				if len(pkgdataJson.get('bundle',{}))>0:
 					processedpkg=self._processPkgData(pkgname,pkgdataJson)
-		elif restricted==False:
-			if len(pkgdataJson.get('bundle',{}))>0:
-				processedpkg=self._processPkgData(pkgname,pkgdataJson)
 		if len(aliaspkgs)>0:
 			if len(processedpkg[0])>0:
 				fillInfo=json.loads(processedpkg[0][1])
@@ -693,6 +700,8 @@ class sqlHelper():
 		if "FP" in categories and "FP" not in cat0+cat1+cat2:
 			cat1="FP"
 		if isinstance(pkgdataJson['versions'],dict):
+			if pkgdataJson["versions"].get("eduapp","")!="":
+				pkgdataJson["versions"].update({"package":pkgdataJson["versions"].pop("eduapp")})
 			states=pkgdataJson.get('state')
 			#pkgdataJson['installed']={}
 			for bun,state in states.items():
@@ -729,8 +738,10 @@ class sqlHelper():
 		eduappv=mergepkgdataJson.get("versions",{}).get("eduapp","")
 		if len(eduapp)>0:
 			mergepkgdataJson["bundle"]={"package":eduapp}
+			mergepkgdataJson["versions"]={"package":"custom"}
 			if len(eduappv)>0:
-				mergepkgdataJson["versions"]={"package":eduappv}
+				mergepkgdataJson["versions"]={"package":mergepkgdataJson["versions"].get("package",eduappv)}
+
 		if len(eduappSum)>0:
 			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 		return(mergepkgdataJson)
@@ -827,6 +838,19 @@ class sqlHelper():
 		rebost_db.close()
 	#def copyBaseTable
 
+	def _cleanTable(self,table):
+		rebost_db=sqlite3.connect(table)
+		cursor=rebost_db.cursor()
+		if table==self.main_tmp_table:
+			table=self.main_table
+		table=os.path.basename(table).replace(".db","")
+		query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
+		self._debug(query)
+		cursor.execute(query)
+		rebost_db.commit()
+		rebost_db.close()
+	#def _cleanTable(self,table):
+
 	def _copyTmpDef(self):
 		#Copy tmp to definitive
 		if os.path.isfile(self.main_tmp_table):
@@ -834,6 +858,8 @@ class sqlHelper():
 			copyfile(self.main_tmp_table,self.main_table)
 			self._debug("Removing tmp file")
 			os.remove(self.main_tmp_table)
+			self._debug("Removing unavailable apps")
+			self._cleanTable(self.main_table)
 		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	

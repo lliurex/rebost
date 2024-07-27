@@ -58,8 +58,9 @@ class Rebost():
 		signal.signal(signal.SIGUSR2,self._launchRebostUpdated)
 	
 	def _launchRebostUpdated(self,*args,**kwargs):
-		print("LAUNCH SIGNAL USR1")
+		self._debug("SIG updated")
 		signal.raise_signal(signal.SIGALRM)
+	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
 		self._log("Starting rebost")

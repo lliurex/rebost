@@ -14,9 +14,9 @@ class rebostDbusMethods(dbus.service.Object):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
 		self.dbg=True
+		signal.signal(signal.SIGALRM, self._manageSignals)
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
-		signal.signal(signal.SIGALRM, self._launchupdated)
 	#def __init__
 
 	def _debug(self,msg):
@@ -25,17 +25,24 @@ class rebostDbusMethods(dbus.service.Object):
 			print("rebost-dbus: %s"%str(msg))
 	#def _debug
 
-	def _launchupdated(self,*args,**kwargs):
-		self._debug("MOLA MOGOLLON")
-		self.updated()
+	def _manageSignals(self,*args,**kwargs):
+		print(args)
+		print(kwargs)
+		self.storeUpdated()
 
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
 	#def _print
 
 	@dbus.service.signal("net.lliurex.rebost")
-	def updated(self):
-		print("UPDAYED")
+	def loaded(self):
+		print("LOADED")
+		pass
+
+	#def dataChanged(self)
+	@dbus.service.signal("net.lliurex.rebost")
+	def storeUpdated(self):
+		print("UPDATED")
 		pass
 	#def dataChanged(self)
 	
@@ -78,6 +85,7 @@ class rebostDbusMethods(dbus.service.Object):
 	def load(self):
 		action='load'
 		ret=self.rebost.execute(action)
+		self.updated()
 		return (ret)
 	#def load
 

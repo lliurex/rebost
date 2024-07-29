@@ -98,6 +98,7 @@ class appimageHelper():
 			else:
 				self._debug("Skip update")
 		return (err,msg)
+	#def _getBundlesCatalogue(self,searchDirs=[]):
 	
 	def _chkNeedUpdate(self,appimageJson,repo_name):
 		update=True

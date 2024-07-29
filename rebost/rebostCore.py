@@ -58,7 +58,8 @@ class Rebost():
 		signal.signal(signal.SIGUSR2,self._launchRebostUpdated)
 	
 	def _launchRebostUpdated(self,*args,**kwargs):
-		self._debug("SIG updated")
+		self._copyTmpToCache()
+		self._log("Cache restored")
 		signal.raise_signal(signal.SIGALRM)
 	#def _launchRebostUpdated(self,*args,**kwargs):
 
@@ -76,8 +77,6 @@ class Rebost():
 		else:
 			self._log("Cache unavailable")
 			self._autostartActions()
-		self._copyTmpToCache()
-		self._log("Cache restored")
 		self._log("Autostart ended.")
 	#def run
 
@@ -323,6 +322,7 @@ class Rebost():
 			for lu in os.scandir(self.rebostPathTmp):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
+					self._debug("Save: {0} -> {1}".format(lu.path,os.path.join(tmpCache,lu.name)))
 	#def _copyTmpToCache
 
 	def _beginAutostartActions(self):

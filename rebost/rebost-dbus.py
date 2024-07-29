@@ -14,7 +14,9 @@ class rebostDbusMethods(dbus.service.Object):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
 		self.dbg=True
-		signal.signal(signal.SIGALRM, self._manageSignals)
+		signal.signal(signal.SIGUSR1, self._reloadSignal)
+		signal.signal(signal.SIGUSR2, self._updatedSignal)
+		signal.signal(signal.SIGALRM, self._beginUpdateSignal)
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
 	#def __init__
@@ -25,10 +27,17 @@ class rebostDbusMethods(dbus.service.Object):
 			print("rebost-dbus: %s"%str(msg))
 	#def _debug
 
-	def _manageSignals(self,*args,**kwargs):
-		print(args)
-		print(kwargs)
-		self.storeUpdated()
+	def _beginUpdateSignal(self,*args,**kwargs):
+		self.beginUpdateSignal()
+	#def _beginUpdateSignal
+
+	def _reloadSignal(self,*args,**kwargs):
+		self.reloadSignal()
+	#def _reloadSignal
+
+	def _updatedSignal(self,*args,**kwargs):
+		self.updatedSignal()
+	#def _updatedSignal
 
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
@@ -36,15 +45,22 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.signal("net.lliurex.rebost")
 	def loaded(self):
-		print("LOADED")
 		pass
 
-	#def dataChanged(self)
 	@dbus.service.signal("net.lliurex.rebost")
-	def storeUpdated(self):
-		print("UPDATED")
+	def beginUpdateSignal(self):
 		pass
-	#def dataChanged(self)
+	#def storeLoaded
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def reloadSignal(self):
+		pass
+	#def storeLoaded
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def updatedSignal(self):
+		pass
+	#def storeUpdated
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')
@@ -85,7 +101,6 @@ class rebostDbusMethods(dbus.service.Object):
 	def load(self):
 		action='load'
 		ret=self.rebost.execute(action)
-		self.updated()
 		return (ret)
 	#def load
 
@@ -212,6 +227,7 @@ class rebostDbusMethods(dbus.service.Object):
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='ay')
 	def update(self,force=False):
+		self.beginUpdateSignal()
 		ret=self.rebost.forceUpdate(force)
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
@@ -227,7 +243,6 @@ class rebostDbusMethods(dbus.service.Object):
 			print("Critical error relaunching")
 			print(str(e))
 			ret=False
-		self.updated()
 		return (ret)
 	#def restart(self):
 

@@ -809,6 +809,7 @@ class sqlHelper():
 					if fname.split(".")[0] in f:
 						fValues=f.split(":")
 						if fValues[-1].strip()!=str(fsize):
+							self._debug("DIFF ON {}".format(fname))
 							update=True
 						break
 				if update:

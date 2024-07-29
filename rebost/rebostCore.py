@@ -16,10 +16,30 @@ from gi.repository import AppStreamGlib as appstream
 class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
-		self.gui=False
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
+		self._iniCache()
+		self.confFile=os.path.join(self.rebostPath,"store.json")
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
+		self.includeFile=os.path.join(self.rebostPath,"lists.d")
+		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
+		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
+		self.plugins={}
+		self.pluginInfo={}
+		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
+		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
+		self.process={}
+		self.store=appstream.Store()
+		self.config={}
+		self.procId=1
+		signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+	#def __init__(self,*args,**kwargs):
+
+	def _iniCache(self):
 		if os.path.exists(self.rebostWrkDir)==True:
 			for f in os.scandir(self.rebostWrkDir):
 				if os.path.isfile(f.path):
@@ -39,28 +59,12 @@ class Rebost():
 		else:
 			self.cache=seld.rebostWrkDir
 		self.rebostPath=os.path.join(home,".config","rebost")
-		self.confFile=os.path.join(self.rebostPath,"store.json")
-		if os.path.exists(self.confFile)==False:
-			if os.path.exists(self.rebostPath)==False:
-				os.makedirs(self.rebostPath)
-			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
-		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
-		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
-		self.plugins={}
-		self.pluginInfo={}
-		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
-		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
-		self.process={}
-		self.store=appstream.Store()
-		self.config={}
-		self.procId=1
-		signal.signal(signal.SIGUSR2,self._launchRebostUpdated)
+	#def _iniCache
 	
 	def _launchRebostUpdated(self,*args,**kwargs):
 		self._copyTmpToCache()
 		self._log("Cache restored")
-		signal.raise_signal(signal.SIGALRM)
+		signal.raise_signal(signal.SIGUSR2)
 	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
@@ -356,7 +360,7 @@ class Rebost():
 					#actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
 				priority=info.get('priority',0)
-				newDictPost=actionDict.get(priority,{})
+				newDictPost=postactionDict.get(priority,{})
 				newDictPost[plugin]=postactions
 				postactionDict[priority]=newDictPost.copy()
 		#Launch actions by priority
@@ -517,7 +521,7 @@ class Rebost():
 			print(e)
 			retval=0
 		return(rs)
-	#def _executeAction
+	#def _executeCoreAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -548,7 +552,7 @@ class Rebost():
 
 	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		datadirs=[self.rebostPathTmp,os.path.join(self.rebostWrkDir,"tmp")]
+		datadirs=[self.rebostPathTmp,os.path.join(self.cache,"tmp")]
 		for d in datadirs:
 			if os.path.isdir(d)==False:
 				continue

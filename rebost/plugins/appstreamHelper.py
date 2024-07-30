@@ -27,7 +27,7 @@ class appstreamHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.wrkDir=os.path.join(self.rebostCache,"xml","appstream")
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","as.lu")
-		self.ignored=["rebost"]
+		self.ignored=["rebost","rebost-gui"]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

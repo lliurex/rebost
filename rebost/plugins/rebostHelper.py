@@ -557,7 +557,7 @@ def _get_package_commands(rebostpkg,user):
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")
-	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname)
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_package_commands
 

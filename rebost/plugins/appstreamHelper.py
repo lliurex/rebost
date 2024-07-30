@@ -105,7 +105,7 @@ class appstreamHelper():
 					pass
 		self._debug("End loading appstream metadata")
 		return(store)
-	def _loadCatalogueFromFiles(self, storeYmlFiles=[]):
+	#def _loadCatalogueFromFiles
 
 	def _loadAppstreamCatalogue(self):
 		store=appstream.Store()

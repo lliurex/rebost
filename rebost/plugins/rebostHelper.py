@@ -532,7 +532,11 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	elif bundle=='appimage':
 		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
 	elif bundle=='zomando':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
+		zpath=rebostpkg["bundle"]["zomando"]
+		if os.path.exists(zpath)==False:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
+		else:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd

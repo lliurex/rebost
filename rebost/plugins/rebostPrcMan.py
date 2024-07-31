@@ -246,7 +246,6 @@ class rebostPrcMan():
 			if len(renv.get("USER",""))==0:
 				renv["USER"]=username
 			cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",epifile,"cli",action]
-			print(cmd)
 			#cmd=["/usr/sbin/epic",action,"-nc","-u",epifile]
 			if action=="remove":
 				cmd=["pkexec","/usr/share/rebost/helper/rebost-software-manager.sh",epifile,"cli","uninstall"]
@@ -341,7 +340,6 @@ class rebostPrcMan():
 	#def _managePackage
 
 	def _removeTempDir(self,tmpfile):
-		return
 		tmpDir=os.path.dirname(tmpfile)
 		if os.path.isdir(tmpDir):
 			try:

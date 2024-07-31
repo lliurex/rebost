@@ -52,7 +52,7 @@ class epicHelper():
 	def _debug(self,msg):
 		if self.dbg:
 			dbg="epicHelper: {}".format(msg)
-			#rebostHelper._debug(dbg)
+			rebostHelper._debug(dbg)
 	#def _debug(self,msg):
 	
 	def execute(self,*args,action='',parms='',extraParms='',extraParms2='',**kwargs):
@@ -260,6 +260,9 @@ class epicHelper():
 			rebostPkg["categories"].insert(0,"Zomando")
 		for pkg in pkgList:
 			name=pkg.get("name","").strip()
+			if "zero-lliurex-{}".format(name)==rebostPkg["name"]:
+				self._debug("SKIP {} (duplicated of {})".format(name,rebostPkg["name"])) 
+				continue
 			if name.lower().startswith("lib"):
 				continue
 			if name.lower().endswith("libs"):

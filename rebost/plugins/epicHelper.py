@@ -258,39 +258,41 @@ class epicHelper():
 		origstate=rebostPkg.get('state',{}).copy()
 		if "Zomando" not in rebostPkg["categories"]:
 			rebostPkg["categories"].insert(0,"Zomando")
-		for pkg in pkgList:
-			name=pkg.get("name","").strip()
-			if "zero-lliurex-{}".format(name)==rebostPkg["name"]:
-				self._debug("SKIP {} (duplicated of {})".format(name,rebostPkg["name"])) 
-				continue
-			if name.lower().startswith("lib"):
-				continue
-			if name.lower().endswith("libs"):
-				continue
-			rebostTmp={}
-			rebostTmp=rebostPkg.copy()
-			rebostTmp["name"]=self._getNameForPkg(name)
-			rebostTmp["pkgname"]=name
-			cname=pkg.get('custom_name','')
-			if len(cname)<1:
-				cname=pkg.get('name','')
-			description+="\\\\{}".format(cname.strip())
-			rebostTmp["description"]=cname.strip()
-			rebostTmp=self._fillDataFromEpi(rebostTmp,pkg)
-			if pkg.get("custom_icon","")!="":
-				customIcon=os.path.join(jepi.get("epiPathDir",""),pkg.get("custom_icon"))
-				if os.path.exists(customIcon):
-					rebostTmp["icon"]=customIcon
-				else:
-					rebostTmp["icon"]=pkg.get("customIcon",rebostPkg["icon"])
-			if "Zomando" in rebostTmp["categories"] and rebostTmp["name"]!=rebostPkg["name"]:
-				rebostTmp["categories"].remove("Zomando")
-			rebostTmp["state"].update({"zomando":"1"})
-			#rebostTmp["alias"]=rebostPkg["pkgname"]
-			pkgs.append(rebostTmp)
-		rebostPkg["categories"]=origcats
-		rebostPkg["state"]=origstate
-		rebostPkg['description']=description.strip()
+		#Only more than one package
+		if len(pkgList)>1:
+			for pkg in pkgList:
+				name=pkg.get("name","").strip()
+				if "zero-lliurex-{}".format(name)==rebostPkg["name"]:
+					self._debug("SKIP {} (duplicated of {})".format(name,rebostPkg["name"])) 
+					continue
+				if name.lower().startswith("lib"):
+					continue
+				if name.lower().endswith("libs"):
+					continue
+				rebostTmp={}
+				rebostTmp=rebostPkg.copy()
+				rebostTmp["name"]=self._getNameForPkg(name)
+				rebostTmp["pkgname"]=name
+				cname=pkg.get('custom_name','')
+				if len(cname)<1:
+					cname=pkg.get('name','')
+				description+="\\\\{}".format(cname.strip())
+				rebostTmp["description"]=cname.strip()
+				rebostTmp=self._fillDataFromEpi(rebostTmp,pkg)
+				if pkg.get("custom_icon","")!="":
+					customIcon=os.path.join(jepi.get("epiPathDir",""),pkg.get("custom_icon"))
+					if os.path.exists(customIcon):
+						rebostTmp["icon"]=customIcon
+					else:
+						rebostTmp["icon"]=pkg.get("customIcon",rebostPkg["icon"])
+				if "Zomando" in rebostTmp["categories"] and rebostTmp["name"]!=rebostPkg["name"]:
+					rebostTmp["categories"].remove("Zomando")
+				rebostTmp["state"].update({"zomando":"1"})
+				#rebostTmp["alias"]=rebostPkg["pkgname"]
+				pkgs.append(rebostTmp)
+			rebostPkg["categories"]=origcats
+			rebostPkg["state"]=origstate
+			rebostPkg['description']=description.strip()
 		pkgs.insert(0,rebostPkg)
 		return(pkgs)
 	#def _getZomandoInstalls

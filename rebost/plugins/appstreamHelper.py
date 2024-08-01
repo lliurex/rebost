@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os,stat
+import os,stat,distro
+import json
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -27,6 +28,7 @@ class appstreamHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.wrkDir=os.path.join(self.rebostCache,"xml","appstream")
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","as.lu")
+		self.pkgfile="/usr/share/rebost/lists.d/eduapps.map"
 		self.ignored=["rebost","rebost-gui"]
 	#def __init__
 
@@ -53,7 +55,9 @@ class appstreamHelper():
 		self._debug("Get apps")
 		restrictedYml="/usr/share/rebost-data/yaml/eduapps.yml"
 		store=self._loadCatalogueFromFiles([restrictedYml])
-		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml","/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
+		(release,codename)=self._getReleaseCodename()
+		storeYml=["/usr/share/rebost-data/yaml/{0}/lliurex_dists_{1}_main_dep11_Components-amd64.yml".format(release,codename),
+			"/usr/share/rebost-data/yaml/{0}/lliurex_dists_{1}_universe_dep11_Components-amd64.yml".format(release,codename)]
 		fullstore=self._loadCatalogueFromFiles(storeYml)
 		update=self._chkNeedUpdate(store)
 		if update:
@@ -70,6 +74,24 @@ class appstreamHelper():
 		else:
 			self._debug("Skip update")
 	#def _loadStore
+
+	def _getReleaseCodename(self):
+		release="llx23"
+		cmd=["/usr/bin/lliurex-version","-n"]
+		try:
+			out=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+		except Exception as e:
+			print(e)
+			#out=distro.codename()
+		if isinstance(out,str):
+			release=out.strip()[0:out.rindex(".")]
+			if release.isdigit():
+				release="llx{}".format(release)
+			else:
+				release="llx23"
+		codename=distro.codename()
+		return(release,codename)
+	#def _getReleaseCodename
 
 	def _chkNeedUpdate(self,store):
 		update=True
@@ -121,6 +143,9 @@ class appstreamHelper():
 		store=appstream.Store()
 		rebostPkgList=[]
 		iconDb=self._populateIconDb()
+		#Load ignored apps from map file if present
+		self._loadIgnoredApps()
+
 		for pkg in restrictedstore.get_apps():
 			pkgname=pkg.get_pkgname_default()
 			if pkgname in self.ignored:
@@ -141,9 +166,6 @@ class appstreamHelper():
 			fname=None
 			if icondefault:
 				icondefault=self._setIconFname(pkg,icondefault)
-				#if icondefault==None:
-				#	continue
-				#fname=icondefault.get_filename()
 			if fname==None:
 				icon=self._getAppIcons(idx,iconDb)
 				if icon:
@@ -169,6 +191,16 @@ class appstreamHelper():
 				added.append(pkg.get_id())
 		return(store)
 	#def _generateStore
+
+	def _loadIgnoredApps(self):
+		if os.path.exists(self.pkgfile):
+			apps=[]
+			with open(self.pkgfile,"r") as f:
+				apps=json.loads(f.read())
+			for app in apps.keys():
+				if apps[app]=="" and app not in self.ignored:
+					self.ignored.append(app)
+	#def _loadIgnoredApps
 
 	def _setIconFname(self,pkg,icondefault):
 		prefix=icondefault.get_prefix()

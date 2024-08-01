@@ -119,6 +119,7 @@ class appstreamHelper():
 				continue
 				#storeYml="/usr/share/rebost-data/yaml/lliurex_restricted.yml"
 			if os.path.isfile(storeYml):
+				self._debug("Loading data from {}".format(storeYml))
 				storeFile=Gio.File.new_for_path(storeYml)
 				try:
 					store.from_file(storeFile,iconDir,None)

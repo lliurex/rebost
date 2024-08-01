@@ -1,10 +1,11 @@
-rebost (2.5.2-0lliurex23) jammy; urgency=medium
+rebost (2.5.3-0lliurex23) jammy; urgency=medium
 
   * Cache reenabled
   * Improve bundle integration
-  * Don't include appsedu mapped to blank
-  * Zomandos with no .zmd install as packages
   * Clean tmp files (re-enabled)
+  * Zomandos with no .zmd perform as packages
+  * Appstream blocks apps mapped to blank
+  * Packagekit blocks apps mapped to blank
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 24 Jul 2024 14:55:45 +0200
 

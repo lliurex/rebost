@@ -537,9 +537,8 @@ class sqlHelper():
 			if "lliurex" in pkgdata.lower():
 				restricted=False
 			if restricted==False:
-				eduapp=pkgdataJson.get("bundle",{}).get("eduapp","")
-				if len(eduapp)>0:
-					pkgdataJson["bundle"]={"package":eduapp}
+				if pkgdataJson.get("bundle",{}).get("eduapp","")!="":
+					pkgdataJson["bundle"].update({"package":pkgdataJson["bundle"].pop("eduapp")})
 				if len(pkgdataJson.get('bundle',{}))>0:
 					processedpkg=self._processPkgData(pkgname,pkgdataJson)
 		else:
@@ -738,14 +737,13 @@ class sqlHelper():
 		#If package comes from eduapps and is not maped then
 		#appstream adds a bundle "eduapps". Replace it as if there's info
 		#in appstream then this pkg is available from repos
-		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
-		eduappv=mergepkgdataJson.get("versions",{}).get("eduapp","")
-		if len(eduapp)>0:
-			mergepkgdataJson["bundle"]={"package":eduapp}
-			mergepkgdataJson["versions"]={"package":"custom"}
-			if len(eduappv)>0:
-				mergepkgdataJson["versions"]={"package":mergepkgdataJson["versions"].get("package",eduappv)}
-
+		if mergepkgdataJson.get("bundle",{}).get("eduapp","")!="":
+			mergepkgdataJson["bundle"].update({"package":mergepkgdataJson["bundle"].pop("eduapp")})
+			mergepkgdataJson["versions"].update({"package":"custom"})
+			if "eduappp" in mergepkgdataJson.get("versions",{}).keys():
+				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
+			else:
+				mergepkgdataJson["versions"].update({"package":"custom"})
 		if len(eduappSum)>0:
 			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 		return(mergepkgdataJson)

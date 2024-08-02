@@ -1,4 +1,4 @@
-rebost (2.5.3-0lliurex23) jammy; urgency=medium
+rebost (2.5.4-0lliurex23) jammy; urgency=medium
 
   * Cache reenabled
   * Improve bundle integration
@@ -6,6 +6,8 @@ rebost (2.5.3-0lliurex23) jammy; urgency=medium
   * Zomandos with no .zmd perform as packages
   * Appstream blocks apps mapped to blank
   * Packagekit blocks apps mapped to blank
+  * BUGFIX: ensure zmd path is absolute
+  * Preserve as many info as possible
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 24 Jul 2024 14:55:45 +0200
 

@@ -52,12 +52,13 @@ class Rebost():
 			#shutil.rmtree(self.rebostWrkDir)
 		else:
 			os.makedirs(self.rebostWrkDir)
-		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
+		os.chmod(self.rebostWrkDir,stat.S_IRWXU)
+		os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
 		home=os.environ.get("HOME",self.dbCache)
 		if len(home)>0:
 			self.cache=os.path.join(home,".cache","rebost")
 		else:
-			self.cache=seld.rebostWrkDir
+			self.cache=self.rebostWrkDir
 		self.rebostPath=os.path.join(home,".config","rebost")
 	#def _iniCache
 	

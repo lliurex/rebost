@@ -406,7 +406,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
 		os.makedirs("/tmp/rebost")
-	os.chmod("/tmp/rebost",0o777)
+		os.chmod("/tmp/rebost",0o777)
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:

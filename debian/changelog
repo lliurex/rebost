@@ -1,3 +1,9 @@
+rebost (2.5.5-0lliurex23) jammy; urgency=medium
+
+  * Flatpak per user
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Aug 2024 10:23:15 +0200
+
 rebost (2.5.4-0lliurex23) jammy; urgency=medium
 
   * Cache reenabled

@@ -1,3 +1,10 @@
+rebost (2.5.6-0lliurex23) jammy; urgency=medium
+
+  * Update signal also reloads cache
+  * Initial cache re-enabled
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 29 Aug 2024 14:27:40 +0200
+
 rebost (2.5.5-0lliurex23) jammy; urgency=medium
 
   * Flatpak per user

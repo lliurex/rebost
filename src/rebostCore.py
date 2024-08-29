@@ -400,6 +400,7 @@ class Rebost():
 							pr.join()
 						except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+		self._launchRebostUpdated()
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
@@ -438,7 +439,7 @@ class Rebost():
 				catList.append(cat[0])
 			store=json.dumps(catList)
 		if action=="install" or action=="remove" or action=="test":
-			self._copyTmpToCache()
+			self._launchRebostUpdated()
 		return(store)
 	#def execute
 			

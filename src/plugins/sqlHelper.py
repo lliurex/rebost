@@ -535,7 +535,8 @@ class sqlHelper():
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			if "lliurex" in pkgdata.lower():
-				restricted=False
+				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
+					restricted=False
 			if restricted==False:
 				if pkgdataJson.get("bundle",{}).get("eduapp","")!="":
 					pkgdataJson["bundle"].update({"package":pkgdataJson["bundle"].pop("eduapp")})

@@ -11,6 +11,10 @@ import logging
 import tempfile
 import subprocess
 import time
+import urllib
+from bs4 import BeautifulSoup as bs
+from urllib.request import Request
+from urllib.request import urlretrieve
 import flatpakHelper
 
 DBG=False
@@ -34,6 +38,7 @@ logger.addHandler(fh)
 st=logging.StreamHandler()
 st.setLevel(logging.DEBUG)
 st.setFormatter(formatter)
+EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 #logger.addHandler(st)
 
 def setDebugEnabled(dbg):
@@ -68,6 +73,8 @@ def rebostPkg(*kwargs):
 	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
+
+#---< 
 
 def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	wrkDir=WRKDIR #"/usr/share/rebost"
@@ -200,7 +207,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
 #def _rebostPkg_fill_data
 
-def _fixFlatpakIconPath(self,icon):
+def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
 	spath=fpath.split("/")
 	idx=0
@@ -283,7 +290,7 @@ def appstream_to_rebost(appstreamCatalogue):
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-			pkg["icon"]=self._fixFlatpakIconPath(pkg['icon'])
+			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)
@@ -350,9 +357,12 @@ def _componentFillInfo(component,pkg):
 				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
 				pkg['versions']={bundle:versionArray[-1]}
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
-					pkgid=component.get_id()
+					pkgid=component.get_pkgname_default()
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
+					if int(component.get_state())==1:
+						pkg['state']["package"]="0"
+						pkg['versions']={"package":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
@@ -396,6 +406,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
 		os.makedirs("/tmp/rebost")
+		os.chmod("/tmp/rebost",0o777)
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:
@@ -522,7 +533,11 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	elif bundle=='appimage':
 		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
 	elif bundle=='zomando':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
+		zpath=rebostpkg["bundle"]["zomando"]
+		if os.path.exists(zpath)==False:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
+		else:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
@@ -536,17 +551,18 @@ def _get_package_commands(rebostpkg,user):
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
 	#Temporary use apt until bug fix
-
+	#FIX PKGNAME
+	pkgname=rebostpkg.get("bundle",{}).get("package",rebostpkg["pkgname"])
 	installCmd="export DEBIAN_FRONTEND=noninteractive"
 	installCmdLine.append("export DEBIAN_PRIORITY=critical")
-	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(rebostpkg['pkgname']))
+	installCmdLine.append("apt-get -qy -o \"Dpkg::Options::=--force-confdef\" -o \"Dpkg::Options::=--force-confold\" install {} 2>&1;ERR=$?".format(pkgname))
 	#removeCmd="pkcon remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
-	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	removeCmd="apt remove -y {} 2>&1;ERR=$?".format(pkgname)
+	removeCmdLine.append("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")
-	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_package_commands
 
@@ -560,9 +576,9 @@ def _get_snap_commands(rebostpkg,user):
 
 def _get_flatpak_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="flatpak -y install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
-	removeCmd="flatpak -y uninstall {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
-	statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+	installCmd="sudo -u {0} flatpak --user -y install {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
+	removeCmd="sudo -u {0} flatpak --user -y uninstall {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
+	statusTestLine=("TEST=$(sudo -u {0} flatpak --user list 2> /dev/null| grep $'{1}\\t' >/dev/null && echo 'installed')".format(user,rebostpkg['bundle']['flatpak']))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_flatpak_commands
 
@@ -592,10 +608,13 @@ def _get_appimage_commands(rebostpkg,user):
 
 def _get_zomando_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	#statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
-	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	zdir="/usr/share/zero-center/zmds/"
+	zpath=rebostpkg['bundle']['zomando']
+	if zdir not in zpath:
+		zpath=os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando'])
+	installCmd="exec {}".format(zpath)
+	removeCmd="exec {}".format(zpath)
+	statusTestLine=("TEST=$([ -e %s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(zpath,os.path.basename(zpath).replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_zomando_commands
 

@@ -1,3 +1,100 @@
+rebost (2.5.6-1lliurex23) jammy-devel; urgency=medium
+
+  * Fix bug with deeper pkg queries
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 02 Sep 2024 09:14:26 +0200
+
+rebost (2.5.6-0lliurex23) jammy; urgency=medium
+
+  * Update signal also reloads cache
+  * Initial cache re-enabled
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 29 Aug 2024 14:27:40 +0200
+
+rebost (2.5.5-0lliurex23) jammy; urgency=medium
+
+  * Flatpak per user
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Aug 2024 10:23:15 +0200
+
+rebost (2.5.4-0lliurex23) jammy; urgency=medium
+
+  * Cache reenabled
+  * Improve bundle integration
+  * Clean tmp files (re-enabled)
+  * Zomandos with no .zmd perform as packages
+  * Appstream blocks apps mapped to blank
+  * Packagekit blocks apps mapped to blank
+  * BUGFIX: ensure zmd path is absolute
+  * Preserve as many info as possible
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 24 Jul 2024 14:55:45 +0200
+
+rebost (2.4-0lliurex23) jammy; urgency=medium
+
+  * Improve network timeout 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 18 Jul 2024 12:17:29 +0200
+
+rebost (2.3-1lliurex23) jammy; urgency=medium
+
+  * Use aux lib for appsedu management
+  * Optimize packagekit integration with appsedu
+
+ -- Juanma1980 <juanma1980@gmail.com>  Sat, 06 Jul 2024 09:40:41 +0200
+
+rebost (2.2-0lliurex23) jammy; urgency=medium
+
+  * Better integration between appsedu, packagekit and appstream
+  * Support for same alias for multiple applications
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 05 Jul 2024 11:01:20 +0200
+
+rebost (2.1-0lliurex23) jammy; urgency=medium
+
+  * Enable appsedu stuff
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jul 2024 12:14:19 +0200
+
+rebost (2.0.1-0lliurex23) jammy; urgency=medium
+
+  * Fix icon search for flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 28 Jun 2024 12:14:04 +0200
+
+rebost (2.0-1lliurex23) jammy; urgency=medium
+
+  * Remove gui from package
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 25 Jun 2024 09:53:20 +0200
+
+rebost (1.999-2lliurex23) jammy; urgency=medium
+
+  * Fix bug: installed not defined in flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 05 Jun 2024 13:03:09 +0200
+
+rebost (1.999-1lliurex23) jammy; urgency=medium
+
+  * Threaded start
+  * Full polkit and epi|epic integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 16 Apr 2024 10:21:44 +0200
+
+rebost (1.991-0lliurex23) jammy; urgency=medium
+
+  * Eduapps integration 
+  *   Load apps from web and not only from map
+  *   If app is not maped assign as package bundle type
+  * EPI integration:
+  *   Fake version for packages inside zomandos
+  *   Add homepage
+  * GUI:
+  *   Add categories as tags in details
+  *   Fix wait cursor when showing info
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Apr 2024 12:19:54 +0200
+
 rebost (1.99-0lliurex23) jammy; urgency=medium
 
   * Session DBus

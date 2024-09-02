@@ -4,6 +4,7 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
+import signal
 import html
 import sqlite3
 from shutil import copyfile
@@ -355,30 +356,32 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
-		query="SELECT pkg,data FROM {} WHERE pkg='{}';".format(table,pkgname)
-		#self._debug(query)
-		cursor.execute(query)
-		rows=cursor.fetchall()
-		for row in rows:
-			(pkg,dataContent)=row
-			data=json.loads(dataContent)
-			data['state'][bundle]=state
-			release=data['versions'].get(bundle,0)
-			if isinstance(data['installed'],str):
-				data['installed']={}
-			if state!=0:
-				data['installed'].pop(bundle,None)
-			else:
-				data['installed'][bundle]=release
-			dataContent=str(json.dumps(data))
-			#Ensure all single quotes are duplicated or sql will fail
-			dataContent=dataContent.replace("''","'")
-			dataContent=dataContent.replace("'","''")
-			query="UPDATE {0} SET data='{1}' WHERE pkg='{2}';".format(table,dataContent,pkgname)
-			queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
-			cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
-		#self._debug(query)
+		for f in ["pkg","alias"]:
+			query="SELECT pkg,data FROM {0} WHERE {1}='{2}';".format(table,f,pkgname)
+			#self._debug(query)
 			cursor.execute(query)
+			rows=cursor.fetchall()
+			for row in rows:
+				(pkg,dataContent)=row
+				data=json.loads(dataContent)
+				data['state'][bundle]=state
+				release=data['versions'].get(bundle,0)
+				if isinstance(data['installed'],str):
+					data['installed']={}
+				if state!=0:
+					data['installed'].pop(bundle,None)
+				else:
+					data['installed'][bundle]=release
+				dataContent=str(json.dumps(data))
+				#Ensure all single quotes are duplicated or sql will fail
+				dataContent=dataContent.replace("''","'")
+				dataContent=dataContent.replace("'","''")
+				query="UPDATE {0} SET data='{1}' WHERE {3}='{2}';".format(table,dataContent,pkgname,f)
+				queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
+				cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
+		#self._debug(query)
+				cursor.execute(query)
+		query="SELECT pkg,data FROM {} WHERE alias='{}';".format(table,pkgname)
 		self.closeConnection(db)
 		self.closeConnection(dbInstalled)
 		return(rows)
@@ -428,6 +431,7 @@ class sqlHelper():
 			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
+		signal.raise_signal(signal.SIGUSR2)
 		return([])
 	#def consolidateSqlTables
 
@@ -461,23 +465,24 @@ class sqlHelper():
 				query=[]
 				removequery=[]
 				for data in allData[offset:limit]:
-					(processedPkg,aliasPkg)=self._addPkgToQuery(tmpdb,cursor,data,restricted)
+					(processedPkg,aliasPkgs)=self._addPkgToQuery(tmpdb,cursor,data,restricted)
 					if processedPkg!=([],[]):
 						pkgData=processedPkg[0]
 						categories=processedPkg[1]
 						if len(categories)>0:
 							allCategories.extend(categories)
 						query.append(pkgData)
-					if aliasPkg!=([],[]):
-						app=aliasPkg[0]
-						dataContent=aliasPkg[0][1]
-						alias=aliasPkg[0][0]
-						#Ensure all single quotes are duplicated or sql will fail
-						dataContent=dataContent.replace("''","'")
-						dataContent=dataContent.replace("'","''")
-						removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
-						cursor.execute(removequery)
-						db.commit()
+					if len(aliasPkgs)>0:
+						for aliasPkg in aliasPkgs:
+							if aliasPkg!=([],[]):
+								dataContent=aliasPkg[0][1]
+								alias=aliasPkg[0][0]
+								#Ensure all single quotes are duplicated or sql will fail
+								dataContent=dataContent.replace("''","'")
+								dataContent=dataContent.replace("'","''")
+								removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
+								cursor.execute(removequery)
+								db.commit()
 				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(tmpdb)
 				try:
 					cursor.executemany(queryMany,query)
@@ -516,57 +521,78 @@ class sqlHelper():
 		(cat0,cat1,cat2)=(None,None,None)
 		processedpkg=([],[])
 		aliaspkg=([],[])
+		aliaspkgs=[]
 		(pkgname,pkgdata)=data
 		pkgdataJson=json.loads(pkgdata)
-		self.filters=False
+		self.filters=False #Disabled
 		if self.filters:
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
 				return(processedpkg)
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-		row=cursor.execute(fetchquery).fetchone()
-		if not(row):
-			bypkgalias=False
-			query="pkg = '{0}'".format(pkgname)
-			fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-			row=cursor.execute(fetchquery).fetchone()
-		if row:
-			rowname=row[0]
-			if rowname!=pkgname: #Alias
-				alias=row[0]
-				aliasdata=json.loads(row[1])
-				aliaspkgdataJson=pkgdataJson.copy()
-				aliaspkgdataJson["name"]=alias
-				aliasname=""
-				if "Zomando" not in aliaspkgdataJson.get("categories"):
-					aliasname=aliasdata["name"]
-				aliasdesc=""
-				#eduapps rejected by needs webscrap of detail url
-				#for the moment it's disabled because is time-consuming
-				#However when the info gets loaded then this should work
-				if "FORBIDDEN" in aliasdata["categories"]:
-					aliasdesc=aliasdata["description"]
-				aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
-				if len(aliasdesc)>0:
-					if aliasdesc!=aliaspkgdataJson["description"]:
-						aliaspkgdataJson["description"]=aliasdesc
-			
-				elif len(aliasname)>0:
-					aliaspkgdataJson["name"]=pkgname
-				aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
-				query="pkg = '{0}'".format(pkgname)
-				fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-				row=cursor.execute(fetchquery).fetchone()
-			if row:
-				pkgdataJson=self._mergePackage(pkgdataJson,row)
-			if len(pkgdataJson.get('bundle',{}))>0:
-				processedpkg=self._processPkgData(pkgname,pkgdataJson)
-		elif restricted==False:
-			if len(pkgdataJson.get('bundle',{}))>0:
-				processedpkg=self._processPkgData(pkgname,pkgdataJson)
-
-		return(processedpkg,aliaspkg)
+		rows=cursor.execute(fetchquery).fetchall()
+		#rows=0 new app, add . rows>0 already inserted app, merge
+		if len(rows)==0:
+			if "lliurex" in pkgdata.lower():
+				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
+					restricted=False
+			if restricted==False:
+				if pkgdataJson.get("bundle",{}).get("eduapp","")!="":
+					pkgdataJson["bundle"].update({"package":pkgdataJson["bundle"].pop("eduapp")})
+				if len(pkgdataJson.get('bundle',{}))>0:
+					processedpkg=self._processPkgData(pkgname,pkgdataJson)
+		else:
+			for row in rows:
+				if row==None:
+					continue
+				rowname=row[0]
+				if rowname!=pkgname: #Alias
+					alias=rowname
+					aliasdata=json.loads(row[1])
+					aliaspkgdataJson=pkgdataJson.copy()
+					aliaspkgdataJson["name"]=alias
+					aliasname=""
+					if len(aliaspkgdataJson.get("icon"))==0:
+						aliaspkgdataJson["icon"]=aliasdata["icon"]
+					if "Zomando" not in aliaspkgdataJson.get("categories"):
+						aliasname=aliasdata["name"]
+					aliasdesc=""
+					#rejected eduapps needs webscrap of detail url
+					#for the moment it's disabled because is time-consuming
+					#However when the info gets loaded this should work
+					if "Forbidden" in aliasdata["categories"]:
+						aliasdesc=aliasdata["description"]
+						if "Forbidden" not in pkgdataJson["categories"]:
+							pkgdataJson["categories"].insert(0,"Forbidden")
+					aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
+					if len(aliasdesc)>0:
+						if aliasdesc!=aliaspkgdataJson["description"]:
+							aliaspkgdataJson["description"]=aliasdesc
+				
+					elif len(aliasname)>0:
+						aliaspkgdataJson["name"]=pkgname
+					aliaspkg=self._processPkgData(alias,aliaspkgdataJson)
+					aliaspkgs.append(aliaspkg)
+					query="pkg = '{0}'".format(pkgname)
+					fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
+					row=cursor.execute(fetchquery).fetchone()
+				if row:
+					pkgdataJson=self._mergePackage(pkgdataJson,row)
+				if len(pkgdataJson.get('bundle',{}))>0:
+					processedpkg=self._processPkgData(pkgname,pkgdataJson)
+		if len(aliaspkgs)>0:
+			if len(processedpkg[0])>0:
+				fillInfo=json.loads(processedpkg[0][1])
+				aliasInfo=json.loads(aliaspkgs[0][0][1])
+				for key in fillInfo.keys():
+					val=fillInfo.get(key,"")
+					if not val:
+						val=""
+					if len(str(val))==0:
+						fillInfo[key]=aliasInfo.get(key,"")
+				processedpkg[0][1]=json.dumps(fillInfo)
+		return(processedpkg,aliaspkgs)
 	#def _addPkgToQuery
 
 	def _applyFilters(self,pkgname,pkgdataJson):
@@ -642,16 +668,16 @@ class sqlHelper():
 	#def _checkIncludeList
 
 	def _processPkgData(self,pkgname,pkgdataJson):
-	#REM This code removes a candidate zmd package with no zomando associated
+	#REM At this point the pkgs has been filtered so this must be a validad one. Don't discard
 		if pkgname.startswith("zero-"):
 			if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
-				self._debug("DISCARD {}".format(pkgname))
-				return([],[])
+				self._debug("Pkg without ZMD {}".format(pkgname))
+				#return([],[])
 		categories=pkgdataJson.get('categories',[]).copy()
-		if "FORBIDDEN" in categories:
-			self._debug("Set app {} as FORBIDDEN".format(pkgname))
-			categories.remove("FORBIDDEN")
-			categories.insert(0,"FORBIDDEN")
+		if "Forbidden" in categories:
+			self._debug("Set app {} as Forbidden".format(pkgname))
+			categories.remove("Forbidden")
+			categories.insert(0,"Forbidden")
 			for item in pkgdataJson.get("bundle",""):
 				item=""
 		elif "Lliurex" in categories:
@@ -678,6 +704,8 @@ class sqlHelper():
 		if "FP" in categories and "FP" not in cat0+cat1+cat2:
 			cat1="FP"
 		if isinstance(pkgdataJson['versions'],dict):
+			if pkgdataJson["versions"].get("eduapp","")!="":
+				pkgdataJson["versions"].update({"package":pkgdataJson["versions"].pop("eduapp")})
 			states=pkgdataJson.get('state')
 			#pkgdataJson['installed']={}
 			for bun,state in states.items():
@@ -700,7 +728,9 @@ class sqlHelper():
 		(pkg,data,cat0,cat1,cat2,alias)=row
 		mergepkgdataJson=json.loads(data)
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
+		eduappSum=""
 		if len(eduapp)>0:
+			eduappSum=mergepkgdataJson.get("summary","")
 			mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
@@ -708,11 +738,15 @@ class sqlHelper():
 		#If package comes from eduapps and is not maped then
 		#appstream adds a bundle "eduapps". Replace it as if there's info
 		#in appstream then this pkg is available from repos
-		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
-		eduappv=mergepkgdataJson.get("versions",{}).get("eduapp","")
-		if len(eduapp)>0:
-			mergepkgdataJson["bundle"]={"package":eduapp}
-			mergepkgdataJson["versions"]={"package":eduappv}
+		if mergepkgdataJson.get("bundle",{}).get("eduapp","")!="":
+			mergepkgdataJson["bundle"].update({"package":mergepkgdataJson["bundle"].pop("eduapp")})
+			mergepkgdataJson["versions"].update({"package":"custom"})
+			if "eduappp" in mergepkgdataJson.get("versions",{}).keys():
+				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
+			else:
+				mergepkgdataJson["versions"].update({"package":"custom"})
+		if len(eduappSum)>0:
+			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 		return(mergepkgdataJson)
 	#def _mergePackage
 
@@ -732,9 +766,12 @@ class sqlHelper():
 							tmp.append(i)
 					mergepkgdataJson[key]=tmp
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
-				#If icon exists use it
 				if len(item)>=len(mergepkgdataJson.get(key,'')):
 					mergepkgdataJson[key]=item
+				if key=="icon":
+					if mergepkgdataJson["icon"]=="https://portal.edu.gva.es/appsedu/wp-content/uploads/sites/1964/2024/01/00_Generica-1.png":
+						if os.path.exists(item)==True:
+							mergepkgdataJson["icon"]=item
 		return(mergepkgdataJson)
 	#def _mergeData
 
@@ -771,6 +808,7 @@ class sqlHelper():
 					if fname.split(".")[0] in f:
 						fValues=f.split(":")
 						if fValues[-1].strip()!=str(fsize):
+							self._debug("DIFF ON {}".format(fname))
 							update=True
 						break
 				if update:
@@ -804,6 +842,19 @@ class sqlHelper():
 		rebost_db.close()
 	#def copyBaseTable
 
+	def _cleanTable(self,table):
+		rebost_db=sqlite3.connect(table)
+		cursor=rebost_db.cursor()
+		if table==self.main_tmp_table:
+			table=self.main_table
+		table=os.path.basename(table).replace(".db","")
+		query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
+		self._debug(query)
+		cursor.execute(query)
+		rebost_db.commit()
+		rebost_db.close()
+	#def _cleanTable(self,table):
+
 	def _copyTmpDef(self):
 		#Copy tmp to definitive
 		if os.path.isfile(self.main_tmp_table):
@@ -811,6 +862,8 @@ class sqlHelper():
 			copyfile(self.main_tmp_table,self.main_table)
 			self._debug("Removing tmp file")
 			os.remove(self.main_tmp_table)
+			self._debug("Removing unavailable apps")
+			self._cleanTable(self.main_table)
 		self._log("Database ready. Rebost operative")
 	#def _copyTmpDef
 	
@@ -819,6 +872,7 @@ class sqlHelper():
 		query="Select * from installed where pkg={0} and bundle={1}".format(pkg,bundle)
 		ret=cursorInstalled.execute(query)
 		return ret
+	#def getTableStatus
 
 def main():
 	obj=sqlHelper()

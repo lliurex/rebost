@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os,stat
+import os,stat,distro
+import json
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -27,7 +28,8 @@ class appstreamHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.wrkDir=os.path.join(self.rebostCache,"xml","appstream")
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","as.lu")
-		#self._loadStore()
+		self.pkgfile="/usr/share/rebost/lists.d/eduapps.map"
+		self.ignored=["rebost","rebost-gui"]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -52,14 +54,16 @@ class appstreamHelper():
 	def _loadStore(self):
 		self._debug("Get apps")
 		restrictedYml="/usr/share/rebost-data/yaml/eduapps.yml"
-		store=self._get_appstream_catalogue_from_files([restrictedYml])
-		storeYml=["/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml","/usr/share/rebost-data/yaml/lliurex_dists_focal_universe_dep11_Components-amd64.yml"]
-		fullstore=self._get_appstream_catalogue_from_files(storeYml)
+		store=self._loadCatalogueFromFiles([restrictedYml])
+		(release,codename)=self._getReleaseCodename()
+		storeYml=["/usr/share/rebost-data/yaml/{0}/lliurex_dists_{1}_main_dep11_Components-amd64.yml".format(release,codename),
+			"/usr/share/rebost-data/yaml/{0}/lliurex_dists_{1}_universe_dep11_Components-amd64.yml".format(release,codename)]
+		fullstore=self._loadCatalogueFromFiles(storeYml)
 		update=self._chkNeedUpdate(store)
 		if update:
 			if len(store.get_apps())<=0:
 				store=fullstore
-			store=self._generate_store(store,fullstore)
+			store=self._generateStore(store,fullstore)
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
@@ -70,6 +74,24 @@ class appstreamHelper():
 		else:
 			self._debug("Skip update")
 	#def _loadStore
+
+	def _getReleaseCodename(self):
+		release="llx23"
+		cmd=["/usr/bin/lliurex-version","-n"]
+		try:
+			out=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+		except Exception as e:
+			print(e)
+			#out=distro.codename()
+		if isinstance(out,str):
+			release=out.strip()[0:out.rindex(".")]
+			if release.isdigit():
+				release="llx{}".format(release)
+			else:
+				release="llx23"
+		codename=distro.codename()
+		return(release,codename)
+	#def _getReleaseCodename
 
 	def _chkNeedUpdate(self,store):
 		update=True
@@ -87,7 +109,7 @@ class appstreamHelper():
 		return(update)
 	#def _chkNeedUpdate
 
-	def _get_appstream_catalogue_from_files(self, storeYmlFiles=[]):
+	def _loadCatalogueFromFiles(self, storeYmlFiles=[]):
 		store=appstream.Store()
 		sections=[]
 		progress=0
@@ -97,6 +119,7 @@ class appstreamHelper():
 				continue
 				#storeYml="/usr/share/rebost-data/yaml/lliurex_restricted.yml"
 			if os.path.isfile(storeYml):
+				self._debug("Loading data from {}".format(storeYml))
 				storeFile=Gio.File.new_for_path(storeYml)
 				try:
 					store.from_file(storeFile,iconDir,None)
@@ -105,45 +128,55 @@ class appstreamHelper():
 					pass
 		self._debug("End loading appstream metadata")
 		return(store)
-	#def _get_restricted_appstream_catalogue
+	#def _loadCatalogueFromFiles
 
-	def _get_appstream_catalogue(self):
+	def _loadAppstreamCatalogue(self):
 		store=appstream.Store()
 		flags=[appstream.StoreLoadFlags.APP_INFO_SYSTEM,appstream.StoreLoadFlags.APP_INSTALL,appstream.StoreLoadFlags.APP_INFO_USER,appstream.StoreLoadFlags.DESKTOP,appstream.StoreLoadFlags.ALLOW_VETO]
 		for flag in flags:
 			store.load(flag,None)
 		self._debug("End loading full appstream metadata")
 		return(store)
-	#def _get_appstream_catalogue
+	#def _loadAppstreamCatalogue
 
-	def _generate_store(self,restrictedstore,fullstore=None):
+	def _generateStore(self,restrictedstore,fullstore=None):
 		added=[]
 		store=appstream.Store()
 		rebostPkgList=[]
-		iconDb=self._populate_icon_db()
+		iconDb=self._populateIconDb()
+		#Load ignored apps from map file if present
+		self._loadIgnoredApps()
+
 		for pkg in restrictedstore.get_apps():
+			pkgname=pkg.get_pkgname_default()
+			if pkgname in self.ignored:
+				continue
 			if fullstore:
-				fullPkg=fullstore.get_app_by_pkgname(pkg.get_pkgname_default())
+				fullPkg=fullstore.get_app_by_pkgname(pkgname)
 				if fullPkg:
 					pkg=fullPkg
 			idx=pkg.get_id()
 			#appstream has his own cache dir for icons so if present use it
 			icondefault=pkg.get_icon_default()
+			#state is not working
+			#Do a best effort, get launchable and check if exists
+			pkg.set_state(2)
+			for i in pkg.get_launchables():
+				if os.path.exists("/usr/share/applications/{}".format(i.get_value())):
+					pkg.set_state(1)
 			fname=None
 			if icondefault:
-				icondefault=self._set_icon_fname(pkg,icondefault)
-				#if icondefault==None:
-				#	continue
-				#fname=icondefault.get_filename()
+				icondefault=self._setIconFname(pkg,icondefault)
 			if fname==None:
-				icon=self._get_app_icons(idx,iconDb)
+				icon=self._getAppIcons(idx,iconDb)
 				if icon:
 					pkg.add_icon(icon)
 			else:
 				pkg.add_icon(icondefault)
 			if not pkg.get_bundles():
 				bundle=appstream.Bundle()
-				bundle.set_id("{}".format(pkg.get_id()))
+				#bundle.set_id("{}".format(pkg.get_id()))
+				bundle.set_id("{}".format(pkgname))
 				bundle.set_kind(appstream.BundleKind.LIMBA)
 				pkg.add_bundle(bundle)
 			if pkg.get_id() not in added:
@@ -158,9 +191,19 @@ class appstreamHelper():
 				store.add_app(pkg)
 				added.append(pkg.get_id())
 		return(store)
-	#def _generate_store
+	#def _generateStore
 
-	def _set_icon_fname(self,pkg,icondefault):
+	def _loadIgnoredApps(self):
+		if os.path.exists(self.pkgfile):
+			apps=[]
+			with open(self.pkgfile,"r") as f:
+				apps=json.loads(f.read())
+			for app in apps.keys():
+				if apps[app]=="" and app not in self.ignored:
+					self.ignored.append(app)
+	#def _loadIgnoredApps
+
+	def _setIconFname(self,pkg,icondefault):
 		prefix=icondefault.get_prefix()
 		if prefix:
 			prefix=os.path.dirname(icondefault.get_prefix())
@@ -187,9 +230,9 @@ class appstreamHelper():
 				icondefault.convert_to_kind(appstream.IconKind.LOCAL)
 			icondefault.set_filename(defIcon)
 		return(icondefault)
-	#def _set_icon_fname
+	#def _setIconFname
 
-	def _populate_icon_db(self):
+	def _populateIconDb(self):
 		appstreamIconDirs=["/var/lib/app-info/icons","/usr/share/rebost-data/icons"]
 		iconDb={}
 		for appstreamIconDir in appstreamIconDirs:
@@ -212,7 +255,7 @@ class appstreamHelper():
 								iconDb[pathDir].append(i.path)
 		return(iconDb)
 
-	def _get_app_icons(self,idx,iconDb):
+	def _getAppIcons(self,idx,iconDb):
 		iconPath=''
 		icon=None
 		idx=os.path.basename(idx)
@@ -231,7 +274,7 @@ class appstreamHelper():
 			icon.set_kind(appstream.IconKind.LOCAL)
 			icon.set_filename(iconPath)
 		return(icon)
-	#def _get_app_icons
+	#def _getAppIcons
 
 def main():
 	obj=appstreamHelper()

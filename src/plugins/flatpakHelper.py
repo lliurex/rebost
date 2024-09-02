@@ -48,14 +48,17 @@ class flatpakHelper():
 		rs='[{}]'
 		if action=='load':
 			rs=self._loadStore()
+		if action=='install':
+			rs=["flatpak","--user","install"]
 		return(rs)
 	#def execute
 
 	def _loadStore(self):
 		action="load"
 		self._debug("Get apps")
-		store=self._get_flatpak_catalogue()
+		store=self._getFlatpakCatalogue()
 		update=self._chkNeedUpdate(store)
+		rebostPkgList=[]
 		if update:
 			self._debug("Get rebostPkg")
 			rebostPkgList=rebostHelper.appstream_to_rebost(store)
@@ -78,6 +81,7 @@ class flatpakHelper():
 				f.write(storeMd5)
 		else:
 			self._debug("Skip update")
+		return(rebostPkgList)
 	#def _loadStore(self):
 
 	def _fillInstalledData(self,rebostPkgList,installed):
@@ -113,8 +117,18 @@ class flatpakHelper():
 				update=False
 		return(update)
 	#def _chkNeedUpdate
+	
+	def _updateMetadata(self,flInst,flRemote):
+		self._debug("Updating metadata for {}".format(flRemote.get_name()))
+		flInst.update_remote_sync(flRemote.get_name(),None)
+		self._debug("Updating metadata from URL {}".format(flRemote.get_url()))
+		flInst.prune_local_repo()
+		flRemote.set_gpg_verify(False)
+		flInst.modify_remote(flRemote,None)
+		flInst.update_appstream_sync(flRemote.get_name(),None,None,None)
+	#def _updateMetadata
 
-	def _get_flatpak_catalogue(self):
+	def _getFlatpakCatalogue(self):
 		action="load"
 		rebostPkgList=[]
 		sections=[]
@@ -122,10 +136,10 @@ class flatpakHelper():
 		flInst=''
 		store=appstream.Store()
 		tmpStore=appstream.Store()
-		(srcDir,flInst)=self._get_flatpak_metadata()
+		(srcDir,flInst)=self._getFlatpakMetadata()
 		if srcDir=='':
 		#When initializing for first time metada needs a reload
-			(srcDir,flInst)=self._get_flatpak_metadata()
+			(srcDir,flInst)=self._getFlatpakMetadata()
 		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		fxml=os.path.join(srcDir,"appstream.xml")
 		try:
@@ -143,7 +157,7 @@ class flatpakHelper():
 			store.add_app(app)
 		self._debug("End loading flatpak metadata")
 		return(store)
-	#def _get_flatpak_catalogue
+	#def _getFlatpakCatalogue
 
 	def _fixAppstreamXml(self,fxml):
 		fcontent=""
@@ -169,22 +183,37 @@ class flatpakHelper():
 		return tmpfile
 	#def _fixAppstreamXml
 
-	def _get_flatpak_metadata(self):
-		#Get all the remotes, copy appstream to wrkdir
-		flInst=[]
-		srcDir=''
-		try:
-			flInst=Flatpak.get_system_installations()
-		except Exception as e:
-			print("Error getting flatpak remote: {}".format(e))
+	def _getFlatpakRemotes(self,flInst):
+		remotes={}
 		for installer in flInst:
 			self._debug("Loading {}".format(installer))
 			flRemote=installer.list_remotes()
-			if not flRemote:
-				self._init_flatpak_repo()
-				self._debug("Reloading {}".format(installer))
-				break
-			for remote in flRemote:
+			if len(flRemote)>0:
+				remotes[installer]=flRemote
+		return(remotes)
+	#def _getFlatpakRemotes
+
+	def _getFlatpakMetadata(self,systemInstall=False):
+		#Get all the remotes, copy appstream to wrkdir
+		flInst=[]
+		flRemote=[]
+		remotes=[]
+		srcDir=''
+		found=False
+		if systemInstall==True:
+			try:
+				flInst=Flatpak.get_system_installations()
+			except Exception as e:
+				print("Error getting flatpak remote: {}".format(e))
+			remotes=self._getFlatpakRemotes(flInst)
+		if len(remotes)==0:
+			self._debug("Reloading repo info")
+			(flInst,flRemote)=self._init_flatpak_repo()
+			remotes=self._getFlatpakRemotes([flInst])
+		self._debug("Get REMOTES: {}".format(remotes))
+		for installer,remotelist in remotes.items():
+			for remote in remotelist:
+				self._debug("Inspect {}".format(remote))
 				srcDir=remote.get_appstream_dir().get_path()
 				self._debug("flatpak srcdir: {}".format(srcDir))
 				try:
@@ -193,7 +222,7 @@ class flatpakHelper():
 					self._debug("Error reaching remote {}".format(remote))
 				self._debug("{} synced".format(srcDir))
 		return(srcDir,flInst)
-	#def _get_flatpak_metadata
+	#def _getFlatpakMetadata
 
 	def _getInstalledRefs(self):
 		flInst=None
@@ -220,42 +249,6 @@ class flatpakHelper():
 				upgradableApps.extend(inst.list_installed_refs_for_update())
 		return(upgradableApps)
 	#def _getInstalledRefs
-
-	def _generate_store2(self,store,flInst,srcDir):
-		added=[]
-		rebostPkgList=[]
-		for pkg in store.get_apps():
-			idx=pkg.get_id()
-			state=self._get_state(flInst,pkg)
-			#flatpak has his own cache dir for icons so if present use it
-			icon=self._get_app_icons(srcDir,idx)
-			if icon:
-				pkg.add_icon(icon)
-			add=False
-			if not pkg.get_categories():
-				pkg.add_category("Utility")
-			if not pkg.get_bundles():
-				bundle=appstream.Bundle()
-				bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))
-				bundle.set_kind(appstream.BundleKind.FLATPAK)
-				pkg.add_bundle(bundle)
-				add=True
-			else:
-				for bundle in pkg.get_bundles():
-					bundle.set_id("{};amd64;{}".format(pkg.get_id(),state))
-					bundle.set_kind(appstream.BundleKind.FLATPAK)
-					add=True
-			if add and pkg.get_id() not in added:
-				try:
-					if not (app.validate()):
-						store.add_app(pkg)
-					else:
-						print(app.validate())
-				except:
-					pass
-				added.append(pkg.get_id())
-		return(store)
-	#def _generate_store
 
 	def _get_state(self,flInst,pkg):
 		state="available"
@@ -313,12 +306,19 @@ class flatpakHelper():
 	#def _get_app_icons
 
 	def _init_flatpak_repo(self):
-		cmd=['/usr/bin/flatpak','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub.flatpakrepo']
-		try:
-			subprocess.run(cmd)
-		except Exception as e:
-			print(e)
-			print("Flatpak source disabled")
+		flInst=Flatpak.Installation.new_user(None)
+		flRemote=Flatpak.Remote().new("flathub")
+		flRemote.set_url('https://flathub.org/repo')#/flathub.flatpakrepo')
+		flRemote.set_disabled(False)
+		flInst.add_remote(flRemote,True,None)
+		#cmd=['/usr/bin/flatpak','--user','remote-add','--if-not-exists','flathub','https://flathub.org/repo/flathub.flatpakrepo']
+#		try:
+#			subprocess.run(cmd)
+#		except Exception as e:
+#			print(e)
+#			print("Flatpak source disabled")
+		self._updateMetadata(flInst,flRemote)
+		return(flInst,flRemote)
 	#def _init_flatpak_repo
 
 def main():

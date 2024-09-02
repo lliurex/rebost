@@ -15,7 +15,3 @@ Description: Software management for LliureX
  that supports snap, flatpack, appimage and packageKit. 
  It provides a dbus interface for software-related operations.
 
-Package: rebost-gui
-Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, rebost, rebost-data, python3-rebost, python3-pyside2.qtgui, python3-pyside2.qtcore
-Description: QT Gui for rebost

@@ -19,16 +19,12 @@ class Rebost():
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
-		if os.path.exists(self.rebostWrkDir)==True:
-			shutil.rmtree(self.rebostWrkDir)
-		os.makedirs(self.rebostWrkDir)
-		os.chmod(self.rebostWrkDir,stat.S_IRWXU )
-		home=os.environ.get("HOME",self.dbCache)
-		if len(home)>0:
-			self.cache=os.path.join(home,".cache","rebost")
-		self.cacheData=os.path.join("{}".format(self.cache),"xml")
-		self.rebostPath="/usr/share/rebost/"
+		self._iniCache()
 		self.confFile=os.path.join(self.rebostPath,"store.json")
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -40,6 +36,41 @@ class Rebost():
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
+		signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+	#def __init__(self,*args,**kwargs):
+
+	def _iniCache(self):
+		if os.path.exists(self.rebostWrkDir)==True:
+			for f in os.scandir(self.rebostWrkDir):
+				if os.path.isfile(f.path):
+					if f.path.endswith(".db"):
+						os.unlink(f.path)
+				elif os.path.isdir(f.path):
+					for fd in os.scandir(f.path):
+						if os.path.isfile(fd.path):
+							os.unlink(fd.path)
+			#shutil.rmtree(self.rebostWrkDir)
+		else:
+			os.makedirs(self.rebostWrkDir)
+		try:
+			os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
+		except:
+			pass
+		finally:
+			os.chmod(self.rebostWrkDir,stat.S_IRWXU)
+		home=os.environ.get("HOME",self.dbCache)
+		if len(home)>0:
+			self.cache=os.path.join(home,".cache","rebost")
+		else:
+			self.cache=self.rebostWrkDir
+		self.rebostPath=os.path.join(home,".config","rebost")
+	#def _iniCache
+	
+	def _launchRebostUpdated(self,*args,**kwargs):
+		self._copyTmpToCache()
+		self._log("Cache restored")
+		signal.raise_signal(signal.SIGUSR2)
+	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
 		self._log("Starting rebost")
@@ -55,8 +86,6 @@ class Rebost():
 		else:
 			self._log("Cache unavailable")
 			self._autostartActions()
-		self._copyTmpToCache()
-		self._log("Cache restored")
 		self._log("Autostart ended.")
 	#def run
 
@@ -177,7 +206,7 @@ class Rebost():
 
 	def _processConfig(self):
 		cfg=self._readConfig()
-		for plugin,state in cfg.get("plugins",{}).items():
+		for plugin,state in cfg.items():
 			if state==True:
 				self._enable(plugin)
 			else:
@@ -248,27 +277,44 @@ class Rebost():
 	#def _disable
 
 	def _chkNetwork(self):
+		def trace_function(frame, event, arg):
+			if time.time() - start > TOTAL_TIMEOUT:
+				raise Exception('Timed out!') # Use whatever exception you consider appropriate.
+
+			return trace_function
+		##
+		TOTAL_TIMEOUT = 1
+		start = time.time()
+		sys.settrace(trace_function)
+
+		sw=True
 		try:
-			requests.get('https://portal.edu.gva.es/',timeout=1)
-			return True
+			res = requests.get('http://lliurex.net/jammy/', timeout=(1, 2)) # Use whatever timeout values you consider appropriate.
 		except:
-			return False
+			sw=False
+		finally:
+			sys.settrace(None) # Remove the time constraint and continue normally.
+		return sw
 	#def _chkNetwork
 
 	def _copyCacheToTmp(self):
 		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
-			if os.path.exists(self.rebostPathTmp)==True:
+			if os.path.exists(os.path.join(self.rebostPathTmp,"sq.lu"))==True:
 				return()
-			os.makedirs(self.rebostPathTmp)
+			elif os.path.exists(self.rebostPathTmp)==False:
+				os.makedirs(self.rebostPathTmp)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
+					if copied==False:
+						copied=True
+					self._debug("Copy: {0} -> {1}".format(db.path,os.path.join(self.rebostWrkDir,db.name)))
 			for lu in os.scandir(tmpCache):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
-			copied=True
+					self._debug("Copy: {0} -> {1}".format(lu.path,os.path.join(self.rebostWrkDir,lu.name)))
 		return(copied)
 	#def _copyCacheToTmp
 
@@ -285,6 +331,7 @@ class Rebost():
 			for lu in os.scandir(self.rebostPathTmp):
 				if lu.path.endswith(".lu"):
 					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
+					self._debug("Save: {0} -> {1}".format(lu.path,os.path.join(tmpCache,lu.name)))
 	#def _copyTmpToCache
 
 	def _beginAutostartActions(self):
@@ -318,7 +365,7 @@ class Rebost():
 					#actionDict[priority]=newDict.copy()
 			if len(postactions)>0:
 				priority=info.get('priority',0)
-				newDictPost=actionDict.get(priority,{})
+				newDictPost=postactionDict.get(priority,{})
 				newDictPost[plugin]=postactions
 				postactionDict[priority]=newDictPost.copy()
 		#Launch actions by priority
@@ -353,6 +400,7 @@ class Rebost():
 							pr.join()
 						except Exception as e:
 							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
+		self._launchRebostUpdated()
 	#def _autostartActions
 	
 	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
@@ -391,7 +439,7 @@ class Rebost():
 				catList.append(cat[0])
 			store=json.dumps(catList)
 		if action=="install" or action=="remove" or action=="test":
-			self._copyTmpToCache()
+			self._launchRebostUpdated()
 		return(store)
 	#def execute
 			
@@ -479,7 +527,7 @@ class Rebost():
 			print(e)
 			retval=0
 		return(rs)
-	#def _executeAction
+	#def _executeCoreAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
@@ -510,12 +558,17 @@ class Rebost():
 
 	def _cleanData(self,force=False):
 		self._debug("Cleaning tmp")
-		for i in os.scandir(self.rebostPathTmp):
-			try:
-				os.remove(i.path)
-			except Exception as e:
-				print(e)
-				self._debug(e)
+		datadirs=[self.rebostPathTmp,os.path.join(self.cache,"tmp")]
+		for d in datadirs:
+			if os.path.isdir(d)==False:
+				continue
+			for i in os.scandir(d):
+				try:
+					os.remove(i.path)
+					self._debug("rm {}".format(i.path))
+				except Exception as e:
+					print(e)
+					self._debug(e)
 		if force==True:
 			self._debug("Removing databases")
 			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
@@ -524,13 +577,19 @@ class Rebost():
 					if i.path.endswith(".db"):
 						try:
 							os.remove(i.path)
+							self._debug("rm {}".format(i.path))
 						except Exception as e:
 							print(e)
 							self._debug(e)
 	#def _cleanData
 
 	def forceUpdate(self,force=False):
-		self._debug("Rebost forcing update...")
+		if isinstance(force,int):
+			if force==1:
+				force=True
+			else:
+				force=False
+		self._debug("Rebost forcing update. Deep clean: {}".format(force))
 		self._cleanData(force=force)
 		return(self.restart())
 	#def getProgress(self):

@@ -5,6 +5,7 @@ gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 import json
 import rebostHelper
+import libAppsEdu
 import logging
 import os
 import time
@@ -59,21 +60,22 @@ class packageKit():
 		action="load"
 		pkcon=packagekit.Client()
 		restrictIds=[]
+		tmppkgIds=[]
+		pkgIds=[]
 		if self.restricted==False:
 			flags=[packagekit.FilterEnum.APPLICATION,packagekit.FilterEnum.GUI]
 			pklists=self._loadFullCatalogue(pkcon,flags)
 		else:
 			restrictIds=self._readFilterFile(self.pkgFile)
 			pklists=self._loadRestrictedCatalogue(pkcon,restrictIds)
-		tmppkgIds=[]
-		pkgIds=[]
 		for pkgSack in pklists:
 			tmppkgIds.append(pkgSack.get_ids())
 		if self.restricted==True:
 			for pkglist in tmppkgIds:
-				for pkg in pkglist:
+				setlist=list(set(pkglist))
+				for pkg in setlist:
 					pkgname=pkg.split(";")[0]
-					if pkgname not in restrictIds:
+					if pkgname not in restrictIds and "lliurex" not in pkgname.lower():
 						pkgSack.remove_package_by_id(pkg)
 		for pkgSack in pklists:
 			pkgIds.extend(pkgSack.get_ids())
@@ -86,7 +88,7 @@ class packageKit():
 				with open(self.lastUpdate,'w') as f:
 					f.write(newMd5)
 			except:
-				print("Forcing update")
+				self._debug("Forcing update")
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")
@@ -132,6 +134,7 @@ class packageKit():
 	def _readFilterFile(self,pkgfile):
 		self._debug("Getting restricted pkg list from {}".format(pkgfile))
 		searchList=[]
+		mapedList=[]
 		if os.path.exists(pkgfile)==False:
 			self._debug("File not found: {}".format(pkgfile))
 		else:
@@ -139,13 +142,24 @@ class packageKit():
 				jcontent=json.loads(f.read())
 			searchList=[]
 			for key,item in jcontent.items():
-				if item not in searchList:
-					if item.startswith("zero-"):
-						self._debug("Getting pkgs from zmd")
-
-					searchList.append(item)
+				mapedList.append(key)
+				if item=="" or item in searchList:
+					self._debug("Discard {}".format(key))
+					continue
+				searchList.append(item)
+		searchList=self._addCacheFile(searchList,mapedList)
 		return(searchList)
 	#def _readFilterFile
+
+	def _addCacheFile(self,pkglist=[],mapedList=[]):
+		eduApps=libAppsEdu.getAppsEduCatalogue()
+		for pkg in eduApps:
+			app=pkg["app"]
+			if app not in pkglist and app not in mapedList:
+				self._debug("Append unmaped app  {}".format(app))
+				pkglist.append(app.lower())
+		return(pkglist)
+	#def _addCacheFile
 
 	def _getChanges(self,gPath):
 		#Compare old file with new file. Extract changes and update db
@@ -209,8 +223,7 @@ class packageKit():
 		pkgDict={}
 		updateSelected=[]
 		if self.onlyLliurex==True:
-			lliurexPkgs=[pkg for pkg in pkgToProcess if "lliurex" in pkg.lower()]
-			pkgToProcess=lliurexPkgs
+			pkgToProcess=[pkg for pkg in pkgToProcess if "lliurex" in pkg.lower()]
 		for pkg in pkgToProcess:
 			#0->Name,1->Release,2->arch,3->origin
 			pkgData=pkg.split(";")
@@ -254,7 +267,7 @@ class packageKit():
 		#updateVersion=updateInfo.get(name,version)
 		rebostPkg['name']=name
 		rebostPkg['pkgname']=rebostPkg['name']
-		rebostPkg['id']="org.packagekit.{}".format(rebostPkg['name'])
+		rebostPkg['id']=rebostPkg['name']
 		rebostPkg['summary']=pkg.get_summary()
 		rebostPkg['description']=pkg.get_description()
 		updateVersion=updateInfo.get(name,{}).get('release',"{}".format(version))
@@ -299,6 +312,7 @@ class packageKit():
 
 	def _loadCallback(self,*args):
 		return
+	#def _loadCallback
 
 def main():
 	obj=packageKit()

@@ -1,4 +1,4 @@
-rebost (2.5.6-1lliurex23) jammy-devel; urgency=medium
+rebost (2.5.7-0lliurex23) jammy; urgency=medium
 
   * Fix bug with deeper pkg queries
 

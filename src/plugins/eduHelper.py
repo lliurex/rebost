@@ -158,7 +158,7 @@ class eduHelper():
 				rebostPkg["alias"]=self.appmap[pkgname]
 		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
 		rebostPkg["homepage"]=appUrl
-		rebostPkg["name"]=pkgname.rstrip("-2")
+		rebostPkg["name"]=pkgname
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
 		rebostPkg["bundle"]={"eduapp":pkgname}

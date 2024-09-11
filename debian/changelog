@@ -1,6 +1,7 @@
 rebost (2.5.8-0lliurex23) jammy; urgency=medium
 
   * Trust appsedu url
+  * Don't fire signals on test action
 
  -- Juanma1980 <juanma1980@gmail.com>  Wed, 11 Sep 2024 17:29:43 +0200
 

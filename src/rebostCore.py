@@ -438,7 +438,8 @@ class Rebost():
 			for cat in rebostPkgList:
 				catList.append(cat[0])
 			store=json.dumps(catList)
-		if action=="install" or action=="remove" or action=="test":
+		#if action=="install" or action=="remove" or action=="test":
+		if action=="install" or action=="remove":
 			self._launchRebostUpdated()
 		return(store)
 	#def execute

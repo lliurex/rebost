@@ -294,7 +294,7 @@ class epicHelper():
 		if "Zomando" not in rebostPkg["categories"]:
 			rebostPkg["categories"].insert(0,"Zomando")
 		#Only more than one package
-		if len(pkgList)>1:
+		if len(pkgList)>0:
 			pkgs=self._getPkgsFromList(pkgList,rebostPkg,jepi)
 			rebostPkg["description"]+="\\\\====="
 			for pkg in pkgs:
@@ -302,7 +302,7 @@ class epicHelper():
 			#rebostPkg["categories"]=origcats
 			#rebostPkg["state"]=origstate
 			#rebostPkg['description']=description.strip()
-		pkgs.insert(0,rebostPkg)
+			pkgs.insert(0,rebostPkg)
 		return(pkgs)
 	#def _getZomandoInstalls
 

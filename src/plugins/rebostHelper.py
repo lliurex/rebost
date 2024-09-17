@@ -39,6 +39,7 @@ st=logging.StreamHandler()
 st.setLevel(logging.DEBUG)
 st.setFormatter(formatter)
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
+MAP="/usr/share/rebost/lists.d/eduapps.map"
 #logger.addHandler(st)
 
 def setDebugEnabled(dbg):
@@ -239,6 +240,19 @@ def _sanitizeString(data,scape=False,unescape=False):
 	return(data)
 #def _sanitizeString
 
+def _loadMap():
+	appmap={}
+	fappmap={}
+	if os.path.isfile(MAP):
+		with open(MAP,"r") as f:
+			fcontent=json.loads(f.read())
+	for app,alias in fcontent.items():
+		if alias=="":
+			continue
+		appmap.update({app:alias})
+	return(appmap)
+#def _loadMAP
+
 def rebostToAppstream(rebostPkgList,fname=""):
 	if len(fname)==0:
 		fname="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
@@ -272,6 +286,7 @@ def rebostToAppstream(rebostPkgList,fname=""):
 def appstream_to_rebost(appstreamCatalogue):
 	rebostPkgList=[]
 	catalogue=appstreamCatalogue.get_apps()
+	appmap=_loadMap()
 	while catalogue:
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
@@ -282,6 +297,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		else:
 			pkg['pkgname']=pkg['name']
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
+		if pkg["pkgname"] in appmap:
+			pkg["alias"]=appmap[pkg["pkgname"]]
 		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):

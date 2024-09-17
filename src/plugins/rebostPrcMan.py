@@ -329,7 +329,7 @@ class rebostPrcMan():
 											'done':1,
 											'status':'',
 											'msg':'package {} is a system package'.format(pkgname)})]
-						sure=False
+							sure=False
 			if sure:
 				usern="{}".format(user)
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)

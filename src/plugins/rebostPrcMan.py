@@ -315,9 +315,21 @@ class rebostPrcMan():
 		#1st check if removing and if removing package doesn't removes meta
 			sure=True
 			if (action=='remove' or action=='test') and bundle=='package':
-				if rebostHelper.check_remove_unsure(pkgname):
-					rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} is a system package'.format(pkgname)})]
+				jpkg={}
+				try:
+					jpkg=json.loads(rebostpkg)
+				except:
 					sure=False
+				else:
+					if jpkg.get("state",{}).get("package","1")=="0":
+						if rebostHelper.check_remove_unsure(pkgname):
+							rebostPkgList=[("{}".format(self.failProc),
+											{'pid':"{}".format(self.failProc),
+											'package':pkgname,
+											'done':1,
+											'status':'',
+											'msg':'package {} is a system package'.format(pkgname)})]
+						sure=False
 			if sure:
 				usern="{}".format(user)
 				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)

@@ -1,4 +1,5 @@
 echo "cleaning files..."
-rm /usr/share/rebost/tmp/* 2>/dev/null
-rm /usr/share/rebost/*db 2>/dev/null
+TMPDIR=/usr/share/rebost
+[ -e $TMPDIR ] && rm $TMPDIR/*db 2>/dev/null
+[ -e $TMPDIR/tmp ] && rm $TMPDIR/tmp/* 2>/dev/null
 exit 0

@@ -2,6 +2,7 @@
 import sys
 import zlib
 import json
+import signal
 import dbus,dbus.service,dbus.exceptions
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
@@ -13,6 +14,9 @@ class rebostDbusMethods(dbus.service.Object):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
 		self.dbg=True
+		signal.signal(signal.SIGUSR1, self._reloadSignal)
+		signal.signal(signal.SIGUSR2, self._updatedSignal)
+		signal.signal(signal.SIGALRM, self._beginUpdateSignal)
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
 	#def __init__
@@ -23,9 +27,40 @@ class rebostDbusMethods(dbus.service.Object):
 			print("rebost-dbus: %s"%str(msg))
 	#def _debug
 
+	def _beginUpdateSignal(self,*args,**kwargs):
+		self.beginUpdateSignal()
+	#def _beginUpdateSignal
+
+	def _reloadSignal(self,*args,**kwargs):
+		self.reloadSignal()
+	#def _reloadSignal
+
+	def _updatedSignal(self,*args,**kwargs):
+		self.updatedSignal()
+	#def _updatedSignal
+
 	def _print(self,msg):
 		logging.info("rebost-dbus: %s"%str(msg))
 	#def _print
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def loaded(self):
+		pass
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def beginUpdateSignal(self):
+		pass
+	#def storeLoaded
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def reloadSignal(self):
+		pass
+	#def storeLoaded
+
+	@dbus.service.signal("net.lliurex.rebost")
+	def updatedSignal(self):
+		pass
+	#def storeUpdated
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='s')
@@ -192,6 +227,7 @@ class rebostDbusMethods(dbus.service.Object):
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='b', out_signature='ay')
 	def update(self,force=False):
+		self.beginUpdateSignal()
 		ret=self.rebost.forceUpdate(force)
 #		ret = zlib.compress(ret.encode(),level=1)
 		return ()
@@ -234,6 +270,7 @@ class rebostDbusMethods(dbus.service.Object):
 
 	def getPlugins(self):
 		pass
+
 #class rebostDbusMethods
 	
 

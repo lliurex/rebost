@@ -213,11 +213,12 @@ def getAppsEduCatalogue():
 		_debug("Skip update")
 		#return([])
 	bscontent=bs(rawcontent,"html.parser")
-	appInfo=bscontent.find_all("td",["column-1","column-2","column-7"])
+	appInfo=bscontent.find_all("td",["column-1","column-2","column-5","column-7"])
 	eduApps=[]
 	candidate=None
 	columnAuth=None
 	columnName=None
+	columnCats=None
 	columnIcon=None
 	for column in appInfo:
 		full=False
@@ -225,8 +226,21 @@ def getAppsEduCatalogue():
 			columnIcon=column.img
 		if (column.attrs["class"][0]=="column-2"):
 			columnName=column.find_all("a",href=True)
+		if (column.attrs["class"][0]=="column-5"):
+			columnCats=column.text
 		if (column.attrs["class"][0]=="column-7"):
 			columnAuth=column.text
+			#Some apps should be hidden as are pure system apps (drkonqui...)
+			#or apps included within another (kde-connect related stuff...)
+			#or for some other reason (xterm..)
+			#The 1st approach is based on category and authorizaton status
+			#but there're many apps misscatalogued so disable it ATM
+			#if columnAuth.lower().endswith("sistema"):
+			#	if "utili" in columnCats.lower():
+			#		columnAuth=None
+			#		columnName=None
+			#		columnIcon=None
+			#		continue
 			full=True
 		if full==True:
 			for data in columnName:

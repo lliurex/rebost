@@ -39,6 +39,7 @@ st=logging.StreamHandler()
 st.setLevel(logging.DEBUG)
 st.setFormatter(formatter)
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
+MAP="/usr/share/rebost/lists.d/eduapps.map"
 #logger.addHandler(st)
 
 def setDebugEnabled(dbg):
@@ -239,6 +240,19 @@ def _sanitizeString(data,scape=False,unescape=False):
 	return(data)
 #def _sanitizeString
 
+def _loadMap():
+	appmap={}
+	fappmap={}
+	if os.path.isfile(MAP):
+		with open(MAP,"r") as f:
+			fcontent=json.loads(f.read())
+	for app,alias in fcontent.items():
+		if alias=="":
+			continue
+		appmap.update({app:alias})
+	return(appmap)
+#def _loadMAP
+
 def rebostToAppstream(rebostPkgList,fname=""):
 	if len(fname)==0:
 		fname="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
@@ -272,6 +286,7 @@ def rebostToAppstream(rebostPkgList,fname=""):
 def appstream_to_rebost(appstreamCatalogue):
 	rebostPkgList=[]
 	catalogue=appstreamCatalogue.get_apps()
+	appmap=_loadMap()
 	while catalogue:
 		component=catalogue.pop(0)
 		pkg=rebostPkg()
@@ -282,6 +297,8 @@ def appstream_to_rebost(appstreamCatalogue):
 		else:
 			pkg['pkgname']=pkg['name']
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
+		if pkg["pkgname"] in appmap:
+			pkg["alias"]=appmap[pkg["pkgname"]]
 		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
 		pkg['description']=component.get_description()
 		if not isinstance(pkg['description'],str):
@@ -357,7 +374,7 @@ def _componentFillInfo(component,pkg):
 				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
 				pkg['versions']={bundle:versionArray[-1]}
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
-					pkgid=component.get_id()
+					pkgid=component.get_pkgname_default()
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:
@@ -406,6 +423,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
 		os.makedirs("/tmp/rebost")
+		os.chmod("/tmp/rebost",0o777)
 	tmpDir=tempfile.mkdtemp(dir="/tmp/rebost")
 	os.chmod(tmpDir,0o755)
 	if remote==False:
@@ -532,7 +550,11 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	elif bundle=='appimage':
 		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
 	elif bundle=='zomando':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
+		zpath=rebostpkg["bundle"]["zomando"]
+		if os.path.exists(zpath)==False:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
+		else:
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
@@ -557,7 +579,7 @@ def _get_package_commands(rebostpkg,user):
 	removeCmdLine.append("if [ \"$TEST\" == 'installed' ];then")
 	removeCmdLine.append("exit 1")
 	removeCmdLine.append("fi")
-	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(rebostpkg['pkgname']))
+	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_package_commands
 
@@ -571,9 +593,9 @@ def _get_snap_commands(rebostpkg,user):
 
 def _get_flatpak_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="flatpak -y install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
-	removeCmd="flatpak -y uninstall {} 2>&1;ERR=$?".format(rebostpkg['bundle']['flatpak'])
-	statusTestLine=("TEST=$( flatpak list 2> /dev/null| grep $'{}\\t' >/dev/null && echo 'installed')".format(rebostpkg['bundle']['flatpak']))
+	installCmd="sudo -u {0} flatpak --user -y install {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
+	removeCmd="sudo -u {0} flatpak --user -y uninstall {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
+	statusTestLine=("TEST=$(sudo -u {0} flatpak --user list 2> /dev/null| grep $'{1}\\t' >/dev/null && echo 'installed')".format(user,rebostpkg['bundle']['flatpak']))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_flatpak_commands
 
@@ -603,10 +625,13 @@ def _get_appimage_commands(rebostpkg,user):
 
 def _get_zomando_commands(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
-	installCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	removeCmd="{}".format(os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando']))
-	#statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ] && [[ ! -n $(grep epi /usr/share/zero-center/zmds/%s) ]] && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
-	statusTestLine=("TEST=$([ -e /usr/share/zero-center/zmds/%s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(rebostpkg['bundle']['zomando'],rebostpkg['bundle']['zomando'].replace(".zmd","")))
+	zdir="/usr/share/zero-center/zmds/"
+	zpath=rebostpkg['bundle']['zomando']
+	if zdir not in zpath:
+		zpath=os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando'])
+	installCmd="exec {}".format(zpath)
+	removeCmd="exec {}".format(zpath)
+	statusTestLine=("TEST=$([ -e %s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(zpath,os.path.basename(zpath).replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _get_zomando_commands
 

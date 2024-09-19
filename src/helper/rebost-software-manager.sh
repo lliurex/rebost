@@ -4,9 +4,9 @@
 #Parms: $1 -> package; $2 -> cli/gui mode
 if [[ $2 == "cli" ]]
 then
-	/usr/sbin/epic $3 -nc -d $1 > /tmp/rebost/epigtk.log
+	/usr/sbin/epic $3 -nc -d $1 > /tmp/rebost/epigtk.$USER.log
 else
-	/usr/sbin/epi-gtk -nc -u $1 > /tmp/rebost/epigtk.log
+	/usr/sbin/epi-gtk -nc -u $1 > /tmp/rebost/epigtk.$USER.log
 fi
 
 TMPDIR=$(dirname $1)

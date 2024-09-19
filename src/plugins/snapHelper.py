@@ -28,7 +28,7 @@ class snapHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sp.lu")
 		self.snap=Snapd.Client()
-		self.forceApps=[]
+		self.forceApps=["octoprint-sdev"]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -51,7 +51,7 @@ class snapHelper():
 	def _loadStore(self):
 		action="load"
 		try:
-			(rebostPkgList,update)=self._get_snap_catalogue()
+			(rebostPkgList,update)=self._getSnapCatalogue()
 		except Exception as e:
 			raise
 		if update:
@@ -60,7 +60,7 @@ class snapHelper():
 		else:
 			self._debug("Skip update")
 
-	def _get_snap_catalogue(self):
+	def _getSnapCatalogue(self):
 		action="load"
 		rebostPkgList=[]
 		sections=[]
@@ -142,25 +142,34 @@ class snapHelper():
 
 	def _get_categories(self,section):
 		categories=[]
-		catMap={"development":["Development"],
-				"games":["Game"],
-				"social":["Network","InstantMessaging"],
-				"productivity":["Office"],
-				"utilities":["Utility"],
-				"photoandvideo":["AudioVideo","Graphics"],
-				"serverandcloud":["Network"],
-				"security":["System","Security"],
-				"devicesandlot":["Development","Robotics","Electronics"],
-				"musicandaudio":["AudioVideo"],
-				"entertainment":["Amusement"],
+		catMap={
 				"artanddesign":["Graphics","Art"],
+				"art-and-design":["Graphics","Art"],
+				"books-and-reference":["Documentation","Education"],
 				"booksandreference":["Documentation","Education"],
+				"development":["Development"],
+				"devicesandiot":["Development","Robotics","Electronics"],
+				"devices-and-lot":["Development","Robotics","Electronics"],
+				"entertainment":["Amusement"],
 				"education":["Education"],
 				"finance":["Office","Finance"],
-				"healthandfidness":["Utility","Amusement"],
+				"games":["Game"],
+				"healthandfitness":["Utility","Amusement"],
+				"health-and-fitness":["Utility","Amusement"],
+				"musicandaudio":["AudioVideo"],
+				"music-and-audio":["AudioVideo"],
 				"newsandweather":["Network","News"],
+				"news-and-weather":["Network","News"],
 				"personalisation":["Settings"],
-				"science":["Science"]
+				"photoandvideo":["AudioVideo","Graphics"],
+				"photo-and-video":["AudioVideo","Graphics"],
+				"productivity":["Office"],
+				"security":["System","Security"],
+				"serverandcloud":["Network"],
+				"server-and-cloud":["Network"],
+				"science":["Science"],
+				"social":["Network","InstantMessaging"],
+				"utilities":["Utility"]
 				}
 		#Snap categories aren't standard so... 
 		categories=catMap.get(section.lower().replace(" ",""),["Utility"])

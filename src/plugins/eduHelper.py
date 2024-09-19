@@ -26,6 +26,7 @@ class eduHelper():
 		self.actions=["load"]
 		self.autostartActions=["load"]
 		self.regex=re.compile("[^\\w -]")
+		self.appmap={}
 		self.priority=1
 		dbCache="/tmp/.cache/rebost"
 		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
@@ -61,6 +62,7 @@ class eduHelper():
 		rebostPkgList=[]
 		fnames=os.path.join(self.rebostCache,"appsedu.list")
 		#Generate cache with names
+		self._loadMAP()
 		with open(fnames,"w") as f:
 			for eduapp in eduApps:
 				rebostPkgList.append(self._appToRebost(eduapp))
@@ -68,7 +70,6 @@ class eduHelper():
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
 		if len(rebostPkgList)>0:
 			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,"eduapps.db")
-
 		#REM
 		return
 		searchDict=self._generateTags(eduApps)
@@ -137,20 +138,27 @@ class eduHelper():
 		return(eduApps)
 	#def getEduApps
 
-	def _appToRebost(self,eduapp,getDetail=False):
-		rebostPkg=rebostHelper.rebostPkg()
+	def _loadMAP(self):
 		appmap={}
+		self.appmap={}
 		if os.path.isfile(MAP):
 			with open(MAP,"r") as f:
 				appmap=json.loads(f.read())
-		app=eduapp["app"]
-		pkgname=app
-		if app in appmap:
-			if app!=appmap[app]:
-				rebostPkg["alias"]=appmap[app]
-		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),app)
+		for app,alias in appmap.items():
+			if alias=="":
+				continue
+			self.appmap.update({app:alias})
+	#def _loadMAP(self):
+
+	def _appToRebost(self,eduapp,getDetail=False):
+		rebostPkg=rebostHelper.rebostPkg()
+		pkgname=eduapp["app"]
+		if pkgname in self.appmap:
+			if pkgname!=self.appmap[pkgname]:
+				rebostPkg["alias"]=self.appmap[pkgname]
+		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
 		rebostPkg["homepage"]=appUrl
-		rebostPkg["name"]=app.rstrip("-2")
+		rebostPkg["name"]=pkgname
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
 		rebostPkg["bundle"]={"eduapp":pkgname}

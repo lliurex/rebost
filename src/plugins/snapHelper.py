@@ -2,7 +2,7 @@
 import os,shutil,stat
 import gi
 from gi.repository import Gio
-gi.require_version ('Snapd', '1')
+gi.require_version ('Snapd', '2')
 from gi.repository import Snapd
 import json
 import rebostHelper

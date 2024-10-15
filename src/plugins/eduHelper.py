@@ -186,19 +186,15 @@ class eduHelper():
 					rebostPkg['summary']+=rebostPkg["description"].split(".")[0]
 				homepage=i.find("div","acf-view__url_editor-link acf-view__link")
 				if homepage:
-					print("Homepage: {}".format(homepage.text.strip()))
 					rebostPkg["homepage"]=homepage.text.strip()
 				auth=i.find("div","acf-view__estat_val-choice acf-view__choice")
 				if auth:
-					print("Auth: {}".format(auth.text.strip()))
-				reject=i.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
+					reject=i.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
 				if reject:
-					print("Rejected by: {}".format(reject.text.strip()))
 					rebostPkg["description"]+="****{}".format(reject.text.strip())
 					rebostPkg["bundle"]={"eduapp":"banned"}
 				cats=i.find("div","acf-view__categoria_val-choice acf-view__choice")
 				if cats:
-					print("Cats: {}".format(cats.text.strip()))
 					rebostPkg["categories"]=cats.text.strip().split()
 
 				#Without use

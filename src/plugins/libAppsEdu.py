@@ -178,28 +178,46 @@ def _getEduApps():
 	return(eduApps)
 #def getEduApps
 
+def downloadCatalogue(url=EDUAPPS_URL):
+	content=""
+	req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+	try:
+		with urllib.request.urlopen(req,timeout=10) as f:
+			content=(f.read().decode('utf-8'))
+	except Exception as e:
+		print("Couldn't fetch {}".format(url))
+		print("{}".format(e))
+	return(content)
+#def downloadCatalogue
+
 def _fetchCatalogue(url=""):
 	if len(url)==0:
 		url=EDUAPPS_URL
-	content=''
+	content=downloadCatalogue(url)
 	if not os.path.exists(FCACHE):
-		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
-		try:
-			with urllib.request.urlopen(req,timeout=10) as f:
-				content=(f.read().decode('utf-8'))
-		except Exception as e:
-			print("Couldn't fetch {}".format(url))
-			print("{}".format(e))
-		else:
-			print("Writing cache...")
-			with open(FCACHE,"w") as f:
-				f.write(content)
-	else:
-		print("Read catalogue from {}".format(FCACHE))
-		with open(FCACHE,"r") as f:
-			content=f.read()
+		if len(content)>0:
+			_writeCache(content)
+	print("Read catalogue from {}".format(FCACHE))
+	if len(content)>0:
+		fcontent=_readCache()
+		if content!=fcontent:
+			_writeCache(content)
 	return(content)
 #def _fetchCatalogue
+
+def _writeCache(content):
+	print("Writing cache...")
+	with open(FCACHE,"w") as f:
+		f.write(content)
+#def _writeCache
+
+def _readCache():
+	fcontent=""
+	if os.path.exists(FCACHE):
+		with open(FCACHE,"r") as f:
+			fcontent=f.read()
+	return(fcontent)
+#def _readCache
 
 def _chkNeedUpdate(urlcontent):
 	update=True

@@ -11,6 +11,8 @@ from shutil import copyfile
 import time
 import hashlib
 import appimageHelper
+import eduHelper
+import html2text
 
 class sqlHelper():
 	def __init__(self,*args,**kwargs):
@@ -39,6 +41,7 @@ class sqlHelper():
 		if os.path.isfile(self.main_tmp_table):
 			os.remove(self.main_tmp_table)
 		self.appimage=appimageHelper.appimageHelper()
+		self.appsedu=eduHelper.eduHelper()
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sq.lu")
 		self.banlist=True
 		if self.banlist:
@@ -49,6 +52,7 @@ class sqlHelper():
 		self.wordlistFilter=rebostHelper.getFiltersList(wordlist=True)
 		self.restricted=True
 		self.mainTableForRestrict=""
+		self.mode="appsedu"
 		self._chkDbIntegrity()
 	#def __init__
 
@@ -195,6 +199,9 @@ class sqlHelper():
 					if bundle=='appimage':
 						bundleurl=bundles.get(bundle,'')
 						rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
+					if bundle=="eduapp":
+						bundleurl=bundles.get(bundle,'')
+						rebostPkg=self._upgradeAppseduData(db,table,cursor,bundleurl,pkg,rebostPkg)
 					#Get state from epi
 					rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
 				rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
@@ -216,6 +223,25 @@ class sqlHelper():
 		self.closeConnection(db)
 		return(rows)
 	#def _showPackage
+
+	def _upgradeAppseduData(self,db,table,cursor,bundleurl,pkg,rebostPkg):
+		dataTmp=json.dumps(self.appsedu.fillData(rebostPkg))
+		row=(pkg,dataTmp)
+		#Ensure all single quotes are duplicated or sql will fail
+		dataTmp=dataTmp.replace("''","'")
+		dataTmp=dataTmp.replace("'","''")
+		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
+		try:
+			cursor.execute(query)
+		except:
+			print("Query error upgrading appimage: {}".format(query))
+		eduappsTable=os.path.join(os.path.dirname(self.main_table),"eduapps.db")
+		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format("eduapps",dataTmp,pkg)
+		(db,cursor)=self.enableConnection(eduappsTable,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
+		cursor.execute(query)
+		db.commit()
+		rebostPkg=json.loads(dataTmp)
+		return(rebostPkg)
 
 	def _upgradeAppimageData(self,db,table,cursor,bundleurl,pkg,rebostPkg):
 		if not rebostPkg.get("bundle",{}).get("appimage","").lower().endswith(".appimage") and bundleurl!='':
@@ -328,10 +354,15 @@ class sqlHelper():
 		if upgradable or installed:
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
+			category=category.replace(")","")
+			category=category.replace("(","")
+			if category.lower()=="no,disponible":
+				category="Forbidden"
 			if "," in category:
-				query="SELECT pkg,data FROM {0} WHERE cat0 in {1} OR cat1 in {1} OR cat2 in {1} {2} {3}".format(table,str(category),order,fetch)
-			else:
-				query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
+				category=category.replace(","," ")
+				#query="SELECT pkg,data FROM {0} WHERE cat0 in '{1}' OR cat1 in '{1}' OR cat2 in '{1}' {2} {3}".format(table,str(category),order,fetch)
+			#else:
+			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
 		cursor.execute(query)
 		rows=cursor.fetchall()
@@ -422,8 +453,9 @@ class sqlHelper():
 				if sources[source]==False:
 					idx=tables.index(source)
 					tables.pop(idx)
-		for table in tables:
-			include.append("{}.db".format(table))
+		if self.mode!="appsedu":
+			for table in tables:
+				include.append("{}.db".format(table))
 		include.insert(0,"appstream.db")
 		include.insert(0,"zomandos.db")
 		allCategories=[]
@@ -460,8 +492,9 @@ class sqlHelper():
 		f=os.path.join(self.rebostCache,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
-			if "zomandos"==fname.replace(".db",""):
-				restricted=False
+			if self.mode!="appsedu":
+				if "zomandos"==fname.replace(".db",""):
+					restricted=False
 			fsize=os.path.getsize(f)
 			fupdate.write("\n{0}:{1}".format(fname,fsize))
 			allData=self._getAllData(f)
@@ -701,18 +734,23 @@ class sqlHelper():
 			
 		while len(categories)<3:
 			categories.append("")
-		if ("Lliurex" in categories):
-			cat0="Lliurex"
-			cat1=categories[1]
-			cat2=categories[-1]
-		else:
-			cat0=categories[0]
-			cat1=categories[-1]
-			cat2=categories[-2]
-		if "Zomando" in categories and "Zomando" not in cat0+cat1+cat2:
-			cat2="Zomando"
-		if "FP" in categories and "FP" not in cat0+cat1+cat2:
-			cat1="FP"
+		cat0=categories[0]
+		cat1=categories[-1]
+		cat2=categories[-2]
+		if self.mode=="appsedu":
+			if ("Lliurex" in categories):
+				categories.remove("Lliurex")
+				cat0="Lliurex"
+				cat1=categories[0]
+				cat2=categories[1]
+			else:
+				cat0=categories[0]
+				cat1=categories[1]
+				cat2=categories[2]
+			#if "Zomando" in categories and "Zomando" not in cat0+cat1+cat2:
+			#	cat2="Zomando"
+			#if "FP" in categories and "FP" not in cat0+cat1+cat2:
+			#	cat1="FP"
 		if isinstance(pkgdataJson['versions'],dict):
 			if pkgdataJson["versions"].get("eduapp","")!="":
 				pkgdataJson["versions"].update({"package":pkgdataJson["versions"].pop("eduapp")})
@@ -902,7 +940,9 @@ class sqlHelper():
 			self._debug("Saving list to {}/unavailable.apps".format(self.rebostCache))
 			with open(os.path.join(self.rebostCache,"unavailable.apps"),"w") as f:
 				f.write(json.dumps(rows))
-		query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
+		if self.mode=="appsedu":
+			pass
+			#query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug(query)
 		cursor.execute(query)
 		rebost_db.commit()

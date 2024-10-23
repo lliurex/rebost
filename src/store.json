@@ -1,9 +1,10 @@
 {
-    "appimage": true,
+    "appimage": false,
     "config": "user",
-    "flatpak": true,
-    "packageKit": true,
-    "snap": true,
-	"restricTable": "appsedu",
-	"mandatoryTable": "appsedu"
+    "flatpak": false,
+    "packageKit": false,
+    "snap": false,
+	"restricTable": "eduapps",
+	"mandatoryTable": "eduapps",
+	"mode":"appsedu"
 }

@@ -270,7 +270,10 @@ def getAppsEduCatalogue():
 					continue
 				pkgIcon=columnIcon["src"]
 				if candidate:
-					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth})
+					cats=[]
+					for cat in columnCats.split(","):
+						cats.append(cat.strip())
+					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats})
 					candidate=None
 			columnAuth=None
 			columnName=None

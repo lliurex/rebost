@@ -27,7 +27,13 @@ class epicHelper():
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
 		self.iconDir="/usr/share/banners/lliurex-neu/"
-		self.locale=locale.getlocale()[0].split("_")[0]
+		self.locales=[locale.getdefaultlocale()[0].split("_")[0]]
+		self.locales.append("qcv")
+		if self.locales[0]=="ca":
+			self.locales.append("es")
+		else:
+			self.locales.append("ca")
+		self.locales.append("en")
 		cmd=["/usr/bin/lliurex-version","-n"]
 		try:
 			out=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
@@ -229,15 +235,17 @@ class epicHelper():
 				elif fline.startswith("Name"):
 					if summary=="":
 						summary=fline.split("=")[-1]
-					if len(self.locale)>0:
-						if fline.startswith("Name[{}".format(self.locale)):
-							summary=fline.split("=")[-1]
+					if len(self.locales)>0:
+						for locale in self.locales:
+							if fline.startswith("Name[{}".format(locale)):
+								summary=fline.split("=")[-1]
 				elif fline.startswith("Comment"):
 					if description=="":
 						description=fline.split("=")[-1]
-					if len(self.locale)>0:
-						if fline.startswith("Comment[{}".format(self.locale)):
-							description=fline.split("=")[-1]
+					if len(self.locales)>0:
+						for locale in self.locales:
+							if fline.startswith("Comment[{}".format(locale)):
+								description=fline.split("=")[-1]
 			rebostPkg['summary']=summary
 			rebostPkg['description']=description
 			if "Zomando" in rebostPkg['categories']:

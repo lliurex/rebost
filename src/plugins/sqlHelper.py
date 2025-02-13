@@ -453,9 +453,9 @@ class sqlHelper():
 				if sources[source]==False:
 					idx=tables.index(source)
 					tables.pop(idx)
-		if self.mode!="appsedu":
-			for table in tables:
-				include.append("{}.db".format(table))
+		#if self.mode!="appsedu":
+		for table in tables:
+			include.append("{}.db".format(table))
 		include.insert(0,"appstream.db")
 		include.insert(0,"zomandos.db")
 		allCategories=[]
@@ -899,7 +899,6 @@ class sqlHelper():
 
 	def _generateControlTags(self):
 		pass
-		
 
 	def _getAllData(self,f):
 		allData=[]

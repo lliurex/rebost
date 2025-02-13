@@ -78,7 +78,10 @@ class Rebost():
 		self._log("Plugins loaded")
 		self._loadPluginInfo()
 		self._log("Plugins processed")
+		self.mode=""
 		self._processConfig()
+		if self.mode=="appsedu":
+			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Config readed")
 		if self._copyCacheToTmp()==True:
 			self._log("Cache enabled")
@@ -214,11 +217,13 @@ class Rebost():
 		self.restricted=cfg.get("restricted",True)
 		self.mainTableForRestrict=cfg.get("maintable","")
 		self.forceApps=cfg.get("forceApps",{})
+		self.mode=cfg.get("mode","")
 	#def _processConfig
 
 	def _readConfig(self):
 		cfg={}
 		include={}
+		print("Reading {}".format(self.confFile))
 		if os.path.isfile(self.confFile):
 			with open(self.confFile,'r') as f:
 				try:

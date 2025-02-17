@@ -13,7 +13,7 @@ EPIC="/usr/sbin/epic"
 
 class epicHelper():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.packagekind="zomando"

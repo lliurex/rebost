@@ -58,12 +58,12 @@ def _generateTags(eduapps):
 def _extractTags(app):
 	raw=regex.sub("-",app)
 	rawtags=raw.lower().split("-")
-	ban=["lliurex","server","kde","gtk","gnome","extras","portable","runtime","app","flash"]
+	ban=["lliurex","server","kde","gtk","gnome","extras","portable","runtime","app","flash","qt"]
 	tags=[]
 	for rawtag in rawtags:
 		for tag in rawtag.split(" "):
 			if len(tag)>2:
-				if tag not in ban:
+				if tag.lower() not in ban:
 					tags.append(tag.lower())
 	return(tags)
 #def _extractTags
@@ -231,13 +231,14 @@ def getAppsEduCatalogue():
 		_debug("Skip update")
 		#return([])
 	bscontent=bs(rawcontent,"html.parser")
-	appInfo=bscontent.find_all("td",["column-1","column-2","column-5","column-7"])
+	appInfo=bscontent.find_all("td",["column-1","column-2","column-5","column-7","column-8"])
 	eduApps=[]
 	candidate=None
 	columnAuth=None
 	columnName=None
 	columnCats=None
 	columnIcon=None
+	columnPkgname=None
 	for column in appInfo:
 		full=False
 		if (column.attrs["class"][0]=="column-1"):
@@ -248,19 +249,23 @@ def getAppsEduCatalogue():
 			columnCats=column.text
 		if (column.attrs["class"][0]=="column-7"):
 			columnAuth=column.text
+		if (column.attrs["class"][0]=="column-8"):
+			columnPkgname=column.text
 			#Some apps should be hidden as are pure system apps (drkonqui...)
 			#or apps included within another (kde-connect related stuff...)
 			#or for some other reason (xterm..)
 			#The 1st approach is based on category and authorizaton status
-			#but there're many apps misscatalogued so disable it ATM
+			#but there're many apps misscatalogued so is disabled ATM
 			#if columnAuth.lower().endswith("sistema"):
 			#	if "utili" in columnCats.lower():
 			#		columnAuth=None
 			#		columnName=None
 			#		columnIcon=None
 			#		continue
-			full=True
+			if len(columnPkgname.strip())>0:
+				full=True
 		if full==True:
+			print("N: {}".format(columnPkgname))
 			for data in columnName:
 				href=data["href"]
 				candidate=os.path.basename(href.strip("/"))
@@ -273,11 +278,12 @@ def getAppsEduCatalogue():
 					cats=[]
 					for cat in columnCats.split(","):
 						cats.append(cat.strip())
-					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats})
+					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"pkgname":columnPkgname})
 					candidate=None
 			columnAuth=None
 			columnName=None
 			columnIcon=None
+			columnPkgname=None
 	return(eduApps)
 #def getAppsEduCatalogue
 

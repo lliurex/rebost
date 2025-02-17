@@ -1,3 +1,9 @@
+rebost (2.6.0-0lliurex23) jammy; urgency=medium
+
+  * appsedu integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 17 Feb 2025 18:43:37 +0100
+
 rebost (2.5.8-0lliurex23) jammy; urgency=medium
 
   * Trust appsedu url

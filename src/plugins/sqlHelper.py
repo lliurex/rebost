@@ -807,7 +807,14 @@ class sqlHelper():
 					mergepkgdataJson[key].update(item)
 			elif isinstance(item,list) and isinstance(mergepkgdataJson.get(key,''),list):
 				if len(item)>0:
-					mergepkgdataJson[key].extend(item)
+					cat=""
+					if "LliureX" in mergepkgdataJson[key]:
+						cat="LliureX"
+					mergepkgdataJson[key]=item
+					if "LliureX" not in mergepkgdataJson[key]:
+						mergepkgdataJson[key].insert(0,"LliureX")
+					else:
+						mergepkgdataJson[key].extend(item)
 					tmp=[]
 					for i in list(set(mergepkgdataJson[key])):
 						if i:

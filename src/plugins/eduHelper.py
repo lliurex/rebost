@@ -102,12 +102,13 @@ class eduHelper():
 			self._debug("Skip update")
 			#return([])
 		bscontent=bs(rawcontent,"html.parser")
-		appInfo=bscontent.find_all("td",["column-1","column-2","column-7"])
+		appInfo=bscontent.find_all("td",["column-1","column-2","column-7","column-8"])
 		eduApps=[]
 		candidate=None
 		columnAuth=None
 		columnName=None
 		columnIcon=None
+		columnPkgname=None
 		for column in appInfo:
 			full=False
 			if (column.attrs["class"][0]=="column-1"):
@@ -117,6 +118,8 @@ class eduHelper():
 			if (column.attrs["class"][0]=="column-7"):
 				columnAuth=column.text
 				full=True
+			if (column.attrs["class"][0]=="column-8"):
+				columnPkgname=column.text
 			if full==True:
 				for data in columnName:
 					href=data["href"]
@@ -130,11 +133,12 @@ class eduHelper():
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth})
+						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"pkgname":columnPkgname})
 						candidate=None
 				columnAuth=None
 				columnName=None
 				columnIcon=None
+				columnPkgname=None
 		return(eduApps)
 	#def getEduApps
 
@@ -204,7 +208,11 @@ class eduHelper():
 
 	def _appToRebost(self,eduapp,getDetail=False):
 		rebostPkg=rebostHelper.rebostPkg()
-		pkgname=eduapp["app"]
+		pkgname=eduapp.get("pkgname","").strip()
+		print("N: {}".format(pkgname))
+		if len(pkgname)==0:
+			pkgname=eduapp["app"]
+			print("N2: {}".format(pkgname))
 		if pkgname in self.appmap:
 			if pkgname!=self.appmap[pkgname]:
 				rebostPkg["alias"]=self.appmap[pkgname]

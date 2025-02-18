@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup as bs
 from urllib.request import Request
 from urllib.request import urlretrieve
 import flatpakHelper
+import locale
 
 DBG=False
 dbCache="/tmp/.cache/rebost"
@@ -41,6 +42,13 @@ st.setFormatter(formatter)
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 MAP="/usr/share/rebost/lists.d/eduapps.map"
 #logger.addHandler(st)
+localLangs=[locale.getdefaultlocale()[0].split("_")[0]]
+localLangs.append("qcv")
+if localLangs[0]=="ca":
+	localLangs.append("es")
+else:
+	localLangs.append("ca")
+localLangs.append("en")
 
 def setDebugEnabled(dbg):
 	DBG=dbg
@@ -299,11 +307,24 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		if pkg["pkgname"] in appmap:
 			pkg["alias"]=appmap[pkg["pkgname"]]
-		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
-		pkg['description']=component.get_description()
+		tmpSummary=""
+		tmpDescription=""
+		for lang in localLangs:
+				if tmpSummary=="":
+					if isinstance(component.get_comment(lang),str)==True:
+						tmpSummary=component.get_comment(lang)
+				if tmpDescription=="":
+					if isinstance(component.get_description(lang),str)==True:
+						tmpDescription=component.get_description(lang)
+		#pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
+		pkg['summary']=_sanitizeString(tmpSummary,scape=True)
+		#pkg['description']=component.get_description()
+		pkg['description']=tmpDescription
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
+			if len(pkg["description"])==0:
+				pkg['description']=pkg['summary']
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:

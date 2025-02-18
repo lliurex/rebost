@@ -445,14 +445,15 @@ class sqlHelper():
 				self.copyBaseTable(self.mainTableForRestrict)
 		(main_db,main_cursor)=self.enableConnection(self.main_tmp_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"],tableName=main_tmp_table)
 		#Begin merge
-		tables=self._getEnabledBundles()
-		#tables=["flatpak","snap","appimage","packagekit"]
+		# --- REM DISABLE BUNDLE SELECTION AS THERE'S NO CONFIG SINCE 20250211
+		#tables=self._getEnabledBundles()
+		#for source in sources.keys():
+		#	if source in tables:
+		#		if sources[source]==False:
+		#			idx=tables.index(source)
+		#			tables.pop(idx)
 		include=[]
-		for source in sources.keys():
-			if source in tables:
-				if sources[source]==False:
-					idx=tables.index(source)
-					tables.pop(idx)
+		tables=["flatpak","snap","appimage","packagekit"]
 		#if self.mode!="appsedu":
 		for table in tables:
 			include.append("{}.db".format(table))

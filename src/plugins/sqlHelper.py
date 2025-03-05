@@ -712,7 +712,7 @@ class sqlHelper():
 	#def _checkIncludeList
 
 	def _processPkgData(self,pkgname,pkgdataJson):
-	#REM At this point the pkgs has been filtered so this must be a validad one. Don't discard
+	#REM At this point the pkgs has been filtered so this must be a valid one. Don't discard
 		if pkgname.startswith("zero-"):
 			if len(pkgdataJson.get("bundle",{}).get("zomando",""))==0:
 				self._debug("Pkg without ZMD {}".format(pkgname))
@@ -776,6 +776,9 @@ class sqlHelper():
 	def _mergePackage(self,pkgdataJson,row):
 		(pkg,data,cat0,cat1,cat2,alias)=row
 		mergepkgdataJson=json.loads(data)
+		forbidden=False
+		if "Forbidden" in mergepkgdataJson["categories"]:
+			forbidden=True
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		eduappSum=""
 		if len(eduapp)>0:
@@ -796,6 +799,8 @@ class sqlHelper():
 				mergepkgdataJson["versions"].update({"package":"custom"})
 		if len(eduappSum)>0:
 			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
+		if forbidden==True and "Forbidden" not in mergepkgdataJson["categories"]:
+			mergepkgdataJson["categories"].insert(0,"Forbidden")
 		return(mergepkgdataJson)
 	#def _mergePackage
 
@@ -808,9 +813,6 @@ class sqlHelper():
 					mergepkgdataJson[key].update(item)
 			elif isinstance(item,list) and isinstance(mergepkgdataJson.get(key,''),list):
 				if len(item)>0:
-					cat=""
-					if "LliureX" in mergepkgdataJson[key]:
-						cat="LliureX"
 					mergepkgdataJson[key]=item
 					if "LliureX" not in mergepkgdataJson[key]:
 						mergepkgdataJson[key].insert(0,"LliureX")
@@ -820,6 +822,8 @@ class sqlHelper():
 					for i in list(set(mergepkgdataJson[key])):
 						if i:
 							tmp.append(i)
+					if "Forbidden" not in mergepkgdataJson and "Forbidden" in tmp:
+						tmp.insert(0,"Forbidden")
 					mergepkgdataJson[key]=tmp
 			elif isinstance(item,str) and isinstance(mergepkgdataJson.get(key,None),str):
 				if len(item)>=len(mergepkgdataJson.get(key,'')):

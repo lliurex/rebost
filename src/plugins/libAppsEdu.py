@@ -227,6 +227,8 @@ def _chkNeedUpdate(urlcontent):
 def getAppsEduCatalogue():
 	_debug("Fetching {}".format(EDUAPPS_URL))
 	rawcontent=_fetchCatalogue()
+	with open("/tmp/a","w") as f:
+		f.write(rawcontent)
 	if _chkNeedUpdate(rawcontent)==False:
 		_debug("Skip update")
 		#return([])
@@ -238,7 +240,7 @@ def getAppsEduCatalogue():
 	columnName=None
 	columnCats=None
 	columnIcon=None
-	columnPkgname=None
+	columnPkgName=None
 	for column in appInfo:
 		full=False
 		if (column.attrs["class"][0]=="column-1"):
@@ -250,7 +252,7 @@ def getAppsEduCatalogue():
 		if (column.attrs["class"][0]=="column-7"):
 			columnAuth=column.text
 		if (column.attrs["class"][0]=="column-8"):
-			columnPkgname=column.text
+			columnPkgName=column.text
 			#Some apps should be hidden as are pure system apps (drkonqui...)
 			#or apps included within another (kde-connect related stuff...)
 			#or for some other reason (xterm..)
@@ -262,10 +264,10 @@ def getAppsEduCatalogue():
 			#		columnName=None
 			#		columnIcon=None
 			#		continue
-			if len(columnPkgname.strip())>0:
+			#if len(columnPkgname.strip())>0:
+			if len(columnCats.strip())>0:
 				full=True
 		if full==True:
-			print("N: {}".format(columnPkgname))
 			for data in columnName:
 				href=data["href"]
 				candidate=os.path.basename(href.strip("/"))
@@ -278,7 +280,9 @@ def getAppsEduCatalogue():
 					cats=[]
 					for cat in columnCats.split(","):
 						cats.append(cat.strip())
-					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"pkgname":columnPkgname})
+					if len(columnPkgName.strip())==0:
+						columnPkgName=candidate
+					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName})
 					candidate=None
 			columnAuth=None
 			columnName=None

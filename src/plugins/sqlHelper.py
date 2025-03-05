@@ -196,6 +196,7 @@ class sqlHelper():
 				bundles=rebostPkg.get('bundle',{}).copy()
 				#Update state for bundles as they can be installed outside rebost
 				for bundle in bundles.keys():
+					print(bundle)
 					if bundle=='appimage':
 						bundleurl=bundles.get(bundle,'')
 						rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
@@ -611,7 +612,7 @@ class sqlHelper():
 							pkgdataJson["categories"].insert(0,"Forbidden")
 					aliaspkgdataJson=self._mergePackage(aliaspkgdataJson,row)
 					if len(aliasdesc)>0:
-						if aliasdesc!=aliaspkgdataJson["description"]:
+						if aliasdesc!=aliaspkgdataJson["description"] and len(aliasdesc)>0:
 							aliaspkgdataJson["description"]=aliasdesc
 				
 					elif len(aliasname)>0:
@@ -783,6 +784,7 @@ class sqlHelper():
 		eduappSum=""
 		if len(eduapp)>0:
 			eduappSum=mergepkgdataJson.get("summary","")
+			eduappDesc=mergepkgdataJson.get("description","")
 			mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"]:
 				mergepkgdataJson["versions"].pop("eduapp")
@@ -798,7 +800,9 @@ class sqlHelper():
 			else:
 				mergepkgdataJson["versions"].update({"package":"custom"})
 		if len(eduappSum)>0:
-			mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
+			#mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
+			mergepkgdataJson["summary"]="{}".format(eduappSum)
+			mergepkgdataJson["description"]="{}".format(eduappDesc)
 		if forbidden==True and "Forbidden" not in mergepkgdataJson["categories"]:
 			mergepkgdataJson["categories"].insert(0,"Forbidden")
 		return(mergepkgdataJson)

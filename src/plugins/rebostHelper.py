@@ -316,6 +316,10 @@ def appstream_to_rebost(appstreamCatalogue):
 				if tmpDescription=="":
 					if isinstance(component.get_description(lang),str)==True:
 						tmpDescription=component.get_description(lang)
+		if tmpDescription=="":
+			tmpDescription=component.get_description()
+		if tmpSummary=="":
+			tmpSummary=component.get_comment()
 		#pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
 		pkg['summary']=_sanitizeString(tmpSummary,scape=True)
 		#pkg['description']=component.get_description()

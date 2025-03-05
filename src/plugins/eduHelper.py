@@ -65,6 +65,8 @@ class eduHelper():
 		self._loadMAP()
 		with open(fnames,"w") as f:
 			for eduapp in eduApps:
+				if "sistema" in eduapp["auth"].lower():
+					continue
 				rebostPkgList.append(self._appToRebost(eduapp))
 				f.write("{}\n".format(eduapp["app"]))
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
@@ -133,7 +135,9 @@ class eduHelper():
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"pkgname":columnPkgname})
+						if len(columnPkgname.strip())==0:
+							columnPkgname=candidate
+						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName})
 						candidate=None
 				columnAuth=None
 				columnName=None
@@ -209,13 +213,12 @@ class eduHelper():
 	def _appToRebost(self,eduapp,getDetail=False):
 		rebostPkg=rebostHelper.rebostPkg()
 		pkgname=eduapp.get("pkgname","").strip()
-		print("N: {}".format(pkgname))
 		if len(pkgname)==0:
 			pkgname=eduapp["app"]
-			print("N2: {}".format(pkgname))
-		if pkgname in self.appmap:
-			if pkgname!=self.appmap[pkgname]:
-				rebostPkg["alias"]=self.appmap[pkgname]
+		 #if pkgname in self.appmap:
+		 #	if pkgname!=self.appmap[pkgname]:
+				#rebostPkg["alias"]=self.appmap[pkgname]
+		rebostPkg["alias"]=eduapp["alias"]
 		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
 		rebostPkg["homepage"]=appUrl
 		rebostPkg["name"]=pkgname

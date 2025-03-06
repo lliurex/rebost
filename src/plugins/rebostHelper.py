@@ -387,6 +387,7 @@ def _componentFillInfo(component,pkg):
 	for release in component.get_releases():
 		versionArray.append(release.get_version())
 	if len(versionArray)==0:
+		#There's no match
 		versionArray=["0.9~{}".format(distro.codename())]
 	versionArray.sort()
 	if len(component.get_bundles())>0:
@@ -405,8 +406,9 @@ def _componentFillInfo(component,pkg):
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:
-						pkg['state']["package"]="0"
-						pkg['versions']={"package":versionArray[-1]}
+						if versionArray!=["0.9~{}".format(distro.codename())]:
+							pkg['state']["package"]="0"
+							pkg['versions']={"package":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
 		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:

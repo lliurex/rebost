@@ -250,14 +250,16 @@ def _sanitizeString(data,scape=False,unescape=False):
 
 def _loadMap():
 	appmap={}
-	fappmap={}
-	if os.path.isfile(MAP):
-		with open(MAP,"r") as f:
-			fcontent=json.loads(f.read())
-	for app,alias in fcontent.items():
-		if alias=="":
-			continue
-		appmap.update({app:alias})
+	#DISABLED AS no map wanted
+	#fappmap={}
+	#fcontent={}
+	#if os.path.isfile(MAP):
+	#	with open(MAP,"r") as f:
+	#		fcontent=json.loads(f.read())
+	#for app,alias in fcontent.items():
+	#	if alias=="":
+	#		continue
+	#	appmap.update({app:alias})
 	return(appmap)
 #def _loadMAP
 

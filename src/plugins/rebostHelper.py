@@ -406,8 +406,9 @@ def _componentFillInfo(component,pkg):
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:
+					#	if versionArray!=["0.9~{}".format(distro.codename())]:
+						pkg['state']["package"]="0"
 						if versionArray!=["0.9~{}".format(distro.codename())]:
-							pkg['state']["package"]="0"
 							pkg['versions']={"package":versionArray[-1]}
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)

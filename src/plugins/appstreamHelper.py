@@ -161,9 +161,35 @@ class appstreamHelper():
 			#state is not working
 			#Do a best effort, get launchable and check if exists
 			pkg.set_state(2)
+			launchables=["{}.desktop".format(pkgname)]
 			for i in pkg.get_launchables():
-				if os.path.exists("/usr/share/applications/{}".format(i.get_value())):
-					pkg.set_state(1)
+				if i.get_value() not in launchables:
+					launchables.append(i.get_value())
+			for launchable in launchables:
+				#if launchable exists it's possible that app is installed
+				#but we must also check for Exec
+				if os.path.exists("/usr/share/applications/{}".format(launchable)):
+					fcontent=[]
+					exe=""
+					with open("/usr/share/applications/{}".format(launchable),"r") as f:
+						fcontent=f.readlines()
+					for fline in fcontent:
+						if fline.startswith("Exec="):
+							exe=fline.split("=")[1].rstrip().split(" ")[0]
+							break
+					if exe=="":
+						continue
+					if os.path.exists(exe)==False:
+						path=os.environ.get("PATH","/usr/bin:/sbin:bin:/usr/sbin/").split(":")
+						for p in path:
+							if os.path.exists(os.path.join(p,exe))==True:
+								pkg.set_state(1)
+								break
+
+					else:
+						pkg.set_state(1)
+					if pkg.get_state()==1:
+						break
 			fname=None
 			if icondefault:
 				icondefault=self._setIconFname(pkg,icondefault)

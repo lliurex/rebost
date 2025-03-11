@@ -79,7 +79,7 @@ def resultSet(*kwargs):
 #def resultSet
 
 def rebostPkg(*kwargs):
-	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
+	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','infopage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
 
@@ -336,6 +336,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
 			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
+		pkg['infopage']=_componentGetInfopage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)
 		pkg['license']=component.get_project_license()
@@ -374,13 +375,18 @@ def _componentGetIcon(component):
 #def _componentGetIcon
 
 def _componentGetHomepage(component):
+		homepage=component.get_url_item(appstream.UrlKind.HOMEPAGE)
+		return(homepage)
+#def _componentGetHomepage
+
+def _componentGetInfopage(component):
 		homepage=''
-		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
+		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
 		return(homepage)
-#def _componentGetHomepage
+#def _componentGetInfopage
 
 def _componentFillInfo(component,pkg):
 	versionArray=[]

@@ -174,7 +174,7 @@ class eduHelper():
 				rebostPkg['summary']=rebostPkg["description"].split(".")[0]
 			homepage=i.find("div","acf-view__url_editor-link acf-view__link")
 			if homepage:
-				rebostPkg["homepage"]=homepage.text.strip()
+				rebostPkg["infopage"]=homepage.text.strip()
 			auth=i.find("div","acf-view__estat_val-choice acf-view__choice")
 			if auth:
 				reject=i.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
@@ -220,7 +220,7 @@ class eduHelper():
 				#rebostPkg["alias"]=self.appmap[pkgname]
 		rebostPkg["alias"]=eduapp["alias"]
 		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
-		rebostPkg["homepage"]=appUrl
+		rebostPkg["infopage"]=appUrl
 		rebostPkg["name"]=pkgname
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)

@@ -269,8 +269,8 @@ def getAppsEduCatalogue():
 				full=True
 		if full==True:
 			for data in columnName:
-				href=data["href"]
-				candidate=os.path.basename(href.strip("/"))
+				infopage=data["href"]
+				candidate=os.path.basename(infopage.strip("/"))
 			if candidate:
 				if columnIcon==None:
 					print("NO ICON FOR {}".format(candidate))
@@ -282,7 +282,7 @@ def getAppsEduCatalogue():
 						cats.append(cat.strip())
 					if len(columnPkgName.strip())==0:
 						columnPkgName=candidate
-					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName})
+					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})
 					candidate=None
 			columnAuth=None
 			columnName=None

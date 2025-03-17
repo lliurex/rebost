@@ -159,25 +159,25 @@ class eduHelper():
 		self._debug("URL: {}".format(appUrl))
 		rawcontent=self._fetchCatalogue(appUrl)
 		bscontent=bs(rawcontent,"html.parser")
-		b=bscontent.find_all("div","entry-content")
-		for i in b:
-			img=i.find("img")
+		pageDivs=bscontent.find_all("div","entry-content")
+		for div in pageDivs:
+			img=div.find("img")
 			if img:
 				rebostPkg["icon"]=img["src"]
-			rel=i.find("div","acf-view__versio-field acf-view__field")
+			rel=div.find("div","acf-view__versio-field acf-view__field")
 			if rel:
 				rebostPkg["versions"]={"eduapp":rel.text.strip()}
 				#rebostPkg["icon"]=img["src"]
-			desc=i.find("div","acf-view__descripcio-field acf-view__field")
+			desc=div.find("div","acf-view__descripcio-field acf-view__field")
 			if desc:
 				rebostPkg["description"]=desc.text.strip()
 				rebostPkg['summary']=rebostPkg["description"].split(".")[0]
-			homepage=i.find("div","acf-view__url_editor-link acf-view__link")
+			homepage=div.find("div","acf-view__url_editor-link acf-view__link")
 			if homepage:
-				rebostPkg["infopage"]=homepage.text.strip()
-			auth=i.find("div","acf-view__estat_val-choice acf-view__choice")
+				rebostPkg["homepage"]=homepage.text.strip()
+			auth=div.find("div","acf-view__estat_val-choice acf-view__choice")
 			if auth:
-				reject=i.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
+				reject=div.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
 			if reject:
 				rebostPkg["description"]+="****{}".format(reject.text.strip())
 				rebostPkg["bundle"]={"eduapp":"banned"}
@@ -187,9 +187,9 @@ class eduHelper():
 			#	rebostPkg["categories"]=cats.text.strip().split()
 
 			#Without use
-			groups=i.find("acf-view__usuaris_autoritzats_val-choice acf-view__choice")
-			ident=i.find("acf-view__identitat_val-choice acf-view__choice")
-			ambit=i.find("div","acf-view__ambit_educatiu_val-label acf-view__label")
+			groups=div.find("acf-view__usuaris_autoritzats_val-choice acf-view__choice")
+			ident=div.find("acf-view__identitat_val-choice acf-view__choice")
+			ambit=div.find("div","acf-view__ambit_educatiu_val-label acf-view__label")
 			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
 			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
 			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
@@ -219,12 +219,12 @@ class eduHelper():
 		 #	if pkgname!=self.appmap[pkgname]:
 				#rebostPkg["alias"]=self.appmap[pkgname]
 		rebostPkg["alias"]=eduapp["alias"]
-		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
-		rebostPkg["infopage"]=appUrl
+		#appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
+		rebostPkg["infopage"]=eduapp["infopage"]
 		rebostPkg["name"]=pkgname
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
-		rebostPkg["bundle"]={"eduapp":appUrl}
+		rebostPkg["bundle"]={"eduapp":eduapp["infopage"]}
 		rebostPkg["icon"]=eduapp["icon"]
 		rebostPkg["categories"]=eduapp["categories"]
 		if eduapp["auth"].lower().startswith("autori")==False:

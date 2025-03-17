@@ -196,7 +196,6 @@ class sqlHelper():
 				bundles=rebostPkg.get('bundle',{}).copy()
 				#Update state for bundles as they can be installed outside rebost
 				for bundle in bundles.keys():
-					print(bundle)
 					if bundle=='appimage':
 						bundleurl=bundles.get(bundle,'')
 						rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
@@ -351,7 +350,7 @@ class sqlHelper():
 			limit=0
 		if limit>0:
 			fetch="LIMIT {}".format(limit)
-			order="ORDER by RANDOM()"
+			#order="ORDER by RANDOM()"
 		if upgradable or installed:
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%\"state\": _\"_____%\": \"0\"%}}' {2} {3}".format(table,str(category),order,fetch)
 		else:
@@ -371,11 +370,13 @@ class sqlHelper():
 			query="PRAGMA case_sensitive_like = 1"
 			cursor.execute(query)
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
+			self._debug(query)
 			cursor.execute(query)
 			moreRows=cursor.fetchall()
 			if moreRows:
 				rows.extend(moreRows)
 			query="PRAGMA case_sensitive_like = 0"
+			self._debug(query)
 			cursor.execute(query)
 		self.closeConnection(db)
 		if upgradable==True:
@@ -817,7 +818,8 @@ class sqlHelper():
 					mergepkgdataJson[key].update(item)
 			elif isinstance(item,list) and isinstance(mergepkgdataJson.get(key,''),list):
 				if len(item)>0:
-					mergepkgdataJson[key]=item
+					mergepkgdataJson[key].extend(item)
+					mergepkgdataJson[key]=list(set(mergepkgdataJson[key]))
 					if "LliureX" not in mergepkgdataJson[key]:
 						mergepkgdataJson[key].insert(0,"LliureX")
 					else:

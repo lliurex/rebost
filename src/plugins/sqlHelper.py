@@ -194,14 +194,15 @@ class sqlHelper():
 				(pkg,data)=row
 				rebostPkg=json.loads(data)
 				bundles=rebostPkg.get('bundle',{}).copy()
+				infoPage=rebostPkg.get('infopage',"")
+				if len(infoPage)>0:
+					rebostPkg=self._upgradeAppseduData(db,table,cursor,infoPage,pkg,rebostPkg)
 				#Update state for bundles as they can be installed outside rebost
 				for bundle in bundles.keys():
 					if bundle=='appimage':
 						bundleurl=bundles.get(bundle,'')
-						rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
-					if bundle=="eduapp":
-						bundleurl=bundles.get(bundle,'')
-						rebostPkg=self._upgradeAppseduData(db,table,cursor,bundleurl,pkg,rebostPkg)
+						if infoPage=="":
+							rebostPkg=self._upgradeAppimageData(db,table,cursor,bundleurl,pkg,rebostPkg)
 					#Get state from epi
 					rebostPkg=self._getStateFromEpi(db,table,cursor,pkgname,rebostPkg,bundle,user)
 				rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
@@ -519,8 +520,8 @@ class sqlHelper():
 							allCategories.extend(categories)
 						query.append(pkgData)
 					if len(aliasPkgs)>0:
-						for aliasPkg in aliasPkgs:
-							if aliasPkg!=([],[]):
+						if aliasPkgs!=([],[]):
+							for aliasPkg in aliasPkgs:
 								dataContent=aliasPkg[0][1]
 								alias=aliasPkg[0][0]
 								#Ensure all single quotes are duplicated or sql will fail
@@ -574,12 +575,15 @@ class sqlHelper():
 		if self.filters:
 			banList=self._applyFilters(pkgname,pkgdataJson)
 			if banList==True:
-				return(processedpkg)
+				return(processedpkg,aliaspkg)
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
 		rows=cursor.execute(fetchquery).fetchall()
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
+			#If no row then it's a new pkg so discard it if strict mode enabled
+			if self.mode=="appsedu":
+				return(processedpkg,aliaspkg)
 			if "lliurex" in pkgdata.lower():
 				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
 					restricted=False
@@ -783,11 +787,13 @@ class sqlHelper():
 			forbidden=True
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		eduappSum=""
-		if len(eduapp)>0:
+		infoPage=mergepkgdataJson.get("infopage","")
+		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
 			eduappSum=mergepkgdataJson.get("summary","")
 			eduappDesc=mergepkgdataJson.get("description","")
-			mergepkgdataJson["bundle"].pop("eduapp")
-			if "eduapp" in mergepkgdataJson["versions"]:
+			if "eduapp" in mergepkgdataJson["bundle"].keys():
+				mergepkgdataJson["bundle"].pop("eduapp")
+			if "eduapp" in mergepkgdataJson["versions"].keys():
 				mergepkgdataJson["versions"].pop("eduapp")
 		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
 		#If package comes from eduapps and is not maped then
@@ -800,12 +806,14 @@ class sqlHelper():
 				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
 			else:
 				mergepkgdataJson["versions"].update({"package":"custom"})
-		if len(eduappSum)>0:
+		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
 			#mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 			mergepkgdataJson["summary"]="{}".format(eduappSum)
 			mergepkgdataJson["description"]="{}".format(eduappDesc)
 		if forbidden==True and "Forbidden" not in mergepkgdataJson["categories"]:
 			mergepkgdataJson["categories"].insert(0,"Forbidden")
+		if len(infoPage)>0:
+			mergepkgdataJson["infopage"]=infoPage
 		return(mergepkgdataJson)
 	#def _mergePackage
 

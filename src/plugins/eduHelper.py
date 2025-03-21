@@ -165,7 +165,8 @@ class eduHelper():
 		for div in pageDivs:
 			img=div.find("img")
 			if img:
-				rebostPkg["icon"]=img["src"]
+				if "Generica" in img and repostPkg.get("icon","")!="":
+					rebostPkg["icon"]=img["src"]
 			rel=div.find("div","acf-view__versio-field acf-view__field")
 			if rel:
 				rebostPkg["versions"]={"eduapp":rel.text.strip()}

@@ -155,8 +155,10 @@ class eduHelper():
 				self._debug(rebostPkg)
 				return(rebostPkg)
 		self._debug("Filling data for {}".format(rebostPkg.get('name')))
-		appUrl=rebostPkg.get("bundle",{}).get("eduapp","")
+		appUrl=rebostPkg.get("infopage","")
 		self._debug("URL: {}".format(appUrl))
+		if len(appUrl)==0:
+			return(rebostPkg)
 		rawcontent=self._fetchCatalogue(appUrl)
 		bscontent=bs(rawcontent,"html.parser")
 		pageDivs=bscontent.find_all("div","entry-content")
@@ -176,9 +178,10 @@ class eduHelper():
 			if homepage:
 				rebostPkg["homepage"]=homepage.text.strip()
 			auth=div.find("div","acf-view__estat_val-choice acf-view__choice")
+			reject=None
 			if auth:
 				reject=div.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
-			if reject:
+			if reject!=None:
 				rebostPkg["description"]+="****{}".format(reject.text.strip())
 				rebostPkg["bundle"]={"eduapp":"banned"}
 			#Don't overwrite categories

@@ -828,7 +828,7 @@ class sqlHelper():
 				if len(item)>0:
 					mergepkgdataJson[key].extend(item)
 					mergepkgdataJson[key]=list(set(mergepkgdataJson[key]))
-					if "LliureX" not in mergepkgdataJson[key]:
+					if ("LliureX" not in mergepkgdataJson[key]) and (key.lower()=="categories"):
 						mergepkgdataJson[key].insert(0,"LliureX")
 					else:
 						mergepkgdataJson[key].extend(item)

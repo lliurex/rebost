@@ -23,6 +23,35 @@ EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
 
+i18n={'CAD':"Engineering",
+	'Música':"Music",
+	'Gràfics':"Graphics",
+	'Vídeo':"Video",
+	'Ingenieria':"Engineering",
+	'Àudio':"Audio",
+	'Tecnologia':"Robotics", 
+	'Tecnología':"Robotics", 
+	'Multimèdia':"AudioVideo", 
+	'Matemàtiques':"Math", 
+	'Video':"Video", 
+	'Electrònica':"Electronics", 
+	'Utilitats':"Utility", 
+	'Gamificació':"Education",
+	'Robótica':"Robotics", 
+	'Ciències':"Science",
+	'Geografia':"Geography",
+	'Ofimàtica':"Office",
+	'Informàtica':"ComputerScience",
+	'Musica':"Music",
+	'Intel·ligència Artificial':"ArtificialIntelligence", 
+	'Programació':"Development", 
+	'Fotografia':"Photography", 
+	'Disseny':"Engineering",
+	'Física':"Physics",
+	'Enginyeria':"Engineering",
+	'Química':"Chemistry",
+	'Presentacions':"Presentation"}
+
 def _debug(msg):
 	print("eduApps: {}".format(msg))
 
@@ -241,6 +270,7 @@ def getAppsEduCatalogue():
 	columnCats=None
 	columnIcon=None
 	columnPkgName=None
+	categories=[]
 	for column in appInfo:
 		full=False
 		if (column.attrs["class"][0]=="column-1"):
@@ -278,19 +308,29 @@ def getAppsEduCatalogue():
 				pkgIcon=columnIcon["src"]
 				if candidate:
 					cats=[]
-					#Don't get categories
-					#for cat in columnCats.split(","):
-					#	cats.append(cat.strip())
+					#Categories must be mapped 'cause are translated
+					for cat in columnCats.split(","):
+						realCat=_getRealCategory(cat.strip())
+						if len(realCat)>0 and realCat not in cats:
+							cats.append(realCat)
+							print("CAT: {}".format(realCat))
 					if len(columnPkgName.strip())==0:
 						columnPkgName=candidate
 					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})
 					candidate=None
+					categories.extend(cats)
 			columnAuth=None
 			columnName=None
 			columnIcon=None
 			columnPkgname=None
 	return(eduApps)
 #def getAppsEduCatalogue
+
+def _getRealCategory(cat):
+	cat=i18n.get(cat,cat)
+	return(cat)
+#def _getRealCategory
+
 
 regex=re.compile("[^\\w -]")
 #if __name__=="__main__":

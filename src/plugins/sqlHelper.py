@@ -157,7 +157,11 @@ class sqlHelper():
 			query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT{});".format(tableName,fields)
 		else:
 			query="CREATE TABLE IF NOT EXISTS {} ({});".format(tableName,fields)
-		cursor.execute(query)
+		try:
+			cursor.execute(query)
+		except Exception as e:
+			#something went wrong
+			print("CRITICAL ERROR. Accessing database: {}".format(e))
 		return(db,cursor)
 	#def enableConnection
 
@@ -366,16 +370,23 @@ class sqlHelper():
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
 		cursor.execute(query)
+		seen=[]
+		rows=[]
 		rows=cursor.fetchall()
+		for row in rows:
+			seen.append("\"{}\"".format(row[0]))
 		if len(rows)<limit or len(rows)==0 and (upgradable==False and installed==False):
+			included=""
+			if len(seen)>0:
+				included="and pkg not in ({})".format(",".join(seen))
 			query="PRAGMA case_sensitive_like = 1"
 			cursor.execute(query)
-			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {2} {3}".format(table,str(category),order,fetch)
+			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {4} {2} {3}".format(table,str(category),order,fetch,included)
 			self._debug(query)
 			cursor.execute(query)
 			moreRows=cursor.fetchall()
-			if moreRows:
-				rows.extend(moreRows)
+			rows.extend(moreRows)
+			#Restore case sensitive
 			query="PRAGMA case_sensitive_like = 0"
 			self._debug(query)
 			cursor.execute(query)

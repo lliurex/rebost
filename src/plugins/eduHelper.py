@@ -186,10 +186,13 @@ class eduHelper():
 			if reject!=None:
 				rebostPkg["description"]+="****{}".format(reject.text.strip())
 				rebostPkg["bundle"]={"eduapp":"banned"}
-			#Don't overwrite categories
-			#cats=i.find("div","acf-view__categoria_val-choice acf-view__choice")
-			#if cats:
-			#	rebostPkg["categories"]=cats.text.strip().split()
+			#Translate categories
+			rawCats=div.find("div","acf-view__categoria_val-choice acf-view__choice")
+			if len(rawCats)>0:
+				categories=[]
+				for cat in rawCats:
+					categories.append(libAppsEdu.i18n.get(cat,cat))
+				rebostPkg["categories"]=categories
 
 			#Without use
 			groups=div.find("acf-view__usuaris_autoritzats_val-choice acf-view__choice")

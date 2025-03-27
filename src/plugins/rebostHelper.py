@@ -416,9 +416,10 @@ def _componentFillInfo(component,pkg):
 						pkg['state']["package"]="0"
 						if versionArray!=["0.9~{}".format(distro.codename())]:
 							pkg['versions']={"package":versionArray[-1]}
+		categories=[cat.lower() for cat in pkg.get("categories",[])]
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
-		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+		elif "lliurex" in categories:
 				pkg['bundle']={'package':pkg['pkgname']}
 				pkg['homepage']="https://github.com/lliurex"
 	return(pkg)
@@ -437,7 +438,8 @@ def _componentLliurexPackage(component,pkg):
 			pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
 		else:
 			pkg['bundle']={'package':pkg['pkgname']}
-	if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+	categories=[cat.lower() for cat in pkg.get("categories",[])]
+	if "lliurex" in categories==False:
 		pkg['categories'].insert(0,"Lliurex")
 	pkg['homepage']="https://github.com/lliurex"
 	return(pkg)

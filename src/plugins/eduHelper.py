@@ -137,6 +137,7 @@ class eduHelper():
 					if candidate:
 						if len(columnPkgname.strip())==0:
 							columnPkgname=candidate
+						cats=[]
 						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName})
 						candidate=None
 				columnAuth=None

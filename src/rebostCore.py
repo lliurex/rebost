@@ -330,6 +330,7 @@ class Rebost():
 			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
+					self._debug("Restore db: {0} -> {1}".format(db.path,os.path.join(self.cache,db.name)))
 			tmpCache=os.path.join(self.cache,"tmp")
 			if os.path.exists(tmpCache)==False:
 				os.makedirs(tmpCache)
@@ -480,7 +481,6 @@ class Rebost():
 	#def _sanitizeStore
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
-		#action,args=action_args.split("#")
 		proc=None
 		plugList=[]
 		if not plugin:  
@@ -539,8 +539,11 @@ class Rebost():
 		self._debug("Getting status from {}".format(epifile))
 		stdout='1'
 		if os.path.isfile(epifile):
-			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
-			stdout=proc.stdout.decode().strip()
+			try:
+				proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
+				stdout=proc.stdout.decode().strip()
+			except Exception as e:
+				stdout=str(e)
 		else:
 			stdout="23"
 		return (stdout)

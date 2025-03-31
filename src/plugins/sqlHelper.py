@@ -19,7 +19,7 @@ class sqlHelper():
 		self.dbg=True
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export']
+		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export','updatePkgData']
 		self.packagekind="*"
 		self.priority=0
 		self.postAutostartActions=["load"]
@@ -138,6 +138,8 @@ class sqlHelper():
 				os.remove(self.lastUpdate)
 			rs=self.consolidateSqlTables()
 			#self.includelist=True
+		if action=='updatePkgData':
+			rs=self._updatePkgData(parms,extraParms)
 		return(rs)
 	#def execute
 
@@ -423,15 +425,38 @@ class sqlHelper():
 				dataContent=dataContent.replace("''","'")
 				dataContent=dataContent.replace("'","''")
 				query="UPDATE {0} SET data='{1}' WHERE {3}='{2}';".format(table,dataContent,pkgname,f)
+				cursor.execute(query)
 				queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
 				cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
 		#self._debug(query)
-				cursor.execute(query)
 		query="SELECT pkg,data FROM {} WHERE alias='{}';".format(table,pkgname)
 		self.closeConnection(db)
 		self.closeConnection(dbInstalled)
 		return(rows)
 	#def _commitInstall
+
+	def _updatePkgData(self,pkgname,data):
+		if hasattr(self,"updatePkgs")==False:
+			self.updatePkgs=-1
+		self.updatePkgs+=1
+		table=os.path.basename(self.main_table).replace(".db","")
+		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
+		dataContent=data
+		#Ensure all single quotes are duplicated or sql will fail
+		dataContent=dataContent.replace("''","'")
+		dataContent=dataContent.replace("'","''")
+		query="UPDATE {0} SET data='{2}' WHERE pkg='{1}';".format(table,pkgname,dataContent)
+		ret=[{}]
+		try:
+			cursor.execute(query)
+		except Exception as e:
+			ret=[{"err":e}]
+		self.closeConnection(db)
+		if self.updatePkgs>4:
+			signal.raise_signal(signal.SIGALRM)
+			self.updatePkgs=0
+		return(ret)
+	#def _updatePkgData
 
 	def consolidateSqlTables(self):
 		self._debug("Merging data")
@@ -806,6 +831,7 @@ class sqlHelper():
 				mergepkgdataJson["bundle"].pop("eduapp")
 			if "eduapp" in mergepkgdataJson["versions"].keys():
 				mergepkgdataJson["versions"].pop("eduapp")
+			#Remove categories of eduapps 'cause could be wrong so get categories from the other sources
 		mergepkgdataJson=self._mergeData(pkgdataJson,mergepkgdataJson)
 		#If package comes from eduapps and is not maped then
 		#appstream adds a bundle "eduapps". Replace it as if there's info
@@ -844,9 +870,12 @@ class sqlHelper():
 					else:
 						mergepkgdataJson[key].extend(item)
 					tmp=[]
+					seen=[]
 					for i in list(set(mergepkgdataJson[key])):
-						if i:
-							tmp.append(i)
+						if i.islower()==False:
+							if i.lower() not in seen:
+								tmp.append(i.strip())
+								seen.append(i.lower())
 					if "Forbidden" not in mergepkgdataJson and "Forbidden" in tmp:
 						tmp.insert(0,"Forbidden")
 					mergepkgdataJson[key]=tmp

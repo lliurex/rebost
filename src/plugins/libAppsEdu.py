@@ -21,6 +21,7 @@ import html2text
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
+EDUAPPS_RAW="/tmp/.eduapps.raw"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
 
 i18n={'CAD':"Engineering",
@@ -253,10 +254,18 @@ def _chkNeedUpdate(urlcontent):
 	return(update)
 #def _chkNeedUpdate
 
+def getRawContent():
+	rawcontent=""
+	if os.path.exists(EDUAPPS_RAW):
+		with open(EDUAPPS_RAW,"r") as f:
+			rawcontent=f.read()
+	return(rawcontent)
+#def getRawContent
+
 def getAppsEduCatalogue():
 	_debug("Fetching {}".format(EDUAPPS_URL))
 	rawcontent=_fetchCatalogue()
-	with open("/tmp/a","w") as f:
+	with open(EDUAPPS_RAW,"w") as f:
 		f.write(rawcontent)
 	if _chkNeedUpdate(rawcontent)==False:
 		_debug("Skip update")
@@ -313,7 +322,6 @@ def getAppsEduCatalogue():
 						realCat=_getRealCategory(cat.strip())
 						if len(realCat)>0 and realCat not in cats:
 							cats.append(realCat)
-							print("CAT: {}".format(realCat))
 					if len(columnPkgName.strip())==0:
 						columnPkgName=candidate
 					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})

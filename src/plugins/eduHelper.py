@@ -58,6 +58,10 @@ class eduHelper():
 			os.unlink(FILTER)
 		#eduApps=self._getEduApps()
 		eduApps=libAppsEdu.getAppsEduCatalogue()
+		rawcontent=libAppsEdu.getRawContent()
+		if self._chkNeedUpdate(rawcontent)==False:
+			self._debug("Skip update")
+			return([])
 		self._debug("Loaded {} from eduapps".format(len(eduApps)))
 		rebostPkgList=[]
 		fnames=os.path.join(self.rebostCache,"appsedu.list")
@@ -191,7 +195,9 @@ class eduHelper():
 			if len(rawCats)>0:
 				categories=[]
 				for cat in rawCats:
+					cat=cat.strip()
 					categories.append(libAppsEdu.i18n.get(cat,cat))
+			if len(rebostPkg.get("categories",[]))==0:
 				rebostPkg["categories"]=categories
 
 			#Without use

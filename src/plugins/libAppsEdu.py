@@ -10,7 +10,6 @@ import time,os
 import json
 import re
 from rebost import store
-import rebostHelper
 import urllib
 from urllib.request import Request
 from urllib.request import urlretrieve
@@ -312,7 +311,7 @@ def getAppsEduCatalogue():
 				candidate=os.path.basename(infopage.strip("/"))
 			if candidate:
 				if columnIcon==None:
-					print("NO ICON FOR {}".format(candidate))
+					_debug("NO ICON FOR {}".format(candidate))
 					continue
 				pkgIcon=columnIcon["src"]
 				if candidate:
@@ -324,6 +323,9 @@ def getAppsEduCatalogue():
 							cats.append(realCat)
 					if len(columnPkgName.strip())==0:
 						columnPkgName=candidate
+					#elif columnPkgName.startswith("zero:"):
+					#	fixName=columnPkgName.replace("zero:","")
+					#	columnPkgName="zero-lliurex-{}".format(fixName.split(".")[-1].lower())
 					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})
 					candidate=None
 					categories.extend(cats)

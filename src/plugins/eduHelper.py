@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#import rebostHelper
 import time,os,stat
 import json
 import re
@@ -12,6 +11,7 @@ import gettext
 from bs4 import BeautifulSoup as bs
 import rebostHelper
 import libAppsEdu
+import epicHelper
 import hashlib
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
@@ -33,6 +33,7 @@ class eduHelper():
 		if os.path.exists(self.rebostCache)==False:
 			os.makedirs(self.rebostCache)
 		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.epic=epicHelper.epicHelper()
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","eh.lu")
 	#def __init__
 
@@ -233,6 +234,8 @@ class eduHelper():
 		 #	if pkgname!=self.appmap[pkgname]:
 				#rebostPkg["alias"]=self.appmap[pkgname]
 		rebostPkg["alias"]=eduapp["alias"]
+		if rebostPkg["alias"].startswith("zero:"):
+			rebostPkg["alias"]=self._getRealPkgForZeroAlias(rebostPkg["alias"])
 		#appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
 		rebostPkg["infopage"]=eduapp["infopage"]
 		rebostPkg["name"]=pkgname
@@ -249,6 +252,14 @@ class eduHelper():
 				rebostPkg=self.fillData(rebostPkg)
 		return(rebostPkg)
 	#def _getAppDetail(self,eduapp):
+
+	def _getRealPkgForZeroAlias(self,alias):
+		pkgname=alias.replace("zero:","")
+		pkgname=self.epic.getEpiForPkg(pkgname)
+		if pkgname=="":
+			pkgname="zero-lliurex-{}".format(pkgname.split(".")[-1].lower())
+		return pkgname
+	#def _getRealPkgForZeroAlias
 
 	def _fetchCatalogue(self,url=""):
 		if len(url)==0:

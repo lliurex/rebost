@@ -363,6 +363,20 @@ class epicHelper():
 		return(rebostTmp)
 	#def _fillDataFromEpi
 
+	def getEpiForPkg(self,pkg):
+		epi=pkg
+		epicList=self._getEpicZomandos()
+		rebostPkgList=self._generateRebostFromEpic(epicList)
+		for rebostPkg in rebostPkgList:
+			if rebostPkg["name"]!=pkg:
+				continue
+			epi=rebostPkg["bundle"].get("zomando","")
+			if len(epi.strip())==0:
+				if rebostPkg["id"].startswith("zero."):
+					epi=rebostPkg["id"].split(".")[-1]
+		return(epi)
+	#def getEpiForPkg
+
 def main():
 	obj=epicHelper()
 	return (obj)

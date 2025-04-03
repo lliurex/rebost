@@ -201,7 +201,8 @@ class sqlHelper():
 				rebostPkg=json.loads(data)
 				bundles=rebostPkg.get('bundle',{}).copy()
 				infoPage=rebostPkg.get('infopage',"")
-				if len(infoPage)>0:
+				if len(infoPage)>0 and len(rebostPkg.get("description",""))==0:
+					self._debug("Upgrading appsedu data for {}".format(rebostPkg.get("name")))
 					rebostPkg=self._upgradeAppseduData(db,table,cursor,infoPage,pkg,rebostPkg)
 				#Update state for bundles as they can be installed outside rebost
 				for bundle in bundles.keys():
@@ -429,16 +430,15 @@ class sqlHelper():
 				queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
 				cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
 		#self._debug(query)
-		query="SELECT pkg,data FROM {} WHERE alias='{}';".format(table,pkgname)
 		self.closeConnection(db)
 		self.closeConnection(dbInstalled)
 		return(rows)
 	#def _commitInstall
 
 	def _updatePkgData(self,pkgname,data):
-		if hasattr(self,"updatePkgs")==False:
-			self.updatePkgs=-1
-		self.updatePkgs+=1
+		#if hasattr(self,"updatePkgs")==False:
+		#	self.updatePkgs=-1
+		#self.updatePkgs+=1
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		dataContent=data
@@ -452,9 +452,9 @@ class sqlHelper():
 		except Exception as e:
 			ret=[{"err":e}]
 		self.closeConnection(db)
-		if self.updatePkgs>4:
-			signal.raise_signal(signal.SIGALRM)
-			self.updatePkgs=0
+		#if self.updatePkgs>4:
+		#	signal.raise_signal(signal.SIGALRM)
+		#	self.updatePkgs=0
 		return(ret)
 	#def _updatePkgData
 

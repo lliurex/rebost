@@ -243,9 +243,11 @@ class Rebost():
 	def _readConfig(self):
 		cfg={}
 		include={}
-		print("Reading {}".format(self.confFile))
-		if os.path.isfile(self.confFile):
-			with open(self.confFile,'r') as f:
+		sysConf="/usr/share/rebost/store.json"
+		#print("Reading {}".format(self.confFile))
+		print("Reading {}".format(sysConf))
+		if os.path.isfile(sysConf):
+			with open(sysConf,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:

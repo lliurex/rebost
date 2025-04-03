@@ -154,7 +154,7 @@ class packageKit():
 	def _addCacheFile(self,pkglist=[],mapedList=[]):
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
-			app=pkg["alias"]
+			app=pkg["alias"].replace("zero:","").split(".")[-1].lower()
 			if app not in pkglist and app not in mapedList:
 				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app.lower())

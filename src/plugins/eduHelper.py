@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.
 import time,os,stat
 import json
 import re
@@ -67,7 +67,9 @@ class eduHelper():
 		rebostPkgList=[]
 		fnames=os.path.join(self.rebostCache,"appsedu.list")
 		#Generate cache with names
-		self._loadMAP()
+		#self._loadMAP()
+		#self.epiTree=self.epic.getPkgEpiTree()
+		self.epiTree={}
 		with open(fnames,"w") as f:
 			for eduapp in eduApps:
 				if "sistema" in eduapp["auth"].lower():
@@ -227,15 +229,12 @@ class eduHelper():
 
 	def _appToRebost(self,eduapp,getDetail=False):
 		rebostPkg=rebostHelper.rebostPkg()
-		pkgname=eduapp.get("pkgname","").strip()
+		pkgname=eduapp.get("app","").strip()
 		if len(pkgname)==0:
 			pkgname=eduapp["app"]
 		 #if pkgname in self.appmap:
 		 #	if pkgname!=self.appmap[pkgname]:
 				#rebostPkg["alias"]=self.appmap[pkgname]
-		rebostPkg["alias"]=eduapp["alias"]
-		if rebostPkg["alias"].startswith("zero:"):
-			rebostPkg["alias"]=self._getRealPkgForZeroAlias(rebostPkg["alias"])
 		#appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
 		rebostPkg["infopage"]=eduapp["infopage"]
 		rebostPkg["name"]=pkgname
@@ -250,8 +249,9 @@ class eduHelper():
 			rebostPkg['summary']=eduapp["auth"]
 		if getDetail==True:
 				rebostPkg=self.fillData(rebostPkg)
+		rebostPkg["alias"]=eduapp["alias"].replace("zero:","").split(".")[-1].lower()
 		return(rebostPkg)
-	#def _getAppDetail(self,eduapp):
+	#def _appToRebost
 
 	def _getRealPkgForZeroAlias(self,alias):
 		pkgname=alias.replace("zero:","")

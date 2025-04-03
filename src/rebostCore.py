@@ -58,17 +58,19 @@ class Rebost():
 	#def __init__(self,*args,**kwargs):
 
 	def _iniCache(self):
-		if os.path.exists(self.rebostWrkDir)==True:
-			for f in os.scandir(self.rebostWrkDir):
-				if os.path.isfile(f.path):
-					if f.path.endswith(".db"):
-						os.unlink(f.path)
-				elif os.path.isdir(f.path):
-					for fd in os.scandir(f.path):
-						if os.path.isfile(fd.path):
-							os.unlink(fd.path)
-			#shutil.rmtree(self.rebostWrkDir)
-		else:
+		#Preserve cache 
+		#if os.path.exists(self.rebostWrkDir)==True:
+		#	for f in os.scandir(self.rebostWrkDir):
+		#		if os.path.isfile(f.path):
+		#			if f.path.endswith(".db"):
+		#				os.unlink(f.path)
+		#		elif os.path.isdir(f.path):
+		#			for fd in os.scandir(f.path):
+		#				if os.path.isfile(fd.path):
+		#					os.unlink(fd.path)
+		#	#shutil.rmtree(self.rebostWrkDir)
+		#else:
+		if os.path.exists(self.rebostWrkDir)==False:
 			os.makedirs(self.rebostWrkDir)
 		try:
 			os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
@@ -286,13 +288,16 @@ class Rebost():
 			table=tables.get(bundle,"")
 			if len(table)>0:
 				self._debug("Deleting table {}".format(table))
-				tpath=os.path.join(self.rebostPathTmp,table)
-				if os.path.isfile(tpath):
-					os.remove(tpath)
+				tpaths=[os.path.join(self.rebostWrkDir,table),os.path.join(self.cache,table)]
+				for tpath in tpaths:
+					if os.path.isfile(tpath):
+						os.remove(tpath)
+						self._debug(" - Deleting {}".format(tpath))
 				prefix=plugin[0]+plugin[3]
-				fprefix=os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower()))
-				if os.path.isfile(fprefix):
-					os.remove(fprefix)
+				fprefixes=[os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower())),os.path.join(self.cache,"tmp","{}.lu".format(prefix.lower()))]
+				for fprefix in fprefixes:
+					if os.path.isfile(fprefix):
+						os.remove(fprefix)
 		if len(disable)>0:
 			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
 				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
@@ -324,10 +329,12 @@ class Rebost():
 		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
-			if os.path.exists(os.path.join(self.rebostPathTmp,"sq.lu"))==True:
+			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
+			if os.path.exists(sqLu)==True:
 				return()
 			elif os.path.exists(self.rebostPathTmp)==False:
 				os.makedirs(self.rebostPathTmp)
+			print(sqLu)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))

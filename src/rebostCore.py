@@ -21,10 +21,6 @@ class Rebost():
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
 		self._iniCache()
 		self.confFile=os.path.join(self.rebostPath,"store.json")
-		if os.path.exists(self.confFile)==False:
-			if os.path.exists(self.rebostPath)==False:
-				os.makedirs(self.rebostPath)
-			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -33,6 +29,28 @@ class Rebost():
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
+		else:
+			with open(self.confFile,"r") as f:
+				fcontent=f.read()
+				if isinstance(fcontent,str)==False:
+					fcontent="{}"
+				elif len(fcontent)==0:
+					fcontent="{}"
+				usrconf=json.loads(fcontent)
+			with open ("/usr/share/rebost/store.json","r") as f:
+				sysconf=json.loads(f.read())
+			if len(usrconf)!=len(sysconf):
+				usrconf=sysconf.copy()
+				usrconf["release"]="-1"
+			if sysconf.get("release","")!=usrconf.get("release","-1"):
+				usrconf.update({"release":sysconf.get("release","")})
+				with open(self.confFile,"w") as f:
+					json.dump(usrconf, f, ensure_ascii=False, indent=4)
+				self._cleanData(force=True)
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
@@ -582,6 +600,8 @@ class Rebost():
 			self._debug("Removing databases")
 			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
 			for dbDir in dbDirs:
+				if os.path.isdir(dbDir)==False:
+					continue
 				for i in os.scandir(dbDir):
 					if i.path.endswith(".db"):
 						try:

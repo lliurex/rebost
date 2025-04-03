@@ -143,7 +143,6 @@ class epicHelper():
 						rebostPkgTmp["name"]=pkg.get("name")
 						rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
 						rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
-						print("Adding {}".format(pkg))
 						rebostPkgList.append(rebostPkgTmp)
 					rebostPkgList.append(rebostPkg)
 					
@@ -155,7 +154,6 @@ class epicHelper():
 		#	rebostPkg['categories'].remove("Lliurex")
 		#rebostPkg['categories'].insert(0,"Lliurex")
 		#			self._debug("Match {}%".format(fname))
-		print(rebostPkgList)
 		return(rebostPkgList)
 	def _generateRebostFromEpic2(self,epicList):
 		lstFiles=[]
@@ -183,7 +181,6 @@ class epicHelper():
 	def _getFileFromEpiF(self,epic,lstFiles):
 		fname=""
 		appname=epic.replace(".epi",".app")
-		#print("* {} *".format(appname))
 		if appname not in lstFiles:
 			for f in lstFiles:
 				if f.endswith(appname):
@@ -199,7 +196,6 @@ class epicHelper():
 		if fname=="":
 			fname=self._deepSearchForEpic(epic)
 			self._debug("Deep Search for {} -> {}".format(epic,fname))
-		#print("<* {} *>".format(fname))
 		return(fname)
 	#def _getFileFromEpiF
 

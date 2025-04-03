@@ -6,6 +6,6 @@
     "snap": false,
 	"restricTable": "eduapps",
 	"mandatoryTable": "eduapps",
-	"mode":"appsedu"
+	"mode":"appsedu",
 	"release":"2.6.0-12"
 }

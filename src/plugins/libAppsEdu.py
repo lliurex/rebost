@@ -323,9 +323,6 @@ def getAppsEduCatalogue():
 							cats.append(realCat)
 					if len(columnPkgName.strip())==0:
 						columnPkgName=candidate
-					#elif columnPkgName.startswith("zero:"):
-					#	fixName=columnPkgName.replace("zero:","")
-					#	columnPkgName="zero-lliurex-{}".format(fixName.split(".")[-1].lower())
 					eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})
 					candidate=None
 					categories.extend(cats)

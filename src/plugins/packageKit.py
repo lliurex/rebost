@@ -152,12 +152,17 @@ class packageKit():
 	#def _readFilterFile
 
 	def _addCacheFile(self,pkglist=[],mapedList=[]):
+		self._debug("Adding all packages from appsedu")
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
 			app=pkg["alias"].replace("zero:","").split(".")[-1].lower()
 			if app not in pkglist and app not in mapedList:
 				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app.lower())
+				if app.lower().startswith("zero-")==False:
+					zeroApp="zero-lliurex-{}".format(app.lower())
+					self._debug("Append unmaped ZERO app  {}".format(zeroApp))
+					pkglist.append(zeroApp)
 		return(pkglist)
 	#def _addCacheFile
 
@@ -300,13 +305,23 @@ class packageKit():
 		arr=pkgList.get_details_array()
 		for pkg in arr:
 			dismiss=["admin-tools","other","system"]
-			dismiss=[]#admin-tools","other","system"]
+			#Dismiss disabled
+			dismiss=[]
 			cat=pkg.get_group().to_string(pkg.get_group()).lower().strip()
-			if (cat in dismiss)==False or "lliurex" in pkg.get_url():
+			#if (cat in dismiss==False) or ("lliurex" in pkg.get_url()):
+			if (cat in dismiss==False) or ("zero-lliurex" in pkg.get_package_id()):
 				pkgId=pkg.get_package_id().split(";")
 				name=pkgId[0]
 				#if name.startswith("zero-lliurex")==False:
-				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+				rebostPkg=self._generateRebostPkg(pkg,updateInfo)
+				if rebostPkg["name"].startswith("zero-lliurex") and "installer" in rebostPkg["summary"].lower():# and rebostPkg['state']["package"]=="1":
+					tmpPkg=rebostPkg.copy()
+					rebostPkg['alias']=rebostPkg["name"]
+					rebostPkg['bundle'].update({"zomando":"{}".format(rebostPkg['alias'])})
+					rebostPkg['state'].update({"zomando":"1"})
+					rebostPkg['name']=rebostPkg["name"].replace("zero-lliurex-","")
+					rebostPkgList.append(tmpPkg)
+				rebostPkgList.append(rebostPkg)
 		return(rebostPkgList)
 	#def _generateRebostPkgList
 

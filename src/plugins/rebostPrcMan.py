@@ -332,7 +332,16 @@ class rebostPrcMan():
 							sure=False
 			if sure:
 				usern="{}".format(user)
-				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
+				postaction=""
+				try:
+					jpkg=json.loads(rebostpkg)
+				except:
+					jpkg={}
+				if jpkg.get("bundle",{}).get("zomando","")!="":
+					if (jpkg.get("state",{}).get("zomando","0")!="0") and ((jpkg.get("state",{}).get("package","0")!="0")):
+						tmpAction="install"
+						postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
+				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote,postaction)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				if action=="remote":
 					self._remoteInstall(usern,episcript)

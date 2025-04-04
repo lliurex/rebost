@@ -118,16 +118,20 @@ class epicHelper():
 #			rawEpicList=output[idx:].replace("system:","")
 #			epicList=[ epic.strip() for epic in rawEpicList.split(",") ]
 		epicList=self.epiManager.all_available_epis
+		for epic in epicList:
+			print("Available: {}".format(epic))
 		return(epicList)
 	#def _getEpicZomandos
 	
 	def _generateRebostFromEpic(self,epicList):
 		rebostPkgList=[]
 		for epi in epicList:
-
 			for epiName,epiData in epi.items():
 				self._debug("Processing {} ({})".format(epiName,len(epicList)))
 				fname=epiData.get("zomando")
+				if "virtualizer" in epiName:
+					print("F: {}".format(fname))
+					print(epiData)
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()
@@ -138,7 +142,9 @@ class epicHelper():
 					rebostPkg['homepage']="https://github.com/lliurex"
 					rebostPkg['versions']={'zomando':self.release}
 					rebostPkg['summary']=epiData.get("custom_name",rebostPkg["name"])
-					for pkg in epiData.get("pkg_list"):
+					pkgList=epiData.get("pkg_list",[])
+					pkgList.extend(epiData.get("only_gui_available",[]))
+					for pkg in pkgList:
 						rebostPkgTmp=rebostPkg.copy()
 						rebostPkgTmp["name"]=pkg.get("name")
 						rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])

@@ -72,7 +72,7 @@ class eduHelper():
 		self.epiTree={}
 		with open(fnames,"w") as f:
 			for eduapp in eduApps:
-				if "sistema" in eduapp["auth"].lower():
+				if "sistema" in eduapp["auth"].lower() or "coordinada" in eduapp["auth"].lower():
 					continue
 				rebostPkgList.append(self._appToRebost(eduapp))
 				f.write("{}\n".format(eduapp["app"]))
@@ -249,16 +249,18 @@ class eduHelper():
 			rebostPkg['summary']=eduapp["auth"]
 		if getDetail==True:
 				rebostPkg=self.fillData(rebostPkg)
-		rebostPkg["alias"]=eduapp["alias"].replace("zero:","").split(".")[-1].lower()
+		#Try to map alias to a real package
+		rebostPkg["alias"]=self._getRealPkgForZeroAlias(eduapp["alias"],pkgname)
 		return(rebostPkg)
 	#def _appToRebost
 
-	def _getRealPkgForZeroAlias(self,alias):
-		pkgname=alias.replace("zero:","")
-		pkgname=self.epic.getEpiForPkg(pkgname)
-		if pkgname=="":
-			pkgname="zero-lliurex-{}".format(pkgname.split(".")[-1].lower())
-		return pkgname
+	def _getRealPkgForZeroAlias(self,alias,pkgname):
+		realPkg=alias.replace("zero:","")
+		if realPkg.count(".")>=2:
+			realPkg=alias.split(".")[-1].lower()
+		elif realPkg=="":
+			realPkg="zero-lliurex-{}".format(pkgname.lower())
+		return realPkg
 	#def _getRealPkgForZeroAlias
 
 	def _fetchCatalogue(self,url=""):

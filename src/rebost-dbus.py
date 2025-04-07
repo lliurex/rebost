@@ -277,6 +277,13 @@ class rebostDbusMethods(dbus.service.Object):
 	def getPlugins(self):
 		pass
 
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='')
+	def commitData(self):
+		ret=self.rebost.commitData()
+#		ret = zlib.compress(ret.encode(),level=1)
+	#def commitData
+
 #class rebostDbusMethods
 	
 

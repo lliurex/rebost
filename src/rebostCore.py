@@ -643,3 +643,6 @@ class Rebost():
 	def fullUpdate(self):
 		return
 
+	def commitData(self):
+		self._copyTmpToCache()
+	#def commitData

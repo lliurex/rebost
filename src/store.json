@@ -7,5 +7,5 @@
 	"restricTable": "eduapps",
 	"mandatoryTable": "eduapps",
 	"mode":"appsedu",
-	"release":"2.6.0-12"
+	"release":"2.6.0-15"
 }

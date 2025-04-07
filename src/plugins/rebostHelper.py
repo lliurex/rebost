@@ -456,7 +456,7 @@ def _componentGetScreenshots(component):
 	return(screenshots)
 #def _componentGetScreenshots
 
-def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
+def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False,postaction=""):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
@@ -473,7 +473,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		user=''
 	if user=='root':
 		user=''
-	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir)
+	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir,postaction=postaction)
 	return(epijson,episcript)
 #def generate_epi_for_rebostpkg
 	
@@ -503,11 +503,11 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 	return(epiJson)
 #def _generate_epi_json
 
-def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
+def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp",postaction=""):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
 #		try:
-		_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
+		_make_epi_script(rebostpkg,epiScript,bundle,user,remote,postaction)
 #		except Exception as e:
 #			_debug("Helper: {}".format(e))
 #			print("Generate_epi error {}".format(e))
@@ -517,7 +517,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	return(epiScript)
 #def _generate_epi_sh
 
-def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
+def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
 	_debug("Helper: Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
@@ -537,6 +537,8 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 			f.write("\t\t{}\n".format(commands.get('installCmd')))
 			for command in commands.get('installCmdLine',[]):
 				f.write("\t\t{}\n".format(command))
+			if postaction!="":
+				f.write("\t\t{}\n".format(postaction))
 			f.write("}\n")
 
 		f.write("ACTION=\"$1\"\n")
@@ -546,11 +548,15 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 		f.write("\t\t{}\n".format(commands.get('removeCmd')))
 		for command in commands.get('removeCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
+		if postaction!="":
+			f.write("\t\t{}\n".format(postaction))
 		f.write("\t\t;;\n")
 		f.write("\tinstallPackage)\n")
 		f.write("\t\t{}\n".format(commands.get('installCmd')))
 		for command in commands.get('installCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
+		if postaction!="":
+			f.write("\t\t{}\n".format(postaction))
 		f.write("\t\t;;\n")
 		f.write("\ttestInstall)\n")	
 		f.write("\t\techo \"0\"\n")

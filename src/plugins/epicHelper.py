@@ -8,6 +8,7 @@ import locale
 import hashlib
 import n4d.client as n4d
 import subprocess
+from epi import epimanager
 
 EPIC="/usr/sbin/epic"
 
@@ -21,11 +22,15 @@ class epicHelper():
 		self.autostartActions=["load"]
 		self.priority=1
 		self.store=None
+		self.epiManager=epimanager.EpiManager()
 		self.user=''
 		if kwargs:
 			self.user=kwargs.get('user','')
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
+		self.appDirFiles=[]
+		if os.path.isdir(self.appDir):
+			self.appDirFiles=os.listdir(self.appDir)
 		self.iconDir="/usr/share/banners/lliurex-neu/"
 		self.locales=[locale.getdefaultlocale()[0].split("_")[0]]
 		self.locales.append("qcv")
@@ -71,7 +76,7 @@ class epicHelper():
 
 	def _loadStore(self):
 		action="load"
-		epicList=self._getEpicZomandos()
+		epicList=self.epiManager.all_available_epis
 		rebostPkgList=self._generateRebostFromEpic(epicList)
 		if self._chkNeedUpdate(rebostPkgList):
 			epicMd5=hashlib.md5(str(rebostPkgList).encode("utf-8")).hexdigest()
@@ -101,56 +106,115 @@ class epicHelper():
 	#def _chkNeedUpdate
 
 	def _getEpicZomandos(self):
-		cmd=[EPIC,"showlist"]
-		epicList=[]
-		renv = os.environ.copy()
-		if len(renv.get("USER",""))==0:
-			renv["USER"]="root"
-		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,env=renv)
-		output=proc.stdout
-		if "EPIC:" in output:
-			idx=output.index("EPIC:")
-			rawEpicList=output[idx:].replace("EPIC:","")
-			epicList=[ epic.strip() for epic in rawEpicList.split(",") ]
+#		cmd=[EPIC,"showall"]
+#		epicList=[]
+#		renv = os.environ.copy()
+#		if len(renv.get("USER",""))==0:
+#			renv["USER"]="root"
+#		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,env=renv)
+#		output=proc.stdout
+#		if "[EPIC]:" in output:
+#			idx=output.index("system:")
+#			rawEpicList=output[idx:].replace("system:","")
+#			epicList=[ epic.strip() for epic in rawEpicList.split(",") ]
+		epicList=self.epiManager.all_available_epis
+		for epic in epicList:
+			print("Available: {}".format(epic))
 		return(epicList)
 	#def _getEpicZomandos
 	
 	def _generateRebostFromEpic(self,epicList):
+		rebostPkgList=[]
+		for epi in epicList:
+			for epiName,epiData in epi.items():
+				self._debug("Processing {} ({})".format(epiName,len(epicList)))
+				fname=epiData.get("zomando")
+				if "virtualizer" in epiName:
+					print("F: {}".format(fname))
+					print(epiData)
+				if len(fname)>0:
+					appFile=os.path.join(self.appDir,"{}.app".format(fname))
+					rebostPkg=rebostHelper.rebostPkg()
+					rebostPkg['name']=epiData.get("name",fname)
+					rebostPkg['id']="zero.lliurex.{}".format(epiName)
+					rebostPkg['pkgname']=fname
+					rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,"{}.zmd".format(fname))}
+					rebostPkg['homepage']="https://github.com/lliurex"
+					rebostPkg['versions']={'zomando':self.release}
+					rebostPkg['summary']=epiData.get("custom_name",rebostPkg["name"])
+					pkgList=epiData.get("pkg_list",[])
+					pkgList.extend(epiData.get("only_gui_available",[]))
+					for pkg in pkgList:
+						rebostPkgTmp=rebostPkg.copy()
+						rebostPkgTmp["name"]=pkg.get("name")
+						rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
+						rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
+						rebostPkgList.append(rebostPkgTmp)
+					rebostPkgList.append(rebostPkg)
+					
+		#rebostPkg['description']=description
+		#if "Zomando" in rebostPkg['categories']:
+		#	rebostPkg['categories'].remove("Zomando")
+		#rebostPkg['categories'].insert(0,"Zomando")
+		#if "Lliurex" in rebostPkg['categories']:
+		#	rebostPkg['categories'].remove("Lliurex")
+		#rebostPkg['categories'].insert(0,"Lliurex")
+		#			self._debug("Match {}%".format(fname))
+		return(rebostPkgList)
+	def _generateRebostFromEpic2(self,epicList):
 		lstFiles=[]
 		rebostPkgList=[]
-		if os.path.isdir(self.appDir):
-			lstFiles=os.listdir(self.appDir)
 		for epic in epicList:
-			self._debug("Processing {}".format(epic))
-			fname=self._getFileFromEpiF(epic,lstFiles)
-			if  fname not in lstFiles:
-					continue
-			self._debug("Match {}%".format(fname))
+			self._debug("Processing {} ({})".format(epic,len(epicList)))
+			fname=self._getFileFromEpiF(epic,self.appDirFiles)
+			if  fname not in self.appDirFiles:
+				if len(fname)>0:
+					self._debug("Warning: ZMD for {} aliased as {}".format(epic,fname))
+				else:
+					self._debug("Warning: ZMD for {} not found".format(epic))
 			rebostPkg=rebostHelper.rebostPkg()
-			rebostPkg['name']=os.path.basename(fname).replace(".app","")
+			rebostPkg['name']=os.path.basename(fname)
 			rebostPkg['id']="zero.lliurex.{}".format(epic.replace(".epi",""))
 			rebostPkg['pkgname']=os.path.basename(fname).replace(".app","")
 			rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,fname.replace(".app",".zmd"))}
 			rebostPkg['homepage']="https://github.com/lliurex"
 			rebostPkg['versions']={'zomando':self.release}
 			rebostPkgList.extend(self._getDataForAllPackages(fname,rebostPkg))
+			self._debug("Match {}%".format(fname))
 		return(rebostPkgList)
 	#def _generateRebostFromEpic
 
 	def _getFileFromEpiF(self,epic,lstFiles):
-		fname=epic.replace(".epi",".app")
-		if fname not in lstFiles:
+		fname=""
+		appname=epic.replace(".epi",".app")
+		if appname not in lstFiles:
 			for f in lstFiles:
-				if f.endswith(fname):
+				if f.endswith(appname):
 					fname=f
 					break
-			if  fname not in lstFiles:
+			if fname not in lstFiles:
 				for f in lstFiles:
-					if (fname.split(".")[0] in f) or (fname.split("-")[0] in f):
+					if (appname.split(".")[0] in f) or (appname.split("-")[0] in f):
 						fname=f
 						break
+		else:
+			fname=appname
+		if fname=="":
+			fname=self._deepSearchForEpic(epic)
+			self._debug("Deep Search for {} -> {}".format(epic,fname))
 		return(fname)
 	#def _getFileFromEpiF
+
+	def _deepSearchForEpic(self,epicF):
+		epiName=epicF
+		for i in os.scandir(self.zmdDir):
+			with open(i,"r") as f:
+				fcontent=f.readlines()
+			for fline in fcontent:
+				if epicF in fline:
+					epiName=i.name.replace(".zmd",".app")
+		return(epiName)
+	#def _deepSearchForEpic
 
 	def _getDataForAllPackages(self,fname,rebostPkg):
 		pkgList=[]
@@ -161,16 +225,26 @@ class epicHelper():
 
 	def _getAppData(self,fname,rebostPkg):
 		appPath=os.path.join(self.appDir,fname)
+		#REM THIS IS TIME CONSUMMING!!!
 		rebostPkg=self._getDataFromSystem(rebostPkg)
-		rebostPkg=self._getDataFromAppFile(appPath,rebostPkg)
+		#rebostPkg=self._getDataFromAppFile(appPath,rebostPkg)
+		rebostPkg['summary']=summary
+		rebostPkg['description']=description
+		if "Zomando" in rebostPkg['categories']:
+			rebostPkg['categories'].remove("Zomando")
+		rebostPkg['categories'].insert(0,"Zomando")
+		if "Lliurex" in rebostPkg['categories']:
+			rebostPkg['categories'].remove("Lliurex")
+		rebostPkg['categories'].insert(0,"Lliurex")
 		return(rebostPkg)
 	#def _getAppData
 
-	def _getDataFromSystem(self,rebostPkg):
-		state=self._getDataFromN4d(rebostPkg)
-		if state==None:
-			state=self._getDataFromEpic(rebostPkg)
-		rebostPkg["state"]={"zomando":state}
+	def _getStateFromSystem(self,rebostPkg):
+		#state=self._getDataFromN4d(rebostPkg)
+		#if state=="0":
+		#REM THIS IS TIME CONSUMMING!!!
+		#state=self._getDataFromEpic(rebostPkg)
+		rebostPkg["state"].update({"zomando":state})
 		return(rebostPkg)
 	#def _getDataFromSystem
 
@@ -197,19 +271,58 @@ class epicHelper():
 	#def _getDataFromN4d
 
 	def _getDataFromEpic(self,rebostPkg):
-		cmd=[EPIC,"showinfo","{}.epi".format(rebostPkg["name"])]
+		epi=""
+		zmd=rebostPkg["bundle"].get("zomando","")
+		if len(zmd)>0:
+			with open(zmd,"r") as f:
+				rawOutput=f.read()
+			try:
+				idx=rawOutput.index("epi-gtk")
+			except:
+				print("****************")
+				print("****************")
+				print("****************")
+				print(rawOutput)
+				print("****************")
+				print("****************")
+				print("****************")
+				idx=-1
+			if idx>0:
+				epi=os.path.basename(rawOutput[idx:].split(" ")[1].split("\n")[0].strip())
+				#for fline in f.readlines():
+				#	if fline.startswith("epi-gtk"):
+				#		epi=os.path.basename(fline.split(" ")[-1].strip())
+		if len(epi)==0:
+			epi="{}.epi".format(rebostPkg["name"]).strip()
+		cmd=[EPIC,"showinfo","{}".format(epi)]
 		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
 		rawoutput=proc.stdout
-		output=[line.strip() for line in rawoutput.split("\n")]
-		for line in output:
-			if ":" not in line:
-				continue
-			(key,item)=line.replace(" ","").split(":",1)
-			if key.lower()=="-status":
-				if item.lower()=="installed":
-					rebostPkg['state'].update({'zomando':0})
-					break
-		return(rebostPkg)
+		rawStatus=""
+		try:
+			idx=rawoutput.index("- Status:")
+		except:
+			print(rawoutput)
+			print("%{}%".format(epi))
+		finally:
+			if idx>0:
+				rawStatus=rawoutput[idx:idx+rawoutput[idx:].index("\n")]
+			if "installed" in rawStatus.lower():
+				rebostPkg['state'].update({'zomando':0})
+			else:
+				rebostPkg['state'].update({'zomando':1})
+
+	#	output=[line.strip() for line in rawoutput.split("\n")]
+	#	for line in output:
+	#		if ":" not in line:
+	#			continue
+	#		(key,item)=line.replace(" ","").split(":",1)
+	#		if key.lower()=="-status":
+	#			if item.lower()=="installed":
+	#				rebostPkg['state'].update({'zomando':0})
+	#			else:
+	#				rebostPkg['state'].update({'zomando':1})
+	#			break
+		return(rebostPkg["state"]["zomando"])
 	#def _getDataFromEpic
 
 	def _getDataFromAppFile(self,appPath,rebostPkg):
@@ -234,11 +347,12 @@ class epicHelper():
 						rebostPkg['categories'].append(cat)
 				elif fline.startswith("Name"):
 					if summary=="":
-						summary=fline.split("=")[-1]
+						summary=fline.split("=")[-1].strip()
 					if len(self.locales)>0:
 						for locale in self.locales:
 							if fline.startswith("Name[{}".format(locale)):
-								summary=fline.split("=")[-1]
+								summary=fline.split("=")[-1].strip()
+								break
 				elif fline.startswith("Comment"):
 					if description=="":
 						description=fline.split("=")[-1]
@@ -246,6 +360,7 @@ class epicHelper():
 						for locale in self.locales:
 							if fline.startswith("Comment[{}".format(locale)):
 								description=fline.split("=")[-1]
+								break
 			rebostPkg['summary']=summary
 			rebostPkg['description']=description
 			if "Zomando" in rebostPkg['categories']:
@@ -355,7 +470,7 @@ class epicHelper():
 			bundle="package"
 		elif bundle in ["file","deb"]:
 			bundle=""
-			rebostTmp["bundle"]={}
+			rebostTmp["alias"]=rebostTmp["bundle"].get("zomando")
 		if bundle!="":
 			rebostTmp["bundle"].update({bundle:rebostTmp["name"]})
 			rebostTmp["state"].update({bundle:"1"})
@@ -363,6 +478,54 @@ class epicHelper():
 		return(rebostTmp)
 	#def _fillDataFromEpi
 
+#	def _fillDataFromEpi(self,rebostTmp,pkg):
+#		bundle=pkg.get("type","")
+#		if len(bundle)>0 and bundle in ["apt"]:
+#			bundle="package"
+#		elif bundle in ["file","deb"]:
+#			bundle=""
+#			key=pkg.get("key_store","")
+#		if len(bundle)>0:
+#			if len(key)>0:
+#				zmd=os.path.join(self.zmdDir,"{}.zmd".format(key))
+#				rebostTmp["bundle"].update({bundle:rebostTmp["alias"]})
+#			try:
+#				rebostTmp["bundle"].update({bundle:rebostTmp["alias"]})
+#			except:
+#				print("-------")
+#				print(rebostTmp)
+#				print("-------")
+#			rebostTmp["state"].update({bundle:"1"})
+#		#rebostTmp["state"].update({"zomando":"1"})
+#		return(rebostTmp)
+#	#def _fillDataFromEpi
+
+	def getEpiForPkg(self,pkg):
+		epi=pkg
+		epicList=self._getEpicZomandos()
+		rebostPkgList=self._generateRebostFromEpic(epicList)
+		for rebostPkg in rebostPkgList:
+			if rebostPkg["name"]!=pkg:
+				continue
+			epi=rebostPkg["bundle"].get("zomando","")
+			if len(epi.strip())==0:
+				if rebostPkg["id"].startswith("zero."):
+					epi=rebostPkg["id"].split(".")[-1]
+					break
+			else:
+				break
+		return(epi)
+	#def getEpiForPkg
+
+	def getPkgEpiTree(self):
+		epicList=self._getEpicZomandos()
+		rebostPkgList=self._generateRebostFromEpic(epicList)
+		tree={}
+		for rebostPkg in rebostPkgList:
+			tree[rebostPkg["name"]]=rebostPkg["bundle"].get("zomando","")
+		return(tree)
+	#def getPkgEpiTree
+		
 def main():
 	obj=epicHelper()
 	return (obj)

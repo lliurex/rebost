@@ -21,10 +21,6 @@ class Rebost():
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
 		self._iniCache()
 		self.confFile=os.path.join(self.rebostPath,"store.json")
-		if os.path.exists(self.confFile)==False:
-			if os.path.exists(self.rebostPath)==False:
-				os.makedirs(self.rebostPath)
-			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -33,6 +29,28 @@ class Rebost():
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
+		else:
+			with open(self.confFile,"r") as f:
+				fcontent=f.read()
+				if isinstance(fcontent,str)==False:
+					fcontent="{}"
+				elif len(fcontent)==0:
+					fcontent="{}"
+				usrconf=json.loads(fcontent)
+			with open ("/usr/share/rebost/store.json","r") as f:
+				sysconf=json.loads(f.read())
+			if len(usrconf)!=len(sysconf):
+				usrconf=sysconf.copy()
+				usrconf["release"]="-1"
+			if sysconf.get("release","")!=usrconf.get("release","-1"):
+				usrconf.update({"release":sysconf.get("release","")})
+				with open(self.confFile,"w") as f:
+					json.dump(usrconf, f, ensure_ascii=False, indent=4)
+				self._cleanData(force=True)
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
@@ -40,17 +58,19 @@ class Rebost():
 	#def __init__(self,*args,**kwargs):
 
 	def _iniCache(self):
-		if os.path.exists(self.rebostWrkDir)==True:
-			for f in os.scandir(self.rebostWrkDir):
-				if os.path.isfile(f.path):
-					if f.path.endswith(".db"):
-						os.unlink(f.path)
-				elif os.path.isdir(f.path):
-					for fd in os.scandir(f.path):
-						if os.path.isfile(fd.path):
-							os.unlink(fd.path)
-			#shutil.rmtree(self.rebostWrkDir)
-		else:
+		#Preserve cache 
+		#if os.path.exists(self.rebostWrkDir)==True:
+		#	for f in os.scandir(self.rebostWrkDir):
+		#		if os.path.isfile(f.path):
+		#			if f.path.endswith(".db"):
+		#				os.unlink(f.path)
+		#		elif os.path.isdir(f.path):
+		#			for fd in os.scandir(f.path):
+		#				if os.path.isfile(fd.path):
+		#					os.unlink(fd.path)
+		#	#shutil.rmtree(self.rebostWrkDir)
+		#else:
+		if os.path.exists(self.rebostWrkDir)==False:
 			os.makedirs(self.rebostWrkDir)
 		try:
 			os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
@@ -223,9 +243,11 @@ class Rebost():
 	def _readConfig(self):
 		cfg={}
 		include={}
-		print("Reading {}".format(self.confFile))
-		if os.path.isfile(self.confFile):
-			with open(self.confFile,'r') as f:
+		sysConf="/usr/share/rebost/store.json"
+		#print("Reading {}".format(self.confFile))
+		print("Reading {}".format(sysConf))
+		if os.path.isfile(sysConf):
+			with open(sysConf,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:
@@ -268,13 +290,16 @@ class Rebost():
 			table=tables.get(bundle,"")
 			if len(table)>0:
 				self._debug("Deleting table {}".format(table))
-				tpath=os.path.join(self.rebostPathTmp,table)
-				if os.path.isfile(tpath):
-					os.remove(tpath)
+				tpaths=[os.path.join(self.rebostWrkDir,table),os.path.join(self.cache,table)]
+				for tpath in tpaths:
+					if os.path.isfile(tpath):
+						os.remove(tpath)
+						self._debug(" - Deleting {}".format(tpath))
 				prefix=plugin[0]+plugin[3]
-				fprefix=os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower()))
-				if os.path.isfile(fprefix):
-					os.remove(fprefix)
+				fprefixes=[os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower())),os.path.join(self.cache,"tmp","{}.lu".format(prefix.lower()))]
+				for fprefix in fprefixes:
+					if os.path.isfile(fprefix):
+						os.remove(fprefix)
 		if len(disable)>0:
 			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
 				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
@@ -306,10 +331,12 @@ class Rebost():
 		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
-			if os.path.exists(os.path.join(self.rebostPathTmp,"sq.lu"))==True:
+			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
+			if os.path.exists(sqLu)==True:
 				return()
 			elif os.path.exists(self.rebostPathTmp)==False:
 				os.makedirs(self.rebostPathTmp)
+			print(sqLu)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
@@ -330,6 +357,7 @@ class Rebost():
 			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
+					self._debug("Restore db: {0} -> {1}".format(db.path,os.path.join(self.cache,db.name)))
 			tmpCache=os.path.join(self.cache,"tmp")
 			if os.path.exists(tmpCache)==False:
 				os.makedirs(tmpCache)
@@ -480,7 +508,6 @@ class Rebost():
 	#def _sanitizeStore
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
-		#action,args=action_args.split("#")
 		proc=None
 		plugList=[]
 		if not plugin:  
@@ -539,8 +566,11 @@ class Rebost():
 		self._debug("Getting status from {}".format(epifile))
 		stdout='1'
 		if os.path.isfile(epifile):
-			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
-			stdout=proc.stdout.decode().strip()
+			try:
+				proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
+				stdout=proc.stdout.decode().strip()
+			except Exception as e:
+				stdout=str(e)
 		else:
 			stdout="23"
 		return (stdout)
@@ -579,6 +609,8 @@ class Rebost():
 			self._debug("Removing databases")
 			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
 			for dbDir in dbDirs:
+				if os.path.isdir(dbDir)==False:
+					continue
 				for i in os.scandir(dbDir):
 					if i.path.endswith(".db"):
 						try:
@@ -611,3 +643,6 @@ class Rebost():
 	def fullUpdate(self):
 		return
 
+	def commitData(self):
+		self._copyTmpToCache()
+	#def commitData

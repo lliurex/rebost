@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup as bs
 from urllib.request import Request
 from urllib.request import urlretrieve
 import flatpakHelper
+import locale
 
 DBG=False
 dbCache="/tmp/.cache/rebost"
@@ -41,6 +42,13 @@ st.setFormatter(formatter)
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 MAP="/usr/share/rebost/lists.d/eduapps.map"
 #logger.addHandler(st)
+localLangs=[locale.getdefaultlocale()[0].split("_")[0]]
+localLangs.append("qcv")
+if localLangs[0]=="ca":
+	localLangs.append("es")
+else:
+	localLangs.append("ca")
+localLangs.append("en")
 
 def setDebugEnabled(dbg):
 	DBG=dbg
@@ -71,7 +79,7 @@ def resultSet(*kwargs):
 #def resultSet
 
 def rebostPkg(*kwargs):
-	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','categories':[],'installerUrl':'','state':{}}
+	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','infopage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
 
@@ -242,14 +250,16 @@ def _sanitizeString(data,scape=False,unescape=False):
 
 def _loadMap():
 	appmap={}
-	fappmap={}
-	if os.path.isfile(MAP):
-		with open(MAP,"r") as f:
-			fcontent=json.loads(f.read())
-	for app,alias in fcontent.items():
-		if alias=="":
-			continue
-		appmap.update({app:alias})
+	#DISABLED AS no map wanted
+	#fappmap={}
+	#fcontent={}
+	#if os.path.isfile(MAP):
+	#	with open(MAP,"r") as f:
+	#		fcontent=json.loads(f.read())
+	#for app,alias in fcontent.items():
+	#	if alias=="":
+	#		continue
+	#	appmap.update({app:alias})
 	return(appmap)
 #def _loadMAP
 
@@ -299,16 +309,34 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 		if pkg["pkgname"] in appmap:
 			pkg["alias"]=appmap[pkg["pkgname"]]
-		pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
-		pkg['description']=component.get_description()
+		tmpSummary=""
+		tmpDescription=""
+		for lang in localLangs:
+				if tmpSummary=="":
+					if isinstance(component.get_comment(lang),str)==True:
+						tmpSummary=component.get_comment(lang)
+				if tmpDescription=="":
+					if isinstance(component.get_description(lang),str)==True:
+						tmpDescription=component.get_description(lang)
+		if tmpDescription=="":
+			tmpDescription=component.get_description()
+		if tmpSummary=="":
+			tmpSummary=component.get_comment()
+		#pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
+		pkg['summary']=_sanitizeString(tmpSummary,scape=True)
+		#pkg['description']=component.get_description()
+		pkg['description']=tmpDescription
 		if not isinstance(pkg['description'],str):
 			pkg['description']=pkg['summary']
 		else:
+			if len(pkg["description"])==0:
+				pkg['description']=pkg['summary']
 			pkg['description']=_sanitizeString(pkg['description'],scape=True)
 		pkg['icon']=_componentGetIcon(component)
 		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
 			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 		pkg['homepage']=_componentGetHomepage(component)
+		pkg['infopage']=_componentGetInfopage(component)
 		pkg['categories']=component.get_categories()
 		pkg=_componentFillInfo(component,pkg)
 		pkg['license']=component.get_project_license()
@@ -347,19 +375,25 @@ def _componentGetIcon(component):
 #def _componentGetIcon
 
 def _componentGetHomepage(component):
+		homepage=component.get_url_item(appstream.UrlKind.HOMEPAGE)
+		return(homepage)
+#def _componentGetHomepage
+
+def _componentGetInfopage(component):
 		homepage=''
-		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.HOMEPAGE,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
+		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
 			homepage=component.get_url_item(kind)
 			if homepage:
 				break
 		return(homepage)
-#def _componentGetHomepage
+#def _componentGetInfopage
 
 def _componentFillInfo(component,pkg):
 	versionArray=[]
 	for release in component.get_releases():
 		versionArray.append(release.get_version())
 	if len(versionArray)==0:
+		#There's no match
 		versionArray=["0.9~{}".format(distro.codename())]
 	versionArray.sort()
 	if len(component.get_bundles())>0:
@@ -378,11 +412,14 @@ def _componentFillInfo(component,pkg):
 					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
 					pkg['versions']={"eduapp":versionArray[-1]}
 					if int(component.get_state())==1:
+					#	if versionArray!=["0.9~{}".format(distro.codename())]:
 						pkg['state']["package"]="0"
-						pkg['versions']={"package":versionArray[-1]}
+						if versionArray!=["0.9~{}".format(distro.codename())]:
+							pkg['versions']={"package":versionArray[-1]}
+		categories=[cat.lower() for cat in pkg.get("categories",[])]
 		if "lliurex"  in component.get_id():
 			pkg=_componentLliurexPackage(component,pkg)
-		elif "Lliurex" in pkg['categories'] or "LliureX" in pkg['categories']:
+		elif "lliurex" in categories:
 				pkg['bundle']={'package':pkg['pkgname']}
 				pkg['homepage']="https://github.com/lliurex"
 	return(pkg)
@@ -401,7 +438,8 @@ def _componentLliurexPackage(component,pkg):
 			pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
 		else:
 			pkg['bundle']={'package':pkg['pkgname']}
-	if not("Lliurex" in pkg['categories']) and not("LliureX" in pkg['categories']):
+	categories=[cat.lower() for cat in pkg.get("categories",[])]
+	if "lliurex" in categories==False:
 		pkg['categories'].insert(0,"Lliurex")
 	pkg['homepage']="https://github.com/lliurex"
 	return(pkg)
@@ -418,7 +456,7 @@ def _componentGetScreenshots(component):
 	return(screenshots)
 #def _componentGetScreenshots
 
-def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
+def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False,postaction=""):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
@@ -435,7 +473,7 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False):
 		user=''
 	if user=='root':
 		user=''
-	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir)
+	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir,postaction=postaction)
 	return(epijson,episcript)
 #def generate_epi_for_rebostpkg
 	
@@ -465,11 +503,11 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 	return(epiJson)
 #def _generate_epi_json
 
-def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
+def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp",postaction=""):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
 #		try:
-		_make_epi_script(rebostpkg,epiScript,bundle,user,remote)
+		_make_epi_script(rebostpkg,epiScript,bundle,user,remote,postaction)
 #		except Exception as e:
 #			_debug("Helper: {}".format(e))
 #			print("Generate_epi error {}".format(e))
@@ -479,7 +517,7 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp"):
 	return(epiScript)
 #def _generate_epi_sh
 
-def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
+def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
 	_debug("Helper: Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
 	commands=_get_bundle_commands(bundle,rebostpkg,user)
 
@@ -499,6 +537,8 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 			f.write("\t\t{}\n".format(commands.get('installCmd')))
 			for command in commands.get('installCmdLine',[]):
 				f.write("\t\t{}\n".format(command))
+			if postaction!="":
+				f.write("\t\t{}\n".format(postaction))
 			f.write("}\n")
 
 		f.write("ACTION=\"$1\"\n")
@@ -508,11 +548,15 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False):
 		f.write("\t\t{}\n".format(commands.get('removeCmd')))
 		for command in commands.get('removeCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
+		if postaction!="":
+			f.write("\t\t{}\n".format(postaction))
 		f.write("\t\t;;\n")
 		f.write("\tinstallPackage)\n")
 		f.write("\t\t{}\n".format(commands.get('installCmd')))
 		for command in commands.get('installCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
+		if postaction!="":
+			f.write("\t\t{}\n".format(postaction))
 		f.write("\t\t;;\n")
 		f.write("\ttestInstall)\n")	
 		f.write("\t\techo \"0\"\n")

@@ -182,6 +182,14 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,args,bundle,state)
 		return (ret)
 	#def commitInstall
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='ss', out_signature='s')
+	def updatePkgData(self,args,data):
+		action='updatePkgData'
+		ret=self.rebost.execute(action,args,data)
+		return (ret)
+	#def commitInstall
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
@@ -191,8 +199,6 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	#def addTransaction
 	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def getEpiPkgStatus(self,epifile):
@@ -270,6 +276,13 @@ class rebostDbusMethods(dbus.service.Object):
 
 	def getPlugins(self):
 		pass
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='')
+	def commitData(self):
+		ret=self.rebost.commitData()
+#		ret = zlib.compress(ret.encode(),level=1)
+	#def commitData
 
 #class rebostDbusMethods
 	

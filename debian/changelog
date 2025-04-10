@@ -1,3 +1,9 @@
+rebost (2.7.0-0llx25) noble; urgency=medium
+
+  * Sync with jammy
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 10 Apr 2025 09:51:43 +0200
+
 rebost (2.7lliurex25) noble; urgency=medium
 
   * Fix bug with polkit rules

@@ -129,9 +129,6 @@ class epicHelper():
 			for epiName,epiData in epi.items():
 				self._debug("Processing {} ({})".format(epiName,len(epicList)))
 				fname=epiData.get("zomando")
-				if "virtualizer" in epiName:
-					print("F: {}".format(fname))
-					print(epiData)
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()

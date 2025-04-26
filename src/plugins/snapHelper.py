@@ -31,7 +31,8 @@ class snapHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sp.lu")
 		self.snap=Snapd.Client()
-		self.forceApps=["octoprint-sdev"]
+		#self.forceApps=["octoprint-sdev"]
+		self.forceApps=[]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):

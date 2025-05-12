@@ -824,7 +824,9 @@ class sqlHelper():
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		eduappSum=""
 		infoPage=mergepkgdataJson.get("infopage","")
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if infoPage==None:
+			infoPage=""
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			eduappSum=mergepkgdataJson.get("summary","")
 			eduappDesc=mergepkgdataJson.get("description","")
 			if "eduapp" in mergepkgdataJson["bundle"].keys():
@@ -843,7 +845,7 @@ class sqlHelper():
 				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
 			else:
 				mergepkgdataJson["versions"].update({"package":"custom"})
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			#mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 			mergepkgdataJson["summary"]="{}".format(eduappSum)
 			mergepkgdataJson["description"]="{}".format(eduappDesc)
@@ -872,6 +874,8 @@ class sqlHelper():
 					tmp=[]
 					seen=[]
 					for i in list(set(mergepkgdataJson[key])):
+						if i==None:
+							continue
 						if i.islower()==False:
 							if i.lower() not in seen:
 								tmp.append(i.strip())

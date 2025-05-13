@@ -1,5 +1,5 @@
 #!/bin/bash
-INFO_FILE=/usr/share/rebost/tmp/bash_completion
+INFO_FILE=/tmp/.cache/rebost/${USER}/tmp/bash_completion
 
 _store_completion() {
 	CUR="${COMP_WORDS[COMP_CWORD]}"

@@ -532,7 +532,8 @@ class sqlHelper():
 		f=os.path.join(self.rebostCache,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
-			if self.mode!="appsedu":
+			if restricted==True:
+				#Always include zomandos
 				if "zomandos"==fname.replace(".db",""):
 					restricted=False
 			fsize=os.path.getsize(f)
@@ -618,7 +619,8 @@ class sqlHelper():
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			#If no row then it's a new pkg so discard it if strict mode enabled
-			if self.mode=="appsedu":
+			#if self.mode=="appsedu":
+			if self.restricted==True:
 				return(processedpkg,aliaspkg)
 			if "lliurex" in pkgdata.lower():
 				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
@@ -780,7 +782,8 @@ class sqlHelper():
 		cat0=categories[0]
 		cat1=categories[-1]
 		cat2=categories[-2]
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			if ("Lliurex" in categories):
 				categories.remove("Lliurex")
 				cat0="Lliurex"
@@ -824,7 +827,9 @@ class sqlHelper():
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		eduappSum=""
 		infoPage=mergepkgdataJson.get("infopage","")
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if infoPage==None:
+			infoPage=""
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			eduappSum=mergepkgdataJson.get("summary","")
 			eduappDesc=mergepkgdataJson.get("description","")
 			if "eduapp" in mergepkgdataJson["bundle"].keys():
@@ -843,7 +848,7 @@ class sqlHelper():
 				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
 			else:
 				mergepkgdataJson["versions"].update({"package":"custom"})
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			#mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 			mergepkgdataJson["summary"]="{}".format(eduappSum)
 			mergepkgdataJson["description"]="{}".format(eduappDesc)
@@ -872,6 +877,8 @@ class sqlHelper():
 					tmp=[]
 					seen=[]
 					for i in list(set(mergepkgdataJson[key])):
+						if i==None:
+							continue
 						if i.islower()==False:
 							if i.lower() not in seen:
 								tmp.append(i.strip())
@@ -1005,7 +1012,8 @@ class sqlHelper():
 			self._debug("Saving list to {}/unavailable.apps".format(self.rebostCache))
 			with open(os.path.join(self.rebostCache,"unavailable.apps"),"w") as f:
 				f.write(json.dumps(rows))
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			pass
 			#query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug(query)

@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
@@ -93,15 +93,15 @@ class Rebost():
 	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
+		self.mode=""
+		self._processConfig()
+		if self.mode=="appsedu":
+			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Starting rebost")
 		self._loadPlugins()
 		self._log("Plugins loaded")
 		self._loadPluginInfo()
 		self._log("Plugins processed")
-		self.mode=""
-		self._processConfig()
-		if self.mode=="appsedu":
-			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Config readed")
 		if self._copyCacheToTmp()==True:
 			self._log("Cache enabled")
@@ -168,6 +168,12 @@ class Rebost():
 							print("Plugin loaded: {}".format(plugin))
 						else:
 							print("{} will set its status".format(plugin))
+						if hasattr(pluginObject,"restricted"):
+							pluginObject.restricted=self.restricted
+						if hasattr(pluginObject,"mainTableForRestrict"):
+							pluginObject.mainTabledForRestrict=self.mainTableForRestrict
+						if hasattr(pluginObject,"mode"):
+							pluginObject.mode=self.mode
 					else:
 						self._debug("Plugin disabled: {}".format(plugin))
 						disabledPlugins[plugin.replace(".py","")]=False
@@ -212,8 +218,9 @@ class Rebost():
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
 
-	def _writeConfig(self,config):
-		return()
+	def _writeConfig(self,config,force=False):
+		if force!=True:
+			return()
 		cfg=self._readConfig()
 		cfgFile=self.confFile
 		for key,value in config.items():
@@ -223,8 +230,8 @@ class Rebost():
 			with open(cfgFile,'w') as f:
 				try:
 					f.write(json.dumps(cfg,skipkeys=True))
-				except:
-					pass
+				except Exception as e:
+					print("Unable to unlock")
 	#def _writeConfig
 
 	def _processConfig(self):
@@ -235,7 +242,10 @@ class Rebost():
 			else:
 				self._disable(plugin)
 		self.restricted=cfg.get("restricted",True)
-		self.mainTableForRestrict=cfg.get("maintable","")
+		if self.restricted==True:
+			self.mainTableForRestrict=cfg.get("maintable","")
+		else:
+			self.mainTableForRestrict=""
 		self.forceApps=cfg.get("forceApps",{})
 		self.mode=cfg.get("mode","")
 	#def _processConfig
@@ -575,6 +585,10 @@ class Rebost():
 			stdout="23"
 		return (stdout)
 	#def getEpiPkgStatus
+
+	def unlock(self):
+		cfg={"restricted":False,"mandatoryTable":"","mode":"store"}
+		self._writeConfig(cfg,True)
 
 	def getFiltersEnabled(self):
 		state=True

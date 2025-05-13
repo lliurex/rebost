@@ -22,6 +22,7 @@ EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
 EDUAPPS_RAW="/tmp/.eduapps.raw"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
+DEBUG=False
 
 i18n={'CAD':"Engineering",
 	'Música':"Music",
@@ -53,7 +54,8 @@ i18n={'CAD':"Engineering",
 	'Presentacions':"Presentation"}
 
 def _debug(msg):
-	print("eduApps: {}".format(msg))
+	if DEBUG==True:
+		print("eduApps: {}".format(msg))
 
 def processEduApps():
 	if os.path.exists(EDUAPPS_MAP):

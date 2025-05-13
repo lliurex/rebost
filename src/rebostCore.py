@@ -222,16 +222,21 @@ class Rebost():
 		if force!=True:
 			return()
 		cfg=self._readConfig()
-		cfgFile=self.confFile
+		userCfgFile=self.confFile
+		cfgFile="/usr/share/rebost/store.json"
+
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'w') as f:
-				try:
-					f.write(json.dumps(cfg,skipkeys=True))
-				except Exception as e:
-					print("Unable to unlock")
+		for cfile in [cfgFile,userCfgFile]:
+			if os.path.isfdir(os.path.dirname(cfile)):
+				with open(cfile,'w') as f:
+					print("PASO {}".format(cfile))
+					try:
+						f.write(json.dumps(cfg,skipkeys=True))
+					except Exception as e:
+						print("Unable to unlock")
+						break
 	#def _writeConfig
 
 	def _processConfig(self):

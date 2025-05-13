@@ -1,0 +1,6 @@
+polkit.addRule(function(action, subject) {
+    if ( action.id == "net.lliurex.rebost.unlock") {
+	    if ( subject.active == true && subject.local == true && subject.isInGroup("admins") ) return polkit.Result.AUTH_ADMIN;
+	    return polkit.Result.NO;
+    }
+});

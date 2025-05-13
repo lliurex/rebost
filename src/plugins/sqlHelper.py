@@ -532,7 +532,8 @@ class sqlHelper():
 		f=os.path.join(self.rebostCache,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
-			if self.mode!="appsedu":
+			if restricted==True:
+				#Always include zomandos
 				if "zomandos"==fname.replace(".db",""):
 					restricted=False
 			fsize=os.path.getsize(f)
@@ -618,7 +619,8 @@ class sqlHelper():
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			#If no row then it's a new pkg so discard it if strict mode enabled
-			if self.mode=="appsedu":
+			#if self.mode=="appsedu":
+			if self.restricted==True:
 				return(processedpkg,aliaspkg)
 			if "lliurex" in pkgdata.lower():
 				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
@@ -780,7 +782,8 @@ class sqlHelper():
 		cat0=categories[0]
 		cat1=categories[-1]
 		cat2=categories[-2]
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			if ("Lliurex" in categories):
 				categories.remove("Lliurex")
 				cat0="Lliurex"
@@ -1009,7 +1012,8 @@ class sqlHelper():
 			self._debug("Saving list to {}/unavailable.apps".format(self.rebostCache))
 			with open(os.path.join(self.rebostCache,"unavailable.apps"),"w") as f:
 				f.write(json.dumps(rows))
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			pass
 			#query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug(query)

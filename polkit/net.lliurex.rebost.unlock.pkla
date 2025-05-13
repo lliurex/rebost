@@ -1,0 +1,7 @@
+[/usr/share/rebost/helper/unlock-rebost.py]
+Identity=unix-group:admins;unix-group:sudo;
+Action=net.lliurex.rebost.unlock
+ResultActive=auth_self
+ResultAny=no
+ResultInactive=no
+

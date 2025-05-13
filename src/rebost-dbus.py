@@ -254,6 +254,16 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='')
+	def lock(self):
+		try:
+			self.rebost.execute("lock")
+		except Exception as e:
+			print("Critical error locking")
+			print(str(e))
+	#def unlock
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='')
 	def unlock(self):
 		try:
 			self.rebost.execute("unlock")

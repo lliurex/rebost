@@ -229,9 +229,8 @@ class Rebost():
 			key=key.replace("Helper","")
 			cfg[key]=value
 		for cfile in [cfgFile,userCfgFile]:
-			if os.path.isfdir(os.path.dirname(cfile)):
+			if os.path.isdir(os.path.dirname(cfile)):
 				with open(cfile,'w') as f:
-					print("PASO {}".format(cfile))
 					try:
 						f.write(json.dumps(cfg,skipkeys=True))
 					except Exception as e:
@@ -591,9 +590,15 @@ class Rebost():
 		return (stdout)
 	#def getEpiPkgStatus
 
+	def lock(self):
+		cfg={"restricted":True,"mandatoryTable":"appsedu","mode":"appsedu"}
+		self._writeConfig(cfg,True)
+	#def lock(self):
+
 	def unlock(self):
 		cfg={"restricted":False,"mandatoryTable":"","mode":"store"}
 		self._writeConfig(cfg,True)
+	#def unlock(self):
 
 	def getFiltersEnabled(self):
 		state=True

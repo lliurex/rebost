@@ -514,15 +514,16 @@ class sqlHelper():
 	#def consolidateSqlTables
 
 	def _readCurrentConfig(self):
-		config=os.path.join(self.rebostCache,"store.json")
-		self._debug("Reading sources from {}".format(config))
-		fcontent={}
-		if os.path.isfile(config):
-			self._debug("Reading sources from {}".format(config))
-			with open(config,'r') as f:
-				fcontent=json.loads(f.read())
-		else:
-			fcontent=self._readConfig()
+		#DISABLED. Config is always readed from system, User side must be implemented
+	#	config=os.path.join(self.rebostCache,"store.json")
+	#	self._debug("Reading sources from {}".format(config))
+	#	fcontent={}
+	#	if os.path.isfile(config):
+	#		self._debug("Reading sources from {}".format(config))
+	#		with open(config,'r') as f:
+	#			fcontent=json.loads(f.read())
+	#	else:
+		fcontent=self._readConfig()
 		return(fcontent)
 	#def _readCurrentConfig(self):
 

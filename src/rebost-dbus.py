@@ -273,26 +273,38 @@ class rebostDbusMethods(dbus.service.Object):
 	#def unlock
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
-	def disableFilters(self):
-		try:
-			self.rebost.execute("disableFilters")
-		except Exception as e:
-			print("Critical error disabling filters")
-			print(str(e))
-	#def disableFilters
-
-	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='b')
-	def getFiltersEnabled(self):
-		ret=True
+	def getLockStatus(self):
+		ret=False
 		try:
-			ret=self.rebost.getFiltersEnabled()
+			ret=self.rebost.getLockStatus()
 		except Exception as e:
-			print("Critical error reading filters")
+			print("Critical error getting lock status")
 			print(str(e))
 		return(ret)
-	#def disableFilters
+	#def getLockStatus
+
+	#@dbus.service.method("net.lliurex.rebost",
+	#					 in_signature='', out_signature='')
+	#def disableFilters(self):
+	#	try:
+	#		self.rebost.execute("disableFilters")
+	#	except Exception as e:
+	#		print("Critical error disabling filters")
+	#		print(str(e))
+	##def disableFilters
+
+	#@dbus.service.method("net.lliurex.rebost",
+	#					 in_signature='', out_signature='b')
+	#def getFiltersEnabled(self):
+	#	ret=True
+	#	try:
+	#		ret=self.rebost.getFiltersEnabled()
+	#	except Exception as e:
+	#		print("Critical error reading filters")
+	#		print(str(e))
+	#	return(ret)
+	##def disableFilters
 
 	def getPlugins(self):
 		pass

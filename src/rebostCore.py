@@ -15,7 +15,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
@@ -596,7 +596,7 @@ class Rebost():
 	#def getLockStatus
 
 	def lock(self):
-		cfg={"restricted":True,"mandatoryTable":"appsedu","mode":"appsedu"}
+		cfg={"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"}
 		self._writeConfig(cfg,True)
 	#def lock(self):
 

@@ -231,12 +231,16 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getUpgradableApps(self):
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='b', out_signature='')
+						 in_signature='b', out_signature='b')
 	def update(self,force=False):
-		self.beginUpdateSignal()
-		ret=self.rebost.forceUpdate(force)
+		ret=True
+		#self.beginUpdateSignal()
+		try:
+			self.rebost.forceUpdate(force)
+		except:
+			ret=False
 #		ret = zlib.compress(ret.encode(),level=1)
-		return ()
+		return ret
 	#def update
 
 	@dbus.service.method("net.lliurex.rebost",

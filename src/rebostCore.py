@@ -592,7 +592,6 @@ class Rebost():
 
 	def getLockStatus(self):
 		cfg=self._readConfig()
-		print(cfg)
 		return(cfg.get("restricted",False))
 	#def getLockStatus
 

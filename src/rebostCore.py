@@ -590,6 +590,11 @@ class Rebost():
 		return (stdout)
 	#def getEpiPkgStatus
 
+	def getLockStatus(self):
+		cfg=self._readConfig()
+		return(cfg.get("restricted",False))
+	#def getLockStatus
+
 	def lock(self):
 		cfg={"restricted":True,"mandatoryTable":"appsedu","mode":"appsedu"}
 		self._writeConfig(cfg,True)

@@ -247,7 +247,7 @@ class Rebost():
 				self._disable(plugin)
 		self.restricted=cfg.get("restricted",True)
 		if self.restricted==True:
-			self.mainTableForRestrict=cfg.get("maintable","")
+			self.mainTableForRestrict=cfg.get("mandatoryTable","")
 		else:
 			self.mainTableForRestrict=""
 		self.forceApps=cfg.get("forceApps",{})

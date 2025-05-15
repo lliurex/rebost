@@ -195,11 +195,13 @@ class eduHelper():
 				rebostPkg["bundle"]={"eduapp":"banned"}
 			#Translate categories
 			rawCats=div.find("div","acf-view__categoria_val-choice acf-view__choice")
-			if len(rawCats)>0:
-				categories=[]
-				for cat in rawCats:
-					cat=cat.strip()
-					categories.append(libAppsEdu.i18n.get(cat,cat))
+			categories=[]
+			if isinstance(rawCats,list):
+				if len(rawCats)>0:
+					categories=[]
+					for cat in rawCats:
+						cat=cat.strip()
+						categories.append(libAppsEdu.i18n.get(cat,cat))
 			if len(rebostPkg.get("categories",[]))==0:
 				rebostPkg["categories"]=categories
 

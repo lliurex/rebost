@@ -4,7 +4,6 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
-import signal
 import html
 import sqlite3
 from shutil import copyfile
@@ -126,6 +125,7 @@ class sqlHelper():
 			rs=self._showPackage(parms,extraParms,onlymatch=onlymatch)
 		if action=='load':
 			rs=self.consolidateSqlTables()
+			#Operative state
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
@@ -200,7 +200,9 @@ class sqlHelper():
 				(pkg,data)=row
 				rebostPkg=json.loads(data)
 				bundles=rebostPkg.get('bundle',{}).copy()
-				infoPage=rebostPkg.get('infopage',"")
+				infoPage=rebostPkg.get('infopage')
+				if isinstance(infoPage,str)!=True:
+					infoPage=""
 				if len(infoPage)>0 and len(rebostPkg.get("description",""))==0:
 					self._debug("Upgrading appsedu data for {}".format(rebostPkg.get("name")))
 					rebostPkg=self._upgradeAppseduData(db,table,cursor,infoPage,pkg,rebostPkg)
@@ -452,9 +454,6 @@ class sqlHelper():
 		except Exception as e:
 			ret=[{"err":e}]
 		self.closeConnection(db)
-		#if self.updatePkgs>4:
-		#	signal.raise_signal(signal.SIGALRM)
-		#	self.updatePkgs=0
 		return(ret)
 	#def _updatePkgData
 
@@ -509,7 +508,6 @@ class sqlHelper():
 			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
-		signal.raise_signal(signal.SIGUSR2)
 		return([])
 	#def consolidateSqlTables
 

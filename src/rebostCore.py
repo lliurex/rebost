@@ -474,7 +474,6 @@ class Rebost():
 				catList.append(cat[0])
 			store=json.dumps(catList)
 		if action=='getFreedesktopCategories':
-			print("WHAT!!")
 			store=json.dumps(rebostPkgList)
 		else:
 			if not isinstance(rebostPkgList,list):

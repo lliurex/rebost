@@ -1,3 +1,9 @@
+rebost (2.7.1-0llx25) noble; urgency=medium
+
+  * Add getFreedesktopCategories
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 19 May 2025 14:01:22 +0200
+
 rebost (2.7.0-0llx25) noble; urgency=medium
 
   * Sync with jammy

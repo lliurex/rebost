@@ -69,7 +69,7 @@ class flatpakHelper():
 		rebostPkgList=[]
 		if update:
 			self._debug("Get rebostPkg")
-			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			rebostPkgList=rebostHelper._appstreamToRebost(store)
 			#Check state of packages
 			installedRefs=self._getInstalledRefs()
 			installed={}
@@ -82,7 +82,7 @@ class flatpakHelper():
 				a=i.load_metadata()
 			if len(installed)==0:
 				rebostPkgList=self._fillInstalledData(rebostPkgList,installed)
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
 			with open(self.lastUpdate,'w') as f:

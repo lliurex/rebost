@@ -18,7 +18,7 @@ class sqlHelper():
 		self.dbg=True
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export','updatePkgData']
+		self.actions=["show","match","search","load","list",'commitInstall','getCategories','getFreedesktopCategories','disableFilters','export','updatePkgData']
 		self.packagekind="*"
 		self.priority=0
 		self.postAutostartActions=["load"]
@@ -130,6 +130,8 @@ class sqlHelper():
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
 			rs=self._getCategories()
+		if action=='getFreedesktopCategories':
+			rs=[self._getFreedesktopCategories()]
 		if action=='export':
 			rs=self._exportRebost()
 		if action=='disableFilters':
@@ -180,7 +182,11 @@ class sqlHelper():
 		rows=cursor.fetchall()
 		self.closeConnection(db)
 		return(rows)
-	#def _searchPackage
+	#def _getCategories
+
+	def _getFreedesktopCategories(self):
+		return(rebostHelper.getFreedesktopCategories())
+	#def _getFreedesktopCategories
 
 	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -271,8 +277,8 @@ class sqlHelper():
 	#def _upgradeAppimageData
 
 	def _getStateFromEpi(self,db,table,cursor,pkgname,rebostPkg,bundle,user):
-		(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
-		state=rebostHelper.get_epi_status(script)
+		(epi,script)=rebostHelper.epiFromPkg(rebostPkg,bundle,user)
+		state=rebostHelper.getEpiStatus(script)
 		tmpDir=os.path.dirname(epi)
 		if os.path.isdir(tmpDir):
 			try:
@@ -584,7 +590,7 @@ class sqlHelper():
 	def _processCategories(self,allCategories):
 		self._debug("Populating categories")
 		categories_table=os.path.basename(self.categories_table).replace(".db","")
-		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY","level INT"],onlyExtraFields=True)
 		queryDelete="DELETE FROM {}".format(categories_table)
 		cursor_cat.execute(queryDelete)
 		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)

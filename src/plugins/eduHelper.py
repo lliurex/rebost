@@ -78,7 +78,7 @@ class eduHelper():
 				f.write("{}\n".format(eduapp["app"]))
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
 		if len(rebostPkgList)>0:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,"eduapps.db")
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,"eduapps.db")
 		#REM
 		return
 		searchDict=self._generateTags(eduApps)

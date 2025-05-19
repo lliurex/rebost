@@ -208,10 +208,10 @@ class packageKit():
 				if pkDetails:
 					self._debug("Sending to SQL")
 					data=self._generateRebostPkgList(pkDetails,pkgUpdateIds)
-					rebostHelper.rebostPkgList_to_sqlite(data,'packagekit.db',drop=False,sanitize=False)
+					rebostHelper.rebostPkgsToSqlite(data,'packagekit.db',drop=False,sanitize=False)
 			if updateSelected:
 				self._debug("Updating {} items".format(len(updateSelected)))
-				rebostHelper.rebostPkgList_to_sqlite(updateSelected,"packagekit.db")
+				rebostHelper.rebostPkgsToSqlite(updateSelected,"packagekit.db")
 			else:
 				self._debug("No updates detected")
 			self._debug("End processing pkg list")
@@ -239,7 +239,7 @@ class packageKit():
 		#Get rows for ids
 		rows=[]
 		if os.path.isfile(os.path.join(self.rebostCache,"packagekit.db")):
-			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
+			rows=rebostHelper.getPkgFromTablearray("packagekit.db",list(pkgDict.keys()))
 		for row in rows:
 			try:
 				rowData=json.loads(row[0][1])

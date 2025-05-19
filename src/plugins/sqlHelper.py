@@ -18,7 +18,7 @@ class sqlHelper():
 		self.dbg=True
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export','updatePkgData']
+		self.actions=["show","match","search","load","list",'commitInstall','getCategories','getFreedesktopCategories','disableFilters','export','updatePkgData']
 		self.packagekind="*"
 		self.priority=0
 		self.postAutostartActions=["load"]
@@ -130,6 +130,8 @@ class sqlHelper():
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
 			rs=self._getCategories()
+		if action=='getFreedesktopCategories':
+			rs=[self._getFreedesktopCategories()]
 		if action=='export':
 			rs=self._exportRebost()
 		if action=='disableFilters':
@@ -180,7 +182,11 @@ class sqlHelper():
 		rows=cursor.fetchall()
 		self.closeConnection(db)
 		return(rows)
-	#def _searchPackage
+	#def _getCategories
+
+	def _getFreedesktopCategories(self):
+		return(rebostHelper.getFreedesktopCategories())
+	#def _getFreedesktopCategories
 
 	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")

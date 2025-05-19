@@ -271,8 +271,8 @@ class sqlHelper():
 	#def _upgradeAppimageData
 
 	def _getStateFromEpi(self,db,table,cursor,pkgname,rebostPkg,bundle,user):
-		(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
-		state=rebostHelper.get_epi_status(script)
+		(epi,script)=rebostHelper.epiFromPkg(rebostPkg,bundle,user)
+		state=rebostHelper.getEpiStatus(script)
 		tmpDir=os.path.dirname(epi)
 		if os.path.isdir(tmpDir):
 			try:
@@ -584,7 +584,7 @@ class sqlHelper():
 	def _processCategories(self,allCategories):
 		self._debug("Populating categories")
 		categories_table=os.path.basename(self.categories_table).replace(".db","")
-		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY","level INT"],onlyExtraFields=True)
 		queryDelete="DELETE FROM {}".format(categories_table)
 		cursor_cat.execute(queryDelete)
 		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)

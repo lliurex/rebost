@@ -59,7 +59,7 @@ class snapHelper():
 		except Exception as e:
 			raise
 		if update:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'snap.db')
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")

@@ -83,7 +83,7 @@ class epicHelper():
 			with open(self.lastUpdate,'w') as f:
 				f.write(epicMd5)
 			self._debug("Sending {} to sql".format(len(rebostPkgList)))
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'zomandos.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'zomandos.db')
 		else:
 			self._debug("Skip update")
 	#def _loadStore

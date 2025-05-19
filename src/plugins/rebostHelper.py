@@ -85,7 +85,7 @@ def rebostPkg(*kwargs):
 
 #---< 
 
-def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
+def rebostPkgsToSqlite(rebostPkgList,table,drop=False,sanitize=True):
 	wrkDir=WRKDIR #"/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
 	if drop:
@@ -101,7 +101,7 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	while rebostPkgList:
 		rebostPkg=rebostPkgList.pop(0)
 		values=[]
-		values=(_rebostPkg_fill_data(rebostPkg,sanitize))
+		values=(__fillPkgData(rebostPkg,sanitize))
 		pkgName=values[0]
 		pkgData=values[1]
 		queryTmp='SELECT data FROM {0} where pkg="{1}"'.format(table,pkgName)
@@ -131,9 +131,9 @@ def rebostPkgList_to_sqlite(rebostPkgList,table,drop=False,sanitize=True):
 	db.close()
 	cursor=None
 	return()
-#def rebostPkgList_to_sqlite
+#def rebostPkgsToSqlite
 
-def rebostPkg_to_sqlite(rebostPkg,table):
+def rebostPkgToSqlite(rebostPkg,table):
 	wrkDir=WRKDIR #"/usr/share/rebost"
 	tablePath=os.path.join(wrkDir,os.path.basename(table))
 	if tablePath.endswith(".db")==False:
@@ -143,7 +143,7 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 	cursor=db.cursor()
 	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
 	cursor.execute(query)
-	query=_rebostPkg_fill_data(rebostPkg)
+	query=__fillPkgData(rebostPkg)
 	if query:
 		queryMany="INSERT or REPLACE INTO {} VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')".format(table,query[0],query[1],query[2],query[3],query[4],query[5])
 		try:
@@ -159,9 +159,9 @@ def rebostPkg_to_sqlite(rebostPkg,table):
 			db.commit()
 	db.close()
 	cursor=None
-#def rebostPkgList_to_sqlite
+#def rebostPkgsToSqlite
 
-def _rebostPkg_fill_data(rebostPkg,sanitize=True):
+def __fillPkgData(rebostPkg,sanitize=True):
 	if isinstance(rebostPkg['license'],list)==False:
 		rebostPkg['license']=""
 	alias=""
@@ -214,7 +214,7 @@ def _rebostPkg_fill_data(rebostPkg,sanitize=True):
 	(cat0,cat1,cat2)=categories[0:3]
 	alias=rebostPkg.get("alias","")
 	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
-#def _rebostPkg_fill_data
+#def __fillPkgData
 
 def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
@@ -293,7 +293,7 @@ def rebostToAppstream(rebostPkgList,fname=""):
 	return(fname)
 #def rebostToAppstream
 
-def appstream_to_rebost(appstreamCatalogue):
+def _appstreamToRebost(appstreamCatalogue):
 	rebostPkgList=[]
 	catalogue=appstreamCatalogue.get_apps()
 	appmap=_loadMap()
@@ -343,7 +343,7 @@ def appstream_to_rebost(appstreamCatalogue):
 		pkg['screenshots']=_componentGetScreenshots(component)
 		rebostPkgList.append(pkg)
 	return(rebostPkgList)
-#def appstream_to_rebost
+#def _appstreamToRebost
 
 def _componentGetName(component):
 	name=component.get_id()
@@ -456,7 +456,7 @@ def _componentGetScreenshots(component):
 	return(screenshots)
 #def _componentGetScreenshots
 
-def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False,postaction=""):
+def epiFromPkg(rebostpkg,bundle,user='',remote=False,postaction=""):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
 	if os.path.isdir("/tmp/rebost")==False:
@@ -466,18 +466,18 @@ def generate_epi_for_rebostpkg(rebostpkg,bundle,user='',remote=False,postaction=
 	os.chmod(tmpDir,0o755)
 	if remote==False:
 		_debug("Helper: Generate EPI for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
-		epijson=_generate_epi_json(rebostpkg,bundle,tmpDir=tmpDir)
+		epijson=_jsonForEpi(rebostpkg,bundle,tmpDir=tmpDir)
 	else:
 		_debug("Helper: Generate REMOTE SCRIPT for package {} bundle {}".format(rebostpkg.get('pkgname'),bundle))
 		epijson=''
 		user=''
 	if user=='root':
 		user=''
-	episcript=_generate_epi_sh(rebostpkg,bundle,user,remote,tmpDir=tmpDir,postaction=postaction)
+	episcript=_shForEpi(rebostpkg,bundle,user,remote,tmpDir=tmpDir,postaction=postaction)
 	return(epijson,episcript)
-#def generate_epi_for_rebostpkg
+#def epiFromPkg
 	
-def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
+def _jsonForEpi(rebostpkg,bundle,tmpDir="/tmp"):
 	epiJson="{}_{}.epi".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not os.path.isfile(epiJson):
 		name=rebostpkg.get('name').strip()
@@ -501,13 +501,13 @@ def _generate_epi_json(rebostpkg,bundle,tmpDir="/tmp"):
 			_debug("Helper {}".format(e))
 			retCode=1
 	return(epiJson)
-#def _generate_epi_json
+#def _jsonForEpi
 
-def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp",postaction=""):
+def _shForEpi(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp",postaction=""):
 	epiScript="{0}_{1}_script.sh".format(os.path.join(tmpDir,rebostpkg.get('pkgname')),bundle)
 	if not (os.path.isfile(epiScript) and remote==False):
 #		try:
-		_make_epi_script(rebostpkg,epiScript,bundle,user,remote,postaction)
+		_populateEpi(rebostpkg,epiScript,bundle,user,remote,postaction)
 #		except Exception as e:
 #			_debug("Helper: {}".format(e))
 #			print("Generate_epi error {}".format(e))
@@ -515,11 +515,11 @@ def _generate_epi_sh(rebostpkg,bundle,user='',remote=False,tmpDir="/tmp",postact
 		if os.path.isfile(epiScript):
 			os.chmod(epiScript,0o755)
 	return(epiScript)
-#def _generate_epi_sh
+#def _shForEpi
 
-def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
+def _populateEpi(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
 	_debug("Helper: Generating script for:\n{0} - {1} as user {2}".format(rebostpkg,bundle,user))
-	commands=_get_bundle_commands(bundle,rebostpkg,user)
+	commands=_getCommandsForBundle(bundle,rebostpkg,user)
 
 	with open(epiScript,'w') as f:
 		f.write("#!/bin/bash\n")
@@ -576,9 +576,9 @@ def _make_epi_script(rebostpkg,epiScript,bundle,user='',remote=False,postaction=
 			f.write("\ninstallPackage\n")
 
 		f.write("exit $ERR\n")
-#def _make_epi_script
+#def _populateEpi
 
-def _get_bundle_commands(bundle,rebostpkg,user=''):
+def _getCommandsForBundle(bundle,rebostpkg,user=''):
 	commands={}
 	installCmd=''
 	installCmdLine= []
@@ -586,28 +586,28 @@ def _get_bundle_commands(bundle,rebostpkg,user=''):
 	removeCmdLine=[]
 	statusTestLine=''
 	if bundle=='package':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForPackage(rebostpkg,user)
 	elif bundle=='snap':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_snap_commands(rebostpkg,user)
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForSnap(rebostpkg,user)
 	elif bundle=='flatpak':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_flatpak_commands(rebostpkg,user)
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForFlatpak(rebostpkg,user)
 	elif bundle=='appimage':
-		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_appimage_commands(rebostpkg,user)
+		(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForAppimage(rebostpkg,user)
 	elif bundle=='zomando':
 		zpath=rebostpkg["bundle"]["zomando"]
 		if os.path.exists(zpath)==False:
-			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_package_commands(rebostpkg,user)
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForPackage(rebostpkg,user)
 		else:
-			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_get_zomando_commands(rebostpkg,user)
+			(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=_getCommandsForZomando(rebostpkg,user)
 	commands['installCmd']=installCmd
 	commands['installCmdLine']=installCmdLine
 	commands['removeCmd']=removeCmd
 	commands['removeCmdLine']=removeCmdLine
 	commands['statusTestLine']=statusTestLine
 	return(commands)
-#def _get_bundle_commands
+#def _getCommandsForBundle
 
-def _get_package_commands(rebostpkg,user):
+def _getCommandsForPackage(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	#installCmd="pkcon install --allow-untrusted -y {} 2>&1;ERR=$?".format(rebostpkg['pkgname'])
 	#pkcon has a bug detecting network if there's no network under NM (fails with systemd-networkd)
@@ -625,17 +625,17 @@ def _get_package_commands(rebostpkg,user):
 	removeCmdLine.append("fi")
 	statusTestLine=("TEST=$(pkcon resolve --filter installed {0}| grep {0} > /dev/null && echo 'installed')".format(pkgname))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
-#def _get_package_commands
+#def _getCommandsForPackage
 
-def _get_snap_commands(rebostpkg,user):
+def _getCommandsForSnap(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	installCmd="snap install {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
 	removeCmd="snap remove {} 2>&1;ERR=$?".format(rebostpkg['bundle']['snap'])
 	statusTestLine=("TEST=$( snap list 2> /dev/null| grep {} >/dev/null && echo 'installed')".format(rebostpkg['bundle']['snap']))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
-#def _get_snap_commands
+#def _getCommandsForSnap
 
-def _get_flatpak_commands(rebostpkg,user):
+def _getCommandsForFlatpak(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	#installCmd="sudo -u {0} flatpak  --user -y install {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
 	#removeCmd="sudo -u {0} flatpak --user -y uninstall {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
@@ -644,9 +644,9 @@ def _get_flatpak_commands(rebostpkg,user):
 	removeCmd="flatpak --system -y uninstall {1} 2>&1;ERR=$?".format(user,rebostpkg['bundle']['flatpak'])
 	statusTestLine=("TEST=$(flatpak --system list 2> /dev/null| grep $'{1}\\t' >/dev/null && echo 'installed')".format(user,rebostpkg['bundle']['flatpak']))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
-#def _get_flatpak_commands
+#def _getCommandsForFlatpak
 
-def _get_appimage_commands(rebostpkg,user):
+def _getCommandsForAppimage(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	#user=os.environ.get('USER')
 	installCmd=""
@@ -668,9 +668,9 @@ def _get_appimage_commands(rebostpkg,user):
 	removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}-appimage.desktop;ERR=$?".format(destPath,user,rebostpkg['pkgname'])
 	statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
-#def _get_appimage_commands
+#def _getCommandsForAppimage
 
-def _get_zomando_commands(rebostpkg,user):
+def _getCommandsForZomando(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	zdir="/usr/share/zero-center/zmds/"
 	zpath=rebostpkg['bundle']['zomando']
@@ -680,9 +680,9 @@ def _get_zomando_commands(rebostpkg,user):
 	removeCmd="exec {}".format(zpath)
 	statusTestLine=("TEST=$([ -e %s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(zpath,os.path.basename(zpath).replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
-#def _get_zomando_commands
+#def _getCommandsForZomando
 
-def get_epi_status(episcript):
+def getEpiStatus(episcript):
 	st="0"
 	if os.path.exists(episcript)==True:
 		try:
@@ -691,9 +691,9 @@ def get_epi_status(episcript):
 		except Exception as e:
 			_debug(e)
 	return(st)
-#def get_epi_status
+#def getEpiStatus
 
-def get_table_pkg(table,pkg):
+def getPkgFromTable(table,pkg):
 	#tablePath=os.path.join("/usr/share/rebost/",table)
 	tablePath=os.path.join(WRKDIR,table)
 	ret=[]
@@ -709,9 +709,9 @@ def get_table_pkg(table,pkg):
 			pass
 		db.close()
 	return ret
-#def get_table_state
+#def getStateForPkg
 
-def get_table_pkgarray(table,pkgarray):
+def getPkgFromTablearray(table,pkgarray):
 	tablePath=os.path.join(WRKDIR,table)
 	ret=[]
 	if os.path.isfile(tablePath):
@@ -726,9 +726,9 @@ def get_table_pkgarray(table,pkgarray):
 			pass
 		db.close()
 	return ret
-#def get_table_pkgarray
+#def getPkgFromTablearray
 
-def get_table_state(pkg,bundle):
+def getStateForPkg(pkg,bundle):
 	tablePath=os.path.join(WRKDIR,"installed.db")
 	ret=[]
 	if os.path.isfile(tablePath):
@@ -739,9 +739,9 @@ def get_table_state(pkg,bundle):
 		ret=cursor.fetchall()
 		db.close()
 	return ret
-#def get_table_state
+#def getStateForPkg
 
-def check_remove_unsure(package):
+def chkUnsafeRemoval(package):
 	sw=False
 	_debug("Helper: Checking if remove {} is unsure".format(package))
 	proc=subprocess.run(["apt-cache","rdepends",package],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -757,7 +757,7 @@ def check_remove_unsure(package):
 	_debug("Helper: {}".format(proc.stdout))
 	_debug("Helper: Checked")
 	return(sw)
-#def check_remove_unsure(package):
+#def chkUnsafeRemoval(package):
 
 def getFiltersList(banlist=False,includelist=False,wordlist=False):
 	wrkDir=WRKDIR #"/usr/share/rebost"

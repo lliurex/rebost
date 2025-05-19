@@ -156,7 +156,7 @@ class appimageHelper():
 		pkgList=[]
 		while self.queue.empty()==False:
 			pkgList.append(self.queue.get())
-		rebostHelper.rebostPkgList_to_sqlite(pkgList,'appimage.db')
+		rebostHelper.rebostPkgsToSqlite(pkgList,'appimage.db')
 		self._debug("SQL loaded")
 		return(applist)
 	#_processAppimageJson
@@ -167,7 +167,7 @@ class appimageHelper():
 		if appimage.get('links'):
 			appinfo=self.loadJsonAppinfo(appimage,searchDirs=searchDirs)
 		  #  rebostHelper.rebostPkgList_to_xml([appinfo],'/tmp/.cache/rebost/xml/appimage/appimage.xml')
-			#rebostHelper.rebostPkg_to_sqlite(appinfo,'appimage.db')
+			#rebostHelper.rebostPkgToSqlite(appinfo,'appimage.db')
 			self.queue.put(appinfo)
 		semaphore.release()
 	#def _thProcessAppimage
@@ -241,7 +241,7 @@ class appimageHelper():
 				if rebostpkg['state']['appimage']=="0":
 					break
 		#if rebostpkg['state']['appimage']=="0":
-		#	rows=rebostHelper.get_table_state(rebostpkg['pkgname'],'appimage')
+		#	rows=rebostHelper.getStateForPkg(rebostpkg['pkgname'],'appimage')
 		#	for row in rows:
 		#		if row[-1]=="0":
 		#			rebostpkg['installed']['appimage']=row[2]

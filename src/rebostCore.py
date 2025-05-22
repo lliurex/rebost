@@ -220,14 +220,18 @@ class Rebost():
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
+		ret=False
 		for cfile in [cfgFile,userCfgFile]:
 			if os.path.isdir(os.path.dirname(cfile)):
-				with open(cfile,'w') as f:
-					try:
+				try:
+					with open(cfile,'w') as f:
 						f.write(json.dumps(cfg,skipkeys=True))
-					except Exception as e:
-						print("Unable to unlock")
-						break
+					ret=True
+				except Exception as e:
+					print("Unable to unlock")
+					ret=False
+					break
+		return(ret)
 	#def _writeConfig
 
 	def _processConfig(self):
@@ -554,7 +558,6 @@ class Rebost():
 
 	def _executeCoreAction(self,action,th=True):
 		retval=1
-		rs=[{}]
 		proc=None
 		self._debug("Launching {} from CORE (th {})".format(action,th))
 		func=eval("self.{}".format(action))
@@ -567,7 +570,7 @@ class Rebost():
 		except Exception as e:
 			print(e)
 			retval=0
-		return(rs)
+		return(proc)
 	#def _executeCoreAction
 	
 	def getEpiPkgStatus(self,epifile):

@@ -55,7 +55,6 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.signal("net.lliurex.rebost")
 	def reloadSignal(self):
-		print("RELOADING")
 		pass
 	#def storeLoaded
 
@@ -267,23 +266,27 @@ class rebostDbusMethods(dbus.service.Object):
 	#def restart(self):
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
+						 in_signature='', out_signature='b')
 	def lock(self):
+		ret=False
 		try:
-			self.rebost.execute("lock")
+			ret=self.rebost.execute("lock")
 		except Exception as e:
 			print("Critical error locking")
 			print(str(e))
-	#def unlock
+		return(ret)
+	#def lock
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
+						 in_signature='', out_signature='b')
 	def unlock(self):
+		ret=False
 		try:
-			self.rebost.execute("unlock")
+			ret=self.rebost.execute("unlock")
 		except Exception as e:
 			print("Critical error unlocking")
 			print(str(e))
+		return(ret)
 	#def unlock
 
 	@dbus.service.method("net.lliurex.rebost",

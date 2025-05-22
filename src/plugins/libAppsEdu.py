@@ -21,7 +21,7 @@ import html2text
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
-EDUAPPS_RAW=os.path.join(FCACHE,".eduapps.raw")
+EDUAPPS_RAW=os.path.join(os.path.dirname(FCACHE),".eduapps.raw")
 DEBUG=False
 
 i18n={'CAD':"Engineering",

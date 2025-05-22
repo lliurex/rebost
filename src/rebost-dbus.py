@@ -36,7 +36,6 @@ class rebostDbusMethods(dbus.service.Object):
 	#def _reloadSignal
 
 	def _updatedSignal(self,*args,**kwargs):
-		print("UPDATE")
 		self.updatedSignal()
 	#def _updatedSignal
 

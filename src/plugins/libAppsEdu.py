@@ -20,8 +20,8 @@ import html2text
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
-EDUAPPS_RAW="/tmp/.eduapps.raw"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
+EDUAPPS_RAW=os.path.join(FCACHE,".eduapps.raw")
 DEBUG=False
 
 i18n={'CAD':"Engineering",

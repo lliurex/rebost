@@ -948,6 +948,13 @@ class sqlHelper():
 		if os.path.isfile(confF):
 			with open(confF,'r') as f:
 				fcontent=json.loads(f.read())
+		cmd=["pkexec","/usr/share/rebost/helper/test-rebost.py"]
+		try:
+			proc=subprocess.run(cmd)
+			if proc.returncode!=0:
+				cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		except Exception as e:
+			fcontent.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
 		self.mainTableForRestrict=fcontent.get("mandatoryTable","")
 		self.mapFile=fcontent.get("mapFile","")
 		self.md5Map=fcontent.get("md5File","")

@@ -241,13 +241,20 @@ class Rebost():
 				self._enable(plugin)
 			else:
 				self._disable(plugin)
+		self.forceApps=cfg.get("forceApps",{})
+		self.mode=cfg.get("mode","")
+		cmd=["pkexec","/usr/share/rebost/helper/test-rebost.py"]
+		try:
+			proc=subprocess.run(cmd)
+			if proc.returncode!=0:
+				cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		except Exception as e:
+			cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
 		self.restricted=cfg.get("restricted",True)
 		if self.restricted==True:
 			self.mainTableForRestrict=cfg.get("mandatoryTable","")
 		else:
 			self.mainTableForRestrict=""
-		self.forceApps=cfg.get("forceApps",{})
-		self.mode=cfg.get("mode","")
 	#def _processConfig
 
 	def _readConfig(self):

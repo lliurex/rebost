@@ -78,7 +78,7 @@ class eduHelper():
 				f.write("{}\n".format(eduapp["app"]))
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
 		if len(rebostPkgList)>0:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,"eduapps.db")
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,"eduapps.db")
 		#REM
 		return
 		searchDict=self._generateTags(eduApps)
@@ -195,11 +195,13 @@ class eduHelper():
 				rebostPkg["bundle"]={"eduapp":"banned"}
 			#Translate categories
 			rawCats=div.find("div","acf-view__categoria_val-choice acf-view__choice")
-			if len(rawCats)>0:
-				categories=[]
-				for cat in rawCats:
-					cat=cat.strip()
-					categories.append(libAppsEdu.i18n.get(cat,cat))
+			categories=[]
+			if isinstance(rawCats,list):
+				if len(rawCats)>0:
+					categories=[]
+					for cat in rawCats:
+						cat=cat.strip()
+						categories.append(libAppsEdu.i18n.get(cat,cat))
 			if len(rebostPkg.get("categories",[]))==0:
 				rebostPkg["categories"]=categories
 

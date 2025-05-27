@@ -4,8 +4,9 @@
     "flatpak": true,
     "packageKit": true,
     "snap": true,
-	"restricTable": "eduapps",
-	"mandatoryTable": "eduapps",
-	"mode":"appsedu",
+    "restricTable": "eduapps",
+    "mandatoryTable": "eduapps",
+    "mode":"appsedu",
+    "restricted":true,
 	"release":"2.6.0-15"
 }

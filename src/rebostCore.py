@@ -13,6 +13,8 @@ import gi
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 
+# SIGUSR2 -> rebost is operative
+
 class Rebost():
 	def __init__(self,*args,**kwargs):
 		self.dbg=True
@@ -54,22 +56,12 @@ class Rebost():
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
-		signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+		#signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+		#	signal.raise_signal(signal.SIGALRM)
 	#def __init__(self,*args,**kwargs):
 
 	def _iniCache(self):
 		#Preserve cache 
-		#if os.path.exists(self.rebostWrkDir)==True:
-		#	for f in os.scandir(self.rebostWrkDir):
-		#		if os.path.isfile(f.path):
-		#			if f.path.endswith(".db"):
-		#				os.unlink(f.path)
-		#		elif os.path.isdir(f.path):
-		#			for fd in os.scandir(f.path):
-		#				if os.path.isfile(fd.path):
-		#					os.unlink(fd.path)
-		#	#shutil.rmtree(self.rebostWrkDir)
-		#else:
 		if os.path.exists(self.rebostWrkDir)==False:
 			os.makedirs(self.rebostWrkDir)
 		try:
@@ -89,19 +81,18 @@ class Rebost():
 	def _launchRebostUpdated(self,*args,**kwargs):
 		self._copyTmpToCache()
 		self._log("Cache restored")
-		signal.raise_signal(signal.SIGUSR2)
 	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
+		self.mode=""
+		self._processConfig()
+		if self.mode=="appsedu":
+			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Starting rebost")
 		self._loadPlugins()
 		self._log("Plugins loaded")
 		self._loadPluginInfo()
 		self._log("Plugins processed")
-		self.mode=""
-		self._processConfig()
-		if self.mode=="appsedu":
-			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Config readed")
 		if self._copyCacheToTmp()==True:
 			self._log("Cache enabled")
@@ -110,6 +101,7 @@ class Rebost():
 			self._log("Cache unavailable")
 			self._autostartActions()
 		self._log("Autostart ended.")
+		signal.raise_signal(signal.SIGUSR2)
 	#def run
 
 	def _log(self,msg):
@@ -168,6 +160,12 @@ class Rebost():
 							print("Plugin loaded: {}".format(plugin))
 						else:
 							print("{} will set its status".format(plugin))
+						if hasattr(pluginObject,"restricted"):
+							pluginObject.restricted=self.restricted
+						if hasattr(pluginObject,"mainTableForRestrict"):
+							pluginObject.mainTabledForRestrict=self.mainTableForRestrict
+						if hasattr(pluginObject,"mode"):
+							pluginObject.mode=self.mode
 					else:
 						self._debug("Plugin disabled: {}".format(plugin))
 						disabledPlugins[plugin.replace(".py","")]=False
@@ -212,19 +210,28 @@ class Rebost():
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
 
-	def _writeConfig(self,config):
-		return()
+	def _writeConfig(self,config,force=False):
+		if force!=True:
+			return()
 		cfg=self._readConfig()
-		cfgFile=self.confFile
+		userCfgFile=self.confFile
+		cfgFile="/usr/share/rebost/store.json"
+
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'w') as f:
+		ret=False
+		for cfile in [cfgFile,userCfgFile]:
+			if os.path.isdir(os.path.dirname(cfile)):
 				try:
-					f.write(json.dumps(cfg,skipkeys=True))
-				except:
-					pass
+					with open(cfile,'w') as f:
+						f.write(json.dumps(cfg,skipkeys=True))
+					ret=True
+				except Exception as e:
+					print("Unable to unlock")
+					ret=False
+					break
+		return(ret)
 	#def _writeConfig
 
 	def _processConfig(self):
@@ -234,10 +241,20 @@ class Rebost():
 				self._enable(plugin)
 			else:
 				self._disable(plugin)
-		self.restricted=cfg.get("restricted",True)
-		self.mainTableForRestrict=cfg.get("maintable","")
 		self.forceApps=cfg.get("forceApps",{})
 		self.mode=cfg.get("mode","")
+		cmd=["pkexec","/usr/share/rebost/helper/test-rebost.py"]
+		try:
+			proc=subprocess.run(cmd)
+			if proc.returncode!=0:
+				cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		except Exception as e:
+			cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		self.restricted=cfg.get("restricted",True)
+		if self.restricted==True:
+			self.mainTableForRestrict=cfg.get("mandatoryTable","")
+		else:
+			self.mainTableForRestrict=""
 	#def _processConfig
 
 	def _readConfig(self):
@@ -462,15 +479,17 @@ class Rebost():
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
 			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
 		#Generate the store with results and sanitize them
-		if action!='getCategories':
-			if not isinstance(rebostPkgList,list):
-				rebostPkgList=[rebostPkgList]
-			store=self._sanitizeStore(rebostPkgList)
-		else:
+		if action=='getCategories':
 			catList=[]
 			for cat in rebostPkgList:
 				catList.append(cat[0])
 			store=json.dumps(catList)
+		if action=='getFreedesktopCategories':
+			store=json.dumps(rebostPkgList)
+		else:
+			if not isinstance(rebostPkgList,list):
+				rebostPkgList=[rebostPkgList]
+			store=self._sanitizeStore(rebostPkgList)
 		#if action=="install" or action=="remove" or action=="test":
 		if action=="install" or action=="remove":
 			self._launchRebostUpdated()
@@ -546,7 +565,6 @@ class Rebost():
 
 	def _executeCoreAction(self,action,th=True):
 		retval=1
-		rs=[{}]
 		proc=None
 		self._debug("Launching {} from CORE (th {})".format(action,th))
 		func=eval("self.{}".format(action))
@@ -559,7 +577,7 @@ class Rebost():
 		except Exception as e:
 			print(e)
 			retval=0
-		return(rs)
+		return(proc)
 	#def _executeCoreAction
 	
 	def getEpiPkgStatus(self,epifile):
@@ -575,6 +593,21 @@ class Rebost():
 			stdout="23"
 		return (stdout)
 	#def getEpiPkgStatus
+
+	def getLockStatus(self):
+		cfg=self._readConfig()
+		return(cfg.get("restricted",False))
+	#def getLockStatus
+
+	def lock(self):
+		cfg={"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"}
+		self._writeConfig(cfg,True)
+	#def lock(self):
+
+	def unlock(self):
+		cfg={"restricted":False,"mandatoryTable":"","mode":"store"}
+		self._writeConfig(cfg,True)
+	#def unlock(self):
 
 	def getFiltersEnabled(self):
 		state=True

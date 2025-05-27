@@ -85,7 +85,7 @@ class zomandoHelper():
 					if isinstance(rebostPkg,dict):
 						rebostPkgList.append(rebostPkg)
 		if rebostPkgList:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'zomandos.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'zomandos.db')
 			self._debug("SQL Loaded")
 	#def _get_zomandos
 

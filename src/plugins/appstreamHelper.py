@@ -65,8 +65,8 @@ class appstreamHelper():
 				store=fullstore
 			store=self._generateStore(store,fullstore)
 			self._debug("Get rebostPkg")
-			rebostPkgList=rebostHelper.appstream_to_rebost(store)
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
+			rebostPkgList=rebostHelper._appstreamToRebost(store)
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'appstream.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
 			with open(self.lastUpdate,'w') as f:

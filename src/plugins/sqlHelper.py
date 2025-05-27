@@ -4,7 +4,6 @@ import gi
 from gi.repository import Gio
 import json
 import rebostHelper
-import signal
 import html
 import sqlite3
 from shutil import copyfile
@@ -19,7 +18,7 @@ class sqlHelper():
 		self.dbg=True
 		self.enabled=True
 		self.gui=False
-		self.actions=["show","match","search","load","list",'commitInstall','getCategories','disableFilters','export','updatePkgData']
+		self.actions=["show","match","search","load","list",'commitInstall','getCategories','getFreedesktopCategories','disableFilters','export','updatePkgData']
 		self.packagekind="*"
 		self.priority=0
 		self.postAutostartActions=["load"]
@@ -126,10 +125,13 @@ class sqlHelper():
 			rs=self._showPackage(parms,extraParms,onlymatch=onlymatch)
 		if action=='load':
 			rs=self.consolidateSqlTables()
+			#Operative state
 		if action=='commitInstall':
 			rs=self._commitInstall(parms,extraParms,extraParms2)
 		if action=='getCategories':
 			rs=self._getCategories()
+		if action=='getFreedesktopCategories':
+			rs=[self._getFreedesktopCategories()]
 		if action=='export':
 			rs=self._exportRebost()
 		if action=='disableFilters':
@@ -180,7 +182,11 @@ class sqlHelper():
 		rows=cursor.fetchall()
 		self.closeConnection(db)
 		return(rows)
-	#def _searchPackage
+	#def _getCategories
+
+	def _getFreedesktopCategories(self):
+		return(rebostHelper.getFreedesktopCategories())
+	#def _getFreedesktopCategories
 
 	def _showPackage(self,pkgname,user='',onlymatch=False):
 		table=os.path.basename(self.main_table).replace(".db","")
@@ -200,7 +206,9 @@ class sqlHelper():
 				(pkg,data)=row
 				rebostPkg=json.loads(data)
 				bundles=rebostPkg.get('bundle',{}).copy()
-				infoPage=rebostPkg.get('infopage',"")
+				infoPage=rebostPkg.get('infopage')
+				if isinstance(infoPage,str)!=True:
+					infoPage=""
 				if len(infoPage)>0 and len(rebostPkg.get("description",""))==0:
 					self._debug("Upgrading appsedu data for {}".format(rebostPkg.get("name")))
 					rebostPkg=self._upgradeAppseduData(db,table,cursor,infoPage,pkg,rebostPkg)
@@ -269,8 +277,8 @@ class sqlHelper():
 	#def _upgradeAppimageData
 
 	def _getStateFromEpi(self,db,table,cursor,pkgname,rebostPkg,bundle,user):
-		(epi,script)=rebostHelper.generate_epi_for_rebostpkg(rebostPkg,bundle,user)
-		state=rebostHelper.get_epi_status(script)
+		(epi,script)=rebostHelper.epiFromPkg(rebostPkg,bundle,user)
+		state=rebostHelper.getEpiStatus(script)
 		tmpDir=os.path.dirname(epi)
 		if os.path.isdir(tmpDir):
 			try:
@@ -452,9 +460,6 @@ class sqlHelper():
 		except Exception as e:
 			ret=[{"err":e}]
 		self.closeConnection(db)
-		#if self.updatePkgs>4:
-		#	signal.raise_signal(signal.SIGALRM)
-		#	self.updatePkgs=0
 		return(ret)
 	#def _updatePkgData
 
@@ -509,20 +514,20 @@ class sqlHelper():
 			self._processCategories(allCategories)
 		self._copyTmpDef()
 		self._generateCompletion()
-		signal.raise_signal(signal.SIGUSR2)
 		return([])
 	#def consolidateSqlTables
 
 	def _readCurrentConfig(self):
-		config=os.path.join(self.rebostCache,"store.json")
-		self._debug("Reading sources from {}".format(config))
-		fcontent={}
-		if os.path.isfile(config):
-			self._debug("Reading sources from {}".format(config))
-			with open(config,'r') as f:
-				fcontent=json.loads(f.read())
-		else:
-			fcontent=self._readConfig()
+		#DISABLED. Config is always readed from system, User side must be implemented
+	#	config=os.path.join(self.rebostCache,"store.json")
+	#	self._debug("Reading sources from {}".format(config))
+	#	fcontent={}
+	#	if os.path.isfile(config):
+	#		self._debug("Reading sources from {}".format(config))
+	#		with open(config,'r') as f:
+	#			fcontent=json.loads(f.read())
+	#	else:
+		fcontent=self._readConfig()
 		return(fcontent)
 	#def _readCurrentConfig(self):
 
@@ -532,7 +537,8 @@ class sqlHelper():
 		f=os.path.join(self.rebostCache,fname)
 		if os.path.isfile(f):
 			restricted=self.restricted
-			if self.mode!="appsedu":
+			if restricted==True:
+				#Always include zomandos
 				if "zomandos"==fname.replace(".db",""):
 					restricted=False
 			fsize=os.path.getsize(f)
@@ -584,7 +590,7 @@ class sqlHelper():
 	def _processCategories(self,allCategories):
 		self._debug("Populating categories")
 		categories_table=os.path.basename(self.categories_table).replace(".db","")
-		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
+		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY","level INT"],onlyExtraFields=True)
 		queryDelete="DELETE FROM {}".format(categories_table)
 		cursor_cat.execute(queryDelete)
 		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
@@ -618,7 +624,8 @@ class sqlHelper():
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			#If no row then it's a new pkg so discard it if strict mode enabled
-			if self.mode=="appsedu":
+			#if self.mode=="appsedu":
+			if self.restricted==True:
 				return(processedpkg,aliaspkg)
 			if "lliurex" in pkgdata.lower():
 				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
@@ -780,7 +787,8 @@ class sqlHelper():
 		cat0=categories[0]
 		cat1=categories[-1]
 		cat2=categories[-2]
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			if ("Lliurex" in categories):
 				categories.remove("Lliurex")
 				cat0="Lliurex"
@@ -824,7 +832,9 @@ class sqlHelper():
 		eduapp=mergepkgdataJson.get("bundle",{}).get("eduapp","")
 		eduappSum=""
 		infoPage=mergepkgdataJson.get("infopage","")
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if infoPage==None:
+			infoPage=""
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			eduappSum=mergepkgdataJson.get("summary","")
 			eduappDesc=mergepkgdataJson.get("description","")
 			if "eduapp" in mergepkgdataJson["bundle"].keys():
@@ -843,7 +853,7 @@ class sqlHelper():
 				mergepkgdataJson["versions"].update({"package":mergepkgdataJson["versions"].get("package",mergepkgdataJson["versions"].pop("eduapp"))})
 			else:
 				mergepkgdataJson["versions"].update({"package":"custom"})
-		if "appsedu" in mergepkgdataJson.get("infopage",""): #only appsedu fills infopage
+		if "appsedu" in infoPage: #only appsedu fills infopage
 			#mergepkgdataJson["summary"]="{} ({})".format(mergepkgdataJson["summary"],eduappSum)
 			mergepkgdataJson["summary"]="{}".format(eduappSum)
 			mergepkgdataJson["description"]="{}".format(eduappDesc)
@@ -872,6 +882,8 @@ class sqlHelper():
 					tmp=[]
 					seen=[]
 					for i in list(set(mergepkgdataJson[key])):
+						if i==None:
+							continue
 						if i.islower()==False:
 							if i.lower() not in seen:
 								tmp.append(i.strip())
@@ -936,6 +948,13 @@ class sqlHelper():
 		if os.path.isfile(confF):
 			with open(confF,'r') as f:
 				fcontent=json.loads(f.read())
+		cmd=["pkexec","/usr/share/rebost/helper/test-rebost.py"]
+		try:
+			proc=subprocess.run(cmd)
+			if proc.returncode!=0:
+				cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		except Exception as e:
+			fcontent.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
 		self.mainTableForRestrict=fcontent.get("mandatoryTable","")
 		self.mapFile=fcontent.get("mapFile","")
 		self.md5Map=fcontent.get("md5File","")
@@ -1005,7 +1024,8 @@ class sqlHelper():
 			self._debug("Saving list to {}/unavailable.apps".format(self.rebostCache))
 			with open(os.path.join(self.rebostCache,"unavailable.apps"),"w") as f:
 				f.write(json.dumps(rows))
-		if self.mode=="appsedu":
+		#if self.mode=="appsedu":
+		if self.restricted==True:
 			pass
 			#query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug(query)

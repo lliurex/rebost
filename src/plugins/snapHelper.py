@@ -31,7 +31,8 @@ class snapHelper():
 		os.chmod(self.rebostCache,stat.S_IRWXU )
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","sp.lu")
 		self.snap=Snapd.Client()
-		self.forceApps=["octoprint-sdev"]
+		#self.forceApps=["octoprint-sdev"]
+		self.forceApps=[]
 	#def __init__
 
 	def setDebugEnabled(self,enable=True):
@@ -58,7 +59,7 @@ class snapHelper():
 		except Exception as e:
 			raise
 		if update:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'snap.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'snap.db')
 			self._debug("SQL loaded")
 		else:
 			self._debug("Skip update")

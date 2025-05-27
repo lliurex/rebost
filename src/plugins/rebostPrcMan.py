@@ -153,7 +153,7 @@ class rebostPrcMan():
 
 		if action=='install' or action=='remove':
 			if os.path.exists(episcript):
-				stdout=rebostHelper.get_epi_status(data.get('episcript'))
+				stdout=rebostHelper.getEpiStatus(data.get('episcript'))
 				if action=='install' or action=='remove':
 					if stdout=="0":
 						if action=='install':
@@ -322,7 +322,7 @@ class rebostPrcMan():
 					sure=False
 				else:
 					if jpkg.get("state",{}).get("package","1")=="0":
-						if rebostHelper.check_remove_unsure(pkgname):
+						if rebostHelper.chkUnsafeRemoval(pkgname):
 							rebostPkgList=[("{}".format(self.failProc),
 											{'pid':"{}".format(self.failProc),
 											'package':pkgname,
@@ -341,7 +341,7 @@ class rebostPrcMan():
 					if (jpkg.get("state",{}).get("zomando","0")!="0") and ((jpkg.get("state",{}).get("package","0")!="0")):
 						tmpAction="install"
 						postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
-				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote,postaction)
+				(epifile,episcript)=rebostHelper.epiFromPkg(rebostpkg,bundle,user,remote,postaction)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				if action=="remote":
 					self._remoteInstall(usern,episcript)

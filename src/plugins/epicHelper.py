@@ -83,7 +83,7 @@ class epicHelper():
 			with open(self.lastUpdate,'w') as f:
 				f.write(epicMd5)
 			self._debug("Sending {} to sql".format(len(rebostPkgList)))
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'zomandos.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'zomandos.db')
 		else:
 			self._debug("Skip update")
 	#def _loadStore
@@ -129,9 +129,6 @@ class epicHelper():
 			for epiName,epiData in epi.items():
 				self._debug("Processing {} ({})".format(epiName,len(epicList)))
 				fname=epiData.get("zomando")
-				if "virtualizer" in epiName:
-					print("F: {}".format(fname))
-					print(epiData)
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()

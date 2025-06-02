@@ -106,20 +106,9 @@ class epicHelper():
 	#def _chkNeedUpdate
 
 	def _getEpicZomandos(self):
-#		cmd=[EPIC,"showall"]
-#		epicList=[]
-#		renv = os.environ.copy()
-#		if len(renv.get("USER",""))==0:
-#			renv["USER"]="root"
-#		proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,env=renv)
-#		output=proc.stdout
-#		if "[EPIC]:" in output:
-#			idx=output.index("system:")
-#			rawEpicList=output[idx:].replace("system:","")
-#			epicList=[ epic.strip() for epic in rawEpicList.split(",") ]
 		epicList=self.epiManager.all_available_epis
 		for epic in epicList:
-			print("Available: {}".format(epic))
+			self._debug("Available: {}".format(epic))
 		return(epicList)
 	#def _getEpicZomandos
 	
@@ -139,6 +128,7 @@ class epicHelper():
 					rebostPkg['homepage']="https://github.com/lliurex"
 					rebostPkg['versions']={'zomando':self.release}
 					rebostPkg['summary']=epiData.get("custom_name",rebostPkg["name"])
+					rebostPkg['state']={"zomando":"1"}
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
 					for pkg in pkgList:
@@ -146,38 +136,9 @@ class epicHelper():
 						rebostPkgTmp["name"]=pkg.get("name")
 						rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
 						rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
+						rebostPkg['description']+="<li> * {}</li>".format(pkg.get("custom_name",pkg["name"]))
 						rebostPkgList.append(rebostPkgTmp)
 					rebostPkgList.append(rebostPkg)
-					
-		#rebostPkg['description']=description
-		#if "Zomando" in rebostPkg['categories']:
-		#	rebostPkg['categories'].remove("Zomando")
-		#rebostPkg['categories'].insert(0,"Zomando")
-		#if "Lliurex" in rebostPkg['categories']:
-		#	rebostPkg['categories'].remove("Lliurex")
-		#rebostPkg['categories'].insert(0,"Lliurex")
-		#			self._debug("Match {}%".format(fname))
-		return(rebostPkgList)
-	def _generateRebostFromEpic2(self,epicList):
-		lstFiles=[]
-		rebostPkgList=[]
-		for epic in epicList:
-			self._debug("Processing {} ({})".format(epic,len(epicList)))
-			fname=self._getFileFromEpiF(epic,self.appDirFiles)
-			if  fname not in self.appDirFiles:
-				if len(fname)>0:
-					self._debug("Warning: ZMD for {} aliased as {}".format(epic,fname))
-				else:
-					self._debug("Warning: ZMD for {} not found".format(epic))
-			rebostPkg=rebostHelper.rebostPkg()
-			rebostPkg['name']=os.path.basename(fname)
-			rebostPkg['id']="zero.lliurex.{}".format(epic.replace(".epi",""))
-			rebostPkg['pkgname']=os.path.basename(fname).replace(".app","")
-			rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,fname.replace(".app",".zmd"))}
-			rebostPkg['homepage']="https://github.com/lliurex"
-			rebostPkg['versions']={'zomando':self.release}
-			rebostPkgList.extend(self._getDataForAllPackages(fname,rebostPkg))
-			self._debug("Match {}%".format(fname))
 		return(rebostPkgList)
 	#def _generateRebostFromEpic
 

@@ -1,6 +1,7 @@
-rebost (2.7.1-0llx25) noble; urgency=medium
+rebost (2.7.1.1-0llx25) noble; urgency=medium
 
   * Add getFreedesktopCategories
+  * Update aliases tree
 
  -- Juanma1980 <juanma1980@gmail.com>  Mon, 19 May 2025 14:01:22 +0200
 

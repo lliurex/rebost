@@ -116,7 +116,7 @@ class epicHelper():
 		rebostPkgList=[]
 		for epi in epicList:
 			for epiName,epiData in epi.items():
-				self._debug("Processing {} ({})".format(epiName,len(epicList)))
+				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
@@ -131,13 +131,15 @@ class epicHelper():
 					rebostPkg['state']={"zomando":"1"}
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
-					for pkg in pkgList:
-						rebostPkgTmp=rebostPkg.copy()
-						rebostPkgTmp["name"]=pkg.get("name")
-						rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
-						rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
-						rebostPkg['description']+="<li> * {}</li>".format(pkg.get("custom_name",pkg["name"]))
-						rebostPkgList.append(rebostPkgTmp)
+					if len(pkgList)>1:
+						for pkg in pkgList:
+							rebostPkgTmp=rebostPkg.copy()
+							rebostPkgTmp["name"]=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
+							rebostPkgTmp["pkgname"]=pkg.get("name")
+							rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
+							rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
+							rebostPkg['description']+="<li> * {}</li>".format(pkg.get("custom_name",pkg["name"]))
+							rebostPkgList.append(rebostPkgTmp)
 					rebostPkgList.append(rebostPkg)
 		return(rebostPkgList)
 	#def _generateRebostFromEpic

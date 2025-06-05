@@ -79,7 +79,7 @@ def resultSet(*kwargs):
 #def resultSet
 
 def rebostPkg(*kwargs):
-	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'kind':'','version':'','versions':{},'installed':{},'banner':'','license':'','homepage':'','infopage':'','categories':[],'installerUrl':'','state':{}}
+	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'versions':{},'installed':{},'banner':'','license':'','homepage':'','infopage':'','categories':[],'installerUrl':'','state':{}}
 	return(pkg)
 #def rebostPkg
 
@@ -674,11 +674,16 @@ def _getCommandsForZomando(rebostpkg,user):
 	(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)=("",[],"",[],"")
 	zdir="/usr/share/zero-center/zmds/"
 	zpath=rebostpkg['bundle']['zomando']
-	if zdir not in zpath:
-		zpath=os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando'])
-	installCmd="exec {}".format(zpath)
-	removeCmd="exec {}".format(zpath)
-	statusTestLine=("TEST=$([ -e %s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(zpath,os.path.basename(zpath).replace(".zmd","")))
+#	if zdir not in zpath:
+	#zpath=os.path.join("exec /usr/share/zero-center/zmds/",rebostpkg['bundle']['zomando'])
+	epath=os.path.basename(rebostpkg["bundle"]["zomando"].replace(".zmd",".epi"))
+	installCmd="epic install -u -nc {} {}".format(epath,rebostpkg["name"])
+	removeCmd="epic uninstall -u -nc {} {}".format(epath,rebostpkg["name"])
+	statusTestLine=("TEST=$(epic showinfo %s | grep installed.*%s | grep -o installed)"%(epath,rebostpkg["name"]))
+#	else:
+#		installCmd="exec {}".format(zpath)
+#		removeCmd="exec {}".format(zpath)
+#		statusTestLine=("TEST=$([ -e %s ]  && echo installed || n4d-vars getvalues ZEROCENTER | tr \",\" \"\\n\"|awk -F ',' 'BEGIN{a=0}{if ($1~\"%s\"){a=1};if (a==1){if ($1~\"state\"){ b=split($1,c,\": \");if (c[b]==1) print \"installed\";a=0}}}')"%(zpath,os.path.basename(zpath).replace(".zmd","")))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)
 #def _getCommandsForZomando
 

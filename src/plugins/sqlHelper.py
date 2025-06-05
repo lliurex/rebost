@@ -458,8 +458,29 @@ class sqlHelper():
 		try:
 			cursor.execute(query)
 		except Exception as e:
+			print(e)
 			ret=[{"err":e}]
+		else:
+			query="SELECT pkg FROM {0} WHERE alias='{1}';".format(table,pkgname)
+			cursor.execute(query)
+			rows=cursor.fetchall()
+			if len(rows)>0:
+				if rows[0][0]==pkgname:
+					rows=[]
+				while len(rows)>0:
+					for row in rows:
+						pkgname=row[0]
+						query="UPDATE {0} SET data='{2}' WHERE pkg='{1}';".format(table,pkgname,dataContent)
+						self._debug("Alias update for {}".format(pkgname))
+						cursor.execute(query)
+					query="SELECT pkg FROM {0} WHERE alias='{1}';".format(table,pkgname)
+					cursor.execute(query)
+					rows=cursor.fetchall()
+					if len(rows)>0:
+						if rows[0][0]==pkgname:
+							rows=[]
 		self.closeConnection(db)
+		self.copyBaseTable(os.path.basename(self.main_table).replace(".db",""))
 		return(ret)
 	#def _updatePkgData
 

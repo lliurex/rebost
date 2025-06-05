@@ -1,8 +1,8 @@
-rebost (2.7.1-0llx23) jammy; urgency=medium
+rebost (2.7.1.1-0llx23) jammy; urgency=medium
 
   * Sync with noble
 
- -- Juanma1980 <juanma1980@gmail.com>  Tue, 27 May 2025 09:30:54 +0200
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 05 Jun 2025 06:24:01 +0200
 
 rebost (2.6.0-15lliurex23) jammy; urgency=medium
 

@@ -121,7 +121,8 @@ class epicHelper():
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()
-					rebostPkg['name']=epiData.get("name",fname)
+					rebostPkg['name']=epiName.rstrip(".epi")
+					#rebostPkg['name']=epiData.get("name",fname)
 					rebostPkg['id']="zero.lliurex.{}".format(epiName)
 					rebostPkg['pkgname']=fname
 					rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,"{}.zmd".format(fname))}

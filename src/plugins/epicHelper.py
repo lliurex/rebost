@@ -122,7 +122,7 @@ class epicHelper():
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()
 					rebostPkg['name']=epiName.rstrip(".epi")
-					#rebostPkg['name']=epiData.get("name",fname)
+					rebostPkg['name']=os.path.join(self.zmdDir,"{}.zmd".format(fname))
 					rebostPkg['id']="zero.lliurex.{}".format(epiName)
 					rebostPkg['pkgname']=fname
 					rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,"{}.zmd".format(fname))}
@@ -132,7 +132,7 @@ class epicHelper():
 					rebostPkg['state']={"zomando":"1"}
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
-					if len(pkgList)>1:
+					if len(pkgList)>0:
 						for pkg in pkgList:
 							rebostPkgTmp=rebostPkg.copy()
 							rebostPkgTmp["name"]=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")

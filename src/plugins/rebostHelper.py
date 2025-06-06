@@ -538,7 +538,7 @@ def _populateEpi(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
 			for command in commands.get('installCmdLine',[]):
 				f.write("\t\t{}\n".format(command))
 			if postaction!="":
-				f.write("\t\t{}\n".format(postaction))
+				f.write("\t\t[ $0 -eq 0 ] && {}\n".format(postaction))
 			f.write("}\n")
 
 		f.write("ACTION=\"$1\"\n")
@@ -548,8 +548,8 @@ def _populateEpi(rebostpkg,epiScript,bundle,user='',remote=False,postaction=""):
 		f.write("\t\t{}\n".format(commands.get('removeCmd')))
 		for command in commands.get('removeCmdLine',[]):
 			f.write("\t\t{}\n".format(command))
-		if postaction!="":
-			f.write("\t\t{}\n".format(postaction))
+		#if postaction!="":
+		#	f.write("\t\t{}\n".format(postaction))
 		f.write("\t\t;;\n")
 		f.write("\tinstallPackage)\n")
 		f.write("\t\t{}\n".format(commands.get('installCmd')))

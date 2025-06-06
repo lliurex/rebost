@@ -337,11 +337,9 @@ class rebostPrcMan():
 					jpkg=json.loads(rebostpkg)
 				except:
 					jpkg={}
-				if jpkg.get("bundle",{}).get("zomando","")!="":
-					if (jpkg.get("state",{}).get("zomando","0")!="0") and ((jpkg.get("state",{}).get("package","0")!="0")):
-						tmpAction="install"
-						if bundle!="zomando":
-							postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
+				#if jpkg.get("bundle",{}).get("zomando","")!="":
+				#	if jpkg.get("state",{}).get("package","0")!="0":
+				#		postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
 				(epifile,episcript)=rebostHelper.epiFromPkg(rebostpkg,bundle,user,remote,postaction)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				if action=="remote":

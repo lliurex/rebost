@@ -8,5 +8,5 @@
     "mandatoryTable": "eduapps",
     "mode":"appsedu",
     "restricted":true,
-	"release":"2.7.1.1-0"
+	"release":"2.7.1.2"
 }

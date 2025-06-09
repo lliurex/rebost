@@ -40,6 +40,7 @@ class packageKit():
 	#def setDebugEnabled
 
 	def _debug(self,msg):
+		return
 		if self.dbg==True:
 			dbg="packagekit: {}".format(msg)
 			rebostHelper._debug(dbg)

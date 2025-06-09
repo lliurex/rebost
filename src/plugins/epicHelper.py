@@ -121,7 +121,7 @@ class epicHelper():
 				if len(fname)>0:
 					appFile=os.path.join(self.appDir,"{}.app".format(fname))
 					rebostPkg=rebostHelper.rebostPkg()
-					rebostPkg['name']=epiData.get("name",fname)
+					rebostPkg['name']=os.path.basename(fname).replace(".zmd","")
 					rebostPkg['id']="zero.lliurex.{}".format(epiName)
 					rebostPkg['pkgname']=fname
 					rebostPkg['bundle']={"zomando":os.path.join(self.zmdDir,"{}.zmd".format(fname))}
@@ -131,18 +131,52 @@ class epicHelper():
 					rebostPkg['state']={"zomando":"1"}
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
-					if len(pkgList)>1:
+					if len(pkgList)>0:
+						epiInfo=self._getEpiInfo(epiName,pkgList[0])
 						for pkg in pkgList:
-							rebostPkgTmp=rebostPkg.copy()
+							rebostPkgTmp=rebostPkg
 							rebostPkgTmp["name"]=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 							rebostPkgTmp["pkgname"]=pkg.get("name")
 							rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
 							rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
-							rebostPkg['description']+="<li> * {}</li>".format(pkg.get("custom_name",pkg["name"]))
+							state="1"
+							if pkg["name"] not in epiInfo:
+								continue
+							if epiInfo[pkg["name"]]['status']=="installed":
+								state="0"
+							bundle="zomando"
+							if epiInfo[pkg["name"]]['type']=="apt":
+								bundle="package"
+							elif epiInfo[pkg["name"]]['type']=="flatpak":
+								bundle="flatpak"
+							elif epiInfo[pkg["name"]]['type']=="snap":
+								bundle="snap"
+							elif epiInfo[pkg["name"]]['type']=="appimage":
+								bundle="appimage"
+							if bundle!="zomando":
+								rebostPkgTmp['bundle'].update({bundle:rebostPkgTmp["pkgname"]})
+								rebostPkgTmp['state']={bundle:state}
+							#rebostPkgTmp['alias']=fname
 							rebostPkgList.append(rebostPkgTmp)
-					rebostPkgList.append(rebostPkg)
+							#Update master zmd description
+							rebostPkg['description']+="<li> * {}</li>".format(pkg.get("custom_name",pkg["name"]))
+						rebostPkgList.append(rebostPkg)
+					else:
+						print("No packages found for {}".format(fname))
 		return(rebostPkgList)
 	#def _generateRebostFromEpic
+
+	def _getEpiInfo(self,epiName,firstPackage):
+		icnPath=firstPackage.get("custom_icon","")
+		epiInfo=[]
+		epiManager=epimanager.EpiManager()
+		if os.path.exists(icnPath):
+			epiPath=os.path.join(os.path.dirname(icnPath),epiName)
+			epiManager.read_conf(epiPath)
+			epiManager.get_pkg_info()
+			if hasattr(epiManager,"pkg_info"):
+				epiInfo=epiManager.pkg_info
+		return epiInfo
 
 	def _getFileFromEpiF(self,epic,lstFiles):
 		fname=""

@@ -315,13 +315,13 @@ class packageKit():
 				name=pkgId[0]
 				#if name.startswith("zero-lliurex")==False:
 				rebostPkg=self._generateRebostPkg(pkg,updateInfo)
-				if rebostPkg["name"].startswith("zero-lliurex") and "installer" in rebostPkg["summary"].lower():# and rebostPkg['state']["package"]=="1":
-					tmpPkg=rebostPkg.copy()
-					rebostPkg['alias']=rebostPkg["name"]
+				#if rebostPkg["name"].startswith("zero-lliurex") and "installer" in rebostPkg["summary"].lower():# and rebostPkg['state']["package"]=="1":
+				#	tmpPkg=rebostPkg.copy()
+					#rebostPkg['alias']=rebostPkg["name"]
 					#rebostPkg['bundle'].update({"zomando":"{}".format(rebostPkg['alias'])})
-					rebostPkg['state'].update({"zomando":"1"})
-					rebostPkg['name']=rebostPkg["name"].replace("zero-lliurex-","")
-					rebostPkgList.append(tmpPkg)
+					#rebostPkg['state'].update({"zomando":"1"})
+					#rebostPkg['name']=rebostPkg["name"].replace("zero-lliurex-","")
+				#	rebostPkgList.append(tmpPkg)
 				rebostPkgList.append(rebostPkg)
 		return(rebostPkgList)
 	#def _generateRebostPkgList

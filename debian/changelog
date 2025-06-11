@@ -1,3 +1,9 @@
+rebost (2.7.1.4-0llx23) jammy; urgency=medium
+
+  * Improve zmd and eduapps integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 11 Jun 2025 11:04:35 +0200
+
 rebost (2.7.1.3-1llx25) jammy; urgency=medium
 
   * Sync with noble

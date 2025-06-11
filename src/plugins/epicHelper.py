@@ -132,26 +132,28 @@ class epicHelper():
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
 					if len(pkgList)>0:
-						epiInfo=self._getEpiInfo(epiName,pkgList[0])
+						epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
 						for pkg in pkgList:
-							rebostPkgTmp=rebostPkg
+							if pkg["name"] not in epiInfo:
+								continue
+							print(pkg["name"])
+							rebostPkgTmp=copy.deepcopy(rebostPkg)
 							rebostPkgTmp["name"]=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 							rebostPkgTmp["pkgname"]=pkg.get("name")
 							rebostPkgTmp['summary']=pkg.get("custom_name",pkg["name"])
 							rebostPkgTmp['icon']=pkg.get("custom_icon",pkg["name"])
 							state="1"
-							if pkg["name"] not in epiInfo:
-								continue
-							if epiInfo[pkg["name"]]['status']=="installed":
-								state="0"
-							bundle="zomando"
-							if epiInfo[pkg["name"]]['type']=="apt":
+							#if epiInfo[pkg["name"]]['status']=="installed":
+							#	state="0"
+							bundle="package"
+							epiType=epiInfo[pkg["name"]].get("type","apt")
+							if epiType=="apt":
 								bundle="package"
-							elif epiInfo[pkg["name"]]['type']=="flatpak":
+							elif epiType=="flatpak":
 								bundle="flatpak"
-							elif epiInfo[pkg["name"]]['type']=="snap":
+							elif epiType=="snap":
 								bundle="snap"
-							elif epiInfo[pkg["name"]]['type']=="appimage":
+							elif epiType=="appimage":
 								bundle="appimage"
 							if bundle!="zomando":
 								rebostPkgTmp['bundle'].update({bundle:rebostPkgTmp["pkgname"]})
@@ -166,17 +168,27 @@ class epicHelper():
 		return(rebostPkgList)
 	#def _generateRebostFromEpic
 
-	def _getEpiInfo(self,epiName,firstPackage):
-		icnPath=firstPackage.get("custom_icon","")
-		epiInfo=[]
-		epiManager=epimanager.EpiManager()
-		if os.path.exists(icnPath):
-			epiPath=os.path.join(os.path.dirname(icnPath),epiName)
-			epiManager.read_conf(epiPath)
-			epiManager.get_pkg_info()
-			if hasattr(epiManager,"pkg_info"):
-				epiInfo=epiManager.pkg_info
+	def _getEpiInfo(self,epiName,zmdName):
+		epiInfo={}
+		zmdName=zmdName.replace(".epi","")
+		epiPath=os.path.join("/","usr","share",zmdName,epiName)
+		if os.path.exists(epiPath):
+			with open (epiPath,"r") as f:
+				epiInfo=json.load(f)
+		pkgInfoList=epiInfo.get("pkg_list",[])
+		for pkgItem in pkgInfoList:
+			name=pkgItem.pop("name")
+			epiInfo.update({name:pkgItem})
+		#epiManager=epimanager.EpiManager()
+		#if os.path.exists(icnPath):
+		#	epiPath=os.path.join(os.path.dirname(icnPath),epiName)
+		#	print(epiPath)
+			#epiManager.read_conf(epiPath)
+			#epiManager.get_pkg_info()
+			#if hasattr(epiManager,"pkg_info"):
+			#	epiInfo=epiManager.pkg_info
 		return epiInfo
+	#def _getEpiInfo
 
 	def _getFileFromEpiF(self,epic,lstFiles):
 		fname=""

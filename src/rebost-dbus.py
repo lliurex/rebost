@@ -13,7 +13,7 @@ class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
-		self.dbg=True
+		self.dbg=kwargs["dbg"]
 		signal.signal(signal.SIGUSR2, self._reloadSignal)
 		signal.signal(signal.SIGUSR1, self._updatedSignal)
 		signal.signal(signal.SIGALRM, self._beginUpdateSignal)
@@ -337,6 +337,10 @@ class rebostDbusMethods(dbus.service.Object):
 
 class rebostDBus():
 	def __init__(self): 
+		self.dbg=False
+		if len(sys.argv)>1:
+			if sys.argv[0]=="-d":
+				self.dbg=True
 		self._setDbus()
 	#def __init__
 
@@ -352,7 +356,7 @@ class rebostDBus():
 			print("service is already running")
 			sys.exit(1)
 
-		rebostDbusMethods(bus_name)
+		rebostDbusMethods(bus_name,dbg=self.dbg)
 		# Run the loop
 		try:
 			loop.run()

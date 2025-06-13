@@ -129,6 +129,15 @@ class epicHelper():
 					rebostPkg['versions']={'zomando':self.release}
 					rebostPkg['summary']=epiData.get("custom_name",rebostPkg["name"])
 					rebostPkg['state']={"zomando":"1"}
+					candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(rebostPkg["name"])),os.path.join("/usr/share","{}".format(rebostPkg["name"].replace("zero-lliurex-","")))]
+					for candidateDir in candidateDirs:
+						if os.path.exists(candidateDir):
+							for l in os.scandir(candidateDir):
+								if (rebostPkg["id"].replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
+									rebostPkg['icon']=l.path
+									break
+					if "adobe" in rebostPkg["name"]:
+						print(rebostPkg)
 					pkgList=epiData.get("pkg_list",[])
 					pkgList.extend(epiData.get("only_gui_available",[]))
 					if len(pkgList)>0:

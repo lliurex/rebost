@@ -265,9 +265,20 @@ def _loadMap():
 
 def rebostToAppstream(rebostPkgList,fname=""):
 	if len(fname)==0:
-		fname="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+		flsb="/etc/lsb-release"
+		codename="rebost"
+		if os.path.exists(flsb):
+			with open(flsb,"r") as f:
+				for l in f.readlines():
+					if l.strip().startswith("DISTRIB_CODENAME"):
+						codename=l.split("=")[-1].strip()
+		fname="/tmp/lliurex_dists_{}_main_dep11_Components-amd64.yml".format(codename)
 	store=appstream.Metadata()
 	for rebostPkg in rebostPkgList:
+		#Discard eduapps packages
+		if len(rebostPkg.get("versions",{}))==1:
+			if "eduapp" in rebostPkg.get("versions",{}).keys():
+				continue
 		app=appstream.Component()
 		app.set_id(rebostPkg["id"])
 		app.set_name(rebostPkg["name"])
@@ -283,9 +294,31 @@ def rebostToAppstream(rebostPkgList,fname=""):
 			icon.set_filename(rebostPkg["icon"])
 			icon.set_kind(appstream.IconKind.CACHED)
 		app.add_icon(icon)
+		for bundle,pkg in rebostPkg["bundle"].items():
+			bund=appstream.Bundle()
+			bund.set_id(pkg)
+			if bundle=="flatpak":
+				bund.set_kind(appstream.BundleKind.FLATPAK)
+			elif bundle=="flatpak":
+				bund.set_kind(appstream.BundleKind.SNAP)
+			elif bundle=="appimage":
+				bund.set_kind(appstream.BundleKind.APPIMAGE)
+			elif bundle=="package":
+				bund.set_kind(appstream.BundleKind.PACKAGE)
+			else:
+				#Discard virtual packages (zmd and edu)
+				continue
+			app.add_bundle(bund)
 		screenshot=appstream.Screenshot()
-		#for img in rebostPkg["screenshots"]
-			#screenshot.dd
+		for img in rebostPkg["screenshots"]:
+			appstreamImg=appstream.Image()
+			appstreamImg.set_url(img)
+			screenshot.add_image(appstreamImg)
+		app.add_screenshot(screenshot)
+
+		for cat in rebostPkg["categories"]:
+			app.add_category(cat)
+
 		store.add_component(app)
 	xml=store.components_to_catalog(appstream.FormatKind.YAML)
 	with open(fname,"w") as f:

@@ -645,9 +645,10 @@ class sqlHelper():
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			#If no row then it's a new pkg so discard it if strict mode enabled
-			#if self.mode=="appsedu":
 			if self.restricted==True:
-				return(processedpkg,aliaspkg)
+				#Best effort: If seems to be a zmd let it in
+				if ("Lliurex" in pkgdataJson["categories"]==False) or (pkgname.startswith("zero")==False):
+					return(processedpkg,aliaspkg)
 			if "lliurex" in pkgdata.lower():
 				if pkgdata[pkgdata.lower().find("lliurex")-1]!="/":
 					restricted=False

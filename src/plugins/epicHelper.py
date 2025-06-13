@@ -136,7 +136,6 @@ class epicHelper():
 						for pkg in pkgList:
 							if pkg["name"] not in epiInfo:
 								continue
-							print(pkg["name"])
 							rebostPkgTmp=copy.deepcopy(rebostPkg)
 							rebostPkgTmp["name"]=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 							rebostPkgTmp["pkgname"]=pkg.get("name")

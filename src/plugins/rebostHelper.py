@@ -265,9 +265,20 @@ def _loadMap():
 
 def rebostToAppstream(rebostPkgList,fname=""):
 	if len(fname)==0:
-		fname="/tmp/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+		flsb="/etc/lsb-release"
+		codename="rebost"
+		if os.path.exists(flsb):
+			with open(flsb,"r") as f:
+				for l in f.readlines():
+					if l.strip().startswith("DISTRIB_CODENAME"):
+						codename=l.split("=")[-1].strip()
+		fname="/tmp/lliurex_dists_{}_main_dep11_Components-amd64.yml".format(codename)
 	store=appstream.Metadata()
 	for rebostPkg in rebostPkgList:
+		#Discard eduapps packages
+		if len(rebostPkg.get("versions",{}))==1:
+			if "eduapp" in rebostPkg.get("versions",{}).keys():
+				continue
 		app=appstream.Component()
 		app.set_id(rebostPkg["id"])
 		app.set_name(rebostPkg["name"])
@@ -294,6 +305,9 @@ def rebostToAppstream(rebostPkgList,fname=""):
 				bund.set_kind(appstream.BundleKind.APPIMAGE)
 			elif bundle=="package":
 				bund.set_kind(appstream.BundleKind.PACKAGE)
+			else:
+				#Discard virtual packages (zmd and edu)
+				continue
 			app.add_bundle(bund)
 		screenshot=appstream.Screenshot()
 		for img in rebostPkg["screenshots"]:

@@ -17,7 +17,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))

@@ -350,10 +350,9 @@ class Rebost():
 		if os.path.exists(tmpCache):
 			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
 			if os.path.exists(sqLu)==True:
-				return()
+				return(True)
 			elif os.path.exists(self.rebostPathTmp)==False:
 				os.makedirs(self.rebostPathTmp)
-			print(sqLu)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))

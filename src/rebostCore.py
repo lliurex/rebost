@@ -17,7 +17,7 @@ from gi.repository import AppStreamGlib as appstream
 
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
@@ -350,10 +350,9 @@ class Rebost():
 		if os.path.exists(tmpCache):
 			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
 			if os.path.exists(sqLu)==True:
-				return()
+				return(True)
 			elif os.path.exists(self.rebostPathTmp)==False:
 				os.makedirs(self.rebostPathTmp)
-			print(sqLu)
 			for db in os.scandir(self.cache):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))

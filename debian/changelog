@@ -1,0 +1,349 @@
+rebost (2.7.1.4-0llx23) jammy; urgency=medium
+
+  * Improve zmd and eduapps integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 11 Jun 2025 11:04:35 +0200
+
+rebost (2.7.1.3-1llx25) jammy; urgency=medium
+
+  * Sync with noble
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 09 Jun 2025 15:03:46 +0200
+
+rebost (2.6.0-15lliurex23) jammy; urgency=medium
+
+  * appsedu integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 17 Feb 2025 18:43:37 +0100
+
+rebost (2.5.8-0lliurex23) jammy; urgency=medium
+
+  * Trust appsedu url
+  * Don't fire signals on test action
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 11 Sep 2024 17:29:43 +0200
+
+rebost (2.5.7-0lliurex23) jammy; urgency=medium
+
+  * Fix bug with deeper pkg queries
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 02 Sep 2024 09:14:26 +0200
+
+rebost (2.5.6-0lliurex23) jammy; urgency=medium
+
+  * Update signal also reloads cache
+  * Initial cache re-enabled
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 29 Aug 2024 14:27:40 +0200
+
+rebost (2.5.5-0lliurex23) jammy; urgency=medium
+
+  * Flatpak per user
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Aug 2024 10:23:15 +0200
+
+rebost (2.5.4-0lliurex23) jammy; urgency=medium
+
+  * Cache reenabled
+  * Improve bundle integration
+  * Clean tmp files (re-enabled)
+  * Zomandos with no .zmd perform as packages
+  * Appstream blocks apps mapped to blank
+  * Packagekit blocks apps mapped to blank
+  * BUGFIX: ensure zmd path is absolute
+  * Preserve as many info as possible
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 24 Jul 2024 14:55:45 +0200
+
+rebost (2.4-0lliurex23) jammy; urgency=medium
+
+  * Improve network timeout 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 18 Jul 2024 12:17:29 +0200
+
+rebost (2.3-1lliurex23) jammy; urgency=medium
+
+  * Use aux lib for appsedu management
+  * Optimize packagekit integration with appsedu
+
+ -- Juanma1980 <juanma1980@gmail.com>  Sat, 06 Jul 2024 09:40:41 +0200
+
+rebost (2.2-0lliurex23) jammy; urgency=medium
+
+  * Better integration between appsedu, packagekit and appstream
+  * Support for same alias for multiple applications
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 05 Jul 2024 11:01:20 +0200
+
+rebost (2.1-0lliurex23) jammy; urgency=medium
+
+  * Enable appsedu stuff
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jul 2024 12:14:19 +0200
+
+rebost (2.0.1-0lliurex23) jammy; urgency=medium
+
+  * Fix icon search for flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 28 Jun 2024 12:14:04 +0200
+
+rebost (2.0-1lliurex23) jammy; urgency=medium
+
+  * Remove gui from package
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 25 Jun 2024 09:53:20 +0200
+
+rebost (1.999-2lliurex23) jammy; urgency=medium
+
+  * Fix bug: installed not defined in flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 05 Jun 2024 13:03:09 +0200
+
+rebost (1.999-1lliurex23) jammy; urgency=medium
+
+  * Threaded start
+  * Full polkit and epi|epic integration
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 16 Apr 2024 10:21:44 +0200
+
+rebost (1.991-0lliurex23) jammy; urgency=medium
+
+  * Eduapps integration 
+  *   Load apps from web and not only from map
+  *   If app is not maped assign as package bundle type
+  * EPI integration:
+  *   Fake version for packages inside zomandos
+  *   Add homepage
+  * GUI:
+  *   Add categories as tags in details
+  *   Fix wait cursor when showing info
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Apr 2024 12:19:54 +0200
+
+rebost (1.99-0lliurex23) jammy; urgency=medium
+
+  * Session DBus
+
+ -- Juanma1980 <juanma1980@gmail.com>  Sat, 17 Feb 2024 11:09:36 +0100
+
+rebost (1.5.2-0lliurex23) jammy; urgency=medium
+
+  * Add support for include specified apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 13 Feb 2024 11:16:11 +0100
+
+rebost (1.5.1-0lliurex23) jammy; urgency=medium
+
+  * Restricted catalogue through appstream
+  * Filters disabled by default as catalogue restriction is a lot faster
+  * Add plugin for appsedu catalogued apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 09 Feb 2024 10:40:06 +0100
+
+rebost (1.4.3-1lliurex23) jammy; urgency=medium
+
+  * Improve zomando management
+  * Add upgrades support
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 31 Jan 2024 10:58:39 +0100
+
+rebost (1.4.2lliurex23) jammy; urgency=medium
+
+  * Remove n4d plugin
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 12 Jan 2024 07:24:32 +0100
+
+rebost (1.4.1-1lliurex23) jammy; urgency=medium
+
+  * Add basic support for streamed installers:
+  *   kdeapps
+  *   flathub
+  *   snapcraft
+  *   appimagehub
+  *   other webs implementing ocs or appstream
+  * TODO implement ocs/appstream api so
+  *   unknowed apps could be loaded
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 27 Dec 2023 13:02:43 +0100
+
+rebost (1.3-1lliurex23) jammy; urgency=medium
+
+  * Improve gui
+  * Fix timeouts in dbus
+  * Only recovery metadata if there's a working internet connection
+  * Add method for core actions
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 22 Dec 2023 12:24:52 +0100
+
+rebost (1.2-1lliurex23) jammy; urgency=medium
+
+  * Improve zomando management
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 01 Dec 2023 08:20:46 +0100
+
+rebost (1.1.1) jammy; urgency=medium
+
+  * Force username for epic
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 24 Nov 2023 10:34:29 +0100
+
+rebost (1.1) jammy; urgency=medium
+
+  * Cli support multiple apps actions
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 20 Nov 2023 17:04:02 +0100
+
+rebost (1.0.1) jammy; urgency=medium
+
+  * First stable release
+  * Reworked detail screen
+  * Improved filters, add option to append or restrict included apps
+  * Enable packagekit only with packages of "applications" group
+  * Improve dbus calls
+  * Remove need of a master database (taked as reference)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 30 Oct 2023 13:02:44 +0100
+
+rebost (0.9.42lliurex23) jammy; urgency=medium
+
+  * Jammy release
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 05 Sep 2023 12:47:47 +0200
+
+rebost (0.9.42) focal; urgency=medium
+
+  * Allow lliurex own packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 21 Jun 2023 11:43:00 +0200
+
+rebost (0.9.41) focal; urgency=medium
+
+  * RC 5
+  * Improve filter usage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 15 Mar 2023 06:46:09 +0100
+
+rebost (0.9.34) focal; urgency=medium
+
+  * Release candidate 4. 
+  * Disable packagekit plugin (as apt is/will be theorically blocked for users) 
+  * Improved restart mechanism
+  * Delete bundle info when an appimage is not reachable 
+  * Add filters to gui
+  * Improved integration with zommands 
+  *  Load internacionalized summary/description from zomandos
+  *  Get pkg_list from epi for improved zomandos descriptions
+  *  Discard all zomandos but software,fp,resources
+  * Whitelist enabled by default
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 10 Jan 2023 09:48:11 +0100
+
+rebost (0.9.16) lliurex22; urgency=medium
+
+  * Release candidate 3. Bugfix 
+  * Improve packagekit performance
+  * Combobox for bundles install/remove/launch in details stack
+  * i18n support
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 02 Nov 2022 10:35:53 +0100
+
+rebost (0.9.9.8.6) lliurex22; urgency=medium
+
+  * Release candidate 2. Bugfix 
+  * N4d only for remote installs
+  * Print log when transaction fails
+  * Improved logging mechanism
+  * Embed epic for installations
+  * Create log per transaction
+  * GUI: Set return values for EPI
+  * WIP on upgrades
+  * WIP on details stack
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 18 Oct 2022 18:33:55 +0200
+
+rebost (0.9.9.7.2) lliurex22; urgency=medium
+
+  * Release candidate 1. Bugfix 
+  * Thread for epi operations
+  * Distro-agnostic implementation
+  * Optimize performance
+  * Appimage upgrades
+  * GUI: Add launch buttons for installed apps/zomandos
+  * GUI: Much faster execution. Fix duplicated search results
+  * Fix Appimage downloads from github
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 20 Jul 2022 13:21:41 +0200
+
+rebost (0.9.8.3) lliurex22; urgency=medium
+
+  * Implemented daemon restart
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 15 Jul 2022 10:19:18 +0200
+
+rebost (0.9.7.2) lliurex22; urgency=medium
+
+  * Add support for categories
+  * Fix flatpak get installed state
+  * Fix desktop files for appimages
+  * Add gui package
+  * Add desktop and metadata for gui
+  * use python module for clients
+  * Add list installed/upgradable methods (upgradable only for appimages/apt)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 21 Jun 2022 11:19:00 +0200
+
+rebost (0.8.3.1) focal; urgency=medium
+
+  * General improvements
+  * Systemd unit moved from multiuser to default target
+  * Fix pkgname for appstream data when there's no default pkgname
+  * Fix exception when updating app status fails
+  * Fix exception when there's single quotes on sql update 
+  * Add bash completion
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 16 Feb 2022 15:55:39 +0100
+
+rebost (0.7.4.1) focal; urgency=medium
+
+  * Only update catalogue when needed
+  * Fix detection of installed zomandos
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Jan 2022 17:36:30 +0100
+
+rebost (0.7.3.4) focal; urgency=medium
+
+  * Add polkit rules for software management from GUI
+  * Full integration with lliurex-store
+  * Full integration with EPI 
+  * Flatpak initialize working on first launch
+  * Appimage catalogue loads full info
+  * Screenshots get loaded from all bundles
+  * Packagekit loads all info from packages
+  * Search by categories (experimental)
+  * Set limit for search related apps 
+  * General performance improvements
+  * Remote installer support via dbus interface
+  * Authentication with local ticket
+  * Get real user for admin actions
+  * Fix: zombified procs
+  * zomando support
+  * appstream support
+  * icon cache
+  * Add remote_install to CLI
+  * Changes on n4d communication
+  * Improve appimage versioning
+  * Experimental blacklist
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Nov 2021 11:41:35 +0100
+
+rebost (0.1.5.1) focal; urgency=medium
+
+  * Add test method (only generate epi files)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 16 Nov 2021 07:15:39 +0100
+
+rebost (0.1.4) focal; urgency=medium
+
+  * Initial release 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 15 Oct 2021 15:08:16 +0200

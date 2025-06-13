@@ -409,8 +409,8 @@ def _componentFillInfo(component,pkg):
 				pkg['versions']={bundle:versionArray[-1]}
 			if i.get_kind()==1: #appstream.BundleKind.LIMBA
 					pkgid=component.get_pkgname_default()
-					pkg['bundle']={"eduapp":pkgid.replace('.desktop','')}
-					pkg['versions']={"eduapp":versionArray[-1]}
+					pkg['bundle']={"package":pkgid.replace('.desktop','')}
+					pkg['versions']={"package":versionArray[-1]}
 					if int(component.get_state())==1:
 					#	if versionArray!=["0.9~{}".format(distro.codename())]:
 						pkg['state']["package"]="0"

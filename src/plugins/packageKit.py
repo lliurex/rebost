@@ -301,6 +301,14 @@ class packageKit():
 			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))
 		elif os.path.isfile(os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))):
 			rebostPkg['icon']=os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))
+		else:
+			candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(rebostPkg["name"])),os.path.join("/usr/share","{}".format(rebostPkg["name"].replace("zero-lliurex-","")))]
+			for candidateDir in candidateDirs:
+				if os.path.exists(candidateDir):
+					for l in os.scandir(candidateDir):
+						if (rebostPkg["id"].replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
+							rebostPkg['icon']=l.path
+							break
 		return(rebostPkg)
 	#def _generateRebostPkg
 

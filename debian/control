@@ -1,0 +1,33 @@
+Source: rebost
+Section: admin
+Priority: optional
+Maintainer: Juanma1980 <juanma1980@gmail.com>
+Uploaders: LliureX Team
+Build-Depends: llxsrchelper,debhelper (>= 7.0),python3-all, dh-python,python3-poinstaller, zero-dev
+Standards-Version: 4.4.1
+Homepage: https://github.com/lliurex/rebost
+
+Package: rebost
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, 
+	appstream (>=0.12.0-3), 
+	gir1.2-appstream-1.0,
+	gir1.2-appstreamglib-1.0 (>=0.7.7-2), 
+	libappstream5 (>=1.0.2),
+	gir1.2-snapd-2(>=1.41),
+	libsnapd-glib-2-1(>=1.41),
+	gir1.2-flatpak-1.0,
+	gir1.2-packagekitglib-1.0,
+	python3-appconfig (>=0.50),
+	python3-bs4,
+	python3-html2text,
+	python3-psutil,
+	python3-dbus,
+	rebost-data (>=0.4.2),
+	rebost-metadata (>>0.2),
+	python3-rebost (>=1.6)
+Description: Software management for LliureX
+ Rebost it's a software management system through n4d 
+ that supports snap, flatpack, appimage and packageKit. 
+ It provides a dbus interface for software-related operations.
+

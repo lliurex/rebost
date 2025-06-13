@@ -115,6 +115,7 @@ class appstreamHelper():
 		progress=0
 		iconDir="/usr/share/rebost-data/icons"
 		for storeYml in storeYmlFiles:
+			self._debug("Checking appstream file {}".format(storeYml))
 			if storeYml=="":
 				continue
 				#storeYml="/usr/share/rebost-data/yaml/lliurex_restricted.yml"

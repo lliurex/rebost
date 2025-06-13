@@ -2,6 +2,7 @@ rebost (2.7.1.5-0llx25) noble; urgency=medium
 
   * Support orphaned zmds
   * Don't include non-conformant info when exporting yml
+  * Deep search for zmd icons (even if orphaned)
 
  -- Juanma1980 <juanma1980@gmail.com>  Fri, 13 Jun 2025 11:45:01 +0200
 

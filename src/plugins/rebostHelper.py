@@ -265,7 +265,7 @@ def _loadMap():
 
 def rebostToAppstream(rebostPkgList,fname=""):
 	if len(fname)==0:
-		fname="/usr/share/rebost-data/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
+		fname="/tmp/yaml/lliurex_dists_focal_main_dep11_Components-amd64.yml"
 	store=appstream.Metadata()
 	for rebostPkg in rebostPkgList:
 		app=appstream.Component()

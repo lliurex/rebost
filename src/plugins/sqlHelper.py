@@ -58,6 +58,8 @@ class sqlHelper():
 	def setDebugEnabled(self,enable=True):
 		self.dbg=enable
 		self._debug("Debug {}".format(self.dbg))
+		self.appsedu.setDebugEnabled(self.dbg)
+		self.appimage.setDebugEnabled(self.dbg)
 	#def setDebugEnabled
 
 	def _log(self,msg):
@@ -97,7 +99,7 @@ class sqlHelper():
 				(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 				query=testQuery.replace("%%",dbname)
 				try:
-					cursor.execute(query)
+					cursor=self._query(cursor,query)
 					cursor.fetchone()
 				except Exception as e:
 					print(e)
@@ -162,7 +164,7 @@ class sqlHelper():
 		else:
 			query="CREATE TABLE IF NOT EXISTS {} ({});".format(tableName,fields)
 		try:
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 		except Exception as e:
 			#something went wrong
 			print("CRITICAL ERROR. Accessing database: {}".format(e))
@@ -170,15 +172,44 @@ class sqlHelper():
 	#def enableConnection
 
 	def closeConnection(self,db):
-		db.commit()
+		try:
+			db.commit()
+		except:
+			time.sleep(0.5)
+			try:
+				db.commit()
+			except Exception as e:
+				print("FATAL ERROR closeConnection DB")
+				print(e)
+				raise Exception(e)
 		db.close()
 	#def closeConnection
+
+	def _query(self,cursor,query,*args):
+		try:
+			if len(args)>0:
+				cursor.execute(query,args)
+			else:
+				cursor.execute(query)
+		except Exception as e:
+			time.sleep(0.5)
+			try:
+				if len(args)>0:
+					cursor.execute(query,args)
+				else:
+					cursor.execute(query)
+			except Exception as e:
+				print("FATAL ERROR _query DB")
+				print(e)
+				raise Exception(e)
+		return(cursor)
+	#def _query
 
 	def _getCategories(self):
 		table=os.path.basename(self.categories_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY"],onlyExtraFields=True)
 		query="SELECT * FROM {} ORDER BY category;".format(table)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rows=cursor.fetchall()
 		self.closeConnection(db)
 		return(rows)
@@ -193,11 +224,11 @@ class sqlHelper():
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rowsTmp=cursor.fetchall()
 		if len(rowsTmp)<=0:
 			query="SELECT pkg,data FROM {} WHERE alias = '{}' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 			rowsTmp=cursor.fetchall()
 		rows=rowsTmp.copy()
 		if onlymatch==False:
@@ -248,13 +279,13 @@ class sqlHelper():
 		dataTmp=dataTmp.replace("'","''")
 		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
 		try:
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 		except:
 			print("Query error upgrading appimage: {}".format(query))
 		eduappsTable=os.path.join(os.path.dirname(self.main_table),"eduapps.db")
 		query="UPDATE {} SET data='{}' WHERE pkg='{}';".format("eduapps",dataTmp,pkg)
 		(db,cursor)=self.enableConnection(eduappsTable,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		db.commit()
 		rebostPkg=json.loads(dataTmp)
 		return(rebostPkg)
@@ -268,7 +299,7 @@ class sqlHelper():
 			dataTmp=dataTmp.replace("'","''")
 			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataTmp,pkg)
 			try:
-				cursor.execute(query)
+				cursor=self._query(cursor,query)
 			except:
 				print("Query error upgrading appimage: {}".format(query))
 			db.commit()
@@ -293,7 +324,7 @@ class sqlHelper():
 			dataContent=dataContent.replace("'","''")
 			query="UPDATE {} SET data='{}' WHERE pkg='{}';".format(table,dataContent,pkgname)
 			try:
-				cursor.execute(query)
+				cursor=self._query(cursor,query)
 			except:
 				print("Query error updating state: {}".format(query))
 			db.commit()
@@ -305,7 +336,7 @@ class sqlHelper():
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {} ORDER BY pkg".format(table)
 		#self._debug(query)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rows=cursor.fetchall()
 		rebostPkgList=[]
 		for row in rows:
@@ -319,7 +350,7 @@ class sqlHelper():
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT,alias TEXT"])
 		query="SELECT pkg,data FROM {} WHERE pkg LIKE '%{}%' ORDER BY INSTR(pkg,'{}'), '{}'".format(table,pkgname,pkgname,pkgname)
 		#self._debug(query)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rows=cursor.fetchall()
 		self.closeConnection(db)
 		return(rows)
@@ -380,7 +411,7 @@ class sqlHelper():
 			#else:
 			query="SELECT pkg,data FROM {0} WHERE '{1}' in (cat0,cat1,cat2) {2} {3}".format(table,str(category),order,fetch)
 		self._debug(query)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		seen=[]
 		rows=[]
 		rows=cursor.fetchall()
@@ -391,16 +422,16 @@ class sqlHelper():
 			if len(seen)>0:
 				included="and pkg not in ({})".format(",".join(seen))
 			query="PRAGMA case_sensitive_like = 1"
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 			query="SELECT pkg,data FROM {0} WHERE data LIKE '%categories%{1}%' {4} {2} {3}".format(table,str(category),order,fetch,included)
 			self._debug(query)
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 			moreRows=cursor.fetchall()
 			rows.extend(moreRows)
 			#Restore case sensitive
 			query="PRAGMA case_sensitive_like = 0"
 			self._debug(query)
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 		self.closeConnection(db)
 		if upgradable==True:
 			rows=self._filterUpgradables(rows,user)
@@ -416,7 +447,7 @@ class sqlHelper():
 		for f in ["pkg","alias"]:
 			query="SELECT pkg,data FROM {0} WHERE {1}='{2}';".format(table,f,pkgname)
 			#self._debug(query)
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 			rows=cursor.fetchall()
 			for row in rows:
 				(pkg,dataContent)=row
@@ -434,9 +465,9 @@ class sqlHelper():
 				dataContent=dataContent.replace("''","'")
 				dataContent=dataContent.replace("'","''")
 				query="UPDATE {0} SET data='{1}' WHERE {3}='{2}';".format(table,dataContent,pkgname,f)
-				cursor.execute(query)
+				cursor=self._query(cursor,query)
 				queryInst="INSERT or REPLACE INTO {0} VALUES(?,?,?,?);".format(os.path.basename(self.installed_table).replace(".db",""))
-				cursorInstalled.execute(queryInst,(pkgname,bundle,release,state))
+				cursorInstalled=self._query(cursorInstalled,queryInst,(pkgname,bundle,release,state))
 		#self._debug(query)
 		self.closeConnection(db)
 		self.closeConnection(dbInstalled)
@@ -456,13 +487,13 @@ class sqlHelper():
 		query="UPDATE {0} SET data='{2}' WHERE pkg='{1}';".format(table,pkgname,dataContent)
 		ret=[{}]
 		try:
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 		except Exception as e:
 			print(e)
 			ret=[{"err":e}]
 		else:
 			query="SELECT pkg FROM {0} WHERE alias='{1}';".format(table,pkgname)
-			cursor.execute(query)
+			cursor=self._query(cursor,query)
 			rows=cursor.fetchall()
 			if len(rows)>0:
 				if rows[0][0]==pkgname:
@@ -472,9 +503,9 @@ class sqlHelper():
 						pkgname=row[0]
 						query="UPDATE {0} SET data='{2}' WHERE pkg='{1}';".format(table,pkgname,dataContent)
 						self._debug("Alias update for {}".format(pkgname))
-						cursor.execute(query)
+						cursor=self._query(cursor,query)
 					query="SELECT pkg FROM {0} WHERE alias='{1}';".format(table,pkgname)
-					cursor.execute(query)
+					cursor=self._query(cursor,query)
 					rows=cursor.fetchall()
 					if len(rows)>0:
 						if rows[0][0]==pkgname:
@@ -591,7 +622,7 @@ class sqlHelper():
 								dataContent=dataContent.replace("''","'")
 								dataContent=dataContent.replace("'","''")
 								removequery="UPDATE {} SET data=\'{}\' where pkg=\'{}\'".format(tmpdb,dataContent,alias)
-								cursor.execute(removequery)
+								cursor=self._query(cursor,removequery)
 								db.commit()
 				queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(tmpdb)
 				try:
@@ -613,14 +644,14 @@ class sqlHelper():
 		categories_table=os.path.basename(self.categories_table).replace(".db","")
 		(db_cat,cursor_cat)=self.enableConnection(self.categories_table,extraFields=["category TEXT PRIMARY KEY","level INT"],onlyExtraFields=True)
 		queryDelete="DELETE FROM {}".format(categories_table)
-		cursor_cat.execute(queryDelete)
+		cursor_cat=self._query(cursor_cat,queryDelete)
 		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
 		try:
 			for cat in allCategories:
 				if cat!='' and isinstance(cat,str):
 					#cat=cat.capitalize().strip()
 					cat=cat.strip()
-					cursor_cat.execute(queryCategories,(cat,))
+					cursor_cat=self._query(cursor_cat,queryDelete,(cat,))
 		except Exception as e:
 			self._debug(e)
 		self._debug(queryCategories)
@@ -641,7 +672,8 @@ class sqlHelper():
 				return(processedpkg,aliaspkg)
 		query="pkg='{0}' or alias = '{0}'".format(pkgname)
 		fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-		rows=cursor.execute(fetchquery).fetchall()
+		cursor=self._query(cursor,fetchquery)
+		rows=cursor.fetchall()
 		#rows=0 new app, add . rows>0 already inserted app, merge
 		if len(rows)==0:
 			#If no row then it's a new pkg so discard it if strict mode enabled
@@ -691,7 +723,8 @@ class sqlHelper():
 					aliaspkgs.append(aliaspkg)
 					query="pkg = '{0}'".format(pkgname)
 					fetchquery="SELECT * FROM {0} WHERE {1}".format(table,query)
-					row=cursor.execute(fetchquery).fetchone()
+					cursor=self._query(cursor,fetchquery)
+					row=cursor.fetchone()
 				if row:
 					pkgdataJson=self._mergePackage(pkgdataJson,row)
 				if len(pkgdataJson.get('bundle',{}))>0:
@@ -927,7 +960,7 @@ class sqlHelper():
 		table=os.path.basename(self.main_table).replace(".db","")
 		(db,cursor)=self.enableConnection(self.main_table,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg FROM {};".format(table)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rows=cursor.fetchall()
 		completionFile=os.path.join(self.rebostCache,"tmp","bash_completion")
 		if os.path.isdir(os.path.dirname(completionFile)):
@@ -1013,7 +1046,7 @@ class sqlHelper():
 		self._debug("Accesing {}".format(f))
 		(db,cursor)=self.enableConnection(f,["cat0 TEXT","cat1 TEXT","cat2 TEXT","alias TEXT"])
 		query="SELECT pkg,data FROM {}".format(table)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		allData=cursor.fetchall()
 		self.closeConnection(db)
 		return (allData)
@@ -1024,11 +1057,13 @@ class sqlHelper():
 		cursor=rebost_db.cursor()
 		table=os.path.basename(self.main_table).replace(".db","")
 		query="DROP TABLE IF EXISTS {}".format(table)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT, cat0 TEXT, cat1 TEXT, cat2 TEXT,alias TEXT);".format(table)
-		cursor.execute(query)
-		cursor.execute("ATTACH DATABASE '{}.db' AS pk;".format(os.path.join(self.rebostCache,consolidate_table)))
-		cursor.execute("INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table))
+		cursor=self._query(cursor,query)
+		query="ATTACH DATABASE '{}.db' AS pk;".format(os.path.join(self.rebostCache,consolidate_table))
+		cursor=self._query(cursor,query)
+		query="INSERT INTO {0} (pkg,data,cat0,cat1,cat2,alias) SELECT * from pk.{1};".format(table,consolidate_table)
+		cursor=self._query(cursor,query)
 		rebost_db.commit()
 		rebost_db.close()
 	#def copyBaseTable
@@ -1041,7 +1076,8 @@ class sqlHelper():
 		table=os.path.basename(table).replace(".db","")
 		query="SELECT pkg FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug("Getting list of unavailable items")
-		rows=cursor.execute(query).fetchall()
+		cursor=self._query(cursor,query)
+		rows=cursor.fetchall()
 		if len(rows)>0:
 			self._debug("Saving list to {}/unavailable.apps".format(self.rebostCache))
 			with open(os.path.join(self.rebostCache,"unavailable.apps"),"w") as f:
@@ -1051,7 +1087,7 @@ class sqlHelper():
 			pass
 			#query="DELETE FROM %s WHERE data like \"%%eduapp%%versions\"\": {},%%\" and \"Forbidden\" not in (cat0,cat1,cat2);"%table
 		self._debug(query)
-		cursor.execute(query)
+		cursor=self._query(cursor,query)
 		rebost_db.commit()
 		rebost_db.close()
 	#def _cleanTable(self,table):
@@ -1069,10 +1105,10 @@ class sqlHelper():
 	#def _copyTmpDef
 	
 	def getTableStatus(self,pkg,bundle):
-		(dbInstalled,cursorInstalled)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
+		(dbInstalled,cursor)=self.enableConnection(self.installed_table,["pkg TEXT","bundle TEXT","release TEXT","state TEXT","PRIMARY KEY (pkg, bundle)"],onlyExtraFields=True)
 		query="Select * from installed where pkg={0} and bundle={1}".format(pkg,bundle)
-		ret=cursorInstalled.execute(query)
-		return ret
+		cursor=self._query(cursor,query)
+		return cursor
 	#def getTableStatus
 
 def main():

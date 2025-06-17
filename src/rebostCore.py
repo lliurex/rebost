@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import traceback
 import importlib
 import requests
 import os,shutil,stat
@@ -142,6 +143,8 @@ class Rebost():
 				if plugin.endswith(".py") and plugin!='__init__.py':
 					try:
 						imp=importlib.import_module((plugin.replace(".py","")))
+						if hasattr(imp,"main")==False:
+							continue
 						#Get plugin status
 						if "rebostHelper" not in plugin:
 							pluginObject=imp.main()
@@ -149,6 +152,7 @@ class Rebost():
 							pluginObject=imp
 					except Exception as e:
 						self._log("Failed importing {0}: {1}".format(plugin,e))
+						print(traceback.format_exc())
 						continue
 					if "rebostHelper" in plugin:
 						enabled=True
@@ -476,7 +480,22 @@ class Rebost():
 		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
-			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
+			try:
+				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
+			except Exception as e:
+				print()
+				print(">>>>> FATAL ERROR <<<<<<")
+				print(e)
+				print("Traceback ---->")
+				print(traceback.format_exc())
+				print("Traceback <----")
+				print("==============")
+				print("Rebost will now remove its databases and reboot")
+				print("To avoid this execute with debug mode enabled")
+				print("<<<<< END REPORT >>>>>>")
+				print()
+				if self.dbg==False:
+					self.forceUpdate(True)
 		#Generate the store with results and sanitize them
 		if action=='getCategories':
 			catList=[]

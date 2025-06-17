@@ -382,7 +382,7 @@ def _componentGetName(component):
 	name=component.get_id()
 	nameComponents=name.lower().split(".")
 	cont=len(nameComponents)-1
-	banlist=["desktop","org","net","com"]
+	banlist=["desktop","org","net","com","app"]
 	name=nameComponents[-1].lower()
 	while cont>=0:
 		if nameComponents[cont].lower() not in banlist:

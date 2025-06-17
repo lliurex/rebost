@@ -195,12 +195,14 @@ class sqlHelper():
 			time.sleep(0.5)
 			try:
 				if len(args)>0:
-					cursor.execute(query,args)
+					cursor.execute(query,*args)
 				else:
 					cursor.execute(query)
 			except Exception as e:
 				print("FATAL ERROR _query DB")
 				print(e)
+				print(query)
+				print(args)
 				raise Exception(e)
 		return(cursor)
 	#def _query
@@ -646,15 +648,16 @@ class sqlHelper():
 		queryDelete="DELETE FROM {}".format(categories_table)
 		cursor_cat=self._query(cursor_cat,queryDelete)
 		queryCategories="INSERT or REPLACE INTO {} VALUES (?);".format(categories_table)
-		try:
-			for cat in allCategories:
-				if cat!='' and isinstance(cat,str):
-					#cat=cat.capitalize().strip()
-					cat=cat.strip()
-					cursor_cat=self._query(cursor_cat,queryDelete,(cat,))
-		except Exception as e:
-			self._debug(e)
-		self._debug(queryCategories)
+		#try:
+		#	for cat in allCategories:
+		#		if cat!='' and isinstance(cat,str):
+		#			#cat=cat.capitalize().strip()
+		#			cat=cat.strip()
+		#			queryDelete="DELETE FROM {} WHERE category=(?)".format(categories_table)
+		#			cursor_cat=self._query(cursor_cat,queryDelete,(cat,))
+		#except Exception as e:
+		#	self._debug(e)
+		#self._debug(queryCategories)
 		self.closeConnection(db_cat)
 	#def _processCategories
 

@@ -1,4 +1,4 @@
-rebost (2.7.1.5-2llx23) jammy; urgency=medium
+rebost (2.7.1.6-0llx23) jammy; urgency=medium
 
   * Support orphaned zmds
   * Don't include non-conformant info when exporting yml

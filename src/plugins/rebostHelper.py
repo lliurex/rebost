@@ -382,6 +382,7 @@ def _componentGetName(component):
 	name=component.get_id()
 	nameComponents=name.lower().split(".")
 	nameComponents.reverse()
+	name=nameComponents[-1]
 	banlist=["desktop","org","net","com","app","kde","gnome","gtk","qt"]
 	for component in nameComponents:
 		if component.lower() in banlist:

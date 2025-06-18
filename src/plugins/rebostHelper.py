@@ -385,8 +385,9 @@ def _componentGetName(component):
 	banlist=["desktop","org","net","com","app"]
 	name=nameComponents[-1].lower()
 	while cont>=0:
-		if nameComponents[cont].lower() not in banlist:
+		if nameComponents[cont].lower() not in banlist and len(nameComponents[cont])>1:
 			name=nameComponents[cont].lower()
+			name=name.lstrip("_")
 			break
 		cont-=1
 	name=name.replace("_zmd",'')

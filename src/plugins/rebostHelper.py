@@ -381,14 +381,16 @@ def _appstreamToRebost(appstreamCatalogue):
 def _componentGetName(component):
 	name=component.get_id()
 	nameComponents=name.lower().split(".")
-	cont=len(nameComponents)-1
-	banlist=["desktop","org","net","com","app"]
-	name=nameComponents[-1].lower()
-	while cont>=0:
-		if nameComponents[cont].lower() not in banlist:
-			name=nameComponents[cont].lower()
-			break
-		cont-=1
+	nameComponents.reverse()
+	name=nameComponents[-1]
+	banlist=["desktop","org","net","com","app","kde","gnome","gtk","qt"]
+	for component in nameComponents:
+		if component.lower() in banlist:
+			continue
+		if len(component)<2:
+			continue
+		name=component.lstrip("_")
+		break
 	name=name.replace("_zmd",'')
 	return(name)
 #def _componentGetName

@@ -305,10 +305,14 @@ class packageKit():
 			candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(rebostPkg["name"])),os.path.join("/usr/share","{}".format(rebostPkg["name"].replace("zero-lliurex-","")))]
 			for candidateDir in candidateDirs:
 				if os.path.exists(candidateDir):
-					for l in os.scandir(candidateDir):
-						if (rebostPkg["id"].replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
-							rebostPkg['icon']=l.path
-							break
+					try:
+						for l in os.scandir(candidateDir):
+							if (rebostPkg["id"].replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
+								rebostPkg['icon']=l.path
+								break
+					except:
+						#Directory has not read permissions for current user
+						continue
 		return(rebostPkg)
 	#def _generateRebostPkg
 

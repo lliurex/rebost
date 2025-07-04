@@ -157,16 +157,19 @@ class packageKit():
 		self.aliasDict={}
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
+			if pkg["alias"].startswith("zero:"):
+				#Discard zero-alliased
+				continue
 			app=pkg["alias"].replace("zero:","").split(".")[-1].lower()
 			if app not in pkglist and app not in mapedList:
 				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app.lower())
-			if app.lower().startswith("zero-")==False and pkg["alias"].startswith("zero:"):
-				zeroApp="zero-lliurex-{}".format(app.lower())
-				if zeroApp not in pkglist and zeroApp not in mapedList:
-					self._debug("Append unmaped ZERO app  {}".format(zeroApp))
-					pkglist.append(zeroApp.lower())
-					self.aliasDict.update({zeroApp:app.lower()})
+		#	if app.lower().startswith("zero-")==False and pkg["alias"].startswith("zero:"):
+		#		zeroApp="zero-lliurex-{}".format(app.lower())
+		#		if zeroApp not in pkglist and zeroApp not in mapedList:
+		#			self._debug("Append unmaped ZERO app  {}".format(zeroApp))
+		#			pkglist.append(zeroApp.lower())
+		#			self.aliasDict.update({zeroApp:app.lower()})
 		return(pkglist)
 	#def _addCacheFile
 
@@ -329,9 +332,12 @@ class packageKit():
 			name=pkgId[0]
 			if (cat in dismiss==False) or (name in self.aliasDict.keys()):# in pkg.get_package_id()):
 				#if name.startswith("zero-lliurex")==False:
+				#If pkg is alliased is 99% a zmd
 				rebostPkg=self._generateRebostPkg(pkg,updateInfo)
-				rebostPkg["alias"]=name
-				rebostPkg["name"]=self.aliasDict.get(name,"")
+				if name in self.aliasDict.keys():
+					rebostPkg["alias"]=name
+					rebostPkg["name"]=self.aliasDict.get(name,"")
+					print(self.aliasDict[name])
 				#if rebostPkg["name"].startswith("zero-lliurex") and "installer" in rebostPkg["summary"].lower():# and rebostPkg['state']["package"]=="1":
 				#	tmpPkg=rebostPkg.copy()
 					#rebostPkg['alias']=rebostPkg["name"]

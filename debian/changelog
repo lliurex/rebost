@@ -1,3 +1,9 @@
+rebost (2.7.1.7-0llx23) jammy; urgency=medium
+
+  * Exclude zero:appsedu from packagekit
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 04 Jul 2025 09:42:12 +0200
+
 rebost (2.7.1.6-0llx23) jammy; urgency=medium
 
   * Support orphaned zmds

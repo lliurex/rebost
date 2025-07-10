@@ -157,19 +157,21 @@ class packageKit():
 		self.aliasDict={}
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
-			if pkg["alias"].startswith("zero:"):
-				#Discard zero-alliased
-				continue
+			#Revert auto discard as can generate troubles when a zmd is not installed by default
+			#if pkg["alias"].startswith("zero:"):
+			#	#Discard zero-alliased
+			#	#continue
 			app=pkg["alias"].replace("zero:","").split(".")[-1].lower()
 			if app not in pkglist and app not in mapedList:
 				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app.lower())
-		#	if app.lower().startswith("zero-")==False and pkg["alias"].startswith("zero:"):
-		#		zeroApp="zero-lliurex-{}".format(app.lower())
-		#		if zeroApp not in pkglist and zeroApp not in mapedList:
-		#			self._debug("Append unmaped ZERO app  {}".format(zeroApp))
-		#			pkglist.append(zeroApp.lower())
-		#			self.aliasDict.update({zeroApp:app.lower()})
+			#Indiscriminated adding, if app is non existent it will be discarded afterwards (affected by previous reverted change)
+			if app.lower().startswith("zero-")==False and pkg["alias"].startswith("zero:"):
+				zeroApp="zero-lliurex-{}".format(app.lower())
+				if zeroApp not in pkglist and zeroApp not in mapedList:
+					self._debug("Append unmaped ZERO app  {}".format(zeroApp))
+					pkglist.append(zeroApp.lower())
+					self.aliasDict.update({zeroApp:app.lower()})
 		return(pkglist)
 	#def _addCacheFile
 

@@ -1,3 +1,9 @@
+rebost (2.7.1.7-1llx23) jammy; urgency=medium
+
+  * Revert 2.7.1.7-0llx23 (don't exclude anything)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 10 Jul 2025 11:20:30 +0200
+
 rebost (2.7.1.7-0llx23) jammy; urgency=medium
 
   * Exclude zero:appsedu from packagekit

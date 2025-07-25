@@ -1,3 +1,9 @@
+rebost (2.7.2-0llx25) noble; urgency=medium
+
+  * Use map (local and remote) for info fixes
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 25 Jul 2025 12:36:46 +0200
+
 rebost (2.7.1.7-1llx25) noble; urgency=medium
 
   * Sync with jammy

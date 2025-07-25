@@ -23,7 +23,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
 	python3-html2text,
 	python3-psutil,
 	python3-dbus,
-	rebost-data (>=25.06.12),
+	rebost-data (>=25.07.25),
 	rebost-metadata (>>0.2),
 	python3-rebost (>=1.6)
 Description: Software management for LliureX

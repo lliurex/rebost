@@ -19,7 +19,8 @@ from bs4 import BeautifulSoup as bs
 import html2text
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-EDUAPPS_MAP="/usr/share/rebost/lists.d/eduapps.map"
+EDUAPPS_MAP="/usr/share/rebost-data/lists.d/llx25/eduapps.map"
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/llx25/eduapps.map"
 FCACHE=os.path.join("/tmp/.cache/rebost",os.environ.get("USER"),"eduapps.html")
 EDUAPPS_RAW=os.path.join(os.path.dirname(FCACHE),".eduapps.raw")
 DEBUG=False
@@ -263,6 +264,27 @@ def getRawContent():
 	return(rawcontent)
 #def getRawContent
 
+def _getAppseduMapFixes():
+	mapFixes={"nodisplay":[],"alias":{}}
+	if os.path.exists(EDUAPPS_MAP):
+		with open(EDUAPPS_MAP,"r") as f:
+			mapFixes=json.loads(f.read())
+	mapFixesUrlContent=downloadCatalogue(EDUAPPS_MAP_URL)
+	if len(mapFixesUrlContent)>0:
+		try:
+			jcontent=json.loads(mapFixesUrlContent)
+		except:
+			jcontent={}
+	if len(jcontent)>0:
+		if jcontent!=mapFixes:
+			jcontentNodisplay=jcontent.get("nodisplay",[])
+			nodisplay=list(set(mapFixes["nodisplay"]+jcontentNodisplay))
+			mapFixes["nodisplay"]=nodisplay
+			jcontentAliases=jcontent.get("aliases",{})
+			mapFixes["aliases"].update(jcontentAliases)
+	return(mapFixes)
+#def _getAppseduMapFixes
+
 def getAppsEduCatalogue():
 	_debug("Fetching {}".format(EDUAPPS_URL))
 	rawcontent=_fetchCatalogue()
@@ -281,6 +303,7 @@ def getAppsEduCatalogue():
 	columnIcon=None
 	columnPkgName=None
 	categories=[]
+	mapFixes=_getAppseduMapFixes()
 	for column in appInfo:
 		full=False
 		if (column.attrs["class"][0]=="column-1"):
@@ -317,6 +340,11 @@ def getAppsEduCatalogue():
 					continue
 				pkgIcon=columnIcon["src"]
 				if candidate:
+					if candidate in mapFixes["nodisplay"]:
+						continue
+					if candidate in mapFixes["aliases"]:
+						print("Was {} -> {}".format(columnPkgName,mapFixes["aliases"].get(candidate,"")))
+						columnPkgName=mapFixes["aliases"].get(candidate,"")
 					cats=[]
 					#Categories must be mapped 'cause are translated
 					for cat in columnCats.split(","):

@@ -239,7 +239,7 @@ class sqlHelper():
 				(pkg,data)=row
 				rebostPkg=json.loads(data)
 				bundles=rebostPkg.get('bundle',{}).copy()
-				infoPage=rebostPkg.get('infopage')
+				infoPage=rebostPkg.get('infopage',"")
 				if isinstance(infoPage,str)!=True:
 					infoPage=""
 				if len(infoPage)>0 and len(rebostPkg.get("description",""))==0:

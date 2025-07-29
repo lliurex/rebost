@@ -335,10 +335,13 @@ class rebostPrcMan():
 				postaction=""
 				try:
 					jpkg=json.loads(rebostpkg)
-				except:
+				except Exception as e:
+					print("managePackage: {}".format(e))
 					jpkg={}
+				if jpkg.get("infpage")==None:
+					jpkg["infopage"]=""
 				#if jpkg.get("bundle",{}).get("zomando","")!="":
-				if jpkg["pkgname"].startswith("zero-") and "https://portal.edu.gva.es/appsedu/" in jpkg.get("infopage"):
+				if jpkg.get("pkgname","").startswith("zero-") and "https://portal.edu.gva.es/appsedu/" in jpkg.get("infopage"):
 					if jpkg.get("state",{}).get("package","0")!="0":
 						postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
 				(epifile,episcript)=rebostHelper.epiFromPkg(rebostpkg,bundle,user,remote,postaction)

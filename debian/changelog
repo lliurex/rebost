@@ -1,3 +1,9 @@
+rebost (2.7.2.1-0llx25) noble; urgency=medium
+
+  * Fix null value in infopage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 29 Jul 2025 09:31:38 +0200
+
 rebost (2.7.2-0llx25) noble; urgency=medium
 
   * Use map (local and remote) for info fixes

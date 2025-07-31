@@ -3,5 +3,10 @@
     "config": "user",
     "flatpak": true,
     "packageKit": true,
-    "snap": true
+    "snap": true,
+    "restricTable": "eduapps",
+    "mandatoryTable": "eduapps",
+    "mode":"appsedu",
+    "restricted":true,
+	"release":"2.7.2"
 }

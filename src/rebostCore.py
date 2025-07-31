@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import traceback
 import importlib
 import requests
 import os,shutil,stat
@@ -13,18 +14,16 @@ import gi
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 
+# SIGUSR2 -> rebost is operative
+
 class Rebost():
 	def __init__(self,*args,**kwargs):
-		self.dbg=True
+		self.dbg=False
 		self.propagateDbg=True
 		self.dbCache="/tmp/.cache/rebost"
 		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
 		self._iniCache()
 		self.confFile=os.path.join(self.rebostPath,"store.json")
-		if os.path.exists(self.confFile)==False:
-			if os.path.exists(self.rebostPath)==False:
-				os.makedirs(self.rebostPath)
-			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
 		self.includeFile=os.path.join(self.rebostPath,"lists.d")
 		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
 		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
@@ -33,24 +32,38 @@ class Rebost():
 		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
 		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
 		self.process={}
+		if os.path.exists(self.confFile)==False:
+			if os.path.exists(self.rebostPath)==False:
+				os.makedirs(self.rebostPath)
+			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
+		else:
+			with open(self.confFile,"r") as f:
+				fcontent=f.read()
+				if isinstance(fcontent,str)==False:
+					fcontent="{}"
+				elif len(fcontent)==0:
+					fcontent="{}"
+				usrconf=json.loads(fcontent)
+			with open ("/usr/share/rebost/store.json","r") as f:
+				sysconf=json.loads(f.read())
+			if len(usrconf)!=len(sysconf):
+				usrconf=sysconf.copy()
+				usrconf["release"]="-1"
+			if sysconf.get("release","")!=usrconf.get("release","-1"):
+				usrconf.update({"release":sysconf.get("release","")})
+				with open(self.confFile,"w") as f:
+					json.dump(usrconf, f, ensure_ascii=False, indent=4)
+				self._cleanData(force=True)
 		self.store=appstream.Store()
 		self.config={}
 		self.procId=1
-		signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+		#signal.signal(signal.SIGALRM,self._launchRebostUpdated)
+		#	signal.raise_signal(signal.SIGALRM)
 	#def __init__(self,*args,**kwargs):
 
 	def _iniCache(self):
-		if os.path.exists(self.rebostWrkDir)==True:
-			for f in os.scandir(self.rebostWrkDir):
-				if os.path.isfile(f.path):
-					if f.path.endswith(".db"):
-						os.unlink(f.path)
-				elif os.path.isdir(f.path):
-					for fd in os.scandir(f.path):
-						if os.path.isfile(fd.path):
-							os.unlink(fd.path)
-			#shutil.rmtree(self.rebostWrkDir)
-		else:
+		#Preserve cache 
+		if os.path.exists(self.rebostWrkDir)==False:
 			os.makedirs(self.rebostWrkDir)
 		try:
 			os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
@@ -69,16 +82,18 @@ class Rebost():
 	def _launchRebostUpdated(self,*args,**kwargs):
 		self._copyTmpToCache()
 		self._log("Cache restored")
-		signal.raise_signal(signal.SIGUSR2)
 	#def _launchRebostUpdated(self,*args,**kwargs):
 
 	def run(self):
+		self.mode=""
+		self._processConfig()
+		if self.mode=="appsedu":
+			print("********* APPSEDU MODE ENABLED ********")
 		self._log("Starting rebost")
 		self._loadPlugins()
 		self._log("Plugins loaded")
 		self._loadPluginInfo()
 		self._log("Plugins processed")
-		self._processConfig()
 		self._log("Config readed")
 		if self._copyCacheToTmp()==True:
 			self._log("Cache enabled")
@@ -87,6 +102,7 @@ class Rebost():
 			self._log("Cache unavailable")
 			self._autostartActions()
 		self._log("Autostart ended.")
+		signal.raise_signal(signal.SIGUSR2)
 	#def run
 
 	def _log(self,msg):
@@ -127,6 +143,8 @@ class Rebost():
 				if plugin.endswith(".py") and plugin!='__init__.py':
 					try:
 						imp=importlib.import_module((plugin.replace(".py","")))
+						if hasattr(imp,"main")==False:
+							continue
 						#Get plugin status
 						if "rebostHelper" not in plugin:
 							pluginObject=imp.main()
@@ -134,6 +152,7 @@ class Rebost():
 							pluginObject=imp
 					except Exception as e:
 						self._log("Failed importing {0}: {1}".format(plugin,e))
+						print(traceback.format_exc())
 						continue
 					if "rebostHelper" in plugin:
 						enabled=True
@@ -145,6 +164,12 @@ class Rebost():
 							print("Plugin loaded: {}".format(plugin))
 						else:
 							print("{} will set its status".format(plugin))
+						if hasattr(pluginObject,"restricted"):
+							pluginObject.restricted=self.restricted
+						if hasattr(pluginObject,"mainTableForRestrict"):
+							pluginObject.mainTabledForRestrict=self.mainTableForRestrict
+						if hasattr(pluginObject,"mode"):
+							pluginObject.mode=self.mode
 					else:
 						self._debug("Plugin disabled: {}".format(plugin))
 						disabledPlugins[plugin.replace(".py","")]=False
@@ -189,19 +214,28 @@ class Rebost():
 			del(self.plugins[plugin])
 	#def _loadPluginInfo
 
-	def _writeConfig(self,config):
-		return()
+	def _writeConfig(self,config,force=False):
+		if force!=True:
+			return()
 		cfg=self._readConfig()
-		cfgFile=self.confFile
+		userCfgFile=self.confFile
+		cfgFile="/usr/share/rebost/store.json"
+
 		for key,value in config.items():
 			key=key.replace("Helper","")
 			cfg[key]=value
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'w') as f:
+		ret=False
+		for cfile in [cfgFile,userCfgFile]:
+			if os.path.isdir(os.path.dirname(cfile)):
 				try:
-					f.write(json.dumps(cfg,skipkeys=True))
-				except:
-					pass
+					with open(cfile,'w') as f:
+						f.write(json.dumps(cfg,skipkeys=True))
+					ret=True
+				except Exception as e:
+					print("Unable to unlock")
+					ret=False
+					break
+		return(ret)
 	#def _writeConfig
 
 	def _processConfig(self):
@@ -211,16 +245,30 @@ class Rebost():
 				self._enable(plugin)
 			else:
 				self._disable(plugin)
-		self.restricted=cfg.get("restricted",True)
-		self.mainTableForRestrict=cfg.get("maintable","")
 		self.forceApps=cfg.get("forceApps",{})
+		self.mode=cfg.get("mode","")
+		cmd=["pkexec","/usr/share/rebost/helper/test-rebost.py"]
+		try:
+			proc=subprocess.run(cmd)
+			if proc.returncode!=0:
+				cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		except Exception as e:
+			cfg.update({"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"})
+		self.restricted=cfg.get("restricted",True)
+		if self.restricted==True:
+			self.mainTableForRestrict=cfg.get("mandatoryTable","")
+		else:
+			self.mainTableForRestrict=""
 	#def _processConfig
 
 	def _readConfig(self):
 		cfg={}
 		include={}
-		if os.path.isfile(self.confFile):
-			with open(self.confFile,'r') as f:
+		sysConf="/usr/share/rebost/store.json"
+		#print("Reading {}".format(self.confFile))
+		print("Reading {}".format(sysConf))
+		if os.path.isfile(sysConf):
+			with open(sysConf,'r') as f:
 				try:
 					cfg=json.loads(f.read())
 				except:
@@ -263,13 +311,16 @@ class Rebost():
 			table=tables.get(bundle,"")
 			if len(table)>0:
 				self._debug("Deleting table {}".format(table))
-				tpath=os.path.join(self.rebostPathTmp,table)
-				if os.path.isfile(tpath):
-					os.remove(tpath)
+				tpaths=[os.path.join(self.rebostWrkDir,table),os.path.join(self.cache,table)]
+				for tpath in tpaths:
+					if os.path.isfile(tpath):
+						os.remove(tpath)
+						self._debug(" - Deleting {}".format(tpath))
 				prefix=plugin[0]+plugin[3]
-				fprefix=os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower()))
-				if os.path.isfile(fprefix):
-					os.remove(fprefix)
+				fprefixes=[os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower())),os.path.join(self.cache,"tmp","{}.lu".format(prefix.lower()))]
+				for fprefix in fprefixes:
+					if os.path.isfile(fprefix):
+						os.remove(fprefix)
 		if len(disable)>0:
 			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
 				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
@@ -301,8 +352,9 @@ class Rebost():
 		copied=False
 		tmpCache=os.path.join(self.cache,"tmp")
 		if os.path.exists(tmpCache):
-			if os.path.exists(os.path.join(self.rebostPathTmp,"sq.lu"))==True:
-				return()
+			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
+			if os.path.exists(sqLu)==True:
+				return(True)
 			elif os.path.exists(self.rebostPathTmp)==False:
 				os.makedirs(self.rebostPathTmp)
 			for db in os.scandir(self.cache):
@@ -325,6 +377,7 @@ class Rebost():
 			for db in os.scandir(self.rebostWrkDir):
 				if db.path.endswith(".db"):
 					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
+					self._debug("Restore db: {0} -> {1}".format(db.path,os.path.join(self.cache,db.name)))
 			tmpCache=os.path.join(self.cache,"tmp")
 			if os.path.exists(tmpCache)==False:
 				os.makedirs(tmpCache)
@@ -427,18 +480,36 @@ class Rebost():
 		if plugin!="core":
 			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
 			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
-			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
+			try:
+				rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
+			except Exception as e:
+				print()
+				print(">>>>> FATAL ERROR <<<<<<")
+				print(e)
+				print("Traceback ---->")
+				print(traceback.format_exc())
+				print("Traceback <----")
+				print("==============")
+				print("Rebost will now remove its databases and reboot")
+				print("To avoid this execute with debug mode enabled")
+				print("<<<<< END REPORT >>>>>>")
+				print()
+				if self.dbg==False:
+					self.forceUpdate(True)
 		#Generate the store with results and sanitize them
-		if action!='getCategories':
-			if not isinstance(rebostPkgList,list):
-				rebostPkgList=[rebostPkgList]
-			store=self._sanitizeStore(rebostPkgList)
-		else:
+		if action=='getCategories':
 			catList=[]
 			for cat in rebostPkgList:
 				catList.append(cat[0])
 			store=json.dumps(catList)
-		if action=="install" or action=="remove" or action=="test":
+		if action=='getFreedesktopCategories':
+			store=json.dumps(rebostPkgList)
+		else:
+			if not isinstance(rebostPkgList,list):
+				rebostPkgList=[rebostPkgList]
+			store=self._sanitizeStore(rebostPkgList)
+		#if action=="install" or action=="remove" or action=="test":
+		if action=="install" or action=="remove":
 			self._launchRebostUpdated()
 		return(store)
 	#def execute
@@ -474,7 +545,6 @@ class Rebost():
 	#def _sanitizeStore
 	
 	def _execute(self,action,package,bundle='',plugin=None,th=True):
-		#action,args=action_args.split("#")
 		proc=None
 		plugList=[]
 		if not plugin:  
@@ -513,7 +583,6 @@ class Rebost():
 
 	def _executeCoreAction(self,action,th=True):
 		retval=1
-		rs=[{}]
 		proc=None
 		self._debug("Launching {} from CORE (th {})".format(action,th))
 		func=eval("self.{}".format(action))
@@ -526,19 +595,37 @@ class Rebost():
 		except Exception as e:
 			print(e)
 			retval=0
-		return(rs)
+		return(proc)
 	#def _executeCoreAction
 	
 	def getEpiPkgStatus(self,epifile):
 		self._debug("Getting status from {}".format(epifile))
 		stdout='1'
 		if os.path.isfile(epifile):
-			proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
-			stdout=proc.stdout.decode().strip()
+			try:
+				proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
+				stdout=proc.stdout.decode().strip()
+			except Exception as e:
+				stdout=str(e)
 		else:
 			stdout="23"
 		return (stdout)
 	#def getEpiPkgStatus
+
+	def getLockStatus(self):
+		cfg=self._readConfig()
+		return(cfg.get("restricted",False))
+	#def getLockStatus
+
+	def lock(self):
+		cfg={"restricted":True,"mandatoryTable":"eduapps","mode":"appsedu"}
+		self._writeConfig(cfg,True)
+	#def lock(self):
+
+	def unlock(self):
+		cfg={"restricted":False,"mandatoryTable":"","mode":"store"}
+		self._writeConfig(cfg,True)
+	#def unlock(self):
 
 	def getFiltersEnabled(self):
 		state=True
@@ -573,6 +660,8 @@ class Rebost():
 			self._debug("Removing databases")
 			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
 			for dbDir in dbDirs:
+				if os.path.isdir(dbDir)==False:
+					continue
 				for i in os.scandir(dbDir):
 					if i.path.endswith(".db"):
 						try:
@@ -605,3 +694,6 @@ class Rebost():
 	def fullUpdate(self):
 		return
 
+	def commitData(self):
+		self._copyTmpToCache()
+	#def commitData

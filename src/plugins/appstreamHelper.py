@@ -65,8 +65,8 @@ class appstreamHelper():
 				store=fullstore
 			store=self._generateStore(store,fullstore)
 			self._debug("Get rebostPkg")
-			rebostPkgList=rebostHelper.appstream_to_rebost(store)
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'appstream.db')
+			rebostPkgList=rebostHelper._appstreamToRebost(store)
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'appstream.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
 			with open(self.lastUpdate,'w') as f:
@@ -115,6 +115,7 @@ class appstreamHelper():
 		progress=0
 		iconDir="/usr/share/rebost-data/icons"
 		for storeYml in storeYmlFiles:
+			self._debug("Checking appstream file {}".format(storeYml))
 			if storeYml=="":
 				continue
 				#storeYml="/usr/share/rebost-data/yaml/lliurex_restricted.yml"
@@ -161,9 +162,35 @@ class appstreamHelper():
 			#state is not working
 			#Do a best effort, get launchable and check if exists
 			pkg.set_state(2)
+			launchables=["{}.desktop".format(pkgname)]
 			for i in pkg.get_launchables():
-				if os.path.exists("/usr/share/applications/{}".format(i.get_value())):
-					pkg.set_state(1)
+				if i.get_value() not in launchables:
+					launchables.append(i.get_value())
+			for launchable in launchables:
+				#if launchable exists it's possible that app is installed
+				#but we must also check for Exec
+				if os.path.exists("/usr/share/applications/{}".format(launchable)):
+					fcontent=[]
+					exe=""
+					with open("/usr/share/applications/{}".format(launchable),"r") as f:
+						fcontent=f.readlines()
+					for fline in fcontent:
+						if fline.startswith("Exec="):
+							exe=fline.split("=")[1].rstrip().split(" ")[0]
+							break
+					if exe=="":
+						continue
+					if os.path.exists(exe)==False:
+						path=os.environ.get("PATH","/usr/bin:/sbin:bin:/usr/sbin/").split(":")
+						for p in path:
+							if os.path.exists(os.path.join(p,exe))==True:
+								pkg.set_state(1)
+								break
+
+					else:
+						pkg.set_state(1)
+					if pkg.get_state()==1:
+						break
 			fname=None
 			if icondefault:
 				icondefault=self._setIconFname(pkg,icondefault)

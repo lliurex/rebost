@@ -10,6 +10,14 @@ from gi.repository import AppStreamGlib as appstream
 import rebostHelper
 import logging
 import subprocess
+import locale
+localLangs=[locale.getdefaultlocale()[0].split("_")[0]]
+localLangs.append("qcv")
+if localLangs[0]=="ca":
+	localLangs.append("es")
+else:
+	localLangs.append("ca")
+localLangs.append("en")
 #Needed for async find method, perhaps only on xenial
 wrap=Gio.SimpleAsyncResult()
 
@@ -61,7 +69,7 @@ class flatpakHelper():
 		rebostPkgList=[]
 		if update:
 			self._debug("Get rebostPkg")
-			rebostPkgList=rebostHelper.appstream_to_rebost(store)
+			rebostPkgList=rebostHelper._appstreamToRebost(store)
 			#Check state of packages
 			installedRefs=self._getInstalledRefs()
 			installed={}
@@ -74,7 +82,7 @@ class flatpakHelper():
 				a=i.load_metadata()
 			if len(installed)==0:
 				rebostPkgList=self._fillInstalledData(rebostPkgList,installed)
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,'flatpak.db')
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,'flatpak.db')
 			self._debug("SQL loaded")
 			storeMd5=str(store.get_size())
 			with open(self.lastUpdate,'w') as f:
@@ -140,6 +148,8 @@ class flatpakHelper():
 		if srcDir=='':
 		#When initializing for first time metada needs a reload
 			(srcDir,flInst)=self._getFlatpakMetadata()
+		flInst.set_config_sync("languages","{}".format(localLangs[0]))
+		flInst.set_config_sync("extra-languages","{}".format(";".join(localLangs[1:])))
 		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		fxml=os.path.join(srcDir,"appstream.xml")
 		try:

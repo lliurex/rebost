@@ -153,7 +153,7 @@ class rebostPrcMan():
 
 		if action=='install' or action=='remove':
 			if os.path.exists(episcript):
-				stdout=rebostHelper.get_epi_status(data.get('episcript'))
+				stdout=rebostHelper.getEpiStatus(data.get('episcript'))
 				if action=='install' or action=='remove':
 					if stdout=="0":
 						if action=='install':
@@ -315,12 +315,36 @@ class rebostPrcMan():
 		#1st check if removing and if removing package doesn't removes meta
 			sure=True
 			if (action=='remove' or action=='test') and bundle=='package':
-				if rebostHelper.check_remove_unsure(pkgname):
-					rebostPkgList=[("{}".format(self.failProc),{'pid':"{}".format(self.failProc),'package':pkgname,'done':1,'status':'','msg':'package {} is a system package'.format(pkgname)})]
+				jpkg={}
+				try:
+					jpkg=json.loads(rebostpkg)
+				except:
 					sure=False
+				else:
+					if jpkg.get("state",{}).get("package","1")=="0":
+						if rebostHelper.chkUnsafeRemoval(pkgname):
+							rebostPkgList=[("{}".format(self.failProc),
+											{'pid':"{}".format(self.failProc),
+											'package':pkgname,
+											'done':1,
+											'status':'',
+											'msg':'package {} is a system package'.format(pkgname)})]
+							sure=False
 			if sure:
 				usern="{}".format(user)
-				(epifile,episcript)=rebostHelper.generate_epi_for_rebostpkg(rebostpkg,bundle,user,remote)
+				postaction=""
+				try:
+					jpkg=json.loads(rebostpkg)
+				except Exception as e:
+					print("managePackage: {}".format(e))
+					jpkg={}
+				if jpkg.get("infpage")==None:
+					jpkg["infopage"]=""
+				#if jpkg.get("bundle",{}).get("zomando","")!="":
+				if jpkg.get("pkgname","").startswith("zero-") and "https://portal.edu.gva.es/appsedu/" in jpkg.get("infopage"):
+					if jpkg.get("state",{}).get("package","0")!="0":
+						postaction="/usr/sbin/epic -u install {0}.epi 2>/dev/null || /usr/sbin/epic -u install zero-lliurex-{0}.epi".format(pkgname.replace("zero-lliurex-",""))
+				(epifile,episcript)=rebostHelper.epiFromPkg(rebostpkg,bundle,user,remote,postaction)
 				rebostPkgList=[(pkgname,{'package':pkgname,'status':action,'epi':epifile,'script':episcript,'bundle':bundle})]
 				if action=="remote":
 					self._remoteInstall(usern,episcript)

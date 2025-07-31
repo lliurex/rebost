@@ -12,7 +12,7 @@ import time
 
 class packageKit():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
+		self.dbg=True
 		logging.basicConfig(format='%(message)s')
 		self.enabled=True
 		self.onlyLliurex=False
@@ -22,6 +22,7 @@ class packageKit():
 		self.autostartActions=["load"]
 		self.priority=2
 		self.result=''
+		self.aliasDict={}
 		self.restricted=True
 		dbCache="/tmp/.cache/rebost"
 		self.rebostCache=os.path.join(dbCache,os.environ.get("USER"))
@@ -152,12 +153,25 @@ class packageKit():
 	#def _readFilterFile
 
 	def _addCacheFile(self,pkglist=[],mapedList=[]):
+		self._debug("Adding all packages from appsedu")
+		self.aliasDict={}
 		eduApps=libAppsEdu.getAppsEduCatalogue()
 		for pkg in eduApps:
-			app=pkg["app"]
+			#Revert auto discard as can generate troubles when a zmd is not installed by default
+			#if pkg["alias"].startswith("zero:"):
+			#	#Discard zero-alliased
+			#	#continue
+			app=pkg["alias"].replace("zero:","").split(".")[-1].lower()
 			if app not in pkglist and app not in mapedList:
 				self._debug("Append unmaped app  {}".format(app))
 				pkglist.append(app.lower())
+			#Indiscriminated adding, if app is non existent it will be discarded afterwards (affected by previous reverted change)
+			if app.lower().startswith("zero-")==False and pkg["alias"].startswith("zero:"):
+				zeroApp="zero-lliurex-{}".format(app.lower())
+				if zeroApp not in pkglist and zeroApp not in mapedList:
+					self._debug("Append unmaped ZERO app  {}".format(zeroApp))
+					pkglist.append(zeroApp.lower())
+					self.aliasDict.update({zeroApp:app.lower()})
 		return(pkglist)
 	#def _addCacheFile
 
@@ -203,10 +217,10 @@ class packageKit():
 				if pkDetails:
 					self._debug("Sending to SQL")
 					data=self._generateRebostPkgList(pkDetails,pkgUpdateIds)
-					rebostHelper.rebostPkgList_to_sqlite(data,'packagekit.db',drop=False,sanitize=False)
+					rebostHelper.rebostPkgsToSqlite(data,'packagekit.db',drop=False,sanitize=False)
 			if updateSelected:
 				self._debug("Updating {} items".format(len(updateSelected)))
-				rebostHelper.rebostPkgList_to_sqlite(updateSelected,"packagekit.db")
+				rebostHelper.rebostPkgsToSqlite(updateSelected,"packagekit.db")
 			else:
 				self._debug("No updates detected")
 			self._debug("End processing pkg list")
@@ -234,7 +248,7 @@ class packageKit():
 		#Get rows for ids
 		rows=[]
 		if os.path.isfile(os.path.join(self.rebostCache,"packagekit.db")):
-			rows=rebostHelper.get_table_pkgarray("packagekit.db",list(pkgDict.keys()))
+			rows=rebostHelper.getPkgFromTablearray("packagekit.db",list(pkgDict.keys()))
 		for row in rows:
 			try:
 				rowData=json.loads(row[0][1])
@@ -292,6 +306,18 @@ class packageKit():
 			rebostPkg['icon']=os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(rebostPkg['name']))
 		elif os.path.isfile(os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))):
 			rebostPkg['icon']=os.path.join("/usr/share/icons/lliurex/apps/48","{0}.png".format(rebostPkg['name']))
+		else:
+			candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(rebostPkg["name"])),os.path.join("/usr/share","{}".format(rebostPkg["name"].replace("zero-lliurex-","")))]
+			for candidateDir in candidateDirs:
+				if os.path.exists(candidateDir):
+					try:
+						for l in os.scandir(candidateDir):
+							if (rebostPkg["id"].replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
+								rebostPkg['icon']=l.path
+								break
+					except:
+						#Directory has not read permissions for current user
+						continue
 		return(rebostPkg)
 	#def _generateRebostPkg
 
@@ -300,13 +326,27 @@ class packageKit():
 		arr=pkgList.get_details_array()
 		for pkg in arr:
 			dismiss=["admin-tools","other","system"]
-			dismiss=[]#admin-tools","other","system"]
+			#Dismiss disabled
+			dismiss=[]
 			cat=pkg.get_group().to_string(pkg.get_group()).lower().strip()
-			if (cat in dismiss)==False or "lliurex" in pkg.get_url():
-				pkgId=pkg.get_package_id().split(";")
-				name=pkgId[0]
+			#if (cat in dismiss==False) or ("lliurex" in pkg.get_url()):
+			pkgId=pkg.get_package_id().split(";")
+			name=pkgId[0]
+			if (not cat in dismiss) or (name in self.aliasDict.keys()):# in pkg.get_package_id()):
 				#if name.startswith("zero-lliurex")==False:
-				rebostPkgList.append(self._generateRebostPkg(pkg,updateInfo))
+				#If pkg is alliased is 99% a zmd
+				rebostPkg=self._generateRebostPkg(pkg,updateInfo)
+				if name in self.aliasDict.keys():
+					rebostPkg["alias"]=name
+					rebostPkg["name"]=self.aliasDict.get(name,"")
+				#if rebostPkg["name"].startswith("zero-lliurex") and "installer" in rebostPkg["summary"].lower():# and rebostPkg['state']["package"]=="1":
+				#	tmpPkg=rebostPkg.copy()
+					#rebostPkg['alias']=rebostPkg["name"]
+					#rebostPkg['bundle'].update({"zomando":"{}".format(rebostPkg['alias'])})
+					#rebostPkg['state'].update({"zomando":"1"})
+					#rebostPkg['name']=rebostPkg["name"].replace("zero-lliurex-","")
+				#	rebostPkgList.append(tmpPkg)
+				rebostPkgList.append(rebostPkg)
 		return(rebostPkgList)
 	#def _generateRebostPkgList
 

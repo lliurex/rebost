@@ -13,9 +13,9 @@ class rebostDbusMethods(dbus.service.Object):
 	def __init__(self,bus_name,*args,**kwargs):
 		super().__init__(bus_name,"/net/lliurex/rebost")
 		logging.basicConfig(format='%(message)s')
-		self.dbg=True
-		signal.signal(signal.SIGUSR1, self._reloadSignal)
-		signal.signal(signal.SIGUSR2, self._updatedSignal)
+		self.dbg=kwargs["dbg"]
+		signal.signal(signal.SIGUSR2, self._reloadSignal)
+		signal.signal(signal.SIGUSR1, self._updatedSignal)
 		signal.signal(signal.SIGALRM, self._beginUpdateSignal)
 		self.rebost=rebost.Rebost()
 		self.rebost.run()
@@ -113,6 +113,14 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getCategories
 
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getFreedesktopCategories(self):
+		action='getFreedesktopCategories'
+		ret=self.rebost.execute(action)
+		return (ret)
+	#def getCategories
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='ay')
 	def search(self,pkgname):
 		action='search'
@@ -182,6 +190,14 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,args,bundle,state)
 		return (ret)
 	#def commitInstall
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='ss', out_signature='s')
+	def updatePkgData(self,args,data):
+		action='updatePkgData'
+		ret=self.rebost.execute(action,args,data)
+		return (ret)
+	#def commitInstall
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
@@ -191,8 +207,6 @@ class rebostDbusMethods(dbus.service.Object):
 		return (ret)
 	#def addTransaction
 	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def getEpiPkgStatus(self,epifile):
@@ -225,12 +239,16 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getUpgradableApps(self):
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='b', out_signature='ay')
+						 in_signature='b', out_signature='b')
 	def update(self,force=False):
-		self.beginUpdateSignal()
-		ret=self.rebost.forceUpdate(force)
+		ret=True
+		#self.beginUpdateSignal()
+		try:
+			self.rebost.forceUpdate(force)
+		except:
+			ret=False
 #		ret = zlib.compress(ret.encode(),level=1)
-		return ()
+		return ret
 	#def update
 
 	@dbus.service.method("net.lliurex.rebost",
@@ -247,35 +265,82 @@ class rebostDbusMethods(dbus.service.Object):
 	#def restart(self):
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
-	def disableFilters(self):
+						 in_signature='', out_signature='b')
+	def lock(self):
+		ret=False
 		try:
-			self.rebost.execute("disableFilters")
+			ret=self.rebost.execute("lock")
 		except Exception as e:
-			print("Critical error disabling filters")
+			print("Critical error locking")
 			print(str(e))
-	#def disableFilters
+		return(ret)
+	#def lock
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='b')
-	def getFiltersEnabled(self):
-		ret=True
+	def unlock(self):
+		ret=False
 		try:
-			ret=self.rebost.getFiltersEnabled()
+			ret=self.rebost.execute("unlock")
 		except Exception as e:
-			print("Critical error reading filters")
+			print("Critical error unlocking")
 			print(str(e))
 		return(ret)
-	#def disableFilters
+	#def unlock
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='b')
+	def getLockStatus(self):
+		ret=False
+		try:
+			ret=self.rebost.getLockStatus()
+		except Exception as e:
+			print("Critical error getting lock status")
+			print(str(e))
+		return(ret)
+	#def getLockStatus
+
+	#@dbus.service.method("net.lliurex.rebost",
+	#					 in_signature='', out_signature='')
+	#def disableFilters(self):
+	#	try:
+	#		self.rebost.execute("disableFilters")
+	#	except Exception as e:
+	#		print("Critical error disabling filters")
+	#		print(str(e))
+	##def disableFilters
+
+	#@dbus.service.method("net.lliurex.rebost",
+	#					 in_signature='', out_signature='b')
+	#def getFiltersEnabled(self):
+	#	ret=True
+	#	try:
+	#		ret=self.rebost.getFiltersEnabled()
+	#	except Exception as e:
+	#		print("Critical error reading filters")
+	#		print(str(e))
+	#	return(ret)
+	##def disableFilters
 
 	def getPlugins(self):
 		pass
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='')
+	def commitData(self):
+		ret=self.rebost.commitData()
+#		ret = zlib.compress(ret.encode(),level=1)
+	#def commitData
 
 #class rebostDbusMethods
 	
 
 class rebostDBus():
 	def __init__(self): 
+		self.dbg=False
+		if len(sys.argv)>1:
+			if sys.argv[0]=="-d":
+				self.dbg=True
 		self._setDbus()
 	#def __init__
 
@@ -291,7 +356,7 @@ class rebostDBus():
 			print("service is already running")
 			sys.exit(1)
 
-		rebostDbusMethods(bus_name)
+		rebostDbusMethods(bus_name,dbg=self.dbg)
 		# Run the loop
 		try:
 			loop.run()

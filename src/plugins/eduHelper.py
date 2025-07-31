@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-#import rebostHelper
+#!/usr/bin/python3.
 import time,os,stat
 import json
 import re
@@ -12,6 +11,7 @@ import gettext
 from bs4 import BeautifulSoup as bs
 import rebostHelper
 import libAppsEdu
+import epicHelper
 import hashlib
 # wget https://portal.edu.gva.es/appsedu/aplicacions-lliurex/
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
@@ -33,6 +33,7 @@ class eduHelper():
 		if os.path.exists(self.rebostCache)==False:
 			os.makedirs(self.rebostCache)
 		os.chmod(self.rebostCache,stat.S_IRWXU )
+		self.epic=epicHelper.epicHelper()
 		self.lastUpdate=os.path.join(self.rebostCache,"tmp","eh.lu")
 	#def __init__
 
@@ -58,18 +59,26 @@ class eduHelper():
 			os.unlink(FILTER)
 		#eduApps=self._getEduApps()
 		eduApps=libAppsEdu.getAppsEduCatalogue()
+		rawcontent=libAppsEdu.getRawContent()
+		if self._chkNeedUpdate(rawcontent)==False:
+			self._debug("Skip update")
+			return([])
 		self._debug("Loaded {} from eduapps".format(len(eduApps)))
 		rebostPkgList=[]
 		fnames=os.path.join(self.rebostCache,"appsedu.list")
 		#Generate cache with names
-		self._loadMAP()
+		#self._loadMAP()
+		#self.epiTree=self.epic.getPkgEpiTree()
+		self.epiTree={}
 		with open(fnames,"w") as f:
 			for eduapp in eduApps:
+				if "sistema" in eduapp["auth"].lower() or "coordinada" in eduapp["auth"].lower():
+					continue
 				rebostPkgList.append(self._appToRebost(eduapp))
 				f.write("{}\n".format(eduapp["app"]))
 		self._debug("Sending {} to sqlite".format(len(rebostPkgList)))
 		if len(rebostPkgList)>0:
-			rebostHelper.rebostPkgList_to_sqlite(rebostPkgList,"eduapps.db")
+			rebostHelper.rebostPkgsToSqlite(rebostPkgList,"eduapps.db")
 		#REM
 		return
 		searchDict=self._generateTags(eduApps)
@@ -102,12 +111,13 @@ class eduHelper():
 			self._debug("Skip update")
 			#return([])
 		bscontent=bs(rawcontent,"html.parser")
-		appInfo=bscontent.find_all("td",["column-1","column-2","column-7"])
+		appInfo=bscontent.find_all("td",["column-1","column-2","column-7","column-8"])
 		eduApps=[]
 		candidate=None
 		columnAuth=None
 		columnName=None
 		columnIcon=None
+		columnPkgname=None
 		for column in appInfo:
 			full=False
 			if (column.attrs["class"][0]=="column-1"):
@@ -117,6 +127,8 @@ class eduHelper():
 			if (column.attrs["class"][0]=="column-7"):
 				columnAuth=column.text
 				full=True
+			if (column.attrs["class"][0]=="column-8"):
+				columnPkgname=column.text
 			if full==True:
 				for data in columnName:
 					href=data["href"]
@@ -130,17 +142,84 @@ class eduHelper():
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth})
+						if len(columnPkgname.strip())==0:
+							columnPkgname=candidate
+						cats=[]
+						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName})
 						candidate=None
 				columnAuth=None
 				columnName=None
 				columnIcon=None
+				columnPkgname=None
 		return(eduApps)
 	#def getEduApps
+
+	def fillData(self,rebostPkg):
+		if not isinstance(rebostPkg,dict):
+			try:
+				rebostPkg=json.loads(rebostPkg)
+			except Exception as e:
+				self._debug(e)
+				self._debug(rebostPkg)
+				return(rebostPkg)
+		self._debug("Filling data for {}".format(rebostPkg.get('name')))
+		appUrl=rebostPkg.get("infopage","")
+		self._debug("URL: {}".format(appUrl))
+		if len(appUrl)==0:
+			return(rebostPkg)
+		rawcontent=self._fetchCatalogue(appUrl)
+		bscontent=bs(rawcontent,"html.parser")
+		pageDivs=bscontent.find_all("div","entry-content")
+		for div in pageDivs:
+			img=div.find("img")
+			if img:
+				if "Generica" in img and repostPkg.get("icon","")!="":
+					rebostPkg["icon"]=img["src"]
+			rel=div.find("div","acf-view__versio-field acf-view__field")
+			if rel:
+				rebostPkg["versions"]={"eduapp":rel.text.strip()}
+				#rebostPkg["icon"]=img["src"]
+			desc=div.find("div","acf-view__descripcio-field acf-view__field")
+			if desc:
+				rebostPkg["description"]=desc.text.strip()
+				rebostPkg['summary']=rebostPkg["description"].split(".")[0]
+			homepage=div.find("div","acf-view__url_editor-link acf-view__link")
+			if homepage:
+				rebostPkg["homepage"]=homepage.text.strip()
+			auth=div.find("div","acf-view__estat_val-choice acf-view__choice")
+			reject=None
+			if auth:
+				reject=div.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
+			if reject!=None:
+				rebostPkg["description"]+="****{}".format(reject.text.strip())
+				rebostPkg["bundle"]={"eduapp":"banned"}
+			#Translate categories
+			rawCats=div.find("div","acf-view__categoria_val-choice acf-view__choice")
+			categories=[]
+			if isinstance(rawCats,list):
+				if len(rawCats)>0:
+					categories=[]
+					for cat in rawCats:
+						cat=cat.strip()
+						categories.append(libAppsEdu.i18n.get(cat,cat))
+			if len(rebostPkg.get("categories",[]))==0:
+				rebostPkg["categories"]=categories
+
+			#Without use
+			groups=div.find("acf-view__usuaris_autoritzats_val-choice acf-view__choice")
+			ident=div.find("acf-view__identitat_val-choice acf-view__choice")
+			ambit=div.find("div","acf-view__ambit_educatiu_val-label acf-view__label")
+			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
+			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
+			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+		return(rebostPkg)
+	#def fillData
 
 	def _loadMAP(self):
 		appmap={}
 		self.appmap={}
+		return
+		#APPMAP is disabled as 20241023
 		if os.path.isfile(MAP):
 			with open(MAP,"r") as f:
 				appmap=json.loads(f.read())
@@ -152,64 +231,39 @@ class eduHelper():
 
 	def _appToRebost(self,eduapp,getDetail=False):
 		rebostPkg=rebostHelper.rebostPkg()
-		pkgname=eduapp["app"]
-		if pkgname in self.appmap:
-			if pkgname!=self.appmap[pkgname]:
-				rebostPkg["alias"]=self.appmap[pkgname]
-		appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
-		rebostPkg["homepage"]=appUrl
-		rebostPkg["name"]=pkgname.rstrip("-2")
+		pkgname=eduapp.get("app","").strip()
+		if len(pkgname)==0:
+			pkgname=eduapp["app"]
+		 #if pkgname in self.appmap:
+		 #	if pkgname!=self.appmap[pkgname]:
+				#rebostPkg["alias"]=self.appmap[pkgname]
+		#appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),pkgname)
+		rebostPkg["infopage"]=eduapp["infopage"]
+		rebostPkg["name"]=pkgname
 		rebostPkg["pkgname"]=pkgname
 		rebostPkg["id"]="gva.appsedu.{}".format(pkgname)
-		rebostPkg["bundle"]={"eduapp":pkgname}
+		rebostPkg["bundle"]={"eduapp":eduapp["infopage"]}
 		rebostPkg["icon"]=eduapp["icon"]
+		rebostPkg["categories"]=eduapp["categories"]
 		if eduapp["auth"].lower().startswith("autori")==False:
 			self._debug("Set {} as Forbidden".format(pkgname))
 			rebostPkg["categories"].insert(0,"Forbidden")
 			rebostPkg['summary']=eduapp["auth"]
 		if getDetail==True:
-			appUrl=os.path.join("/".join(EDUAPPS_URL.split("/")[:-2]),eduapp)
-			rawcontent=self._fetchCatalogue(appUrl)
-			bscontent=bs(rawcontent,"html.parser")
-			b=bscontent.find_all("div","entry-content")
-			for i in b:
-				img=i.find("img")
-				if img:
-					rebostPkg["icon"]=img["src"]
-				rel=i.find("div","acf-view__versio-field acf-view__field")
-				if rel:
-					rebostPkg["versions"]={"eduapp":rel.text.strip()}
-					#rebostPkg["icon"]=img["src"]
-				desc=i.find("div","acf-view__descripcio-field acf-view__field")
-				if desc:
-					rebostPkg["description"]=desc.text.strip()
-					rebostPkg['summary']+=rebostPkg["description"].split(".")[0]
-				homepage=i.find("div","acf-view__url_editor-link acf-view__link")
-				if homepage:
-					print("Homepage: {}".format(homepage.text.strip()))
-					rebostPkg["homepage"]=homepage.text.strip()
-				auth=i.find("div","acf-view__estat_val-choice acf-view__choice")
-				if auth:
-					print("Auth: {}".format(auth.text.strip()))
-				reject=i.find("div","acf-view__motiu_de_no_autoritzacio_val-choice acf-view__choice")
-				if reject:
-					print("Rejected by: {}".format(reject.text.strip()))
-					rebostPkg["description"]+="****{}".format(reject.text.strip())
-					rebostPkg["bundle"]={"eduapp":"banned"}
-				cats=i.find("div","acf-view__categoria_val-choice acf-view__choice")
-				if cats:
-					print("Cats: {}".format(cats.text.strip()))
-					rebostPkg["categories"]=cats.text.strip().split()
-
-				#Without use
-				groups=i.find("acf-view__usuaris_autoritzats_val-choice acf-view__choice")
-				ident=i.find("acf-view__identitat_val-choice acf-view__choice")
-				ambit=i.find("div","acf-view__ambit_educatiu_val-label acf-view__label")
-			rebostPkg['description']=rebostHelper._sanitizeString(rebostPkg['description'],unescape=True)
-			rebostPkg['summary']=rebostHelper._sanitizeString(rebostPkg['summary'])
-			rebostPkg['name']=rebostHelper._sanitizeString(rebostPkg['name'])
+				rebostPkg=self.fillData(rebostPkg)
+		#Try to map alias to a real package
+		rebostPkg["alias"]=self._getRealPkgForZeroAlias(eduapp["alias"],pkgname)
 		return(rebostPkg)
-	#def _getAppDetail(self,eduapp):
+	#def _appToRebost
+
+	def _getRealPkgForZeroAlias(self,alias,pkgname):
+		realPkg=alias.replace("zero:","")
+		if realPkg.count(".")>=2:
+			realPkg=alias.split(".")[-1].lower()
+		elif realPkg=="":
+			realPkg="zero-lliurex-{}".format(pkgname.lower())
+		return realPkg
+	#def _getRealPkgForZeroAlias
 
 	def _fetchCatalogue(self,url=""):
 		if len(url)==0:
@@ -217,7 +271,7 @@ class eduHelper():
 		content=''
 		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req,timeout=10) as f:
+			with urllib.request.urlopen(req,timeout=2) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
 			print("Couldn't fetch {}".format(url))

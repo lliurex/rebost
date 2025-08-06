@@ -3,8 +3,8 @@ import sys,os,time
 import traceback
 import json
 import importlib
-import xml
-import yaml
+import xml.etree.ElementTree as ET
+import html
 import dbus
 import locale
 import concurrent.futures as Futures
@@ -18,7 +18,8 @@ DBG=True
 SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
 WRKDIR=os.path.join(os.environ["HOME"],".local","share","rebost")
 DBDIR=os.path.join(WRKDIR,"data")
-CACHEDB=os.path.join(os.environ["HOME"],".cache","rebost")
+CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
+CONFIG="/usr/share/rebost/rebost.conf"
 
 
 class _RebostCore():
@@ -27,7 +28,7 @@ class _RebostCore():
 		self.SCHEMES=SCHEMES
 		self.WRKDIR=WRKDIR
 		self.DBDIR=DBDIR
-		self.CACHEDB=CACHEDB
+		self.CACHE=CACHE
 		self.DBG=DBG
 		self.appstream=appstream
 		self.stores={}
@@ -37,7 +38,7 @@ class _RebostCore():
 		self.supportedformats=[]
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
-		self.config={}
+		self.config=self._readConfig()
 		localLangs=[locale.getlocale()[0].split("_")[0]]
 		localLangs.append("qcv") #Many years ago in a surrealistic universe someone believed that this was a good idea
 		if localLangs[0]=="ca":
@@ -56,6 +57,20 @@ class _RebostCore():
 		if self.dbg==True:
 			print("core: {}".format(msg))
 	#def _debug
+
+	def setConfigValue(self,key,value):
+		self.config.update({key:value})
+	#def setConfigValue
+
+	def _readConfig(self):
+		config={}
+		if os.path.isfile(CONFIG):
+			fcontent=""
+			with open(CONFIG,"r") as f:
+				fcontent=f.read()
+			config=json.loads(fcontent)
+		return(config)
+	#def _readConfig
 
 	def _importPlugin(self,modname):
 		plugin=None
@@ -111,11 +126,6 @@ class _RebostCore():
 		return(plugins)
 	#def _loadPlugins
 
-	def _chkTables(self):
-		self._debug("Checking tables...")	
-		self.plugins[100]["sqlengine"][0].chkDatabases()
-	#def _chkTables
-
 	def _toFile(self,store,fxml):
 		store.to_file(Gio.File.parse_name(fxml),appstream.NodeToXmlFlags.FORMAT_MULTILINE|appstream.NodeToXmlFlags.FORMAT_INDENT)
 	#def _toFile
@@ -126,12 +136,43 @@ class _RebostCore():
 			try:
 				with open(fxml,"r") as f:
 					fcontent=f.read()
-				#store.from_file(Gio.File.parse_name(fxml))
+				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
 				store.from_xml(fcontent)
 				self._debug("Added {} apps".format(len(store.get_apps())))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
-				print(e)
+				tree = ET.fromstring(fcontent)
+				r=tree.getroot()
+				for description in r.iter('description'):
+					txt=[]
+					for i in list(description):
+						desc=i.text
+						if isinstance(desc,str)==False:
+							desc=""
+						description.remove(i)
+						txt.append(desc.strip())
+					text=html.escape("{}".format(txt))
+					desc="<p>{}</p>".format(text)
+					try:
+						elem=ET.fromstring(desc)
+					except Exception as e:
+						self._debug(e)
+						print(traceback.format_exc())
+					description.append(elem)
+				os.unlink(fxml)
+				tree.write(fxml,xml_declaration="1.0",encoding="UTF-8")
+				self._debug("Updated {}".format(fxml))
+				try:
+					with open(fxml,"r") as f:
+						fcontent=f.read()
+					store.from_xml(fcontent)
+					self._debug("Added {} apps".format(len(store.get_apps())))
+				except Exception as e:
+					self._debug("Error fixing. Requires user intervention")
+					self._debug(e)
+					print(traceback.format_exc())
+		else:
+			self._debug("{} not found".format(fxml))
 		return(store)
 	#def _fromFile
 
@@ -167,11 +208,12 @@ class _RebostCore():
 
 	def _mergeApps(self):
 		self._debug("Filling work table")
+		mergedStore=appstream.Store()
 		if self.config.get("restrictTable","")!="":
 			self.stores["main"]=self.stores["restricted"]
 		try:
 			for storeId in self.stores.keys():
-				print("Process {}".format(storeId))
+				self._debug("Process {}".format(storeId))
 				if isinstance(storeId,int):
 					for app in self.stores[storeId].get_apps():
 						mergeApp=self._preMergeApp(app)
@@ -179,17 +221,18 @@ class _RebostCore():
 						if oldApp!=None:
 							self.stores["main"].remove_app(app)
 							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
-						self.stores["main"].add_app(mergeApp)
+						mergedStore.add_app(mergeApp)
+			self.stores["main"]=mergedStore
 		except Exception as e:
-			print(e)
+			self._debug(e)
 			print(traceback.format_exc())
-		fxml=os.path.join(CACHEDB,"main.xml")
+		fxml=os.path.join(CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
-			print(e)
-		self._debug("Work table ready. Fast mode enabled")
-		self.ready=True
+			self._debug(e)
+			print(traceback.format_exc())
+		self._debug("Work table ready. Rebost is fully operative")
 	#def _mergeApps
 
 	def _callBackInit(self,*args,**kwargs):
@@ -202,11 +245,13 @@ class _RebostCore():
 			self.stores.update({storeId:store})
 		self.initProc-=1
 		partial=0
-		for k in self.stores.keys():
+		stores=self.stores.copy()
+		for k in stores.keys():
 			if isinstance(k,int):
-				partial+=len(self.stores[k].get_apps())
+				partial+=len(stores[k].get_apps())
 		self._debug("Apps in store: {} Init({})".format(partial,self.initProc))
 		if self.initProc==0:
+			self._debug("Appstream tables ready. Rebost core operative")
 			self.thExecutor.submit(self._mergeApps)
 	#def _callBackInit(self,*args,**kwargs):
 
@@ -225,7 +270,14 @@ class _RebostCore():
 	#def _initEngines
 
 	def _initCore(self):
-		#self._chkTables()
+		fxml=os.path.join(CACHE,"main.xml")
+		try:
+			self.stores["main"]=self._fromFile(self.stores["main"],fxml)
+			self._debug("Cached store loaded. Rebost will update data now")
+		except Exception as e:
+			self._debug(e)
+			print(traceback.format_exc())
+		self.ready=True
 		self._initEngines()
 	#def _initCore
 #class _RebostCore

@@ -64,6 +64,13 @@ class engine:
 		return(srcDir)
 	#def _getFlatpakMetadata
 
+	def _addLanguages(self,flInst):
+		for installation in flInst:
+			if installation.get_is_user()==True:
+				installation.set_config_sync("languages","{}".format(self.core.langs[0]))
+				installation.set_config_sync("extra-languages","{}".format(";".join(self.core.langs[1:])))
+	#def _addLanguages
+
 	def _chkNeedUpdate(self,fappstream):
 		update=True
 		chash=""
@@ -83,6 +90,15 @@ class engine:
 			f.write(chash)
 		return(update)
 	#def _chkNeedUpdate
+
+	def _setAppsState(self,flInst,store):
+		installedRefs=[]
+		updatableRefs=[]
+		for installation in flInst:
+			installedRefs.extend(installation.list_installed_refs())
+			updatableRefs.extend(installation.list_installed_refs_for_update())
+		for ref in installedRefs:
+			print(ref.get_appdata_name())
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
@@ -104,10 +120,7 @@ class engine:
 		srcDir=self._getFlatpakMetadata(remotes)
 		if srcDir=='': #When initializing for first time metada needs a reload
 			srcDir=self._getFlatpakMetadata(remotes)
-		for installation in flInst:
-			if installation.get_is_user()==True:
-				installation.set_config_sync("languages","{}".format(self.core.langs[0]))
-				installation.set_config_sync("extra-languages","{}".format(";".join(self.core.langs[1:])))
+		self._addLanguages(flInst)
 		self._debug("Loading flatpak metadata from file at {}".format(srcDir))
 		fxml=os.path.join(self.cache,"flatpak.xml")
 		fappstream=os.path.join(srcDir,"appstream.xml")
@@ -116,6 +129,7 @@ class engine:
 			store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
 			store.from_file(Gio.File.parse_name(fappstream))
+			self._setAppsState(flInst,store)
 			self.core._toFile(store,fxml)
 			self._debug("End loading flatpak metadata")
 		return(store)

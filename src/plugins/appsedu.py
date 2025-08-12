@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os,shutil,stat
-import json
+import json,time
 import urllib
 from urllib.request import Request
 from urllib.request import urlretrieve
@@ -70,6 +70,7 @@ class engine:
 
 	def _getAppseduMapFixes(self):
 		mapFixes={"nodisplay":[],"alias":{}}
+		jcontent={}
 		if os.path.exists(EDUAPPS_MAP):
 			with open(EDUAPPS_MAP,"r") as f:
 				mapFixes=json.loads(f.read())
@@ -198,16 +199,19 @@ class engine:
 
 	def _processApp(self,eduapp):
 		app=self.core.appstream.App()
+		app.set_trust_flags(self.core.appstream.AppTrustFlags.COMPLETE)
+		app.set_source_kind(self.core.appstream.FormatKind.UNKNOWN)
+		app.set_kind(self.core.appstream.AppKind.DESKTOP)
 		pkgname=eduapp.get("app","").strip()
 		if len(pkgname)==0:
 			pkgname=eduapp["app"]
-		app.set_id("gva.appsedu.{}".format(pkgname))
+		app.set_id(pkgname)
 		app.add_pkgname(pkgname)
 		for l in self.core.langs:
 			app.set_name(l,pkgname)
 			app.set_comment(l,eduapp["auth"])
 			app.set_description(l,eduapp["auth"])
-		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,eduapp["infopage"])
+		#Icon
 		icn=eduapp["icon"]
 		if len(icn)>0:
 			appicon=self.core.appstream.Icon()
@@ -217,15 +221,28 @@ class engine:
 			app.add_icon(appicon)
 		for cat in eduapp["categories"]:
 			app.add_category(cat)
+		#Status
 		if eduapp["auth"].lower().startswith("autori")==False:
 			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
+			app.set_state(self.core.appstream.AppState.UNAVAILABLE)
 		else:
-			app.add_quirk(self.core.appstream.AppQuirk.DEVELOPER_VERIFIED)
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+		#Release
+		release="Appsedu"
+		apprelease=self.core.appstream.Release()
+		apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,1000)
+		apprelease.set_timestamp(int(time.time()))
+		apprelease.set_version(release)
+		app.add_release(apprelease)
+		app.set_origin("appsedu")
+		#URLs
+		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,eduapp["infopage"])
 		return(app)
 	#def _processApp
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
+		store.set_version("1.0.4")
 		eduApps=self._getAppsEduCatalogue()
 		rawcontent=self._getRawContent()
 		fxml=os.path.join(self.cache,"appsedu.xml")

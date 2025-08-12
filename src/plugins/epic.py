@@ -85,20 +85,13 @@ class engine:
 					appicon.set_name(os.path.basename(icn))
 					appicon.set_file(os.path.join(customIconPath,customIcon))
 					app.add_icon(icn)
-				#if epiInfo[pkg["name"]]['status']=="installed":
-				#	state="0"
 				bun=self.core.appstream.Bundle()
-				epiType=epiInfo[pkg["name"]].get("type","apt")
-				if epiType=="apt":
-					bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
-				elif epiType=="flatpak":
-					bun.set_kind(self.core.appstream.BundleKind.FLATPAK)
-				elif epiType=="snap":
-					bun.set_kind(self.core.appstream.BundleKind.SNAP)
-				elif epiType=="appimage":
-					bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
-				bun.set_id(app.get_pkgname_default())
+				bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+				bun.set_id(epiName)
 				app.add_bundle(bun)
+				app.add_keyword("C",epiData["zomando"])
+				for keyword in epiData["zomando"].split("-"):
+					app.add_keyword("C",keyword)
 				apps.append(app)
 		else:
 			print("No packages found for {}".format(fname))
@@ -126,10 +119,21 @@ class engine:
 					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
 					bun.set_id(fname)
 					app.add_bundle(bun)
+					app.add_keyword("C",fname)
+					app.set_state(self.core.appstream.AppState.INSTALLED)
 					icn=self._getIcon(name)
 					if icn!=None:
 						app.add_icon(icn)
-					apps.extend(self._getIncludedApps(epiName,epiData))
+					includedApps=self._getIncludedApps(epiName,epiData)
+					for includedApp in includedApps:
+						apps.append(includedApp)
+						app.add_keyword("C",includedApp.get_id())
+					apprelease=self.core.appstream.Release()
+					apprelease.set_version("1.0")
+					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+					app.add_metadata("X-REBOST-zomando",apprelease.state_to_string(self.core.appstream.ReleaseState.INSTALLED))
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+					app.add_release(apprelease)
 					apps.append(app)
 		return(apps)
 	#def _getAppsFromEpic
@@ -175,11 +179,12 @@ class engine:
 		if len(store.get_apps())==0:
 			store.add_apps(self._getAppsFromEpic(epicList))
 			for pkg in apps:
-				pkgId=pkg.get_id().split(";")
-				name=pkgId[0]
-				release=pkgId[1]
-				origin=pkgId[2]
-				arch=pkgId[3]
+				pkgId=pkg.get_id()
+				pkgIdArray=pkgId.split(";")
+				name=pkgIdArray[0]
+				release=pkgIdArray[1]
+				origin=pkgIdArray[2]
+				arch=pkgIdArray[3]
 				if name.startswith("zero"):
 					if not "lliurex" in name.lower() and not "installer" in name.lower():
 						continue
@@ -193,10 +198,15 @@ class engine:
 						app.set_comment("C",summary)
 						app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 						store.add_app(app)
+					if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
+						app.set_state(self.core.appstream.AppState.INSTALLED)
+					else:
+						app.set_state(self.core.appstream.AppState.AVAILABLE)
 					bun=self.core.appstream.Bundle()
 					bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 					bun.set_id(name)
 					app.add_bundle(bun)
 			self.core._toFile(store,fxml)
+		app=store.get_app_by_id("zero-lliurex-wine64")
 		return(store)
 	#def getAppstreamData

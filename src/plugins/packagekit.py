@@ -29,10 +29,101 @@ class engine:
 
 	def _loadCatalogue(self,pk):
 		self._debug("Getting pkg list")
-		flags=packagekit.FilterEnum.GUI
+		apps=[]
+		appsRevoked=[]
+		pkgSacks=[]
+		pkgIds=[]
+		flags=packagekit.FilterEnum.NONE
 		pkList=pk.get_packages(flags, None, self._loadCallback, None)
-		pkgSack=pkList.get_package_sack()
-		return (pkgSack)
+		pkgSacks.append(pkList.get_package_sack())
+		for pkgSack in pkgSacks:
+			pkgSackIds=pkgSack.get_ids()
+			for ids in pkgSackIds:
+				if ids.startswith("auto"):
+					continue
+				if ids.startswith("gdc"):
+					continue
+				if ids.startswith("gfortran"):
+					continue
+				if ids.startswith("git"):
+					continue
+				if ids.startswith("gm2"):
+					continue
+				if ids.startswith("gnat"):
+					continue
+				if ids.startswith("gobjc"):
+					continue
+				if ids.startswith("golang"):
+					continue
+				if ids.startswith("google"):
+					continue
+				if ids.startswith("grub"):
+					continue
+				if ids.startswith("kf6"):
+					continue
+				if ids.startswith("lib"):
+					continue
+				if ids.startswith("linux"):
+					continue
+				if ids.startswith("ll"):
+					continue
+				if ids.startswith("mono"):
+					continue
+				if ids.startswith("nvidia"):
+					continue
+				if ids.startswith("ocam"):
+					continue
+				if ids.startswith("python"):
+					continue
+				if ids.startswith("qml-"):
+					continue
+				if ids.startswith("qml6"):
+					continue
+				if ids.startswith("qt6"):
+					continue
+				if ids.startswith("rust"):
+					continue
+				if ids.startswith("update"):
+					continue
+				if ids.startswith("vala"):
+					continue
+				if ids.startswith("x11"):
+					continue
+				if ids.startswith("xdg"):
+					continue
+				if ids.startswith("xorg"):
+					continue
+				if ids.startswith("xserver"):
+					continue
+				if "account" in ids:
+					continue
+				if "-dbg" in ids:
+					continue
+				if "-dev" in ids:
+					continue
+				if "-data" in ids:
+					continue
+				if "make" in ids:
+					continue
+				if "-tools" in ids:
+					continue
+				if "ubuntu" in ids.split(";")[0]:
+					continue
+				if "wayland" in ids:
+					continue
+				pkgIds.append(ids)
+	#	pkgFiles=pk.get_files(pkgIds,None,self._loadCallback,None)
+	#	pkgFilesArray=pkgFiles.get_files_array()
+	#	for fpkg in pkgFilesArray:
+	#		fpkgList=str(fpkg.get_files())
+	#		if not ".desktop" in fpkgList: #If no desktop then no app
+	#			appsRevoked.append(fpkg.get_package_id())
+	#			continue
+	#		elif  "/autostart" in fpkgList: #If autostart then most probably isn't an end user app
+	#			appsRevoked.append(fpkg.get_package_id())
+		candidates=list(set(pkgIds))#-set(appsRevoked))
+		candidates.sort()
+		return(candidates)
 	#def _loadCatalogue
 
 	def _chkNeedUpdate(self,pklist):
@@ -52,9 +143,20 @@ class engine:
 		return(update)
 	#def _chkNeedUpdate
 
-	def _processPackages(self,pk,pklist):
+	def _sectionMap(self,section):
+		section=section.replace("desktop-","")
+		sectionMap={"admin":"", "cli-mono":"", "comm":"", "database":"", "debug":"", "devel":"", "doc":"", "editors":"", "education":"Education",
+					"electronics":"Electronics", "embedded":"", "fonts":"", "games":"Games", "gnome":"", "gnu-r":"", "gnustep":"", "graphics":"", 
+					"hamradio":"", "haskell":"", "httpd":"", "interpreters":"", "introspection":"", "java":"", "javascript":"", 
+					"kde":"", "kernel":"", "internet":"Network","libdevel":"", "libs":"", "lisp":"", "localization":"", "mail":"", "math":"Math", "metapackages":"", 
+					"misc":"", "net":"", "news":"", "ocaml":"", "oldlibs":"", "otherosfs":"", "perl":"", "php":"", "python":"", 
+					"ruby":"", "rust":"", "science":"Science", "shells":"TerminalEmulator", "sound":"Audio", "tasks":"", "tex":"", "text":"", "utils":"", 
+					"vcs":"", "video":"Video", "web":"", "x11":"", "xfce":"", "zope":""}
+		return(sectionMap.get(section,""))
+	#def _sectionMap
+
+	def _processPackages(self,pk,pkgIds):
 		apps=[]
-		pkgIds=pklist.get_ids()
 		pkgDetails=[]
 		pkgCount=0
 		inc=5200
@@ -72,17 +174,22 @@ class engine:
 			details=pkDetails.get_details_array()
 			for detail in details:
 				app=self.core.appstream.App()
+				app.set_trust_flags(self.core.appstream.AppTrustFlags.COMPLETE) #Needed for metadata export
+				app.set_source_kind(self.core.appstream.FormatKind.UNKNOWN) #Needed for relase state
+				app.set_kind(self.core.appstream.AppKind.DESKTOP)
+				pkgId=detail.get_package_id()
 				desc=html.escape(detail.get_description().strip())
-				summary=detail.get_description().split("\n")[0]
-				pkgId=detail.get_package_id().split(";")
-				name=pkgId[0]
-				release=pkgId[1]
-				origin=pkgId[2]
-				arch=pkgId[3]
-				cat=detail.get_group().to_string(detail.get_group()).lower()
-				if len(pkgId)>4:
-					installed=True
+				summary=html.escape(detail.get_summary().strip())
+				pkgIdArray=pkgId.split(";")
+				name=pkgIdArray[0]
+				release=pkgIdArray[1]
+				origin=pkgIdArray[2]
+				arch=pkgIdArray[3]
 				app.set_id(name)
+				cat=self._sectionMap(detail.get_group().to_string(detail.get_group()).lower())
+				if cat=="":
+					continue
+				app.add_category(cat)
 				app.add_pkgname(name)
 				for l in self.core.langs:
 					app.set_name(l,name)
@@ -94,10 +201,18 @@ class engine:
 				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 				bun.set_id(name)
 				app.add_bundle(bun)
+				app.set_metadata_license("CC0-1.0")
 				apprelease=self.core.appstream.Release()
 				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,detail.get_size())
 				apprelease.set_version(release)
+				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
+					app.add_metadata("X-REBOST-package","installed")
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+				else:
+					app.set_state(self.core.appstream.AppState.AVAILABLE)
 				app.add_release(apprelease)
+				app.set_origin(origin)
 				apps.append(app)
 			self._debug("End processing pkg list")
 			processed=total
@@ -111,12 +226,11 @@ class engine:
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
 		fxml=os.path.join(self.cache,"packagekit.xml")
-		pk=packagekit.Client()
-		pkglist=self._loadCatalogue(pk)
-		if self._chkNeedUpdate(pkglist)==False:
-			self._debug("Loading from cache")
-			store=self.core._fromFile(store,fxml)
+		#if self._chkNeedUpdate(fxml)==False:
+		#	store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
+			pk=packagekit.Client()
+			pkglist=self._loadCatalogue(pk)
 			apps=self._processPackages(pk,pkglist)
 			store.add_apps(apps)
 			self.core._toFile(store,fxml)

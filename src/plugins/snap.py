@@ -3,10 +3,7 @@ import os,hashlib
 import html,html2text
 import gi
 from gi.repository import Gio
-try:
-	gi.require_version ('Snapd', '2')
-except:
-	gi.require_version ('Snapd', '1')
+gi.require_version ('Snapd', '2')
 from gi.repository import Snapd
 
 class engine:
@@ -100,9 +97,22 @@ class engine:
 				appimg.set_kind(self.core.appstream.ImageKind.SOURCE)
 			appimg.set_url(urlimg)
 			screenshots.add_image(appimg)
+		app.add_screenshot(screenshots)
 		for cat in self._getCategories(section):
 			app.add_category(cat)
-		app.add_screenshot(screenshots)
+		release=pkg.get_version()
+		apprelease=self.core.appstream.Release()
+		apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,pkg.get_download_size())
+		apprelease.set_version(release)
+		if pkg.get_status==Snapd.SnapStatus.INSTALLED:
+			app.add_metadata("X-REBOST-snap",release)
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		else:
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+		app.add_release(apprelease)
+		#URLs
+		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,pkg.get_store_url())
 		return(app)
 	#def _processSnap
 
@@ -111,29 +121,36 @@ class engine:
 		cont=0
 		for section,snaps in sectionSnaps.items():
 			cont+=len(snaps)
-		chash=str(cont)
-		frepo=os.path.join(self.cache,"snap")
-		if os.path.isfile(frepo):
-			fcontent=""
-			with open(frepo,'r') as f:
-				fhash=f.read()
-			if chash==fhash:
-				update=False
-			self._debug(fhash)
-		self._debug(chash)
-		with open(frepo,'w') as f:
-			f.write(chash)
+		if cont>0:
+			chash=str(cont)
+			frepo=os.path.join(self.cache,"snap")
+			if os.path.isfile(frepo):
+				fcontent=""
+				with open(frepo,'r') as f:
+					fhash=f.read()
+				if chash==fhash:
+					update=False
+				self._debug(fhash)
+			self._debug(chash)
+			with open(frepo,'w') as f:
+				f.write(chash)
 		return(update)
 	#def _chkNeedUpdate
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
-		sections=self.snap.get_sections_sync()
+		sections=[]
+		try:
+			sectionsSnap=self.snap.get_categories_sync()
+			sections=[sc.get_name() for sc in sectionsSnap]
+		except:
+			print("Connection seems down")
+
 		processed=[]
 		sectionSnaps={}
 		for section in sections:
 			try:
-				snaps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
+				snaps,curr=self.snap.find_category_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 			except Exception as e:
 				print(e)
 				continue

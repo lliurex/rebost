@@ -39,14 +39,12 @@ class _RebostCore():
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
 		self.config=self._readConfig()
-		localLangs=[locale.getlocale()[0].split("_")[0]]
-		localLangs.append("qcv") #Many years ago in a surrealistic universe someone believed that this was a good idea
-		if localLangs[0]=="ca":
-			localLangs.append("es")
-		elif localLangs[0]=="es":
-			localLangs.append("ca")
-		localLangs.append("en")
-		localLangs.append("C")
+		localLangs=[]
+		for localLang in locale.getlocale():
+			if "_" in localLang:
+				localLangs.append(localLang.split("_")[0])
+				localLangs.append(localLang.split("_")[-1].lower())
+		localLangs.insert(0,"C")
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
@@ -200,6 +198,7 @@ class _RebostCore():
 										continue
 								tmpId="{}.{}".format(tmpId,i)
 					newId=tmpId.strip().rstrip(".").lstrip(".")
+				newId=newId.lower().replace(".appimage","").split(".")[-1]
 			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
@@ -220,7 +219,7 @@ class _RebostCore():
 						oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
 						if oldApp!=None:
 							self.stores["main"].remove_app(app)
-							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
+							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
 						mergedStore.add_app(mergeApp)
 			self.stores["main"]=mergedStore
 		except Exception as e:
@@ -232,6 +231,7 @@ class _RebostCore():
 		except Exception as e:
 			self._debug(e)
 			print(traceback.format_exc())
+		self.ready=True
 		self._debug("Work table ready. Rebost is fully operative")
 	#def _mergeApps
 
@@ -241,8 +241,12 @@ class _RebostCore():
 		resultSet=args[0]
 		self._debug("State {}".format(resultSet.done()))
 		if resultSet.done():
-			store=resultSet.result()
-			self.stores.update({storeId:store})
+			if resultSet.exception():
+				print("Error {}".format(resultSet.exception()))
+				print(traceback.format_exc())
+			else:
+				store=resultSet.result()
+				self.stores.update({storeId:store})
 		self.initProc-=1
 		partial=0
 		stores=self.stores.copy()
@@ -269,15 +273,21 @@ class _RebostCore():
 						init.add_done_callback(self._callBackInit)
 	#def _initEngines
 
-	def _initCore(self):
+	def _loadFromCache(self):
 		fxml=os.path.join(CACHE,"main.xml")
 		try:
-			self.stores["main"]=self._fromFile(self.stores["main"],fxml)
-			self._debug("Cached store loaded. Rebost will update data now")
+			cacheStore=self._fromFile(self.stores["main"],fxml)
 		except Exception as e:
 			self._debug(e)
 			print(traceback.format_exc())
-		self.ready=True
+		if self.ready==False:
+			self.stores["main"]=cacheStore
+			self._debug("Cached store loaded. Rebost will update data now")
+			self.ready=True
+	#def _loadFromCache
+
+	def _initCore(self):
+		self.thExecutor.submit(self._loadFromCache)
 		self._initEngines()
 	#def _initCore
 #class _RebostCore

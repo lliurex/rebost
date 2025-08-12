@@ -73,7 +73,12 @@ class Rebost():
 			if int(time.time())-initTime>20:
 				break
 		if self.core.ready==True:
-			app=self.core.stores["main"].get_apps_by_id(show)
+			app=self.core.stores["main"].get_app_by_id_ignore_prefix(show)
+			for i in self.core.stores.keys():
+				if isinstance(i,int):
+					itapp=self.core.stores[i].get_app_by_id_ignore_prefix(show)
+					if itapp!=None:
+						print(itapp.get_state())
 		return(app)
 	#def _showApp
 
@@ -88,7 +93,6 @@ class Rebost():
 	def _getApps(self):
 		apps=[]
 		initTime=int(time.time())
-		self.core.ready=False
 		while self.core.ready==False:
 			time.sleep(0.01)
 			if int(time.time())-initTime>20:
@@ -104,3 +108,76 @@ class Rebost():
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
 	#def getApps
+
+	def _getCategories(self):
+		apps=[]
+		categories=[]
+		initTime=int(time.time())
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			cats=app.get_categories()
+			categories.extend(cats)
+			categories=list(set(categories))
+		return(categories)
+	#def _getCategories
+
+	def getCategories(self):
+		proc=self.thExecutor.submit(self._getCategories)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getCategories
+
+	def _getAppsPerCategory(self):
+		apps=[]
+		categoryapps={}
+		initTime=int(time.time())
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			cats=app.get_categories()
+			for cat in cats:
+				if not cat in categoryapps.keys():
+					categoryapps[cat]=[]
+				categoryapps[cat].append(app)
+		return(categoryapps)
+	#def _getAppsPerCategory
+
+	def getAppsPerCategories(self):
+		proc=self.thExecutor.submit(self._getAppsPerCategory)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getAppsPerCategories
+
+	def _getInstalledApps(self):
+		apps=[]
+		installed=[]
+		initTime=int(time.time())
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			if app.get_state()==appstream.AppState.INSTALLED:
+				installed.append(app)
+		return(installed)
+	#def _getInstalledApps
+
+	def getInstalledApps(self):
+		proc=self.thExecutor.submit(self._getInstalledApps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getAppsPerCategory

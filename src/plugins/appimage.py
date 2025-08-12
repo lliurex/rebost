@@ -204,13 +204,14 @@ class engine:
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
 		for repo in self.repositories:
+			fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
 			try:
 				repo_raw=self._fetchRepo(repo)
 				jrepo=json.loads(repo_raw)
 			except Exception as e:
 				print("Error in {}: {}".format(repo,e))
+				store=self.core._fromFile(store,fxml)
 			else:
-				fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
 				if self._chkUpdateNeeded(repo,jrepo)==False:
 					self._debug("Loading from cache")
 					store=self.core._fromFile(store,fxml)

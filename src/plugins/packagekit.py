@@ -180,6 +180,8 @@ class engine:
 				pkgId=detail.get_package_id()
 				desc=html.escape(detail.get_description().strip())
 				summary=html.escape(detail.get_summary().strip())
+				if "transitional" in summary.lower() or "transitional" in desc.lower():
+					continue
 				pkgIdArray=pkgId.split(";")
 				name=pkgIdArray[0]
 				release=pkgIdArray[1]
@@ -191,12 +193,11 @@ class engine:
 					continue
 				app.add_category(cat)
 				app.add_pkgname(name)
-				for l in self.core.langs:
-					app.set_name(l,name)
-					app.set_comment(l,summary)
-					app.set_description(l,desc)
-					app.add_keyword(l,cat)
-					app.add_keyword(l,name)
+				app.set_name("C",name)
+				app.set_comment("C",summary)
+				app.set_description("C",desc)
+				app.add_keyword("C",cat)
+				app.add_keyword("C",name)
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 				bun.set_id(name)

@@ -48,6 +48,7 @@ class _RebostCore():
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
+		print(self.plugins)
 		self._initCore()
 	#def __init__
 
@@ -67,6 +68,7 @@ class _RebostCore():
 			with open(CONFIG,"r") as f:
 				fcontent=f.read()
 			config=json.loads(fcontent)
+		print(config)
 		return(config)
 	#def _readConfig
 
@@ -262,6 +264,12 @@ class _RebostCore():
 	def _initEngines(self):
 		priorities=list(self.plugins.keys())
 		priorities.sort()
+		if self.config.get("verifiedProvider","")!="":
+			if self.config.get("onlyVerified",False)==True:
+				print("\n******************************************************")
+				print("************* RESTRICTED MODE ENABLED ****************")
+				print(self.plugins)
+				print("******************************************************\n")
 		for priority in priorities:
 			pluginfo=self.plugins[priority]
 			for plugkey,plugmod in pluginfo.items():

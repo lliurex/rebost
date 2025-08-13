@@ -33,6 +33,32 @@ class Rebost():
 		self.resultQueue[resultSet.arg]=resultSet
 	#def _actionCallback
 
+	def _getFreedesktopCategories(self):
+		#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
+		result={"AudioVideo":["DiscBurning"],
+			"Audio":["Midi","Mixer","Sequencer","Tuner","Recorder","Player"],
+			"Video":["AudioVideoEditing","Player","Recorder","TV"],
+			"Development":["Building","Debugger","IDE","GUIDesigner","Profiling","RevisionControl","Translation","Database","ProjectManagement","WebDevelopment"],
+			"Education":["Art","Construction","Music","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","ImageProcessing","Literature","Maps","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","Spirituality","Sports","ParallelComputing"],
+			"Game":["ActionGame","AdventureGame","ArcadeGame","BoardGame","BlocksGame","CardGame","Emulator","KidsGame","LogicGame","RolePlaying","Shooter","Simulation","SportsGame","StrategyGame","LauncherStore"],
+			"Graphics":["2DGraphics","VectorGraphics","RasterGraphics","3DGraphics","Scanning","OCR","Photography","Publishing","Viewer"],
+			"Network":["Email","Dialup","InstantMessaging","Chat","IRCCLient","Feed","FileTransfer","HamRadio","News","P2P","RemoteAcces","Telephony","TelephonyTools","VideoConference","WebBrowser","WebDevelopment"],
+			"Office":["Calendar","ContactManagement","Database","Dictionary","Chart","Email","Finance","FlowChart","PDA","ProjectManagement","Presentation","Spreadsheet","WordProcessor","Photography","Publishing","Viewer"],
+			"Science":["Construction","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","Literature","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","ParallelComputing"],
+			"Settings":["Security","Accessibility"],
+			"System":["Security","Emulator","FileTools","FileManager","TerminalEmulator","FileSystem","Monitor"],
+			"Utility":["TextTools","TelephonyTools","Maps","Archiving","Compression","FileTools","Accessibility","Calculator","Clock","TextEditor"]
+			}
+		return(result)
+	#def _getFreedesktopCategories
+
+	def getFreedesktopCategories(self):
+		proc=self.thExecutor.submit(self._getFreedesktopCategories)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getFreedesktopCategories
+
 	def _searchApp(self,search):
 		result={}
 		initTime=int(time.time())
@@ -152,7 +178,7 @@ class Rebost():
 		return(categoryapps)
 	#def _getAppsPerCategory
 
-	def getAppsPerCategories(self):
+	def getAppsPerCategory(self):
 		proc=self.thExecutor.submit(self._getAppsPerCategory)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)

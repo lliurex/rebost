@@ -72,10 +72,9 @@ class engine:
 		htmlparser.unicode_snob=True
 		desc=html.escape(htmlparser.handle(pkg.get_description()).replace("\n","").strip()).replace(":"," - ")
 		summary=html.escape(htmlparser.handle(pkg.get_summary()).replace("\n","").strip()).replace(":"," - ")
-		for l in self.core.langs:
-			app.set_name(l,name)
-			app.set_comment(l,summary)
-			app.set_description(l,desc)
+		app.set_name("C",name)
+		app.set_comment("C",summary)
+		app.set_description("C",desc)
 		icn=pkg.get_icon()
 		if icn!=None:
 			appicon=self.core.appstream.Icon()

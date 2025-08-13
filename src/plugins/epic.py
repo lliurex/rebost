@@ -120,6 +120,8 @@ class engine:
 					bun.set_id(fname)
 					app.add_bundle(bun)
 					app.add_keyword("C",fname)
+					app.add_keyword("C","zomando")
+					app.add_keyword("C","zomandos")
 					app.set_state(self.core.appstream.AppState.INSTALLED)
 					icn=self._getIcon(name)
 					if icn!=None:

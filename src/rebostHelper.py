@@ -134,21 +134,34 @@ def _getScreenshotsFromAppstream(app):
 def _appstreamAppToRebost(app):
 	pkg={"bundle":{},"versions":[],"status":{}}
 	pkg['id']=app.get_id().lower()
-	pkg['name']=app.get_name()
+	tmpSummary=""
+	tmpDescription=""
+	tmpName=None
+	localLangs=LOCAL_LANGS[1:]
+	if "ca" in localLangs:
+		idx=localLangs.index("ca")
+		localLangs.insert(idx,"qcv")
+		localLangs.insert(idx,"ca-valencia")
+	localLangs.append(LOCAL_LANGS[0])
+	for lang in localLangs:
+		if tmpName==None:
+			tmpName=app.get_name(lang)
+		if tmpSummary=="":
+			if isinstance(app.get_comment(lang),str)==True:
+				tmpSummary=app.get_comment(lang)
+		if tmpDescription=="":
+			if isinstance(app.get_description(lang),str)==True:
+				tmpDescription=app.get_description(lang)
+		if tmpSummary!="" and tmpDescription!="" and tmpName!=None:
+			break
+	pkg["name"]=tmpName
+	pkg["description"]=tmpDescription
+	pkg["summary"]=tmpSummary
 	if app.get_pkgname_default():
 		pkg['pkgname']=app.get_pkgname_default()
 	else:
 		pkg['pkgname']=pkg['name']
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
-	tmpSummary=""
-	tmpDescription=""
-	for lang in LOCAL_LANGS:
-			if tmpSummary=="":
-				if isinstance(app.get_comment(lang),str)==True:
-					tmpSummary=app.get_comment(lang)
-			if tmpDescription=="":
-				if isinstance(app.get_description(lang),str)==True:
-					tmpDescription=app.get_description(lang)
 	pkg['icon']=_getIconFromAppstream(app)
 	#if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
 	#	pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])

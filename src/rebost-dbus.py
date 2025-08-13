@@ -63,6 +63,14 @@ class rebostDbusMethods(dbus.service.Object):
 	#def storeUpdated
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='a{sas}')
+	def getFreedesktopCategories(self):
+		ret=self.rebost.getFreedesktopCategories()
+		resultList=ret.result()
+		return (resultList)
+	#def getFreedesktopCategories
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='as')
 	def getCategories(self):
 		ret=self.rebost.getCategories()
@@ -72,20 +80,20 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='v')
-	def getAppsPerCategories(self):
+	def getAppsPerCategory(self):
 		ret=self.rebost.getAppsPerCategories()
 		resultDict=ret.result()
 		getResult={}
 		for cat,apps in resultDict.items():
 			getRebostApps=rebostHelper.appstreamToRebost(apps)
 			getResult[cat]=getRebostApps
-		return(json.dumps(getResult))
+		return(getResult)
 	#def search
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='v')
-	def getAppsPerCategory(self,category):
-		ret=self.rebost.getAppsPerCategories()
+						 in_signature='s', out_signature='s')
+	def getAppsInCategory(self,category):
+		ret=self.rebost.getAppsPerCategory()
 		resultDict=ret.result()
 		getResult={}
 		getRebostApps=rebostHelper.appstreamToRebost(resultDict.get(category,[]))

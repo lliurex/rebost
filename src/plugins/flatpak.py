@@ -92,13 +92,30 @@ class engine:
 	#def _chkNeedUpdate
 
 	def _setAppsState(self,flInst,store):
-		installedRefs=[]
+		installedRefs={}
+		installedRefsArray=[]
 		updatableRefs=[]
 		for installation in flInst:
-			installedRefs.extend(installation.list_installed_refs())
+			installedRefsArray.extend(installation.list_installed_refs())
 			updatableRefs.extend(installation.list_installed_refs_for_update())
-		for ref in installedRefs:
-			print(ref.get_appdata_name())
+		for ref in installedRefsArray:
+			installedRefs[ref.get_appdata_name()]=ref.getappdata_version()
+		for app in store.get_apps():
+			if app.get_name() in installedRefs:
+				state="installed"
+				release=installedRefs[app.get_name()]
+			else:
+				state="available"
+				release="unknown"
+				releaseApp=app.get_release_default()
+				if releaseApp!=None:
+					release=releaseApp.get_version()
+				else:
+					for r in app.get_releases():
+						release=r.get_version()
+						break
+			app.add_metadata("X-REBOST-flatpak","{};{}".format(release,state))
+	#def _setAppsState
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()

@@ -178,8 +178,8 @@ class engine:
 				app.set_source_kind(self.core.appstream.FormatKind.UNKNOWN) #Needed for relase state
 				app.set_kind(self.core.appstream.AppKind.DESKTOP)
 				pkgId=detail.get_package_id()
-				desc=html.escape(detail.get_description().strip())
-				summary=html.escape(detail.get_summary().strip())
+				desc=self.core.appstream.markup_import(detail.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
+				summary=self.core.appstream.markup_import(detail.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 				if "transitional" in summary.lower() or "transitional" in desc.lower():
 					continue
 				pkgIdArray=pkgId.split(";")
@@ -207,11 +207,13 @@ class engine:
 				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,detail.get_size())
 				apprelease.set_version(release)
 				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
-					app.add_metadata("X-REBOST-package","installed")
+					status="installed"
 					app.set_state(self.core.appstream.AppState.INSTALLED)
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 				else:
+					status="available"
 					app.set_state(self.core.appstream.AppState.AVAILABLE)
+				app.add_metadata("X-REBOST-package","{};{}".format(release,status))
 				app.add_release(apprelease)
 				app.set_origin(origin)
 				apps.append(app)

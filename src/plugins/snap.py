@@ -70,8 +70,8 @@ class engine:
 		htmlparser=html2text.HTML2Text()
 		htmlparser.scape_snob=True
 		htmlparser.unicode_snob=True
-		desc=html.escape(htmlparser.handle(pkg.get_description()).replace("\n","").strip()).replace(":"," - ")
-		summary=html.escape(htmlparser.handle(pkg.get_summary()).replace("\n","").strip()).replace(":"," - ")
+		desc=self.core.appstream.markup_import(pkg.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
+		summary=self.core.appstream.markup_import(pkg.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 		app.set_name("C",name)
 		app.set_comment("C",summary)
 		app.set_description("C",desc)
@@ -104,11 +104,13 @@ class engine:
 		apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,pkg.get_download_size())
 		apprelease.set_version(release)
 		if pkg.get_status==Snapd.SnapStatus.INSTALLED:
-			app.add_metadata("X-REBOST-snap",release)
+			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)
 			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 		else:
+			status="available"
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
+		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
 		app.add_release(apprelease)
 		#URLs
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,pkg.get_store_url())

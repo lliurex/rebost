@@ -133,7 +133,6 @@ class engine:
 					apprelease=self.core.appstream.Release()
 					apprelease.set_version("1.0")
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
-					app.add_metadata("X-REBOST-zomando",apprelease.state_to_string(self.core.appstream.ReleaseState.INSTALLED))
 					app.set_state(self.core.appstream.AppState.INSTALLED)
 					app.add_release(apprelease)
 					apps.append(app)
@@ -204,6 +203,7 @@ class engine:
 						app.set_state(self.core.appstream.AppState.INSTALLED)
 					else:
 						app.set_state(self.core.appstream.AppState.AVAILABLE)
+					app.add_metadata("X-REBOST-zomando","{};{}".format("zomando","installed"))
 					bun=self.core.appstream.Bundle()
 					bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 					bun.set_id(name)

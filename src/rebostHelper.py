@@ -96,24 +96,24 @@ def _setDetailFromAppstream(app,pkg):
 	versionArray=[]
 	for release in app.get_releases():
 		versionArray.append(release.get_version())
+	if len(versionArray)==0:
+		#There's no match
+		versionArray=["1.0~{}".format(distro.codename())]
+	versionArray.sort()
 	if len(app.get_bundles())>0:
 		for bundle in app.get_bundles():
 			bundleKind=bundle.kind_to_string(bundle.get_kind())
 			if bundleKind==None:
 				bundleKind="unknown"
 			pkg["bundle"].update({bundleKind:bundle.get_id()})
-			pkg['versions']={}
+			pkg['versions']=versionArray
 			metadata=app.get_metadata()
 			if metadata!=None:
 				for key,data in metadata.items():
 					if key.startswith("X-REBOST-"):
 						mkey=key.replace("X-REBOST-","")
-						(release,status)=data.split(";")
-						if status=="installed":
-							pkg["status"].update({mkey:0})
-						else:
+						if data=="installed":
 							pkg["status"].update({mkey:1})
-						pkg["versions"].update({mkey:release})
 	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
 		print("FORBIDDEN!")
 		app.add_category("FORBIDDEN")

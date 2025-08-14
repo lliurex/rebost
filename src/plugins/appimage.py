@@ -109,17 +109,14 @@ class engine:
 				bun.set_id(japp.get("downloadlink1",""))
 				app.add_bundle(bun)
 				apprelease=self.core.appstream.Release()
-				release=japp.get("download_version1","unknown")
 				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,japp.get("downloadsize1",""))
-				apprelease.set_version(release)
+				apprelease.set_version(japp.get("download_version1"))
 				app.add_release(apprelease)
 				idname=app.get_name("C")
 				if idname.lower().endswith(".appimage"):
 					idname=".".join(idname.strip().split(".")[0:-1])
 				app.set_id("com.appimagehub.{}".format(idname.replace(" ","")))
 				#self._debug("Added {} - {}".format(name,app.get_pkgname_default()))
-				status="available"
-				app.add_metadata("X-REBOST-appimage","{};{}".format(release,status))
 				apps.append(app)
 		return(apps)
 	#def _getAppstreamFromDataField
@@ -135,10 +132,10 @@ class engine:
 			if name=="":
 				continue
 			app=self.core.appstream.App()
-			desc=self.core.appstream.markup_import(japp.get("description","").strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
+			desc=html.escape(htmlparser.handle(japp.get("description","")).replace("\n","").strip()).replace(":"," - ")
 			if len(desc)==0:
 				desc="Download 'n' run"
-			summary=self.core.appstream.markup_import(japp.get("summary",""),self.core.appstream.MarkupConvertFormat.SIMPLE).strip().replace("<p>","",).replace("</p>","")
+			summary=html.escape(htmlparser.handle(japp.get("summary","")).replace("\n","").strip())
 			if len(summary)==0:
 				summary="Appimage"
 			author=japp.get("authors",[{}])
@@ -184,21 +181,22 @@ class engine:
 		#	app.set_id("com.appimagehub.{}".format(app.get_pkgname_default()))
 			links=japp.get('links')
 			installerurl=''
-			release="unknown"
-			status="available"
+			version=""
 			while links:
 				link=links.pop(0)
 				if link.get('url') and link.get('type','').lower()=='download':
 					installerUrl=link['url']
 		#REM FIX RELEASES
-					if installerUrl.split('/')>2:
-						release=installerUrl.split('/')[-2]
+		#			if installerUrl.split('/')>2:
+		#				version=installerUrl.split('/')[-2]
+		#				rebostpkg['versions']['appimage']="{}".format(version)
+		#			else:
+		#				rebostpkg['versions']['appimage']="**"
 			bun=self.core.appstream.Bundle()
 			bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
 			bun.set_id(installerUrl)
 			app.add_bundle(bun)
 			app.set_id("io.github.{}".format(name.lower().replace(" ","")))
-			app.add_metadata("X-REBOST-appimage","{};{}".format(release,status))
 			apps.append(app)
 		return(apps)
 	#def _getAppstreamFromItemsField

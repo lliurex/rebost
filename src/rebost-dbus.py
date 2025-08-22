@@ -79,15 +79,15 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getCategories
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='v')
+						 in_signature='', out_signature='s')
 	def getAppsPerCategory(self):
-		ret=self.rebost.getAppsPerCategories()
+		ret=self.rebost.getAppsPerCategory()
 		resultDict=ret.result()
 		getResult={}
 		for cat,apps in resultDict.items():
 			getRebostApps=rebostHelper.appstreamToRebost(apps)
 			getResult[cat]=getRebostApps
-		return(getResult)
+		return(json.dumps(getResult))
 	#def search
 
 	@dbus.service.method("net.lliurex.rebost",
@@ -123,6 +123,16 @@ class rebostDbusMethods(dbus.service.Object):
 		for p in priority:
 			searchResult.extend(resultDict[p])
 		searchResult=rebostHelper.appstreamToRebost(searchResult)
+		return(json.dumps(searchResult))
+	#def search
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def searchAppByUrl(self,url):
+		kind=self.rebost.core.appstream.UrlKind.HOMEPAGE
+		ret=self.rebost.searchAppByUrl(url,kind)
+		resultList=ret.result()
+		searchResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(searchResult))
 	#def search
 

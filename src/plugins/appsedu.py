@@ -143,6 +143,7 @@ class engine:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
+					candidate=candidate.lower().replace("-lliurex","")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue
@@ -203,14 +204,16 @@ class engine:
 		app.set_source_kind(self.core.appstream.FormatKind.UNKNOWN)
 		app.set_kind(self.core.appstream.AppKind.DESKTOP)
 		pkgname=eduapp.get("app","").strip()
-		if len(pkgname)==0:
-			pkgname=eduapp["app"]
-		app.set_id(pkgname)
-		app.add_pkgname(pkgname)
+		aliasname=eduapp.get("alias","").strip()
+		if len(aliasname)==0:
+			aliasname=eduapp["app"]
+		app.set_id(aliasname)
+		app.add_pkgname(aliasname)
 		for l in self.core.langs:
 			app.set_name(l,pkgname)
 			app.set_comment(l,eduapp["auth"])
 			app.set_description(l,eduapp["auth"])
+		app.add_keyword("C",pkgname)
 		#Icon
 		icn=eduapp["icon"]
 		if len(icn)>0:
@@ -243,6 +246,7 @@ class engine:
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
 		store.set_version("1.0.4")
+		store.set_origin("appsedu")
 		eduApps=self._getAppsEduCatalogue()
 		rawcontent=self._getRawContent()
 		fxml=os.path.join(self.cache,"appsedu.xml")

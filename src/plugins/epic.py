@@ -170,7 +170,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
-		action="load"
+		store.set_origin("appsedu")
 		epicList=self.epiManager.all_available_epis
 		apps=self._getAppsFromSystem()
 		fxml=os.path.join(self.cache,"epic.xml")
@@ -209,6 +209,5 @@ class engine:
 					bun.set_id(name)
 					app.add_bundle(bun)
 			self.core._toFile(store,fxml)
-		app=store.get_app_by_id("zero-lliurex-wine64")
 		return(store)
 	#def getAppstreamData

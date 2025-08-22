@@ -140,6 +140,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
+		store.set_origin("snap")
 		sections=[]
 		try:
 			sectionsSnap=self.snap.get_categories_sync()

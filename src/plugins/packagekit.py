@@ -69,6 +69,8 @@ class engine:
 					continue
 				if ids.startswith("mono"):
 					continue
+				if ids.startswith("node-"):
+					continue
 				if ids.startswith("nvidia"):
 					continue
 				if ids.startswith("ocam"):
@@ -85,7 +87,13 @@ class engine:
 					continue
 				if ids.startswith("update"):
 					continue
+				if ids.startswith("uwsgi-"):
+					continue
 				if ids.startswith("vala"):
+					continue
+				if ids.startswith("webext-"):
+					continue
+				if ids.startswith("wordpress-"):
 					continue
 				if ids.startswith("x11"):
 					continue
@@ -146,7 +154,7 @@ class engine:
 	def _sectionMap(self,section):
 		section=section.replace("desktop-","")
 		sectionMap={"admin":"", "cli-mono":"", "comm":"", "database":"", "debug":"", "devel":"", "doc":"", "editors":"", "education":"Education",
-					"electronics":"Electronics", "embedded":"", "fonts":"", "games":"Games", "gnome":"", "gnu-r":"", "gnustep":"", "graphics":"", 
+					"electronics":"Electronics", "embedded":"", "fonts":"", "games":"Game", "gnome":"", "gnu-r":"", "gnustep":"", "graphics":"", 
 					"hamradio":"", "haskell":"", "httpd":"", "interpreters":"", "introspection":"", "java":"", "javascript":"", 
 					"kde":"", "kernel":"", "internet":"Network","libdevel":"", "libs":"", "lisp":"", "localization":"", "mail":"", "math":"Math", "metapackages":"", 
 					"misc":"", "net":"", "news":"", "ocaml":"", "oldlibs":"", "otherosfs":"", "perl":"", "php":"", "python":"", 
@@ -228,6 +236,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
+		store.set_origin("lliurex")
 		fxml=os.path.join(self.cache,"packagekit.xml")
 		#if self._chkNeedUpdate(fxml)==False:
 		#	store=self.core._fromFile(store,fxml)

@@ -59,6 +59,39 @@ class Rebost():
 		return(proc)
 	#def getFreedesktopCategories
 
+	def _searchAppByUrl(self,search,kind):
+		result=[]
+		initTime=int(time.time())
+		searchItems=[search]
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+		if self.core.ready==True:
+			for app in self.core.stores["main"].get_apps():
+				appUrl=app.get_url_item(kind)
+				if "/es/" in search:
+					searchItems.append(search.replace("/es",""))
+				elif "/va/" in search:
+					searchItems.append(search.replace("/va",""))
+				elif "/ca/" in search:
+					searchItems.append(search.replace("/ca",""))
+				if appUrl in searchItems:
+					result.append(app)
+					break
+		return(result)
+	#def _searchApp
+
+	def searchAppByUrl(self,url,kind=None):
+		if kind==None:
+			kind=self.core.appstream.UrlKind.HOMEPAGE
+		proc=self.thExecutor.submit(self._searchAppByUrl,url,kind)
+		proc.arg=len(self.resultQueue)
+		self.resultQueue[proc.arg]=None
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def searchUrl(self,url):
+
 	def _searchApp(self,search):
 		result={}
 		initTime=int(time.time())
@@ -100,11 +133,13 @@ class Rebost():
 				break
 		if self.core.ready==True:
 			app=self.core.stores["main"].get_app_by_id_ignore_prefix(show)
-			for i in self.core.stores.keys():
-				if isinstance(i,int):
-					itapp=self.core.stores[i].get_app_by_id_ignore_prefix(show)
-					if itapp!=None:
-						print(itapp.get_state())
+			#REM this block search in all the appstream catalogues
+			#for i in self.core.stores.keys():
+			#	if isinstance(i,int):
+			#		itapp=self.core.stores[i].get_app_by_id_ignore_prefix(show)
+			#		if itapp!=None:
+			#			print(itapp.get_state())
+			#<---- REM
 		return(app)
 	#def _showApp
 

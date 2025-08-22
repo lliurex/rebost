@@ -205,6 +205,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
+		store.set_origin("appimage")
 		for repo in self.repositories:
 			fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
 			try:

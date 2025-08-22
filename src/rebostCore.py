@@ -8,7 +8,6 @@ import html
 import dbus
 import locale
 import concurrent.futures as Futures
-import threading
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -68,7 +67,6 @@ class _RebostCore():
 			with open(CONFIG,"r") as f:
 				fcontent=f.read()
 			config=json.loads(fcontent)
-		print(config)
 		return(config)
 	#def _readConfig
 
@@ -176,6 +174,42 @@ class _RebostCore():
 		return(store)
 	#def _fromFile
 
+	def _getVerifiedOrigins(self):
+		matchTable=self.config.get("verifiedProvider","main")
+		verifiedOrigins=[]
+		if matchTable!="main":
+			try:
+				for idx,store in self.stores.items():
+					if isinstance(idx,int)==False:
+						continue
+					if store.get_origin()==matchTable:
+						verifiedOrigins.append(idx)
+			except Exception as e:
+				print("^")
+				print(e)
+				print("^")
+		return(verifiedOrigins)
+	#def _getVerifiedOrigins
+
+	def _preLoadVerified(self,verifiedOrigins):
+		store=appstream.Store()
+		for idx in verifiedOrigins:
+			print("Adding {} for {}".format(len(self.stores[idx].get_apps()),self.stores[idx].get_origin()))
+			for app in self.stores[idx].get_apps():
+				mergeApp=self._preMergeApp(app)
+				oldApp=store.get_app_by_id(mergeApp.get_id())
+				if oldApp!=None:
+					store.remove_app(app)
+					try:
+						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
+					except Exception as e:
+						self._debug(e)
+						print(traceback.format_exc())
+				store.add_app(mergeApp)
+		print("Verified table count: {}".format(len(store.get_apps())))
+		return(store)
+	#def _preLoadVerifiedOrigins
+
 	def _preMergeApp(self,app):
 		newId=app.get_id()
 		if len(app.get_bundles())>0:
@@ -206,36 +240,48 @@ class _RebostCore():
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
 		return (app)
 	#def _preMergeApp
-
+	
 	def _mergeApps(self):
 		self._debug("Filling work table")
-		mergedStore=appstream.Store()
-		if self.config.get("restrictTable","")!="":
-			self.stores["main"]=self.stores["restricted"]
-		try:
-			for storeId in self.stores.keys():
-				self._debug("Process {}".format(storeId))
-				if isinstance(storeId,int):
-					for app in self.stores[storeId].get_apps():
-						mergeApp=self._preMergeApp(app)
-						oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
-						if oldApp!=None:
-							self.stores["main"].remove_app(app)
+		verifiedOrigins=self._getVerifiedOrigins()
+		if len(verifiedOrigins)>0:
+			self.stores["main"]=self._preLoadVerified(verifiedOrigins)
+		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
+		onlyVerified=self.config.get("onlyVerified",False)
+		for storeId in self.stores.keys():
+			if storeId in verifiedOrigins:
+				continue
+			self._debug("Process {}".format(storeId))
+			if isinstance(storeId,int):
+				for app in self.stores[storeId].get_apps():
+					mergeApp=self._preMergeApp(app)
+					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
+					if oldApp!=None:
+						try:
 							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
-						mergedStore.add_app(mergeApp)
-			self.stores["main"]=mergedStore
-		except Exception as e:
-			self._debug(e)
-			print(traceback.format_exc())
+						except Exception as e:
+							self._debug(e)
+							print(traceback.format_exc())
+					if (oldApp!=None and onlyVerified==True) or (onlyVerified==False):
+						self.stores["main"].add_app(mergeApp)
 		fxml=os.path.join(CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
 			self._debug(e)
 			print(traceback.format_exc())
-		self.ready=True
-		self._debug("Work table ready. Rebost is fully operative")
 	#def _mergeApps
+
+	def _rebostOperative(self,*args):
+		self.ready=True
+		resultSet=args[0]
+		if resultSet.done():
+			if resultSet.exception():
+				print("Error {}".format(resultSet.exception()))
+				print(traceback.format_exc())
+		self._debug("Work table ready. Rebost is fully operative")
+		self._debug("Loaded {} apps".format(len(self.stores["main"].get_apps())))
+	#def _rebostOperative
 
 	def _callBackInit(self,*args,**kwargs):
 		self._debug("Callback for {}".format(*args))
@@ -258,7 +304,8 @@ class _RebostCore():
 		self._debug("Apps in store: {} Init({})".format(partial,self.initProc))
 		if self.initProc==0:
 			self._debug("Appstream tables ready. Rebost core operative")
-			self.thExecutor.submit(self._mergeApps)
+			init=self.thExecutor.submit(self._mergeApps)
+			init.add_done_callback(self._rebostOperative)
 	#def _callBackInit(self,*args,**kwargs):
 
 	def _initEngines(self):
@@ -268,7 +315,7 @@ class _RebostCore():
 			if self.config.get("onlyVerified",False)==True:
 				print("\n******************************************************")
 				print("************* RESTRICTED MODE ENABLED ****************")
-				print(self.plugins)
+				print("Verified by {}".format(self.config["verifiedProvider"]))
 				print("******************************************************\n")
 		for priority in priorities:
 			pluginfo=self.plugins[priority]

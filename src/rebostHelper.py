@@ -132,7 +132,7 @@ def _getScreenshotsFromAppstream(app):
 #def _getScreenshotsFromAppstream
 
 def _appstreamAppToRebost(app):
-	pkg={"bundle":{},"versions":[],"status":{}}
+	pkg={"bundle":{},"versions":{},"status":{}}
 	pkg['id']=app.get_id().lower()
 	tmpSummary=""
 	tmpDescription=""

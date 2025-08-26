@@ -47,7 +47,6 @@ class _RebostCore():
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
-		print(self.plugins)
 		self._initCore()
 	#def __init__
 

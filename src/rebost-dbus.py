@@ -144,24 +144,19 @@ class rebostDbusMethods(dbus.service.Object):
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))
 	#def search
-	
+
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='ay')
-	def search_by_category(self,category):
-		action='list'
-		ret=self.rebost.execute(action,category)
-		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
-	#def search_by_category
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='si', out_signature='ay')
-	def search_by_category_limit(self,category,limit):
-		action='list'
-		ret=self.rebost.execute(action,category,limit)
-		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
-	#def search_by_category_limit
+						 in_signature='', out_signature='s')
+	def getExternalInstaller(self):
+		ret=""
+		try:
+			result=self.rebost.getExternalInstaller()
+			ret=result.result()
+		except Exception as e:
+			print("D-BUS Exception: {}".format(e))
+			ret=""
+		return ret
+	#def getExternalInstaller
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
@@ -170,62 +165,6 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,user)
 		return (ret)
 	#def export
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def match(self,pkg,user=''):
-		action='match'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,user)
-		return (ret)
-	#def match
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ssss', out_signature='s')
-	def remove(self,pkg,bundle,user='',n4dkey=''):
-		action='remove'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
-		return (ret)
-	#def remove
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def commitInstall(self,args,bundle,state):
-		action='commitInstall'
-		ret=self.rebost.execute(action,args,bundle,state)
-		return (ret)
-	#def commitInstall
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def updatePkgData(self,args,data):
-		action='updatePkgData'
-		ret=self.rebost.execute(action,args,data)
-		return (ret)
-	#def commitInstall
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def addTransaction(self,args):
-		action='insert'
-		ret=self.rebost.execute(action,args)
-		return (ret)
-	#def addTransaction
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def getEpiPkgStatus(self,epifile):
-		ret=self.rebost.getEpiPkgStatus(epifile)
-		return (ret)
-	#def getEpiPkgStatus
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
-	def getResults(self):
-		ret=self.rebost.getProgress()
-		return (ret)
-	#def getResults
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -305,38 +244,6 @@ class rebostDbusMethods(dbus.service.Object):
 			print(str(e))
 		return(ret)
 	#def getLockStatus
-
-	#@dbus.service.method("net.lliurex.rebost",
-	#					 in_signature='', out_signature='')
-	#def disableFilters(self):
-	#	try:
-	#		self.rebost.execute("disableFilters")
-	#	except Exception as e:
-	#		print("Critical error disabling filters")
-	#		print(str(e))
-	##def disableFilters
-
-	#@dbus.service.method("net.lliurex.rebost",
-	#					 in_signature='', out_signature='b')
-	#def getFiltersEnabled(self):
-	#	ret=True
-	#	try:
-	#		ret=self.rebost.getFiltersEnabled()
-	#	except Exception as e:
-	#		print("Critical error reading filters")
-	#		print(str(e))
-	#	return(ret)
-	##def disableFilters
-
-	def getPlugins(self):
-		pass
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
-	def commitData(self):
-		ret=self.rebost.commitData()
-#		ret = zlib.compress(ret.encode(),level=1)
-	#def commitData
 
 #class rebostDbusMethods
 	

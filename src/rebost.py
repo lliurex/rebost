@@ -29,7 +29,6 @@ class Rebost():
 
 	def _actionCallback(self,*args,**kwargs):
 		resultSet=args[0]
-		print(resultSet)
 		self.resultQueue[resultSet.arg]=resultSet
 	#def _actionCallback
 
@@ -238,6 +237,25 @@ class Rebost():
 
 	def getInstalledApps(self):
 		proc=self.thExecutor.submit(self._getInstalledApps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getAppsPerCategory
+
+	def _getExternalInstaller(self):
+		installer=""
+		initTime=int(time.time())
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+		if self.core.ready==True:
+			installer=self.core.getExternalInstaller()
+		return(installer)
+	#def _getExternalInstaller
+
+	def getExternalInstaller(self):
+		proc=self.thExecutor.submit(self._getExternalInstaller)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)

@@ -5,7 +5,6 @@ import json
 import importlib
 import xml.etree.ElementTree as ET
 import html
-import dbus
 import locale
 import concurrent.futures as Futures
 import gi
@@ -335,14 +334,20 @@ class _RebostCore():
 			self._debug(e)
 			print(traceback.format_exc())
 		if self.ready==False:
-			self.stores["main"]=cacheStore
-			self._debug("Cached store loaded. Rebost will update data now")
-			self.ready=True
+			self._debug("Loading {} apps from cache".format(len(cacheStore.get_apps())))
+			if len(cacheStore.get_apps())>0:
+				self.stores["main"]=cacheStore
+				self._debug("Cached store loaded. Rebost will update data now")
+				self.ready=True
 	#def _loadFromCache
 
 	def _initCore(self):
 		self.thExecutor.submit(self._loadFromCache)
 		self._initEngines()
 	#def _initCore
+
+	def getExternalInstaller(self):
+		self.config=self._readConfig()
+		return(self.config.get("externalInstaller",""))
 #class _RebostCore
 

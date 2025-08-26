@@ -341,13 +341,22 @@ class _RebostCore():
 				self.ready=True
 	#def _loadFromCache
 
+	def getExternalInstaller(self):
+		self.config=self._readConfig()
+		return(self.config.get("externalInstaller",""))
+	#def getExternalInstaller
+
+	def commitApp(self,app):
+		self.stores["main"].remove_app_by_id(app.get_id())
+		self.stores["main"].add_app(app)
+		print("Commit app ---->")
+		print(app)
+		print("<------")
+	#def commitApp
+
 	def _initCore(self):
 		self.thExecutor.submit(self._loadFromCache)
 		self._initEngines()
 	#def _initCore
-
-	def getExternalInstaller(self):
-		self.config=self._readConfig()
-		return(self.config.get("externalInstaller",""))
 #class _RebostCore
 

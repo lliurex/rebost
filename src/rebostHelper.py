@@ -108,12 +108,16 @@ def _setDetailFromAppstream(app,pkg):
 				for key,data in metadata.items():
 					if key.startswith("X-REBOST-"):
 						mkey=key.replace("X-REBOST-","")
-						(release,status)=data.split(";")
-						if status=="installed":
-							pkg["status"].update({mkey:0})
-						else:
-							pkg["status"].update({mkey:1})
-						pkg["versions"].update({mkey:release})
+						if ";" in data:
+							(release,status)=data.split(";")
+							if status=="installed":
+								pkg["status"].update({mkey:0})
+							else:
+								pkg["status"].update({mkey:1})
+							pkg["versions"].update({mkey:release})
+						elif mkey=="transaction":
+							if data=="1":
+								pkg["transaction"]=data
 	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
 		print("FORBIDDEN!")
 		app.add_category("FORBIDDEN")

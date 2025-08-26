@@ -242,6 +242,21 @@ class Rebost():
 		return(proc)
 	#def getAppsPerCategory
 
+	def _addTransactionForApp(self,appId,transaction):
+		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)
+		if app!=None:
+			app.add_metadata("X-REBOST-transaction",str(transaction))
+			self.core.commitApp(app)
+		return(app)
+	#def _addTransactionForApp
+
+	def addTransactionForApp(self,appId,transaction):
+		proc=self.thExecutor.submit(self._addTransactionForApp,appId,transaction)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def addTransactionForApp
+
 	def _getExternalInstaller(self):
 		installer=""
 		initTime=int(time.time())

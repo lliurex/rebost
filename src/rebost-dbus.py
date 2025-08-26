@@ -146,6 +146,25 @@ class rebostDbusMethods(dbus.service.Object):
 	#def search
 
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='ssi', out_signature='s')
+	def setAppStatus(self,appId,bundle,status):
+		ret=self.rebost.showApp(appId)
+		app=ret.result()
+		app.add_metadata("X-REBOST-{}".format(bundle),"{};{}".format(release,status))
+		getResult=rebostHelper.appstreamToRebost(app)
+		return(json.dumps(getResult))
+	#def setAppStatus
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='si', out_signature='s')
+	def setAppTmpStatus(self,appId,status):
+		ret=self.rebost.addTransactionForApp(appId,status)
+		app=ret.result()
+		getResult=rebostHelper.appstreamToRebost(app)
+		return(json.dumps(getResult))
+	#def setAppTmpStatus
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
 	def getExternalInstaller(self):
 		ret=""
@@ -244,10 +263,8 @@ class rebostDbusMethods(dbus.service.Object):
 			print(str(e))
 		return(ret)
 	#def getLockStatus
-
 #class rebostDbusMethods
 	
-
 class rebostDBus():
 	def __init__(self): 
 		self.dbg=False

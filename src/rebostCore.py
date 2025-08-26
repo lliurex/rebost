@@ -262,13 +262,16 @@ class _RebostCore():
 							print(traceback.format_exc())
 					if (oldApp!=None and onlyVerified==True) or (onlyVerified==False):
 						self.stores["main"].add_app(mergeApp)
+	#def _mergeApps
+
+	def export(self):
 		fxml=os.path.join(CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
 			self._debug(e)
 			print(traceback.format_exc())
-	#def _mergeApps
+	#def export
 
 	def _rebostOperative(self,*args):
 		self.ready=True
@@ -279,6 +282,7 @@ class _RebostCore():
 				print(traceback.format_exc())
 		self._debug("Work table ready. Rebost is fully operative")
 		self._debug("Loaded {} apps".format(len(self.stores["main"].get_apps())))
+		self.export()
 	#def _rebostOperative
 
 	def _callBackInit(self,*args,**kwargs):
@@ -345,14 +349,6 @@ class _RebostCore():
 		self.config=self._readConfig()
 		return(self.config.get("externalInstaller",""))
 	#def getExternalInstaller
-
-	def commitApp(self,app):
-		self.stores["main"].remove_app_by_id(app.get_id())
-		self.stores["main"].add_app(app)
-		print("Commit app ---->")
-		print(app)
-		print("<------")
-	#def commitApp
 
 	def _initCore(self):
 		self.thExecutor.submit(self._loadFromCache)

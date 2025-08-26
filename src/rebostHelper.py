@@ -115,11 +115,8 @@ def _setDetailFromAppstream(app,pkg):
 							else:
 								pkg["status"].update({mkey:1})
 							pkg["versions"].update({mkey:release})
-						elif mkey=="transaction":
-							if data=="1":
-								pkg["transaction"]=data
+	pkg["state"]=app.get_state()
 	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
-		print("FORBIDDEN!")
 		app.add_category("FORBIDDEN")
 	return(pkg)
 #def _setDetailFromAppstream

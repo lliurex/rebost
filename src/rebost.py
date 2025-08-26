@@ -242,20 +242,34 @@ class Rebost():
 		return(proc)
 	#def getAppsPerCategory
 
-	def _addTransactionForApp(self,appId,transaction):
+	def _setStateForApp(self,appId,appState,bundle,temp):
 		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)
 		if app!=None:
-			app.add_metadata("X-REBOST-transaction",str(transaction))
-			self.core.commitApp(app)
+			app.set_state(appState)
+			if bundle!=None:
+				metadata=app.get_metadata()
+				mkey="X-REBOST-{}".format(bundle)
+				if appState==appstream.AppState.INSTALLED:
+					state="installed"
+				else:
+					state="available"
+				if mkey in metadata.keys():
+					app.remove_metadata(mkey)
+				release=metadata[mkey].split(";")[0]
+				app.add_metadata(mkey,"{};{}".format(release,state))
+			if temp==False:
+				self.core.stores["main"].remove_app_by_id(app.get_id())
+				self.core.stores["main"].add_app(app)
+				self.core.export()
 		return(app)
-	#def _addTransactionForApp
+	#def _setStateForApp
 
-	def addTransactionForApp(self,appId,transaction):
-		proc=self.thExecutor.submit(self._addTransactionForApp,appId,transaction)
+	def setStateForApp(self,appId,appState,bundle=None,temp=True):
+		proc=self.thExecutor.submit(self._setStateForApp,appId,appState,bundle,temp)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def addTransactionForApp
+	#def setStateForApp
 
 	def _getExternalInstaller(self):
 		installer=""

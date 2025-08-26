@@ -145,24 +145,44 @@ class rebostDbusMethods(dbus.service.Object):
 		return(json.dumps(getResult))
 	#def search
 
+	def _getStateFromValue(self,value):
+		if value==1:
+			appState=self.rebost.core.appstream.AppState.INSTALLED
+		elif value==2:
+			appState=self.rebost.core.appstream.AppState.AVAILABLE
+		elif value==4:
+			appState=self.rebost.core.appstream.AppState.UPDATABLE
+		elif value==7:
+			appState=self.rebost.core.appstream.AppState.INSTALLING
+		elif value==8:
+			appState=self.rebost.core.appstream.AppState.REMOVING
+		else:
+			appState=self.rebost.core.appstream.AppState.UNKNOWN
+		return appState
+	#def _getStateFromValue
+
+	def _setAppState(self,appId,state,bundle=None,temp=True):
+		appState=self._getStateFromValue(state)
+		ret=self.rebost.setStateForApp(appId,appState,bundle,temp)
+		app=ret.result()
+		return(app)
+	#def _setAppState
+
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='ssi', out_signature='s')
-	def setAppStatus(self,appId,bundle,status):
-		ret=self.rebost.showApp(appId)
-		app=ret.result()
-		app.add_metadata("X-REBOST-{}".format(bundle),"{};{}".format(release,status))
+	def setAppState(self,appId,bundle,state):
+		app=self._setAppState(appId,state,bundle,False)
 		getResult=rebostHelper.appstreamToRebost(app)
 		return(json.dumps(getResult))
-	#def setAppStatus
+	#def setAppState
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='si', out_signature='s')
-	def setAppTmpStatus(self,appId,status):
-		ret=self.rebost.addTransactionForApp(appId,status)
-		app=ret.result()
+	def setAppTmpState(self,appId,state):
+		app=self._setAppState(appId,state)
 		getResult=rebostHelper.appstreamToRebost(app)
 		return(json.dumps(getResult))
-	#def setAppTmpStatus
+	#def setAppTmpState
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')

@@ -99,7 +99,7 @@ class engine:
 			installedRefsArray.extend(installation.list_installed_refs())
 			updatableRefs.extend(installation.list_installed_refs_for_update())
 		for ref in installedRefsArray:
-			installedRefs[ref.get_appdata_name()]=ref.getappdata_version()
+			installedRefs[ref.get_appdata_name()]=ref.get_appdata_version()
 		for app in store.get_apps():
 			if app.get_name() in installedRefs:
 				state="installed"

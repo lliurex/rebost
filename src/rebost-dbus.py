@@ -178,7 +178,7 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='si', out_signature='s')
-	def setAppTmpState(self,appId,state):
+	def setAppStateTmp(self,appId,state):
 		app=self._setAppState(appId,state)
 		getResult=rebostHelper.appstreamToRebost(app)
 		return(json.dumps(getResult))

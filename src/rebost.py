@@ -219,7 +219,7 @@ class Rebost():
 		return(proc)
 	#def getAppsPerCategories
 
-	def _getInstalledApps(self):
+	def _getAppsInstalled(self):
 		apps=[]
 		installed=[]
 		initTime=int(time.time())
@@ -235,12 +235,12 @@ class Rebost():
 		return(installed)
 	#def _getInstalledApps
 
-	def getInstalledApps(self):
-		proc=self.thExecutor.submit(self._getInstalledApps)
+	def getAppsInstalled(self):
+		proc=self.thExecutor.submit(self._getAppsInstalled)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def getAppsPerCategory
+	#def getAppsInstalled
 
 	def _setStateForApp(self,appId,appState,bundle,temp):
 		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)

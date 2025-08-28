@@ -120,6 +120,8 @@ class engine:
 				#self._debug("Added {} - {}".format(name,app.get_pkgname_default()))
 				status="available"
 				app.add_metadata("X-REBOST-appimage","{};{}".format(release,status))
+				if status=="installed":
+					app.set_state(self.core.appstream.AppState.INSTALLED)
 				apps.append(app)
 		return(apps)
 	#def _getAppstreamFromDataField

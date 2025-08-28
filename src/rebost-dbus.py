@@ -108,8 +108,17 @@ class rebostDbusMethods(dbus.service.Object):
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))
-	#def search
+	#def getApps
 	
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getAppsInstalled(self):
+		ret=self.rebost.getAppsInstalled()
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def getAppsInstalled
+
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def search(self,pkgname):

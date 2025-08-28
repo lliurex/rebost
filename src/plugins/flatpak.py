@@ -104,6 +104,7 @@ class engine:
 			if app.get_name() in installedRefs:
 				state="installed"
 				release=installedRefs[app.get_name()]
+				app.set_state(self.core.appstream.AppState.INSTALLED)
 			else:
 				state="available"
 				release="unknown"

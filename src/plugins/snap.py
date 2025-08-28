@@ -109,7 +109,6 @@ class engine:
 			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 		else:
 			status="available"
-			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
 		app.add_release(apprelease)
 		#URLs

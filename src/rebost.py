@@ -108,7 +108,7 @@ class Rebost():
 				if len(tokens)>1:
 					for s in tokens[1:len(tokens)-1]:
 						match=int(app.search_matches(s)/2)
-				if match>50:
+				if match>10:
 					if match not in result.keys():
 						result[match]=[]
 					result[match].append(app)

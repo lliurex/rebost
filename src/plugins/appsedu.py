@@ -123,7 +123,8 @@ class engine:
 			if (column.attrs["class"][0]=="column-7"):
 				columnAuth=column.text
 			if (column.attrs["class"][0]=="column-8"):
-				columnPkgName=column.text
+				#Discard the zero: tag
+				columnPkgName=column.text.replace("zero:","")
 				#Some apps should be hidden as are pure system apps (drkonqui...)
 				#or apps included within another (kde-connect related stuff...)
 				#or for some other reason (xterm..)

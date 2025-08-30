@@ -137,7 +137,7 @@ def _appstreamAppToRebost(app):
 	pkg['id']=app.get_id().lower()
 	tmpSummary=""
 	tmpDescription=""
-	tmpName=None
+	tmpName=""
 	localLangs=LOCAL_LANGS[1:]
 	if "ca" in localLangs:
 		idx=localLangs.index("ca")
@@ -145,7 +145,7 @@ def _appstreamAppToRebost(app):
 		localLangs.insert(idx,"ca-valencia")
 	localLangs.append(LOCAL_LANGS[0])
 	for lang in localLangs:
-		if tmpName==None:
+		if tmpName=="":
 			tmpName=app.get_name(lang)
 		if tmpSummary=="":
 			if isinstance(app.get_comment(lang),str)==True:
@@ -155,10 +155,16 @@ def _appstreamAppToRebost(app):
 				tmpDescription=app.get_description(lang)
 		if tmpSummary!="" and tmpDescription!="" and tmpName!=None:
 			break
+	if tmpSummary=="":
+		tmpSummary=app.get_comment("C")
+	if tmpDescription=="":
+		tmpDescription=app.get_description("C")
+	if tmpName=="" or tmpName==None:
+		tmpName=pkg["id"]
 	pkg["name"]=tmpName
 	pkg["description"]=tmpDescription
 	pkg["summary"]=tmpSummary
-	if app.get_pkgname_default():
+	if app.get_pkgname_default()!=None:
 		pkg['pkgname']=app.get_pkgname_default()
 	else:
 		pkg['pkgname']=pkg['name']

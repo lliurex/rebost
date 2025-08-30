@@ -100,6 +100,7 @@ class engine:
 
 	def _getAppsFromEpic(self,epicList):
 		apps=[]
+		names=[]
 		for epi in epicList:
 			for epiName,epiData in epi.items():
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
@@ -109,11 +110,6 @@ class engine:
 					name=os.path.basename(fname).replace(".zmd","")
 					app.set_id(name)
 					app.add_pkgname(fname)
-					for l in self.core.langs:
-						app.set_name(l,os.path.basename(fname).replace(".zmd",""))
-						summary=epiData.get("custom_name",os.path.basename(fname).replace(".zmd",""))
-						app.set_comment(l,summary)
-						app.set_description(l,summary)
 					app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 					bun=self.core.appstream.Bundle()
 					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
@@ -127,9 +123,19 @@ class engine:
 					if icn!=None:
 						app.add_icon(icn)
 					includedApps=self._getIncludedApps(epiName,epiData)
+					summary=epiData.get("custom_name",os.path.basename(fname).replace(".zmd",""))
+					description=summary
 					for includedApp in includedApps:
 						apps.append(includedApp)
 						app.add_keyword("C",includedApp.get_id())
+						description+="\n    - {}".format(includedApp.get_id())
+					for l in self.core.langs:
+						app.set_name(l,os.path.basename(fname).replace(".zmd",""))
+						app.set_comment(l,summary)
+						app.set_description(l,description)
+					app.set_name("C",os.path.basename(fname).replace(".zmd",""))
+					app.set_comment("C",summary)
+					app.set_description("C",description)
 					apprelease=self.core.appstream.Release()
 					apprelease.set_version("1.0")
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
@@ -144,10 +150,16 @@ class engine:
 	#def _loadCallback
 
 	def _getAppsFromSystem(self):
-		flags=packagekit.FilterEnum.GUI
+		flags=packagekit.FilterEnum.NONE
 		pk=packagekit.Client()
-		pkList=pk.search_names(flags,"zero-",None,self._loadCallback)
-		return(pkList.get_package_array())
+		pkListSack=[]
+		searchValue="zero-"
+		pkList=pk.get_packages(flags,None,self._loadCallback,None)
+		pkSack=pkList.get_package_array()
+		for pk in pkSack:
+			if pk.get_id().split(";")[0].startswith(searchValue):
+				pkListSack.append(pk)
+		return(pkListSack)
 	#def _getAppsFromSystem
 
 	def _chkNeedUpdate(self,apps):
@@ -169,45 +181,43 @@ class engine:
 	#def _chkNeedUpdate
 
 	def getAppstreamData(self):
+		fxml=os.path.join(self.cache,"epic.xml")
 		store=self.core.appstream.Store()
 		store.set_origin("appsedu")
 		epicList=self.epiManager.all_available_epis
-		apps=self._getAppsFromSystem()
-		fxml=os.path.join(self.cache,"epic.xml")
-		if self._chkNeedUpdate(apps+epicList)==False:
+		if self._chkNeedUpdate(epicList)==False:
 			self._debug("Loading from cache")
 			store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
-			store.add_apps(self._getAppsFromEpic(epicList))
-			for pkg in apps:
+			lstApps=self._getAppsFromEpic(epicList)
+			store.add_apps(lstApps)
+			pkgs=self._getAppsFromSystem()
+			for pkg in pkgs:
 				pkgId=pkg.get_id()
 				pkgIdArray=pkgId.split(";")
 				name=pkgIdArray[0]
 				release=pkgIdArray[1]
 				origin=pkgIdArray[2]
 				arch=pkgIdArray[3]
-				if name.startswith("zero"):
-					if not "lliurex" in name.lower() and not "installer" in name.lower():
-						continue
-					app=store.get_app_by_id(name)
-					if app==None:
-						app=self.core.appstream.App()
-						app.set_id(name)
-						desc=html.escape(pkg.get_summary().strip())
-						app.set_description("C",desc)
-						summary=desc.split("\n")[0]
-						app.set_comment("C",summary)
-						app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
-						store.add_app(app)
-					if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
-						app.set_state(self.core.appstream.AppState.INSTALLED)
-					else:
-						app.set_state(self.core.appstream.AppState.AVAILABLE)
-					app.add_metadata("X-REBOST-zomando","{};{}".format("zomando","installed"))
-					bun=self.core.appstream.Bundle()
-					bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
-					bun.set_id(name)
-					app.add_bundle(bun)
+				app=store.get_app_by_id(name)
+				if app==None:
+					app=self.core.appstream.App()
+					app.set_id(name)
+					app.add_pkgname(name)
+					desc=html.escape(pkg.get_summary().strip())
+					app.set_description("C",desc)
+					summary=desc.split("\n")[0]
+					app.set_comment("C",summary)
+					#app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
+				else:
+					store.remove_app(app)
+				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
+					app.add_metadata("X-REBOST-package","{};{}".format("package","installed"))
+				bun=self.core.appstream.Bundle()
+				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
+				bun.set_id(name)
+				app.add_bundle(bun)
+				store.add_app(app)
 			self.core._toFile(store,fxml)
 		return(store)
 	#def getAppstreamData

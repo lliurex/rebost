@@ -42,19 +42,23 @@ class engine:
 
 	def _getIcon(self,name):
 		appicon=None
+		matchName=name
 		candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(name)),os.path.join("/usr/share","{}".format(name.replace("zero-lliurex-","")))]
 		for candidateDir in candidateDirs:
 			if os.path.exists(candidateDir):
 				try:
-					for l in os.scandir(candidateDir):
-						if (app.get_id().replace(".epi","").split(".")[-1] in l.name ) and (l.name.endswith("png") or l.name.endswith(".svg")):
-							appicon=self.core.appstream.Icon()
-							appicon.set_kind(self.core.appstream.IconKind.LOCAL)
-							appicon.set_name(os.path.basename(icn))
-							appicon.set_file(icn)
-							break
-				except: #Permissions error
-					continue
+					for candidateF in os.scandir(candidateDir):
+						candidateExt=candidateF.name.split(".")[-1]
+						candidateName=".".join(candidateF.name.split(".")[:-1])
+						if candidateExt in ["png","svg"]:
+							if matchName in candidateName:
+								appicon=self.core.appstream.Icon()
+								appicon.set_kind(self.core.appstream.IconKind.LOCAL)
+								appicon.set_name(candidateName)
+								appicon.set_filename(candidateF.path)
+								break
+				except Exception as e: #Permissions error
+					print (e)
 			if appicon!=None:
 				break
 		return (appicon)
@@ -80,10 +84,11 @@ class engine:
 				customIcon=pkg.get("custom_icon")
 				customIconPath=epiData.get("custom_icon_path")
 				if customIcon!=None and customIconPath!=None:
+					icn=os.path.join(customIconPath,customIcon)
 					appicon=self.core.appstream.Icon()
 					appicon.set_kind(self.core.appstream.IconKind.LOCAL)
-					appicon.set_name(os.path.basename(icn))
-					appicon.set_file(os.path.join(customIconPath,customIcon))
+					appicon.set_name(customIcon)
+					appicon.set_filename(icn)
 					app.add_icon(icn)
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
@@ -142,6 +147,8 @@ class engine:
 					app.set_state(self.core.appstream.AppState.INSTALLED)
 					app.add_release(apprelease)
 					apps.append(app)
+				else:
+					print("Not found {}".format(fname))
 		return(apps)
 	#def _getAppsFromEpic
 

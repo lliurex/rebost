@@ -90,10 +90,12 @@ class engine:
 					appicon.set_name(customIcon)
 					appicon.set_filename(icn)
 					app.add_icon(icn)
-				bun=self.core.appstream.Bundle()
-				bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-				bun.set_id(epiName)
-				app.add_bundle(bun)
+				bundles=app.get_bundles()
+				if len(bundles)==0:
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(epiName)
+					app.add_bundle(bun)
 				app.add_keyword("C",epiData["zomando"])
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
@@ -127,13 +129,19 @@ class engine:
 					icn=self._getIcon(name)
 					if icn!=None:
 						app.add_icon(icn)
-					includedApps=self._getIncludedApps(epiName,epiData)
 					summary=epiData.get("custom_name",os.path.basename(fname).replace(".zmd",""))
 					description=summary
+					includedApps=self._getIncludedApps(epiName,epiData)
+					if len(includedApps)>1:
+						suggest=self.core.appstream.Suggest()
+						app.add_suggest(suggest)
 					for includedApp in includedApps:
+						if includedApp.get_id()=="" or includedApp.get_id()==None:
+							continue
 						apps.append(includedApp)
 						app.add_keyword("C",includedApp.get_id())
 						description+="\n    - {}".format(includedApp.get_id())
+						suggest.add_id(includedApp.get_id())
 					for l in self.core.langs:
 						app.set_name(l,os.path.basename(fname).replace(".zmd",""))
 						app.set_comment(l,summary)

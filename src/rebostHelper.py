@@ -118,6 +118,9 @@ def _setDetailFromAppstream(app,pkg):
 	pkg["state"]=app.get_state()
 	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
 		app.add_category("FORBIDDEN")
+	pkg["suggests"]=[]
+	for suggest in app.get_suggests():
+		pkg["suggests"].extend(suggest.get_ids())
 	return(pkg)
 #def _setDetailFromAppstream
 

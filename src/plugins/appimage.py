@@ -138,7 +138,9 @@ class engine:
 				continue
 			app=self.core.appstream.App()
 			desc=self.core.appstream.markup_import(japp.get("description","").strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
-			if len(desc)==0:
+			if desc==None:
+				desc="Download 'n' run"
+			elif len(desc)==0:
 				desc="Download 'n' run"
 			summary=self.core.appstream.markup_import(japp.get("summary",""),self.core.appstream.MarkupConvertFormat.SIMPLE).strip().replace("<p>","",).replace("</p>","")
 			if len(summary)==0:

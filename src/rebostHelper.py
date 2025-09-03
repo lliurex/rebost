@@ -121,6 +121,17 @@ def _setDetailFromAppstream(app,pkg):
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():
 		pkg["suggests"].extend(suggest.get_ids())
+	pkg["keywords"]=[]
+	localLangs=LOCAL_LANGS[1:]
+	if "ca" in localLangs:
+		idx=localLangs.index("ca")
+		localLangs.insert(idx,"qcv")
+		localLangs.insert(idx,"ca-valencia")
+	localLangs.append(LOCAL_LANGS[0])
+	for lang in localLangs:
+		pkg["keywords"].extend(app.get_keywords(lang))
+		if len(pkg["keywords"])>0:
+			break
 	return(pkg)
 #def _setDetailFromAppstream
 

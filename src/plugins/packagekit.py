@@ -39,6 +39,8 @@ class engine:
 		for pkgSack in pkgSacks:
 			pkgSackIds=pkgSack.get_ids()
 			for ids in pkgSackIds:
+				if ids.startswith("alsa"):
+					continue
 				if ids.startswith("auto"):
 					continue
 				if ids.startswith("gdc"):
@@ -119,6 +121,8 @@ class engine:
 					continue
 				if "wayland" in ids:
 					continue
+				if ids.endswith("common"):
+					continue
 				pkgIds.append(ids)
 	#	pkgFiles=pk.get_files(pkgIds,None,self._loadCallback,None)
 	#	pkgFilesArray=pkgFiles.get_files_array()
@@ -153,13 +157,13 @@ class engine:
 
 	def _sectionMap(self,section):
 		section=section.replace("desktop-","")
-		sectionMap={"admin":"", "cli-mono":"", "comm":"", "database":"", "debug":"", "devel":"", "doc":"", "editors":"", "education":"Education",
-					"electronics":"Electronics", "embedded":"", "fonts":"", "games":"Game", "gnome":"", "gnu-r":"", "gnustep":"", "graphics":"", 
+		sectionMap={"accessories":"Utility","admin":"", "admin-tools":"System","cli-mono":"", "comm":"", "database":"", "debug":"", "devel":"", "doc":"", "editors":"", "education":"Education",
+					"electronics":"Electronics", "embedded":"", "fonts":"Office", "games":"Game", "gnome":"Office", "gnu-r":"", "gnustep":"", "graphics":"Graphics", 
 					"hamradio":"", "haskell":"", "httpd":"", "interpreters":"", "introspection":"", "java":"", "javascript":"", 
 					"kde":"", "kernel":"", "internet":"Network","libdevel":"", "libs":"", "lisp":"", "localization":"", "mail":"", "math":"Math", "metapackages":"", 
-					"misc":"", "net":"", "news":"", "ocaml":"", "oldlibs":"", "otherosfs":"", "perl":"", "php":"", "python":"", 
-					"ruby":"", "rust":"", "science":"Science", "shells":"TerminalEmulator", "sound":"Audio", "tasks":"", "tex":"", "text":"", "utils":"", 
-					"vcs":"", "video":"Video", "web":"", "x11":"", "xfce":"", "zope":""}
+					"misc":"", "multimedia":"AudioVideo","net":"", "news":"", "ocaml":"", "oldlibs":"", "other":"","otherosfs":"", "perl":"", "php":"","programming": "", "python":"", 
+					"ruby":"", "rust":"", "science":"Science", "shells":"TerminalEmulator", "sound":"Audio","system":"System", "tasks":"", "tex":"", "text":"","unknown":"Utility", "utils":"", 
+					"vcs":"", "video":"Video", "web":"Web", "x11":"", "xfce":"", "zope":""}
 		return(sectionMap.get(section,""))
 	#def _sectionMap
 
@@ -245,5 +249,6 @@ class engine:
 			apps=self._processPackages(pk,pkglist)
 			store.add_apps(apps)
 			self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

@@ -58,7 +58,7 @@ class engine:
 								appicon.set_filename(candidateF.path)
 								break
 				except Exception as e: #Permissions error
-					print (e)
+					self._debug(e)
 			if appicon!=None:
 				break
 		return (appicon)
@@ -77,10 +77,12 @@ class engine:
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				name=pkg.get("custom_name",pkg["name"])
 				app.set_id(pkgid)
-				for l in self.core.langs:
-					app.set_name(l,name)
-					app.set_comment(l,name)
+				app.set_name("C",name)
+				app.set_comment("C",name)
+				app.set_description("C","Included in {}".format(epiName.replace(".epi","")))
 				app.add_pkgname(pkgid)
+				app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
+				app.add_url(self.core.appstream.UrlKind.HELP,"")
 				customIcon=pkg.get("custom_icon")
 				customIconPath=epiData.get("custom_icon_path")
 				if customIcon!=None and customIconPath!=None:
@@ -99,9 +101,12 @@ class engine:
 				app.add_keyword("C",epiData["zomando"])
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
+				suggest=self.core.appstream.Suggest()
+				app.add_suggest(suggest)
+				suggest.add_id(epiData["zomando"])
 				apps.append(app)
 		else:
-			print("No packages found for {}".format(fname))
+			self._debug("No packages found for {}".format(fname))
 		return(apps)
 	#def _getIncludedApps
 
@@ -139,7 +144,7 @@ class engine:
 						if includedApp.get_id()=="" or includedApp.get_id()==None:
 							continue
 						apps.append(includedApp)
-						app.add_keyword("C",includedApp.get_id())
+						#app.add_keyword("C",includedApp.get_id())
 						description+="\n    - {}".format(includedApp.get_id())
 						suggest.add_id(includedApp.get_id())
 					for l in self.core.langs:
@@ -149,6 +154,8 @@ class engine:
 					app.set_name("C",os.path.basename(fname).replace(".zmd",""))
 					app.set_comment("C",summary)
 					app.set_description("C",description)
+					app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
+					app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")
 					apprelease=self.core.appstream.Release()
 					apprelease.set_version("1.0")
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
@@ -156,7 +163,7 @@ class engine:
 					app.add_release(apprelease)
 					apps.append(app)
 				else:
-					print("Not found {}".format(fname))
+					self._debug("Not found {}".format(fname))
 		return(apps)
 	#def _getAppsFromEpic
 
@@ -198,7 +205,7 @@ class engine:
 	def getAppstreamData(self):
 		fxml=os.path.join(self.cache,"epic.xml")
 		store=self.core.appstream.Store()
-		store.set_origin("appsedu")
+		store.set_origin("epic")
 		epicList=self.epiManager.all_available_epis
 		if self._chkNeedUpdate(epicList)==False:
 			self._debug("Loading from cache")
@@ -227,12 +234,13 @@ class engine:
 				else:
 					store.remove_app(app)
 				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
-					app.add_metadata("X-REBOST-package","{};{}".format("package","installed"))
+					app.add_metadata("X-REBOST-package","{};{}".format(release,"installed"))
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 				bun.set_id(name)
 				app.add_bundle(bun)
 				store.add_app(app)
 			self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

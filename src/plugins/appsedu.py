@@ -63,8 +63,8 @@ class engine:
 			with urllib.request.urlopen(req,timeout=2) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
-			print("Couldn't fetch {}".format(url))
-			print("{}".format(e))
+			self._debug("Couldn't fetch {}".format(url))
+			self._debug(e)
 		return(content)
 	#def _fetchCatalogue
 
@@ -261,5 +261,6 @@ class engine:
 					continue
 				store.add_app(self._processApp(eduapp))
 			self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

@@ -34,7 +34,7 @@ class engine:
 				content=f.read().decode('utf-8')
 		except Exception as e:
 			print("Couldn't fetch {}".format(repo))
-			print("{}".format(e))
+			self._debug(e)
 		return(content)
 	#def _fetchRepo
 
@@ -239,5 +239,6 @@ class engine:
 					elif "items" in jrepo.keys(): #json responde with items field for the pkgs
 						store.add_apps(self._getAppstreamFromItemsField(jrepo["items"]))
 					self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

@@ -256,6 +256,7 @@ class _RebostCore():
 					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
 					if oldApp!=None:
 						try:
+							self.stores["main"].remove_app(oldApp)
 							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
 						except Exception as e:
 							self._debug(e)

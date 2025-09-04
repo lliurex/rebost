@@ -60,7 +60,7 @@ class engine:
 	
 	def _processSnap(self,pkg,section):
 		app=self.core.appstream.App()
-		name=pkg.get_name()
+		name=pkg.get_title()
 		ids=pkg.get_common_ids()
 		if len(ids)>0:
 			app.set_id(ids[0])
@@ -103,16 +103,29 @@ class engine:
 		apprelease=self.core.appstream.Release()
 		apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,pkg.get_download_size())
 		apprelease.set_version(release)
-		if pkg.get_status==Snapd.SnapStatus.INSTALLED:
+		if pkg.get_status()==Snapd.SnapStatus.INSTALLED:
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)
 			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 		else:
 			status="available"
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
 		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
 		app.add_release(apprelease)
 		#URLs
-		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,pkg.get_store_url())
+		contact=pkg.get_contact()
+		if contact!=None:
+			app.add_url(self.core.appstream.UrlKind.CONTACT,contact)
+		site=pkg.get_website()
+		if site!=None:
+			app.add_url(self.core.appstream.UrlKind.HOMEPAGE,site)
+		url=pkg.get_store_url()
+		if url!=None:
+			app.add_url(self.core.appstream.UrlKind.DETAILS,url)
+		projectLicense=pkg.get_license()
+		if projectLicense!=None:
+			app.set_project_license(projectLicense)
 		return(app)
 	#def _processSnap
 
@@ -145,7 +158,7 @@ class engine:
 			sectionsSnap=self.snap.get_categories_sync()
 			sections=[sc.get_name() for sc in sectionsSnap]
 		except:
-			print("Connection seems down")
+			self._debug("Connection seems down")
 
 		processed=[]
 		sectionSnaps={}
@@ -153,7 +166,7 @@ class engine:
 			try:
 				snaps,curr=self.snap.find_category_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 			except Exception as e:
-				print(e)
+				self._debug(e)
 				continue
 			sectionSnaps.update({section:snaps})
 		fxml=os.path.join(self.cache,"snap.xml")
@@ -169,5 +182,6 @@ class engine:
 						apps.append(self._processSnap(pkg,section))
 				store.add_apps(apps)
 			self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

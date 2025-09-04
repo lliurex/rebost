@@ -126,7 +126,7 @@ class engine:
 		try:
 			flInst=Flatpak.get_system_installations()
 		except Exception as e:
-			print("Error getting system installs: {}".format(e))
+			self._debug("Error getting system installs: {}".format(e))
 		remotes=[]
 		if len(flInst)>0:
 			remotes=self._getFlatpakRemotes(flInst)
@@ -150,5 +150,6 @@ class engine:
 			self._setAppsState(flInst,store)
 			self.core._toFile(store,fxml)
 			self._debug("End loading flatpak metadata")
+		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData

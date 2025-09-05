@@ -67,7 +67,6 @@ class rebostDbusMethods(dbus.service.Object):
 	def getSupportedFormats(self):
 		ret=self.rebost.getSupportedFormats()
 		resultList=ret.result()
-		print(resultList)
 		return (resultList)
 	#def getFreedesktopCategories
 

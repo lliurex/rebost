@@ -63,6 +63,15 @@ class rebostDbusMethods(dbus.service.Object):
 	#def storeUpdated
 	
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='as')
+	def getSupportedFormats(self):
+		ret=self.rebost.getSupportedFormats()
+		resultList=ret.result()
+		print(resultList)
+		return (resultList)
+	#def getFreedesktopCategories
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='a{sas}')
 	def getFreedesktopCategories(self):
 		ret=self.rebost.getFreedesktopCategories()

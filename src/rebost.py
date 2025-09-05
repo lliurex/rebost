@@ -32,6 +32,31 @@ class Rebost():
 		self.resultQueue[resultSet.arg]=resultSet
 	#def _actionCallback
 
+	def _getSupportedFormats(self):
+		formats=[]
+		for bundle in self.core.supportedformats:
+			if bundle==appstream.BundleKind.PACKAGE:
+				formats.append("package")
+			elif bundle==appstream.BundleKind.FLATPAK:
+				formats.append("flatpak")
+			elif bundle==appstream.BundleKind.SNAP:
+				formats.append("snap")
+			elif bundle==appstream.BundleKind.APPIMAGE:
+				formats.append("appimage")
+			elif bundle==appstream.BundleKind.UNKNOWN:
+				formats.append("unknown")
+		formats=list(set(formats))
+
+		return(formats)
+	#def _getSupportedFormats
+
+	def getSupportedFormats(self):
+		proc=self.thExecutor.submit(self._getSupportedFormats)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getFreedesktopCategories
+
 	def _getFreedesktopCategories(self):
 		#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
 		result={"AudioVideo":["DiscBurning"],

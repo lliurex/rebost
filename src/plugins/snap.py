@@ -60,16 +60,13 @@ class engine:
 	
 	def _processSnap(self,pkg,section):
 		app=self.core.appstream.App()
-		name=pkg.get_title()
+		name=self.core.appstream.markup_import(pkg.get_title().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 		ids=pkg.get_common_ids()
 		if len(ids)>0:
 			app.set_id(ids[0])
 		else:
 			app.set_id(name)
 		app.add_pkgname(pkg.get_name())
-		htmlparser=html2text.HTML2Text()
-		htmlparser.scape_snob=True
-		htmlparser.unicode_snob=True
 		desc=self.core.appstream.markup_import(pkg.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
 		summary=self.core.appstream.markup_import(pkg.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 		app.set_name("C",name)

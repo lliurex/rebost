@@ -239,6 +239,7 @@ class engine:
 		apprelease.set_version(release)
 		app.add_release(apprelease)
 		app.set_origin("appsedu")
+		app.add_keyword("C","appsedu")
 		#URLs
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,eduapp["infopage"])
 		return(app)

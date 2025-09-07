@@ -155,25 +155,31 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		oldState=app.get_state()
-		#REM get installedRefs
-		return(app)
-		if app.get_name() in installedRefs:
-			state="installed"
-			release=installedRefs[app.get_name()]
-			app.set_state(self.core.appstream.AppState.INSTALLED)
-		else:
-			app.set_state(self.core.appstream.AppState.AVAILABLE)
-			state="available"
-			release="unknown"
-			releaseApp=app.get_release_default()
-			if releaseApp!=None:
-				release=releaseApp.get_version()
-			else:
-				for r in app.get_releases():
-					release=r.get_version()
-					break
+
+	def refreshAppData(self,app):
+		bundles=app.get_bundles()
+		flInst=Flatpak.get_system_installations()
+		name=""
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+		name=os.path.basename(name)
+		installedRefsArray.extend(installation.list_installed_refs())
+		for ref in installedRefsArray:
+			if name==ref.get_appdata_name():
+				state="installed"
+				app.set_state(self.core.appstream.AppState.INSTALLED)
+		#else:
+		#	state="available"
+		#	release="unknown"
+		#	releaseApp=app.get_release_default()
+		#	if releaseApp!=None:
+		#		release=releaseApp.get_version()
+		#	else:
+		#		for r in app.get_releases():
+		#			release=r.get_version()
+		#			break
 		app.add_metadata("X-REBOST-flatpak","{};{}".format(release,state))
 		return(app)
-	#def refreshAppData(self,app):
+	#def refreshAppData
 #class engine

@@ -182,3 +182,20 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		oldState=app.get_state()
+		#REM ToDo GET SNAP INFO
+		return(app)
+		if pkg.get_status()==Snapd.SnapStatus.INSTALLED:
+			status="installed"
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		else:
+			status="available"
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

@@ -160,7 +160,16 @@ class rebostDbusMethods(dbus.service.Object):
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))
-	#def search
+	#def showApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def refreshApp(self,pkgname):
+		ret=self.rebost.refreshApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def refreshApp
 
 	def _getStateFromValue(self,value):
 		if value==1:

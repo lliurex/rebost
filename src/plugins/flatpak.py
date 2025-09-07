@@ -153,3 +153,27 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		oldState=app.get_state()
+		#REM get installedRefs
+		return(app)
+		if app.get_name() in installedRefs:
+			state="installed"
+			release=installedRefs[app.get_name()]
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+		else:
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+			state="available"
+			release="unknown"
+			releaseApp=app.get_release_default()
+			if releaseApp!=None:
+				release=releaseApp.get_version()
+			else:
+				for r in app.get_releases():
+					release=r.get_version()
+					break
+		app.add_metadata("X-REBOST-flatpak","{};{}".format(release,state))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

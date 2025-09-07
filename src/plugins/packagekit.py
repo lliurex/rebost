@@ -252,3 +252,20 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		oldState=app.get_state()
+		#REM ToDo GET PKGID
+		return(app)
+		if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
+			status="installed"
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		else:
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+			status="available"
+		app.add_metadata("X-REBOST-package","{};{}".format(release,status))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

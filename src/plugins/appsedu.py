@@ -265,3 +265,4 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+#class engine

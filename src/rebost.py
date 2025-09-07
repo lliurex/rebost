@@ -31,6 +31,14 @@ class Rebost():
 		resultSet=args[0]
 		self.resultQueue[resultSet.arg]=resultSet
 	#def _actionCallback
+	
+	def _waitForCore(self):
+		initTime=int(time.time())
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+	#def _waitForCore
 
 	def _getSupportedFormats(self):
 		formats=[]
@@ -46,7 +54,6 @@ class Rebost():
 			elif bundle==appstream.BundleKind.UNKNOWN:
 				formats.append("unknown")
 		formats=list(set(formats))
-
 		return(formats)
 	#def _getSupportedFormats
 
@@ -85,13 +92,9 @@ class Rebost():
 
 	def _searchAppByUrl(self,search,kind):
 		result=[]
-		initTime=int(time.time())
-		searchItems=[search]
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
+			searchItems=[search]
 			for app in self.core.stores["main"].get_apps():
 				appUrl=app.get_url_item(kind)
 				if "/es/" in search:
@@ -118,11 +121,7 @@ class Rebost():
 
 	def _searchApp(self,search):
 		result={}
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			tokens=self.core.appstream.utils_search_tokenize(search)
 			if len(tokens)==0:
@@ -150,11 +149,7 @@ class Rebost():
 
 	def _showApp(self,show):
 		app=[]
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			app=self.core.stores["main"].get_app_by_id_ignore_prefix(show)
 			#REM this block search in all the appstream catalogues
@@ -175,13 +170,28 @@ class Rebost():
 		return(proc)
 	#def showApp
 
+	def _refreshApp(self,appId):
+		self._waitForCore()
+		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)
+		for bundle in app.get_bundles():
+			for pluginData in self.core.plugins.values():
+				if bundle.get_kind() in list(pluginData.keys()):
+					plugin=pluginData[bundle.get_kind()]
+					app=plugin[0].refreshAppData(app)
+		return(app)
+	#def _refreshApp
+
+	def refreshApp(self,appId):
+		proc=self.thExecutor.submit(self._refreshApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApprefreshApp
+
+
 	def _getApps(self):
 		apps=[]
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
 		return(apps)
@@ -197,11 +207,7 @@ class Rebost():
 	def _getCategories(self):
 		apps=[]
 		categories=[]
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
 		for app in apps:
@@ -221,11 +227,7 @@ class Rebost():
 	def _getAppsPerCategory(self):
 		apps=[]
 		categoryapps={}
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
 		for app in apps:
@@ -247,11 +249,7 @@ class Rebost():
 	def _getAppsInstalled(self):
 		apps=[]
 		installed=[]
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
 		for app in apps:
@@ -298,11 +296,7 @@ class Rebost():
 
 	def _getExternalInstaller(self):
 		installer=""
-		initTime=int(time.time())
-		while self.core.ready==False:
-			time.sleep(0.01)
-			if int(time.time())-initTime>20:
-				break
+		self._waitForCore()
 		if self.core.ready==True:
 			installer=self.core.getExternalInstaller()
 		return(installer)
@@ -313,4 +307,4 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def getAppsPerCategory
+	#def getExternalInstaller

@@ -244,3 +244,19 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		oldState=app.get_state()
+		return(app)
+		#REM ToDo implement
+		status="available"
+		for bundle in app.get_bundles():
+			if bundle.kind()==self.bundle:
+				if os.path.exists(os.path.join(APPIMAGE_DIR,app._get_pkgname_default())):
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+					status="installed"
+					break
+		app.add_metadata("X-REBOST-package","{};{}".format(release,status))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

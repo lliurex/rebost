@@ -9,6 +9,7 @@ import urllib
 from urllib.request import Request
 from urllib.request import urlretrieve
 
+APPIMAGE_DIRS=["/opt/appimages"]
 class engine:
 	def __init__(self,core,*args,**kwargs):
 		self.core=core
@@ -105,7 +106,7 @@ class engine:
 						screenshots.add_image(appimg)
 				app.add_screenshot(screenshots)
 				bun=self.core.appstream.Bundle()
-				bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+				bun.set_kind(self.bundle)
 				bun.set_id(japp.get("downloadlink1",""))
 				app.add_bundle(bun)
 				apprelease=self.core.appstream.Release()
@@ -198,7 +199,7 @@ class engine:
 					if installerUrl.split('/')>2:
 						release=installerUrl.split('/')[-2]
 			bun=self.core.appstream.Bundle()
-			bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+			bun.set_kind(self.bundle)
 			bun.set_id(installerUrl)
 			app.add_bundle(bun)
 			app.set_id("io.github.{}".format(name.lower().replace(" ","")))
@@ -242,3 +243,29 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		bundles=app.get_bundles()
+		name=""
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+		name=os.path.basename(name)
+		for appimageDir in APPIMAGE_DIRS:
+			fpath=os.path.join(appimageDir,name)
+			if os.path.exists(fpath):
+				status="installed"
+				app.set_state(self.core.appstream.AppState.INSTALLED)
+				break
+			else:
+				status="available"
+				app.set_state(self.core.appstream.AppState.AVAILABLE)
+		metastatus=app.get_metadata_item("X-REBOST-appimage")
+		metarelease="1;{}".format(status)
+		if metastatus!=None:
+			metarelease="{};{}".format(status.split(";")[0],status)
+			app.remove_metadata("X-REBOST-appimage")
+		app.add_metadata("X-REBOST-appimage","{}".format(metarelease))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

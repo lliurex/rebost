@@ -2,8 +2,9 @@
 import os,shutil,distro,stat
 import html2text
 import gi
-gi.require_version('AppStream', '1.0')
-from gi.repository import AppStream as appstream
+from gi.repository import Gio
+gi.require_version('AppStreamGlib', '1.0')
+from gi.repository import AppStreamGlib as appstream
 import sqlite3
 import json
 import html
@@ -15,206 +16,16 @@ import urllib
 from bs4 import BeautifulSoup as bs
 from urllib.request import Request
 from urllib.request import urlretrieve
-import flatpakHelper
 import locale
 
-DBG=False
-dbCache="/tmp/.cache/rebost"
-WRKDIR=os.path.join(dbCache,os.environ.get("USER"))
-if os.path.exists(WRKDIR)==False:
-	os.makedirs(WRKDIR)
-os.chmod(WRKDIR,stat.S_IRWXU )
-path=os.path.join(WRKDIR,"rebost.log")
-if os.path.isdir(os.path.dirname(path))==False:
-	os.makedirs(os.path.dirname(path))
-f=open(path,"w")
-f.close()
-fname = "rebost.log"
-logger = logging.getLogger(fname)
-formatter = logging.Formatter('%(asctime)s %(message)s')
-fh=logging.FileHandler(path)
-fh.setLevel(logging.INFO)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-st=logging.StreamHandler()
-st.setLevel(logging.DEBUG)
-st.setFormatter(formatter)
-EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-MAP="/usr/share/rebost/lists.d/eduapps.map"
-#logger.addHandler(st)
-localLangs=[locale.getlocale()[0].split("_")[0]]
-localLangs.append("qcv")
-if localLangs[0]=="ca":
-	localLangs.append("es")
-else:
-	localLangs.append("ca")
-localLangs.append("en")
 
-def setDebugEnabled(dbg):
-	DBG=dbg
-	if DBG:
-		logger.setLevel(logging.DEBUG)
-	else:
-		logger.setLevel(logging.INFO)
-#def enableDbg
-
-setDebugEnabled(DBG)
-
-def logmsg(msg):
-	logger.info("{}".format(msg))
-#def logmsg(msg)
-
-def _debug(msg):
-	logger.debug("{}".format(msg))
-#def _debug
-	
-def rebostProcess(*kwargs):
-	reb={'plugin':'','kind':'','progressQ':'','progress':'','resultQ':'','result':'','action':'','parm':'','proc':''}
-	return(reb)
-#def rebostProcess
-
-def resultSet(*kwargs):
-	rs={'id':'','name':'','title':'','msg':'','description':'','error':0,'errormsg':''}
-	return(rs)
-#def resultSet
-
-def rebostPkg(*kwargs):
-	pkg={'name':'','id':'','size':'','screenshots':[],'video':[],'pkgname':'','description':'','summary':'','icon':'','size':{},'downloadSize':'','bundle':{},'versions':{},'installed':{},'banner':'','license':'','homepage':'','infopage':'','categories':[],'installerUrl':'','state':{}}
-	return(pkg)
-#def rebostPkg
-
+LOCAL_LANGS=[]
+for localLang in locale.getlocale():
+	if "_" in localLang:
+		LOCAL_LANGS.append(localLang.split("_")[0])
+		LOCAL_LANGS.append(localLang.split("_")[-1].lower())
+LOCAL_LANGS.insert(0,"C")
 #---< 
-
-def rebostPkgsToSqlite(rebostPkgList,table,drop=False,sanitize=True):
-	wrkDir=WRKDIR #"/usr/share/rebost"
-	tablePath=os.path.join(wrkDir,os.path.basename(table))
-	if drop:
-		if os.path.isfile(tablePath):
-			os.remove(tablePath)
-	db=sqlite3.connect(tablePath)
-	table=table.replace('.db','')
-	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT, cat1 TEXT, cat2 TEXT, alias TEXT);".format(table)
-	_debug("Helper: {}".format(query))
-	cursor.execute(query)
-	query=[]
-	while rebostPkgList:
-		rebostPkg=rebostPkgList.pop(0)
-		values=[]
-		values=(__fillPkgData(rebostPkg,sanitize))
-		pkgName=values[0]
-		pkgData=values[1]
-		queryTmp='SELECT data FROM {0} where pkg="{1}"'.format(table,pkgName)
-		cursor.execute(queryTmp)
-		row=cursor.fetchone()
-		if row!=None:
-			if len(row)>0:
-				if pkgData!=row[0]:
-					query.append(values)
-				#else:
-				#	_debug("Already inserted {}".format(pkgName))
-			else:
-				query.append(values)
-		else:
-			query.append(values)
-		#take breath
-		#if len(rebostPkgList)%20==0:
-		#	time.sleep(0.001)
-	if query:
-		queryMany="INSERT or REPLACE INTO {} VALUES (?,?,?,?,?,?)".format(table)
-		try:
-			_debug("Helper: INSERTING {} for {}".format(len(query),table))
-			cursor.executemany(queryMany,query)
-		except Exception as e:
-			_debug("Helper: {}".format(e))
-		db.commit()
-	db.close()
-	cursor=None
-	return()
-#def rebostPkgsToSqlite
-
-def rebostPkgToSqlite(rebostPkg,table):
-	wrkDir=WRKDIR #"/usr/share/rebost"
-	tablePath=os.path.join(wrkDir,os.path.basename(table))
-	if tablePath.endswith(".db")==False:
-		tablePath+=".db"
-	db=sqlite3.connect(tablePath)
-	table=table.replace('.db','')
-	cursor=db.cursor()
-	query="CREATE TABLE IF NOT EXISTS {} (pkg TEXT PRIMARY KEY,data TEXT,cat0 TEXT,cat1 TEXT, cat2 TEXT);".format(table)
-	cursor.execute(query)
-	query=__fillPkgData(rebostPkg)
-	if query:
-		queryMany="INSERT or REPLACE INTO {} VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')".format(table,query[0],query[1],query[2],query[3],query[4],query[5])
-		try:
-			_debug("Helper: INSERT package for {}".format(table))
-			cursor.execute(queryMany)
-		except sqlite3.OperationalError as e:
-			time.sleep(0.1)
-			cursor.execute(queryMany)
-		try:
-			db.commit()
-		except sqlite3.OperationalError as e:
-			time.sleep(0.1)
-			db.commit()
-	db.close()
-	cursor=None
-#def rebostPkgsToSqlite
-
-def __fillPkgData(rebostPkg,sanitize=True):
-	if isinstance(rebostPkg['license'],list)==False:
-		rebostPkg['license']=""
-	alias=""
-	name=rebostPkg.get('name','')
-	if sanitize:
-		name=rebostPkg.get('name','').strip().lower()
-		rebostPkg["name"]=name.strip()
-		rebostPkg['pkgname']=rebostPkg['pkgname'].replace('.','_')
-		rebostPkg['summary']=_sanitizeString(rebostPkg['summary'],scape=True)
-		rebostPkg['description']=_sanitizeString(rebostPkg['description'],scape=True)
-		if rebostPkg['icon'].startswith("http"):
-			iconName=rebostPkg['icon'].split("/")[-1]
-			iconPath=os.path.join("/usr/share/rebost-data/icons/cache/",iconName)
-			if os.path.isfile(iconPath):
-				rebostPkg['icon']=iconPath
-		elif rebostPkg['icon']=='':
-			iconName=rebostPkg['pkgname']
-			iconPaths=[]
-			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}.png".format(iconName)))
-			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/64x64/","{0}_{0}.png".format(iconName)))
-			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}.png".format(iconName)))
-			iconPaths.append(os.path.join("/usr/share/rebost-data/icons/128x128/","{0}_{0}.png".format(iconName)))
-			iconPaths.append(os.path.join("/usr/share/icons/lliurex/apps/48/{0}.png".format(iconName)))
-			while iconPaths:
-				iconPath=iconPaths.pop(0)
-				if os.path.isfile(iconPath):
-					rebostPkg['icon']=iconPath
-					break
-		elif "/flatpak/" in rebostPkg["icon"] and os.path.isfile(rebostPkg["icon"])==False:
-			rebostPkg["icon"]=self._fixFlatpakIconPath(rebostPkg['icon'])
-		for bun in rebostPkg["bundle"].keys():
-			rebostPkg["bundle"][bun]=str(rebostPkg["bundle"][bun])
-			
-	#fix LliureX categories:
-	cats=rebostPkg.get('categories',[])
-	categories=[ c.lower() for c in cats if c ]
-	while len(categories)<3:
-		categories.append("")
-	for c in ["zomando","lliurex"]:
-		if c in categories:
-			categories.remove(c)
-			categories.insert(0,c)
-	categories=[ c.capitalize() for c in categories ]
-	#	llxcat=list(filter(lambda cat: c in str(cat).lower(), categories))
-	#	if llxcat:
-	#		idx=categories.index(llxcat.pop())
-	#		if idx>0:
-	#			categories.pop(idx)
-	#			categories.insert(0,c.capitalize())
-	(cat0,cat1,cat2)=categories[0:3]
-	alias=rebostPkg.get("alias","")
-	return([name,str(json.dumps(rebostPkg)),cat0,cat1,cat2,alias])
-#def __fillPkgData
 
 def _fixFlatpakIconPath(icon):
 	fpath=os.path.dirname(icon)
@@ -248,156 +59,28 @@ def _sanitizeString(data,scape=False,unescape=False):
 	return(data)
 #def _sanitizeString
 
-def _loadMap():
-	appmap={}
-	#DISABLED AS no map wanted
-	#fappmap={}
-	#fcontent={}
-	#if os.path.isfile(MAP):
-	#	with open(MAP,"r") as f:
-	#		fcontent=json.loads(f.read())
-	#for app,alias in fcontent.items():
-	#	if alias=="":
-	#		continue
-	#	appmap.update({app:alias})
-	return(appmap)
-#def _loadMAP
+def getFreedesktopCategories():
+	#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
+	catTree={"AudioVideo":["DiscBurning"],
+		"Audio":["Midi","Mixer","Sequencer","Tuner","Recorder","Player"],
+		"Video":["AudioVideoEditing","Player","Recorder","TV"],
+		"Development":["Building","Debugger","IDE","GUIDesigner","Profiling","RevisionControl","Translation","Database","ProjectManagement","WebDevelopment"],
+		"Education":["Art","Construction","Music","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","ImageProcessing","Literature","Maps","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","Spirituality","Sports","ParallelComputing"],
+		"Game":["ActionGame","AdventureGame","ArcadeGame","BoardGame","BlocksGame","CardGame","Emulator","KidsGame","LogicGame","RolePlaying","Shooter","Simulation","SportsGame","StrategyGame","LauncherStore"],
+		"Graphics":["2DGraphics","VectorGraphics","RasterGraphics","3DGraphics","Scanning","OCR","Photography","Publishing","Viewer"],
+		"Network":["Email","Dialup","InstantMessaging","Chat","IRCCLient","Feed","FileTransfer","HamRadio","News","P2P","RemoteAcces","Telephony","TelephonyTools","VideoConference","WebBrowser","WebDevelopment"],
+		"Office":["Calendar","ContactManagement","Database","Dictionary","Chart","Email","Finance","FlowChart","PDA","ProjectManagement","Presentation","Spreadsheet","WordProcessor","Photography","Publishing","Viewer"],
+		"Science":["Construction","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","Literature","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","ParallelComputing"],
+		"Settings":["Security","Accessibility"],
+		"System":["Security","Emulator","FileTools","FileManager","TerminalEmulator","FileSystem","Monitor"],
+		"Utility":["TextTools","TelephonyTools","Maps","Archiving","Compression","FileTools","Accessibility","Calculator","Clock","TextEditor"]
+		}
+	return(catTree)
+#def getCategories
 
-def rebostToAppstream(rebostPkgList,fname=""):
-	if len(fname)==0:
-		flsb="/etc/lsb-release"
-		codename="rebost"
-		if os.path.exists(flsb):
-			with open(flsb,"r") as f:
-				for l in f.readlines():
-					if l.strip().startswith("DISTRIB_CODENAME"):
-						codename=l.split("=")[-1].strip()
-		fname="/tmp/lliurex_dists_{}_main_dep11_Components-amd64.yml".format(codename)
-	store=appstream.Metadata()
-	for rebostPkg in rebostPkgList:
-		#Discard eduapps packages
-		if len(rebostPkg.get("versions",{}))==1:
-			if "eduapp" in rebostPkg.get("versions",{}).keys():
-				continue
-		app=appstream.Component()
-		app.set_id(rebostPkg["id"])
-		app.set_name(rebostPkg["name"])
-		app.set_description(rebostPkg["description"],None)
-		app.set_summary(rebostPkg["summary"],None)
-		app.set_pkgname(rebostPkg["pkgname"])
-		app.set_kind(appstream.ComponentKind.GENERIC)
-		icon=appstream.Icon()
-		if "://" in rebostPkg["icon"]:
-			icon.set_url(rebostPkg["icon"])
-			icon.set_kind(appstream.IconKind.REMOTE)
-		else:
-			icon.set_filename(rebostPkg["icon"])
-			icon.set_kind(appstream.IconKind.CACHED)
-		app.add_icon(icon)
-		for bundle,pkg in rebostPkg["bundle"].items():
-			bund=appstream.Bundle()
-			bund.set_id(pkg)
-			if bundle=="flatpak":
-				bund.set_kind(appstream.BundleKind.FLATPAK)
-			elif bundle=="flatpak":
-				bund.set_kind(appstream.BundleKind.SNAP)
-			elif bundle=="appimage":
-				bund.set_kind(appstream.BundleKind.APPIMAGE)
-			elif bundle=="package":
-				bund.set_kind(appstream.BundleKind.PACKAGE)
-			else:
-				#Discard virtual packages (zmd and edu)
-				continue
-			app.add_bundle(bund)
-		screenshot=appstream.Screenshot()
-		for img in rebostPkg["screenshots"]:
-			appstreamImg=appstream.Image()
-			appstreamImg.set_url(img)
-			screenshot.add_image(appstreamImg)
-		app.add_screenshot(screenshot)
-
-		for cat in rebostPkg["categories"]:
-			app.add_category(cat)
-
-		store.add_component(app)
-	xml=store.components_to_catalog(appstream.FormatKind.YAML)
-	with open(fname,"w") as f:
-		f.write(xml)
-	return(fname)
-#def rebostToAppstream
-
-def _appstreamToRebost(appstreamCatalogue):
-	rebostPkgList=[]
-	catalogue=appstreamCatalogue.get_apps()
-	appmap=_loadMap()
-	while catalogue:
-		component=catalogue.pop(0)
-		pkg=rebostPkg()
-		pkg['id']=component.get_id().lower()
-		pkg['name']=_componentGetName(component)
-		if component.get_pkgname_default():
-			pkg['pkgname']=component.get_pkgname_default()
-		else:
-			pkg['pkgname']=pkg['name']
-		pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
-		if pkg["pkgname"] in appmap:
-			pkg["alias"]=appmap[pkg["pkgname"]]
-		tmpSummary=""
-		tmpDescription=""
-		for lang in localLangs:
-				if tmpSummary=="":
-					if isinstance(component.get_comment(lang),str)==True:
-						tmpSummary=component.get_comment(lang)
-				if tmpDescription=="":
-					if isinstance(component.get_description(lang),str)==True:
-						tmpDescription=component.get_description(lang)
-		if tmpDescription=="":
-			tmpDescription=component.get_description()
-		if tmpSummary=="":
-			tmpSummary=component.get_comment()
-		#pkg['summary']=_sanitizeString(component.get_comment(),scape=True)
-		pkg['summary']=_sanitizeString(tmpSummary,scape=True)
-		#pkg['description']=component.get_description()
-		pkg['description']=tmpDescription
-		if not isinstance(pkg['description'],str):
-			pkg['description']=pkg['summary']
-		else:
-			if len(pkg["description"])==0:
-				pkg['description']=pkg['summary']
-			pkg['description']=_sanitizeString(pkg['description'],scape=True)
-		pkg['icon']=_componentGetIcon(component)
-		if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-			pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
-		pkg['homepage']=_componentGetHomepage(component)
-		pkg['infopage']=_componentGetInfopage(component)
-		pkg['categories']=component.get_categories()
-		pkg=_componentFillInfo(component,pkg)
-		pkg['license']=component.get_project_license()
-		pkg['screenshots']=_componentGetScreenshots(component)
-		rebostPkgList.append(pkg)
-	return(rebostPkgList)
-#def _appstreamToRebost
-
-def _componentGetName(component):
-	name=component.get_id()
-	nameComponents=name.lower().split(".")
-	nameComponents.reverse()
-	name=nameComponents[-1]
-	banlist=["desktop","org","net","com","app","kde","gnome","gtk","qt"]
-	for component in nameComponents:
-		if component.lower() in banlist:
-			continue
-		if len(component)<2:
-			continue
-		name=component.lstrip("_")
-		break
-	name=name.replace("_zmd",'')
-	return(name)
-#def _componentGetName
-
-def _componentGetIcon(component):
+def _getIconFromAppstream(app):
 	iconf=""
-	for icon in component.get_icons():
+	for icon in app.get_icons():
 		if icon.get_filename():
 			iconf=icon.get_filename()
 			break
@@ -407,90 +90,124 @@ def _componentGetIcon(component):
 				iconf=url
 				break
 	return(iconf)
-#def _componentGetIcon
+#def _getIconFromAppstream
 
-def _componentGetHomepage(component):
-		homepage=component.get_url_item(appstream.UrlKind.HOMEPAGE)
-		return(homepage)
-#def _componentGetHomepage
-
-def _componentGetInfopage(component):
-		homepage=''
-		for kind in [appstream.UrlKind.UNKNOWN,appstream.UrlKind.CONTACT,appstream.UrlKind.BUGTRACKER,appstream.UrlKind.HELP]:
-			homepage=component.get_url_item(kind)
-			if homepage:
-				break
-		return(homepage)
-#def _componentGetInfopage
-
-def _componentFillInfo(component,pkg):
+def _setDetailFromAppstream(app,pkg):
 	versionArray=[]
-	for release in component.get_releases():
+	for release in app.get_releases():
 		versionArray.append(release.get_version())
-	if len(versionArray)==0:
-		#There's no match
-		versionArray=["0.9~{}".format(distro.codename())]
-	versionArray.sort()
-	if len(component.get_bundles())>0:
-		for i in component.get_bundles():
-			if i.get_kind()==2 or i.get_kind()==4: #appstream.BundleKind.FLATPAK | PACKAGE:
-				if i.get_kind()==2:
-					bundle="flatpak"
-					pkgid=component.get_id()
-				else:
-					pkgid=component.get_pkgname_default()
-					bundle="package"
-				pkg['bundle']={bundle:pkgid.replace('.desktop','')}
-				pkg['versions']={bundle:versionArray[-1]}
-			if i.get_kind()==1: #appstream.BundleKind.LIMBA
-					pkgid=component.get_pkgname_default()
-					pkg['bundle']={"package":pkgid.replace('.desktop','')}
-					pkg['versions']={"package":versionArray[-1]}
-					if int(component.get_state())==1:
-					#	if versionArray!=["0.9~{}".format(distro.codename())]:
-						pkg['state']["package"]="0"
-						if versionArray!=["0.9~{}".format(distro.codename())]:
-							pkg['versions']={"package":versionArray[-1]}
-		categories=[cat.lower() for cat in pkg.get("categories",[])]
-		if "lliurex"  in component.get_id():
-			pkg=_componentLliurexPackage(component,pkg)
-		elif "lliurex" in categories:
-				pkg['bundle']={'package':pkg['pkgname']}
-				pkg['homepage']="https://github.com/lliurex"
+	if len(app.get_bundles())>0:
+		for bundle in app.get_bundles():
+			bundleKind=bundle.kind_to_string(bundle.get_kind())
+			if bundleKind==None:
+				bundleKind="unknown"
+			pkg["bundle"].update({bundleKind:bundle.get_id()})
+			pkg['versions']={}
+			metadata=app.get_metadata()
+			if metadata!=None:
+				for key,data in metadata.items():
+					if key.startswith("X-REBOST-"):
+						mkey=key.replace("X-REBOST-","")
+						if ";" in data:
+							(release,status)=data.split(";")
+							if status=="installed":
+								pkg["status"].update({mkey:0})
+							else:
+								pkg["status"].update({mkey:1})
+							pkg["versions"].update({mkey:release})
+	pkg["state"]=app.get_state()
+	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
+		app.add_category("FORBIDDEN")
+	pkg["suggests"]=[]
+	for suggest in app.get_suggests():
+		pkg["suggests"].extend(suggest.get_ids())
+	pkg["keywords"]=[]
+	localLangs=LOCAL_LANGS[1:]
+	if "ca" in localLangs:
+		idx=localLangs.index("ca")
+		localLangs.insert(idx,"qcv")
+		localLangs.insert(idx,"ca-valencia")
+	localLangs.append(LOCAL_LANGS[0])
+	for lang in localLangs:
+		pkg["keywords"].extend(app.get_keywords(lang))
+		if len(pkg["keywords"])>0:
+			break
 	return(pkg)
-#def _componentFillInfo
+#def _setDetailFromAppstream
 
-def _componentLliurexPackage(component,pkg):
-	pkgName=component.get_id().replace('.desktop','')
-	pkgName=pkgName.replace('_zmd','')
-	zmdPkgName=pkgName
-	if zmdPkgName.endswith(".zmd")==False and "Zomando" in pkg['categories']:
-		zmdPkgName="{}.zmd".format(zmdPkgName)
-	if "Zomando" in pkg['categories'] and "Software" in pkg['categories']:
-		pkg['bundle']={'package':pkgName,'zomando':zmdPkgName}
-	elif "Education" in pkg['categories'] or "Utility" in pkg['categories']:
-		if "Zomando" in pkg['categories']:
-			pkg['bundle']={'package':pkg['pkgname'],'zomando':zmdPkgName}
-		else:
-			pkg['bundle']={'package':pkg['pkgname']}
-	categories=[cat.lower() for cat in pkg.get("categories",[])]
-	if "lliurex" in categories==False:
-		pkg['categories'].insert(0,"Lliurex")
-	pkg['homepage']="https://github.com/lliurex"
-	return(pkg)
-#def _componentLliurexPackage
-
-def _componentGetScreenshots(component):
+def _getScreenshotsFromAppstream(app):
 	screenshots=[]
-	for scr in component.get_screenshots():
+	for scr in app.get_screenshots():
 		for img in scr.get_images():
 			screenshots.append(img.get_url())
 			break
 		if len(screenshots)>3:
 			break
 	return(screenshots)
-#def _componentGetScreenshots
+#def _getScreenshotsFromAppstream
 
+def _appstreamAppToRebost(app):
+	pkg={"bundle":{},"versions":{},"status":{}}
+	pkg['id']=app.get_id().lower()
+	tmpSummary=""
+	tmpDescription=""
+	tmpName=""
+	localLangs=LOCAL_LANGS[1:]
+	if "ca" in localLangs:
+		idx=localLangs.index("ca")
+		localLangs.insert(idx,"qcv")
+		localLangs.insert(idx,"ca-valencia")
+	localLangs.append(LOCAL_LANGS[0])
+	for lang in localLangs:
+		if tmpName=="":
+			tmpName=app.get_name(lang)
+		if tmpSummary=="":
+			if isinstance(app.get_comment(lang),str)==True:
+				tmpSummary=app.get_comment(lang)
+		if tmpDescription=="":
+			if isinstance(app.get_description(lang),str)==True:
+				tmpDescription=app.get_description(lang)
+		if tmpSummary!="" and tmpDescription!="" and tmpName!=None:
+			break
+	if tmpSummary=="":
+		tmpSummary=app.get_comment("C")
+	if tmpDescription=="":
+		tmpDescription=app.get_description("C")
+	if tmpName=="" or tmpName==None:
+		tmpName=pkg["id"]
+	pkg["name"]=tmpName
+	pkg["description"]=tmpDescription
+	pkg["summary"]=tmpSummary
+	if app.get_pkgname_default()!=None:
+		pkg['pkgname']=app.get_pkgname_default()
+	else:
+		pkg['pkgname']=pkg['name']
+	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
+	pkg['icon']=_getIconFromAppstream(app)
+	#if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
+	#	pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
+	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
+	pkg['infopage']=app.get_url_item(appstream.UrlKind.CONTACT)
+	pkg['categories']=app.get_categories()
+	pkg=_setDetailFromAppstream(app,pkg)
+	pkg['license']=app.get_project_license()
+	pkg['screenshots']=_getScreenshotsFromAppstream(app)
+	return(pkg)
+#def _appstreamAppToRebost
+
+def appstreamToRebost(appstreamApps):
+	rebostPkgList=[]
+	if not isinstance(appstreamApps,list) and appstreamApps!=None:
+		appstreamApps=[appstreamApps]
+	while appstreamApps:
+		app=appstreamApps.pop(0)
+		rebostPkg=_appstreamAppToRebost(app)
+		if rebostPkg.get("id","")!="":
+			rebostPkgList.append(rebostPkg)
+	return(rebostPkgList)
+#def appstreamToRebost
+
+#REM
 def epiFromPkg(rebostpkg,bundle,user='',remote=False,postaction=""):
 	if isinstance(rebostpkg,str):
 		rebostpkg=json.loads(rebostpkg)
@@ -836,25 +553,6 @@ def getFilterContent(folder):
 								filters.append(fcontent)
 	return(filters)
 #def getFilterContent
-
-def getFreedesktopCategories():
-	#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
-	catTree={"AudioVideo":["DiscBurning"],
-		"Audio":["Midi","Mixer","Sequencer","Tuner","Recorder","Player"],
-		"Video":["AudioVideoEditing","Player","Recorder","TV"],
-		"Development":["Building","Debugger","IDE","GUIDesigner","Profiling","RevisionControl","Translation","Database","ProjectManagement","WebDevelopment"],
-		"Education":["Art","Construction","Music","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","ImageProcessing","Literature","Maps","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","Spirituality","Sports","ParallelComputing"],
-		"Game":["ActionGame","AdventureGame","ArcadeGame","BoardGame","BlocksGame","CardGame","Emulator","KidsGame","LogicGame","RolePlaying","Shooter","Simulation","SportsGame","StrategyGame","LauncherStore"],
-		"Graphics":["2DGraphics","VectorGraphics","RasterGraphics","3DGraphics","Scanning","OCR","Photography","Publishing","Viewer"],
-		"Network":["Email","Dialup","InstantMessaging","Chat","IRCCLient","Feed","FileTransfer","HamRadio","News","P2P","RemoteAcces","Telephony","TelephonyTools","VideoConference","WebBrowser","WebDevelopment"],
-		"Office":["Calendar","ContactManagement","Database","Dictionary","Chart","Email","Finance","FlowChart","PDA","ProjectManagement","Presentation","Spreadsheet","WordProcessor","Photography","Publishing","Viewer"],
-		"Science":["Construction","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","Literature","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","ParallelComputing"],
-		"Settings":["Security","Accessibility"],
-		"System":["Security","Emulator","FileTools","FileManager","TerminalEmulator","FileSystem","Monitor"],
-		"Utility":["TextTools","TelephonyTools","Maps","Archiving","Compression","FileTools","Accessibility","Calculator","Clock","TextEditor"]
-		}
-	return(catTree)
-#def getCategories
 
 	#Default banlist. If there's a category banlist file use it
 

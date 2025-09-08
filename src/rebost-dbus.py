@@ -6,7 +6,8 @@ import signal
 import dbus,dbus.service,dbus.exceptions
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
-import rebostCore as rebost
+import rebost
+import rebostHelper
 import logging
 
 class rebostDbusMethods(dbus.service.Object):
@@ -18,7 +19,6 @@ class rebostDbusMethods(dbus.service.Object):
 		signal.signal(signal.SIGUSR1, self._updatedSignal)
 		signal.signal(signal.SIGALRM, self._beginUpdateSignal)
 		self.rebost=rebost.Rebost()
-		self.rebost.run()
 	#def __init__
 
 	def _debug(self,msg):
@@ -63,90 +63,165 @@ class rebostDbusMethods(dbus.service.Object):
 	#def storeUpdated
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='b', out_signature='s')
-	def enableGui(self,enable):
-		ret=self.rebost._setGuiEnabled(enable)
-		return (str(ret))
-	#def enableGui
+						 in_signature='', out_signature='as')
+	def getSupportedFormats(self):
+		ret=self.rebost.getSupportedFormats()
+		resultList=ret.result()
+		return (resultList)
+	#def getFreedesktopCategories
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ssss', out_signature='s')
-	def install(self,pkg,bundle,user='',n4dkey=''):
-		action='install'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
-		return (ret)
-	#def install
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def test(self,pkg,bundle,user=''):
-		action='test'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user)
-		return (ret)
-	#def test
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ssss', out_signature='s')
-	def remote_install(self,pkg,bundle,user='',n4dkey=''):
-		action='remote'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
-		return (ret)
-	#def remote_install
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
-	def load(self):
-		action='load'
-		ret=self.rebost.execute(action)
-		return (ret)
-	#def load
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
-	def getCategories(self):
-		action='getCategories'
-		ret=self.rebost.execute(action)
-		return (ret)
-	#def getCategories
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
+						 in_signature='', out_signature='a{sas}')
 	def getFreedesktopCategories(self):
-		action='getFreedesktopCategories'
-		ret=self.rebost.execute(action)
-		return (ret)
+		ret=self.rebost.getFreedesktopCategories()
+		resultList=ret.result()
+		return (resultList)
+	#def getFreedesktopCategories
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='as')
+	def getCategories(self):
+		ret=self.rebost.getCategories()
+		resultList=ret.result()
+		return (resultList)
 	#def getCategories
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='ay')
-	def search(self,pkgname):
-		action='search'
-		pkgname=pkgname.lower()
-		ret=self.rebost.execute(action,pkgname)
-		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
+						 in_signature='', out_signature='s')
+	def getAppsPerCategory(self):
+		ret=self.rebost.getAppsPerCategory()
+		resultDict=ret.result()
+		getResult={}
+		for cat,apps in resultDict.items():
+			getRebostApps=rebostHelper.appstreamToRebost(apps)
+			getResult[cat]=getRebostApps
+		return(json.dumps(getResult))
 	#def search
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def getAppsInCategory(self,category):
+		ret=self.rebost.getAppsPerCategory()
+		resultDict=ret.result()
+		getResult={}
+		getRebostApps=rebostHelper.appstreamToRebost(resultDict.get(category,[]))
+		getResult[category]=getRebostApps
+		return(json.dumps(getResult))
+	#def getAppsPerCategory
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getApps(self):
+		ret=self.rebost.getApps()
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def getApps
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='ay')
-	def search_by_category(self,category):
-		action='list'
-		ret=self.rebost.execute(action,category)
-		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
-	#def search_by_category
-	
+						 in_signature='', out_signature='s')
+	def getAppsInstalled(self):
+		ret=self.rebost.getAppsInstalled()
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def getAppsInstalled
+
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='si', out_signature='ay')
-	def search_by_category_limit(self,category,limit):
-		action='list'
-		ret=self.rebost.execute(action,category,limit)
-		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
-	#def search_by_category_limit
+						 in_signature='s', out_signature='s')
+	def search(self,pkgname):
+		pkgname=pkgname.lower()
+		ret=self.rebost.searchApp(pkgname)
+		resultDict=ret.result()
+		priority=list(resultDict.keys())
+		priority.sort()
+		priority.reverse()
+		searchResult=[]
+		for p in priority:
+			searchResult.extend(resultDict[p])
+		searchResult=rebostHelper.appstreamToRebost(searchResult)
+		return(json.dumps(searchResult))
+	#def search
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def searchAppByUrl(self,url):
+		kind=self.rebost.core.appstream.UrlKind.HOMEPAGE
+		ret=self.rebost.searchAppByUrl(url,kind)
+		resultList=ret.result()
+		searchResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(searchResult))
+	#def search
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def showApp(self,pkgname):
+		ret=self.rebost.showApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def showApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def refreshApp(self,pkgname):
+		ret=self.rebost.refreshApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def refreshApp
+
+	def _getStateFromValue(self,value):
+		if value==1:
+			appState=self.rebost.core.appstream.AppState.INSTALLED
+		elif value==2:
+			appState=self.rebost.core.appstream.AppState.AVAILABLE
+		elif value==4:
+			appState=self.rebost.core.appstream.AppState.UPDATABLE
+		elif value==7:
+			appState=self.rebost.core.appstream.AppState.INSTALLING
+		elif value==8:
+			appState=self.rebost.core.appstream.AppState.REMOVING
+		else:
+			appState=self.rebost.core.appstream.AppState.UNKNOWN
+		return appState
+	#def _getStateFromValue
+
+	def _setAppState(self,appId,state,bundle=None,temp=True):
+		appState=self._getStateFromValue(state)
+		ret=self.rebost.setStateForApp(appId,appState,bundle,temp)
+		app=ret.result()
+		return(app)
+	#def _setAppState
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='ssi', out_signature='s')
+	def setAppState(self,appId,bundle,state):
+		app=self._setAppState(appId,state,bundle,False)
+		getResult=rebostHelper.appstreamToRebost(app)
+		return(json.dumps(getResult))
+	#def setAppState
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='si', out_signature='s')
+	def setAppStateTmp(self,appId,state):
+		app=self._setAppState(appId,state)
+		getResult=rebostHelper.appstreamToRebost(app)
+		return(json.dumps(getResult))
+	#def setAppStateTmp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getExternalInstaller(self):
+		ret=""
+		try:
+			result=self.rebost.getExternalInstaller()
+			ret=result.result()
+		except Exception as e:
+			print("D-BUS Exception: {}".format(e))
+			ret=""
+		return ret
+	#def getExternalInstaller
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
@@ -155,71 +230,6 @@ class rebostDbusMethods(dbus.service.Object):
 		ret=self.rebost.execute(action,user)
 		return (ret)
 	#def export
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def match(self,pkg,user=''):
-		action='match'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,user)
-		return (ret)
-	#def match
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def show(self,pkg,user=''):
-		action='show'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,user)
-		return (ret)
-	#def show
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ssss', out_signature='s')
-	def remove(self,pkg,bundle,user='',n4dkey=''):
-		action='remove'
-		pkg=pkg.lower()
-		ret=self.rebost.execute(action,pkg,bundle,user=user,n4dkey=n4dkey)
-		return (ret)
-	#def remove
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='sss', out_signature='s')
-	def commitInstall(self,args,bundle,state):
-		action='commitInstall'
-		ret=self.rebost.execute(action,args,bundle,state)
-		return (ret)
-	#def commitInstall
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='ss', out_signature='s')
-	def updatePkgData(self,args,data):
-		action='updatePkgData'
-		ret=self.rebost.execute(action,args,data)
-		return (ret)
-	#def commitInstall
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def addTransaction(self,args):
-		action='insert'
-		ret=self.rebost.execute(action,args)
-		return (ret)
-	#def addTransaction
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def getEpiPkgStatus(self,epifile):
-		ret=self.rebost.getEpiPkgStatus(epifile)
-		return (ret)
-	#def getEpiPkgStatus
-	
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
-	def getResults(self):
-		ret=self.rebost.getProgress()
-		return (ret)
-	#def getResults
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
@@ -299,42 +309,8 @@ class rebostDbusMethods(dbus.service.Object):
 			print(str(e))
 		return(ret)
 	#def getLockStatus
-
-	#@dbus.service.method("net.lliurex.rebost",
-	#					 in_signature='', out_signature='')
-	#def disableFilters(self):
-	#	try:
-	#		self.rebost.execute("disableFilters")
-	#	except Exception as e:
-	#		print("Critical error disabling filters")
-	#		print(str(e))
-	##def disableFilters
-
-	#@dbus.service.method("net.lliurex.rebost",
-	#					 in_signature='', out_signature='b')
-	#def getFiltersEnabled(self):
-	#	ret=True
-	#	try:
-	#		ret=self.rebost.getFiltersEnabled()
-	#	except Exception as e:
-	#		print("Critical error reading filters")
-	#		print(str(e))
-	#	return(ret)
-	##def disableFilters
-
-	def getPlugins(self):
-		pass
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='')
-	def commitData(self):
-		ret=self.rebost.commitData()
-#		ret = zlib.compress(ret.encode(),level=1)
-	#def commitData
-
 #class rebostDbusMethods
 	
-
 class rebostDBus():
 	def __init__(self): 
 		self.dbg=False

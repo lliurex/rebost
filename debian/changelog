@@ -2,6 +2,7 @@ rebost (3.0.0-0llx25) noble; urgency=medium
 
   * Remove sql support
   * Full appstream support
+  * sqlmanager set as deprecated
   * Non-compatible with <3.0
 
  -- Juanma1980 <juanma1980@gmail.com>  Mon, 08 Sep 2025 12:32:57 +0200

@@ -24,8 +24,9 @@ Depends: ${misc:Depends}, ${python3:Depends},
 	python3-psutil,
 	python3-dbus,
 	rebost-data (>=25.07.25),
-	rebost-metadata (>>0.2),
-	python3-rebost (>=2.0)
+	rebost-metadata (>0.2),
+Breaks:
+	python3-rebost (<2.0)
 Description: Software management for LliureX
  Rebost it's a software management system through n4d 
  that supports snap, flatpack, appimage and packageKit. 

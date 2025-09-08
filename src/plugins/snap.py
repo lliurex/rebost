@@ -185,17 +185,26 @@ class engine:
 
 	def refreshAppData(self,app):
 		oldState=app.get_state()
-		#REM ToDo GET SNAP INFO
-		return(app)
-		if pkg.get_status()==Snapd.SnapStatus.INSTALLED:
+		name=""
+		bundles=app.get_bundles()
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+		try:
+			installedRefs=self.snap.get_snap_sync(name)
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)
-			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
-		else:
+		#	apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		except:
 			status="available"
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
-			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
-		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
+		#	apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+		metastatus=app.get_metadata_item("X-REBOST-snap")
+		metarelease="1;{}".format(status)
+		if metastatus!=None:
+			metarelease="{};{}".format(metastatus.split(";")[0],status)
+			app.remove_metadata("X-REBOST-snap")
+		app.add_metadata("X-REBOST-snap","{}".format(metarelease))
 		return(app)
 	#def refreshAppData(self,app):
 #class engine

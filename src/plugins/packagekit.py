@@ -16,6 +16,7 @@ class engine:
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.PACKAGE
+		self.pkClient=packagekit.Client()
 	#def __init__
 
 	def _debug(self,msg):
@@ -27,14 +28,14 @@ class engine:
 		return
 	#def _loadCallback
 
-	def _loadCatalogue(self,pk):
+	def _loadCatalogue(self):
 		self._debug("Getting pkg list")
 		apps=[]
 		appsRevoked=[]
 		pkgSacks=[]
 		pkgIds=[]
 		flags=packagekit.FilterEnum.NONE
-		pkList=pk.get_packages(flags, None, self._loadCallback, None)
+		pkList=self.pkClient.get_packages(flags, None, self._loadCallback, None)
 		pkgSacks.append(pkList.get_package_sack())
 		for pkgSack in pkgSacks:
 			pkgSackIds=pkgSack.get_ids()
@@ -105,6 +106,8 @@ class engine:
 					continue
 				if ids.startswith("xserver"):
 					continue
+				if "budgie" in ids:
+					continue
 				if "account" in ids:
 					continue
 				if "-dbg" in ids:
@@ -167,7 +170,7 @@ class engine:
 		return(sectionMap.get(section,""))
 	#def _sectionMap
 
-	def _processPackages(self,pk,pkgIds):
+	def _processPackages(self,pkgIds):
 		apps=[]
 		pkgDetails=[]
 		pkgCount=0
@@ -182,7 +185,7 @@ class engine:
 			# Calls to packagekit are too expensive so it's needed to replace them
 			# Apparently we need a get_details call for retrieving categories
 			# Perhaps it's possible to use pkg.group property but isn't working
-			pkDetails=pk.get_details(pkgIds[processed:total], None, self._loadCallback, None)
+			pkDetails=self.pkClient.get_details(pkgIds[processed:total], None, self._loadCallback, None)
 			details=pkDetails.get_details_array()
 			for detail in details:
 				app=self.core.appstream.App()
@@ -244,9 +247,8 @@ class engine:
 		#if self._chkNeedUpdate(fxml)==False:
 		#	store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
-			pk=packagekit.Client()
-			pkglist=self._loadCatalogue(pk)
-			apps=self._processPackages(pk,pkglist)
+			pkglist=self._loadCatalogue()
+			apps=self._processPackages(pkglist)
 			store.add_apps(apps)
 			self.core._toFile(store,fxml)
 		self._debug("Sending {}".format(len(store.get_apps())))
@@ -255,17 +257,35 @@ class engine:
 
 	def refreshAppData(self,app):
 		oldState=app.get_state()
-		#REM ToDo GET PKGID
-		return(app)
+		name=""
+		bundles=app.get_bundles()
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+		try:
+			pkgResult=self.pkClient.resolve(packagekit.FilterEnum.NONE,[name],None,self._loadCallback,None)
+			pkgArray=pkgResult.get_package_array()
+			for pkg in pkgArray:
+				if "{};".format(name) in pkg.get_id():
+					pkgId=pkg.get_id()
+					break
+		except Exception as e:
+			print(e)
+			pkgId=""
 		if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)
-			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		#	apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
-			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+		#	apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
 			status="available"
-		app.add_metadata("X-REBOST-package","{};{}".format(release,status))
+		metastatus=app.get_metadata_item("X-REBOST-package")
+		metarelease="1;{}".format(status)
+		if metastatus!=None:
+			metarelease="{};{}".format(metastatus.split(";")[0],status)
+			app.remove_metadata("X-REBOST-package")
+		app.add_metadata("X-REBOST-package","{}".format(metarelease))
 		return(app)
 	#def refreshAppData(self,app):
 #class engine

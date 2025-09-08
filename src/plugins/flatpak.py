@@ -155,31 +155,32 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-
-	def refreshAppData(self,app):
-		bundles=app.get_bundles()
-		flInst=Flatpak.get_system_installations()
 		name=""
+		bundles=app.get_bundles()
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()
-		name=os.path.basename(name)
-		installedRefsArray.extend(installation.list_installed_refs())
+		flInst=Flatpak.get_system_installations()
+		installedRefsArray=[]
+		updatableRefs=[]
+		for installation in flInst:
+			installedRefsArray.extend(installation.list_installed_refs())
+		app.set_state(self.core.appstream.AppState.AVAILABLE)
+		status="available"
 		for ref in installedRefsArray:
-			if name==ref.get_appdata_name():
-				state="installed"
+			appName=ref.format_ref()
+			if appName==None:
+				continue
+			if name==appName.lower():
+				status="installed"
 				app.set_state(self.core.appstream.AppState.INSTALLED)
-		#else:
-		#	state="available"
-		#	release="unknown"
-		#	releaseApp=app.get_release_default()
-		#	if releaseApp!=None:
-		#		release=releaseApp.get_version()
-		#	else:
-		#		for r in app.get_releases():
-		#			release=r.get_version()
-		#			break
-		app.add_metadata("X-REBOST-flatpak","{};{}".format(release,state))
+				break
+		metastatus=app.get_metadata_item("X-REBOST-flatpak")
+		metarelease="1;{}".format(status)
+		if metastatus!=None:
+			metarelease="{};{}".format(metastatus.split(";")[0],status)
+			app.remove_metadata("X-REBOST-flatpak")
+		app.add_metadata("X-REBOST-flatpak","{}".format(metarelease))
 		return(app)
 	#def refreshAppData
 #class engine

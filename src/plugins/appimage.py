@@ -245,8 +245,8 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		bundles=app.get_bundles()
 		name=""
+		bundles=app.get_bundles()
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()
@@ -263,7 +263,7 @@ class engine:
 		metastatus=app.get_metadata_item("X-REBOST-appimage")
 		metarelease="1;{}".format(status)
 		if metastatus!=None:
-			metarelease="{};{}".format(status.split(";")[0],status)
+			metarelease="{};{}".format(metastatus.split(";")[0],status)
 			app.remove_metadata("X-REBOST-appimage")
 		app.add_metadata("X-REBOST-appimage","{}".format(metarelease))
 		return(app)

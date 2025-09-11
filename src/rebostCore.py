@@ -91,7 +91,7 @@ class _RebostCore():
 				else:
 					self._debug("Discarded {}".format(modname))
 			except Exception as e:
-				self_error("Failed importing {0}: {1}".format(modname,e))
+				self._error("Failed importing {0}: {1}".format(modname,e))
 		else:
 			self._debug("{} not found".format(modname))
 		return(plugin)
@@ -313,7 +313,7 @@ class _RebostCore():
 		self._debug("State {}".format(resultSet.done()))
 		if resultSet.done():
 			if resultSet.exception():
-				self._error(resultSet.exception(),msg("_callBackInit"))
+				self._error(resultSet.exception(),msg="_callBackInit")
 			else:
 				store=resultSet.result()
 				self.stores.update({storeId:store})

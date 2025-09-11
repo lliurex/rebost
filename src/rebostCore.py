@@ -54,6 +54,12 @@ class _RebostCore():
 			print("core: {}".format(msg))
 	#def _debug
 
+	def _error(self,e,msg=""):
+		print("{}: {}\n<------ TRACEBACK ------>".format(msg,e))
+		print(traceback.format_exc())
+		print ("<------ TRACEBACK -----/>")
+	#def _error
+
 	def setConfigValue(self,key,value):
 		self.config.update({key:value})
 	#def setConfigValue
@@ -85,8 +91,7 @@ class _RebostCore():
 				else:
 					self._debug("Discarded {}".format(modname))
 			except Exception as e:
-				self._debug("Failed importing {0}: {1}".format(modname,e))
-				print(traceback.format_exc())
+				self_error("Failed importing {0}: {1}".format(modname,e))
 		else:
 			self._debug("{} not found".format(modname))
 		return(plugin)
@@ -152,8 +157,7 @@ class _RebostCore():
 					try:
 						elem=ET.fromstring(desc)
 					except Exception as e:
-						self._debug(e)
-						print(traceback.format_exc())
+						self._error(e,msg="_fromFile")
 					description.append(elem)
 				os.unlink(fxml)
 				tree.write(fxml,xml_declaration="1.0",encoding="UTF-8")
@@ -164,35 +168,27 @@ class _RebostCore():
 					store.from_xml(fcontent)
 					self._debug("Added {} apps".format(len(store.get_apps())))
 				except Exception as e:
-					self._debug("Error fixing. Requires user intervention")
-					self._debug(e)
-					print(traceback.format_exc())
+					self._error(e,msg="Error fixing. Requires user intervention")
 		else:
 			self._debug("{} not found".format(fxml))
 		return(store)
 	#def _fromFile
 
 	def _getVerifiedOrigins(self):
-		matchTable=self.config.get("verifiedProvider","main")
+		matchTables=self.config.get("verifiedProvider",[])
 		verifiedOrigins=[]
-		if matchTable!="main":
-			try:
-				for idx,store in self.stores.items():
-					if isinstance(idx,int)==False:
-						continue
-					if store.get_origin()==matchTable:
-						verifiedOrigins.append(idx)
-			except Exception as e:
-				print("^")
-				print(e)
-				print("^")
+		for matchTable in matchTables:
+			for idx,store in self.stores.items():
+				if isinstance(idx,int)==False:
+					continue
+				if store.get_origin()==matchTable:
+					verifiedOrigins.append(idx)
 		return(verifiedOrigins)
 	#def _getVerifiedOrigins
 
 	def _preLoadVerified(self,verifiedOrigins):
 		store=appstream.Store()
 		for idx in verifiedOrigins:
-			print("Adding {} for {}".format(len(self.stores[idx].get_apps()),self.stores[idx].get_origin()))
 			for app in self.stores[idx].get_apps():
 				mergeApp=self._preMergeApp(app)
 				oldApp=store.get_app_by_id(mergeApp.get_id())
@@ -201,12 +197,11 @@ class _RebostCore():
 					try:
 						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
 					except Exception as e:
-						self._debug(e)
-						print(traceback.format_exc())
+						self._error(e,msg="_preLoadVerified")
 				store.add_app(mergeApp)
-		print("Verified table count: {}".format(len(store.get_apps())))
+		self._debug("Verified table count: {}".format(store.get_size()))
 		return(store)
-	#def _preLoadVerifiedOrigins
+	#def _preLoadVerified
 
 	def _preMergeApp(self,app):
 		newId=app.get_id()
@@ -241,11 +236,12 @@ class _RebostCore():
 	
 	def _mergeApps(self):
 		self._debug("Filling work table")
+		self.stores["mainB"]=appstream.Store()
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
-			self.stores["main"]=self._preLoadVerified(verifiedOrigins)
+			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
 		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
-		onlyVerified=self.config.get("onlyVerified",False)
+		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
 		for storeId in self.stores.keys():
 			if storeId in verifiedOrigins:
 				continue
@@ -259,19 +255,43 @@ class _RebostCore():
 							self.stores["main"].remove_app(oldApp)
 							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
 						except Exception as e:
-							self._debug(e)
-							print(traceback.format_exc())
-					if (oldApp!=None and onlyVerified==True) or (onlyVerified==False):
-						self.stores["main"].add_app(mergeApp)
+							self._error(e,msg="_mergeApps")
+					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())
+					if oldApp!=None:
+						self.stores["mainB"].remove_app(oldApp)
+						self.stores["mainB"].add_app(mergeApp)
+					self.stores["main"].add_app(mergeApp)
+		if self.config.get("onlyVerified",False)==True:
+			self._loadToggle()
 	#def _mergeApps
+
+	def loadToggle(self):
+		tmp=self.stores["main"]
+		self.stores["main"]=self.stores["mainB"]
+		self.stores["mainB"]=tmp
+	#def _loadToggle
+
+	def reload(self):
+		fxml=os.path.join(CACHE,"main.xml")
+		if os.path.exists(fxml):
+			os.unlink(fxml)
+		self.stores["main"].remove_all()
+		self.stores["mainB"].remove_all()
+		for storeId in self.stores.keys():
+			self._debug("Process {}".format(storeId))
+			if isinstance(storeId,int):
+				self.stores[storeId].remove_all()
+		self._debug("Reloading rebost core")
+		init=self.thExecutor.submit(self._initEngines)
+		init.add_done_callback(self._rebostOperative)
+	#def reload(self):
 
 	def export(self):
 		fxml=os.path.join(CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
-			self._debug(e)
-			print(traceback.format_exc())
+			self._error(e,msg="export")
 	#def export
 
 	def _rebostOperative(self,*args):
@@ -279,10 +299,10 @@ class _RebostCore():
 		resultSet=args[0]
 		if resultSet.done():
 			if resultSet.exception():
-				print("Error {}".format(resultSet.exception()))
-				print(traceback.format_exc())
+				self._error(resultSet.exception(),msg="_rebostOperative")
 		self._debug("Work table ready. Rebost is fully operative")
-		self._debug("Loaded {} apps".format(len(self.stores["main"].get_apps())))
+		self._debug("Loaded {} apps".format(self.stores["main"].get_size()))
+		self._debug("Loaded {} appsB".format(self.stores["mainB"].get_size()))
 		self.export()
 	#def _rebostOperative
 
@@ -293,8 +313,7 @@ class _RebostCore():
 		self._debug("State {}".format(resultSet.done()))
 		if resultSet.done():
 			if resultSet.exception():
-				print("Error {}".format(resultSet.exception()))
-				print(traceback.format_exc())
+				self._error(resultSet.exception(),msg("_callBackInit"))
 			else:
 				store=resultSet.result()
 				self.stores.update({storeId:store})
@@ -336,8 +355,7 @@ class _RebostCore():
 		try:
 			cacheStore=self._fromFile(self.stores["main"],fxml)
 		except Exception as e:
-			self._debug(e)
-			print(traceback.format_exc())
+			self._error(e,msg="_loadFromCache")
 		if self.ready==False:
 			self._debug("Loading {} apps from cache".format(len(cacheStore.get_apps())))
 			if len(cacheStore.get_apps())>0:
@@ -347,7 +365,6 @@ class _RebostCore():
 	#def _loadFromCache
 
 	def getExternalInstaller(self):
-		self.config=self._readConfig()
 		return(self.config.get("externalInstaller",""))
 	#def getExternalInstaller
 

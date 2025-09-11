@@ -15,6 +15,7 @@ class engine:
 		self.cache=os.path.join(self.core.CACHE,"raw")
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
+		self.includedApps=[]
 		self.bundle=self.core.appstream.BundleKind.UNKNOWN
 		self.epiManager=epimanager.EpiManager()
 		self.zmdDir="/usr/share/zero-center/zmds"
@@ -25,6 +26,12 @@ class engine:
 		if self.dbg==True:
 			print("epic: {}".format(msg))
 	#self _debug
+
+	def _sectionMap(self,section):
+		section=section.replace("desktop-","")
+		sectionMap={"Multimedia":"AudioVideo","FP":"Education","Resources":"Education","System":"System","Software":"Utility","Support":"System","Internet":"Network","Services":"System"}
+		return(sectionMap.get(section,"Utility"))
+	#def _sectionMap
 
 	def _getEpiInfo(self,epiName,zmdName):
 		epiInfo={}
@@ -77,6 +84,7 @@ class engine:
 				app=self.core.appstream.App()
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				name=pkg.get("custom_name",pkg["name"])
+				self.includedApps.append(name)
 				app.set_id(pkgid)
 				app.set_name("C",name)
 				app.set_comment("C",name)
@@ -172,6 +180,20 @@ class engine:
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 					app.set_state(self.core.appstream.AppState.INSTALLED)
 					app.add_release(apprelease)
+					#Category
+					appName=os.path.basename(fname).replace(".zmd","")+".app"
+					if appName.startswith("zero-")==False and appName.startswith("llx")==False:
+						appName="zero-lliurex-{}".format(appName)
+					fpath="/usr/share/zero-center/applications/{}".format(appName)
+					if os.path.exists(fpath):
+						with open(fpath,"r") as f:
+							fcontent=f.read()
+						for fline in fcontent.split("\n"):
+							if fline.startswith("Category"):
+								cat=fline.split("=")[-1].strip()
+								cat=self._sectionMap(cat.capitalize())
+								app.add_category(cat)
+								break
 					apps.append(app)
 				else:
 					self._debug("Not found {}".format(fname))
@@ -191,8 +213,6 @@ class engine:
 		pkSack=pkList.get_package_array()
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
-				if "zero-center" in pk.get_id():
-					continue
 				pkListSack.append(pk)
 		return(pkListSack)
 	#def _getAppsFromSystem

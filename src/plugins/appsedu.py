@@ -265,4 +265,8 @@ class engine:
 		self._debug("Sending {}".format(len(store.get_apps())))
 		return(store)
 	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		#appsedu has no states
+		return(app)
 #class engine

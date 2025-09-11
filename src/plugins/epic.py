@@ -213,6 +213,8 @@ class engine:
 		pkSack=pkList.get_package_array()
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
+				if "zero-center" in pk.get_id():
+					continue
 				pkListSack.append(pk)
 		return(pkListSack)
 	#def _getAppsFromSystem

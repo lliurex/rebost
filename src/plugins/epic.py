@@ -71,6 +71,7 @@ class engine:
 		if len(pkgList)>0:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
 			for pkg in pkgList:
+				suggested=[]
 				if pkg["name"] not in epiInfo:
 					continue
 				app=self.core.appstream.App()
@@ -102,9 +103,14 @@ class engine:
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
 				suggest=self.core.appstream.Suggest()
-				app.add_suggest(suggest)
+				suggest.set_kind(self.core.appstream.SuggestKind.UPSTREAM)
 				suggest.add_id(epiData["zomando"])
+				app.add_suggest(suggest)
 				apps.append(app)
+				print(app.get_id())
+				for s in app.get_suggests():
+					print(s.get_ids())
+				print("<--->")
 		else:
 			self._debug("No packages found for {}".format(fname))
 		return(apps)
@@ -115,6 +121,9 @@ class engine:
 		names=[]
 		for epi in epicList:
 			for epiName,epiData in epi.items():
+				suggested=[]
+				suggest=self.core.appstream.Suggest()
+				includedCategories=[]
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
@@ -138,15 +147,17 @@ class engine:
 					description=summary
 					includedApps=self._getIncludedApps(epiName,epiData)
 					if len(includedApps)>1:
-						suggest=self.core.appstream.Suggest()
 						app.add_suggest(suggest)
 					for includedApp in includedApps:
 						if includedApp.get_id()=="" or includedApp.get_id()==None:
 							continue
-						apps.append(includedApp)
 						#app.add_keyword("C",includedApp.get_id())
+						apps.append(includedApp)
 						description+="\n    - {}".format(includedApp.get_id())
+						if includedApp.get_id() in suggested:
+							continue
 						suggest.add_id(includedApp.get_id())
+						suggested.append(includedApp.get_id())
 					for l in self.core.langs:
 						app.set_name(l,os.path.basename(fname).replace(".zmd",""))
 						app.set_comment(l,summary)
@@ -180,6 +191,8 @@ class engine:
 		pkSack=pkList.get_package_array()
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
+				if "zero-center" in pk.get_id():
+					continue
 				pkListSack.append(pk)
 		return(pkListSack)
 	#def _getAppsFromSystem
@@ -246,17 +259,7 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		oldState=app.get_state()
-		return(app)
-		#REM ToDo implement
-		status="available"
-		for bundle in app.get_bundles():
-			if bundle.kind()==self.bundle:
-				if os.path.exists(os.path.join(APPIMAGE_DIR,app._get_pkgname_default())):
-					app.set_state(self.core.appstream.AppState.INSTALLED)
-					status="installed"
-					break
-		app.add_metadata("X-REBOST-package","{};{}".format(release,status))
+		#epic has states but from rebost point of view they're always installed
 		return(app)
 	#def refreshAppData(self,app):
 #class engine

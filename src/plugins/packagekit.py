@@ -275,10 +275,10 @@ class engine:
 		if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)
-		#	apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
-		#	apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
 			status="available"
 		metastatus=app.get_metadata_item("X-REBOST-package")
 		metarelease="1;{}".format(status)

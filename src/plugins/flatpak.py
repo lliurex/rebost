@@ -166,6 +166,7 @@ class engine:
 		for installation in flInst:
 			installedRefsArray.extend(installation.list_installed_refs())
 		app.set_state(self.core.appstream.AppState.AVAILABLE)
+		apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
 		status="available"
 		for ref in installedRefsArray:
 			appName=ref.format_ref()
@@ -174,6 +175,7 @@ class engine:
 			if name==appName.lower():
 				status="installed"
 				app.set_state(self.core.appstream.AppState.INSTALLED)
+				apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
 				break
 		metastatus=app.get_metadata_item("X-REBOST-flatpak")
 		metarelease="1;{}".format(status)

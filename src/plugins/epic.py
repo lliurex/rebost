@@ -115,10 +115,6 @@ class engine:
 				suggest.add_id(epiData["zomando"])
 				app.add_suggest(suggest)
 				apps.append(app)
-				print(app.get_id())
-				for s in app.get_suggests():
-					print(s.get_ids())
-				print("<--->")
 		else:
 			self._debug("No packages found for {}".format(fname))
 		return(apps)

@@ -224,22 +224,6 @@ class Rebost():
 		return(proc)
 	#def refreshApprefreshApp
 
-
-	def _getApps(self):
-		apps=[]
-		self._waitForCore()
-		if self.core.ready==True:
-			apps=self.core.stores["main"].get_apps()
-		return(apps)
-	#def _getApps
-		
-	def getApps(self):
-		proc=self.thExecutor.submit(self._getApps)
-		proc.arg=len(self.resultQueue)
-		proc.add_done_callback(self._actionCallback)
-		return(proc)
-	#def getApps
-
 	def _getCategories(self):
 		apps=[]
 		categories=[]
@@ -259,6 +243,22 @@ class Rebost():
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
 	#def getCategories
+
+
+	def _getApps(self):
+		apps=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		return(apps)
+	#def _getApps
+		
+	def getApps(self):
+		proc=self.thExecutor.submit(self._getApps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getApps
 
 	def _getAppsPerCategory(self):
 		apps=[]

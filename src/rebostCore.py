@@ -11,6 +11,7 @@ import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
+from gi.repository import AppStream as appstream2
 
 DBG=True
 SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
@@ -237,6 +238,7 @@ class _RebostCore():
 	def _mergeApps(self):
 		self._debug("Filling work table")
 		self.stores["mainB"]=appstream.Store()
+		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
@@ -251,9 +253,9 @@ class _RebostCore():
 					mergeApp=self._preMergeApp(app)
 					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
 					if oldApp!=None:
+						self.stores["main"].remove_app(oldApp)
 						try:
-							self.stores["main"].remove_app(oldApp)
-							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
+							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())

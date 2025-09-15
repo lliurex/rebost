@@ -73,6 +73,7 @@ class engine:
 
 	def _getIncludedApps(self,epiName,epiData):
 		apps=[]
+		seen=[]
 		pkgList=epiData.get("pkg_list",[])
 		pkgList.extend(epiData.get("only_gui_available",[]))
 		if len(pkgList)>0:
@@ -82,6 +83,8 @@ class engine:
 				if pkg["name"] not in epiInfo:
 					continue
 				app=self.core.appstream.App()
+				#suggest=self.core.appstream.Suggest()
+				#suggest.set_kind(self.core.appstream.SuggestKind.UPSTREAM)
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				name=pkg.get("custom_name",pkg["name"])
 				self.includedApps.append(name)
@@ -110,11 +113,11 @@ class engine:
 				app.add_keyword("C",epiData["zomando"])
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
-				suggest=self.core.appstream.Suggest()
-				suggest.set_kind(self.core.appstream.SuggestKind.UPSTREAM)
-				suggest.add_id(epiData["zomando"])
-				app.add_suggest(suggest)
-				apps.append(app)
+				#suggest.add_id(epiData["zomando"])
+				#app.add_suggest(suggest)
+				if app.get_id() not in seen:
+					apps.append(app)
+					seen.append(app.get_id())
 		else:
 			self._debug("No packages found for {}".format(fname))
 		return(apps)
@@ -236,6 +239,7 @@ class engine:
 	def getAppstreamData(self):
 		fxml=os.path.join(self.cache,"epic.xml")
 		store=self.core.appstream.Store()
+		store.set_add_flags(self.core.appstream.StoreAddFlags.USE_UNIQUE_ID)
 		store.set_origin("epic")
 		epicList=self.epiManager.all_available_epis
 		if self._chkNeedUpdate(epicList)==False:

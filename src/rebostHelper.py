@@ -116,12 +116,13 @@ def _setDetailFromAppstream(app,pkg):
 								pkg["status"].update({mkey:1})
 							pkg["versions"].update({mkey:release})
 	pkg["state"]=app.get_state()
-	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
-		app.add_category("FORBIDDEN")
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():
 		pkg["suggests"].extend(suggest.get_ids())
+	pkg["suggests"]=list(set(pkg["suggests"]))
 	pkg["keywords"]=[]
+	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
+		pkg["forbidden"]=True
 	localLangs=LOCAL_LANGS[1:]
 	if "ca" in localLangs:
 		idx=localLangs.index("ca")
@@ -188,8 +189,8 @@ def _appstreamAppToRebost(app):
 	#	pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
 	pkg['infopage']=app.get_url_item(appstream.UrlKind.CONTACT)
-	pkg['categories']=app.get_categories()
 	pkg=_setDetailFromAppstream(app,pkg)
+	pkg['categories']=app.get_categories()
 	pkg['license']=app.get_project_license()
 	pkg['screenshots']=_getScreenshotsFromAppstream(app)
 	return(pkg)

@@ -99,7 +99,6 @@ class _RebostCore():
 				self._error("Failed importing {0}: {1}".format(modpath,e))
 		else:
 			self._debug("{} not found".format(modpath))
-		print("****")
 		return(plugin)
 	#def _importPlugin
 
@@ -113,7 +112,6 @@ class _RebostCore():
 				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
 					continue
 				pluginfo=self._importPlugin(f.path)
-				print("PLUGINFO {}".format(pluginfo))
 				if pluginfo!=None:
 					#plugin=pluginfo.get(f.name.replace(".py",""),"")
 					if hasattr(plugin,"enabled")==True:
@@ -202,7 +200,8 @@ class _RebostCore():
 				if oldApp!=None:
 					store.remove_app(app)
 					try:
-						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
+						#mergeApp.subsume(oldApp)
+						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				store.add_app(mergeApp)
@@ -347,12 +346,8 @@ class _RebostCore():
 				print("Verified by {}".format(self.config["verifiedProvider"]))
 				print("******************************************************\n")
 		for priority in priorities:
-			print("Priority: {}".format(priority))
 			pluginfo=self.plugins[priority]
-			print("Priority plugin: {}".format(pluginfo))
 			for plugkey,plugmod in pluginfo.items():
-				print("Priority item: {}".format(plugmod))
-				print("Priority item: {}".format(plugkey))
 				if isinstance(plugkey,self.appstream.BundleKind):
 					self._debug((priority,plugkey))
 					for mod in plugmod:

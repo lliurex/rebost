@@ -61,6 +61,14 @@ class rebostDbusMethods(dbus.service.Object):
 	def updatedSignal(self):
 		pass
 	#def storeUpdated
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='a{sv}')
+	def toggleLock(self):
+		ret=self.rebost.toggleLock()
+		resultList=ret.result()
+		return (resultList)
+	#def toggleLock
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='as')
@@ -69,6 +77,14 @@ class rebostDbusMethods(dbus.service.Object):
 		resultList=ret.result()
 		return (resultList)
 	#def getFreedesktopCategories
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='a{sv}')
+	def getConfig(self):
+		ret=self.rebost.getConfig()
+		resultList=ret.result()
+		return (resultList)
+	#def getConfig
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='a{sas}')

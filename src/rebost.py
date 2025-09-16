@@ -40,6 +40,31 @@ class Rebost():
 				break
 	#def _waitForCore
 
+	def _restart(self):
+		return(self.core.reload())
+	#def _restart
+
+	def restart(self):
+		proc=self.thExecutor.submit(self._restart)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def toggleLock
+
+	def _toggleLock(self):
+		st=self.core.config.get("onlyVerified",True)
+		self.core.config["onlyVerified"]=not(st)
+		self.core.loadToggle()
+		return(self.core.config)
+	#def _toggleLock
+
+	def toggleLock(self):
+		proc=self.thExecutor.submit(self._toggleLock)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def toggleLock
+
 	def _getSupportedFormats(self):
 		formats=[]
 		for bundle in self.core.supportedformats:
@@ -63,6 +88,17 @@ class Rebost():
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
 	#def getFreedesktopCategories
+
+	def _getConfig(self):
+		return(self.core.config)
+	#def _getConfig
+
+	def getConfig(self):
+		proc=self.thExecutor.submit(self._getConfig)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getConfig
 
 	def _getFreedesktopCategories(self):
 		#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
@@ -172,7 +208,7 @@ class Rebost():
 
 	def _refreshApp(self,appId):
 		self._waitForCore()
-		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)
+		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId.lower())
 		for bundle in app.get_bundles():
 			for pluginData in self.core.plugins.values():
 				if bundle.get_kind() in list(pluginData.keys()):
@@ -187,22 +223,6 @@ class Rebost():
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
 	#def refreshApprefreshApp
-
-
-	def _getApps(self):
-		apps=[]
-		self._waitForCore()
-		if self.core.ready==True:
-			apps=self.core.stores["main"].get_apps()
-		return(apps)
-	#def _getApps
-		
-	def getApps(self):
-		proc=self.thExecutor.submit(self._getApps)
-		proc.arg=len(self.resultQueue)
-		proc.add_done_callback(self._actionCallback)
-		return(proc)
-	#def getApps
 
 	def _getCategories(self):
 		apps=[]
@@ -223,6 +243,22 @@ class Rebost():
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
 	#def getCategories
+
+
+	def _getApps(self):
+		apps=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		return(apps)
+	#def _getApps
+		
+	def getApps(self):
+		proc=self.thExecutor.submit(self._getApps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getApps
 
 	def _getAppsPerCategory(self):
 		apps=[]

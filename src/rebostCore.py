@@ -2,7 +2,7 @@
 import sys,os,time
 import traceback
 import json
-import importlib
+import importlib.util
 import xml.etree.ElementTree as ET
 import html
 import locale
@@ -74,26 +74,30 @@ class _RebostCore():
 		return(config)
 	#def _readConfig
 
-	def _importPlugin(self,modname):
+	def _importPlugin(self,modpath):
 		plugin=None
-		self._debug("Inspecting plugin {}".format(modname))
-		if os.path.exists("plugins/{}".format(modname)):
+		modname=os.path.basename(modpath).replace(".py","")
+		self._debug("Inspecting plugin {} at {}".format(modname,modpath))
+		if os.path.exists(modpath):
 			try:
-				pluginlib=importlib.import_module("plugins.{}".format(modname.replace(".py","")))
+				spec = importlib.util.spec_from_file_location("engine",modpath)
+				pluginlib = importlib.util.module_from_spec(spec)
+				sys.modules["module.name"] = pluginlib
+				spec.loader.exec_module(pluginlib)
 				pluginmod=pluginlib.engine(self)
-				if hasattr(pluginlib,"engine")==True:
-					if hasattr(pluginmod,"bundle")==True:
-						modname=pluginmod.bundle
-						self.supportedformats.append(pluginmod.bundle)
-					else:
-						modname=modname.replace(".py","")
-					plugin={modname:pluginmod}
+				
+				#if hasattr(pluginlib,"engine")==True:
+				if hasattr(pluginmod,"bundle")==True:
+					self.supportedformats.append(pluginmod.bundle)
 				else:
-					self._debug("Discarded {}".format(modname))
+					modname=modname.replace(".py","")
+				plugin={modname:pluginmod}
+				#else:
+				#	self._debug("Discarded {}".format(modname))
 			except Exception as e:
-				self._error("Failed importing {0}: {1}".format(modname,e))
+				self._error("Failed importing {0}: {1}".format(modpath,e))
 		else:
-			self._debug("{} not found".format(modname))
+			self._debug("{} not found".format(modpath))
 		return(plugin)
 	#def _importPlugin
 
@@ -106,7 +110,7 @@ class _RebostCore():
 				plugin=None
 				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
 					continue
-				pluginfo=self._importPlugin(f.name)
+				pluginfo=self._importPlugin(f.path)
 				if pluginfo!=None:
 					plugin=pluginfo.get(f.name.replace(".py",""),"")
 					if hasattr(plugin,"enabled")==True:

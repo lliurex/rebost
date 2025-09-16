@@ -88,6 +88,7 @@ class _RebostCore():
 				
 				#if hasattr(pluginlib,"engine")==True:
 				if hasattr(pluginmod,"bundle")==True:
+					modname=pluginmod.bundle
 					self.supportedformats.append(pluginmod.bundle)
 				else:
 					modname=modname.replace(".py","")
@@ -98,6 +99,7 @@ class _RebostCore():
 				self._error("Failed importing {0}: {1}".format(modpath,e))
 		else:
 			self._debug("{} not found".format(modpath))
+		print("****")
 		return(plugin)
 	#def _importPlugin
 
@@ -111,8 +113,9 @@ class _RebostCore():
 				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
 					continue
 				pluginfo=self._importPlugin(f.path)
+				print("PLUGINFO {}".format(pluginfo))
 				if pluginfo!=None:
-					plugin=pluginfo.get(f.name.replace(".py",""),"")
+					#plugin=pluginfo.get(f.name.replace(".py",""),"")
 					if hasattr(plugin,"enabled")==True:
 						if plugin.enabled==False:
 							self._debug("Disabled plugin {}".format(f.name))
@@ -344,8 +347,12 @@ class _RebostCore():
 				print("Verified by {}".format(self.config["verifiedProvider"]))
 				print("******************************************************\n")
 		for priority in priorities:
+			print("Priority: {}".format(priority))
 			pluginfo=self.plugins[priority]
+			print("Priority plugin: {}".format(pluginfo))
 			for plugkey,plugmod in pluginfo.items():
+				print("Priority item: {}".format(plugmod))
+				print("Priority item: {}".format(plugkey))
 				if isinstance(plugkey,self.appstream.BundleKind):
 					self._debug((priority,plugkey))
 					for mod in plugmod:
@@ -361,8 +368,8 @@ class _RebostCore():
 		except Exception as e:
 			self._error(e,msg="_loadFromCache")
 		if self.ready==False:
-			self._debug("Loading {} apps from cache".format(len(cacheStore.get_apps())))
-			if len(cacheStore.get_apps())>0:
+			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
+			if cacheStore.get_size()>0:
 				self.stores["main"]=cacheStore
 				self._debug("Cached store loaded. Rebost will update data now")
 				self.ready=True

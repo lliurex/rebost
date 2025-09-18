@@ -125,18 +125,8 @@ class engine:
 			if (column.attrs["class"][0]=="column-8"):
 				#Discard the zero: tag
 				columnPkgName=column.text.replace("zero:","")
-				#Some apps should be hidden as are pure system apps (drkonqui...)
-				#or apps included within another (kde-connect related stuff...)
-				#or for some other reason (xterm..)
-				#The 1st approach is based on category and authorizaton status
-				#but there're many apps misscatalogued so is disabled ATM
-				#if columnAuth.lower().endswith("sistema"):
-				#	if "utili" in columnCats.lower():
-				#		columnAuth=None
-				#		columnName=None
-				#		columnIcon=None
-				#		continue
-				#if len(columnPkgname.strip())>0:
+				if columnPkgName.lower().endswith("-lliurex"):
+					columnPkgName=columnPkgName.lower().rstrip("-lliurex")
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
@@ -144,26 +134,27 @@ class engine:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
-					candidate=candidate.lower().replace("-lliurex","")
+					if candidate.lower().endswith("-lliurex"):
+						candidate=candidate.lower().rstrip("-lliurex")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						if candidate in mapFixes["nodisplay"]:
+						if candidate in mapFixes["nodisplay"] or columnPkgName in mapFixes["nodisplay"]:
 							continue
-						if candidate in mapFixes["aliases"]:
-							print("Was {} -> {}".format(columnPkgName,mapFixes["aliases"].get(candidate,"")))
-							columnPkgName=mapFixes["aliases"].get(candidate,"")
+						if candidate in mapFixes["aliases"] or columnPkgName in mapFixes["aliases"]:
+							self._debug("Was {} -> {}".format(columnPkgName,mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))))
+							columnPkgName=mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))
+						if isinstance(columnPkgName,str)==False:
+							columnPkgName=candidate
 						cats=[]
 						#Categories must be mapped 'cause are translated
 						for cat in columnCats.split(","):
 							realCat=self._getRealCategory(cat.strip())
 							if len(realCat)>0 and realCat not in cats:
 								cats.append(realCat)
-						if len(columnPkgName.strip())==0:
-							columnPkgName=candidate
-						eduApps.append({"app":candidate,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"alias":columnPkgName,"infopage":infopage})
+						eduApps.append({"app":columnPkgName,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"infopage":infopage})
 						candidate=None
 						categories.extend(cats)
 				columnAuth=None
@@ -196,6 +187,8 @@ class engine:
 		self._debug(chash)
 		with open(frepo,'w') as f:
 			f.write(chash)
+		#Force update
+		update=True
 		return(update)
 	#def _chkNeedUpdate
 

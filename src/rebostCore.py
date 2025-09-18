@@ -37,6 +37,7 @@ class _RebostCore():
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
 		self.config=self._readConfig()
+		print(self.config.get("release"))
 		localLangs=[]
 		for localLang in locale.getlocale():
 			if "_" in localLang:
@@ -200,8 +201,17 @@ class _RebostCore():
 				if oldApp!=None:
 					store.remove_app(app)
 					try:
+						#It seems strange but both subsumes are needed
 						#mergeApp.subsume(oldApp)
-						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
+						#add all info, honouring previous subsume
+						#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
+						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
+						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BOTH_WAYS)
+						if oldApp.get_id().startswith("abc"):
+							print(oldApp.get_icons())
+						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
+						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.BOTH_WAYS)
+						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|appstream.AppSubsumeFlags.ICONS)
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				store.add_app(mergeApp)
@@ -259,7 +269,8 @@ class _RebostCore():
 					if oldApp!=None:
 						try:
 							self.stores["main"].remove_app(oldApp)
-							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
+							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
+							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|appstream.AppSubsumeFlags.ICONS)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())
@@ -270,6 +281,12 @@ class _RebostCore():
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
 	#def _mergeApps
+
+	def _consolidateApps(self,*args,**kwargs):
+		#Get orphaned apps
+		for app in self.stores["main"].get_apps():
+			if app.get_bundles()==[]:
+				print("Orphaned {}".format(app.get_id()))
 
 	def loadToggle(self):
 		tmp=self.stores["main"]
@@ -333,6 +350,7 @@ class _RebostCore():
 		if self.initProc==0:
 			self._debug("Appstream tables ready. Rebost core operative")
 			init=self.thExecutor.submit(self._mergeApps)
+			self.thExecutor.submit(self._consolidateApps)
 			init.add_done_callback(self._rebostOperative)
 	#def _callBackInit(self,*args,**kwargs):
 
@@ -343,7 +361,7 @@ class _RebostCore():
 			if self.config.get("onlyVerified",False)==True:
 				print("\n******************************************************")
 				print("************* RESTRICTED MODE ENABLED ****************")
-				print("Verified by {}".format(self.config["verifiedProvider"]))
+				print("Verified origins {}".format(self.config["verifiedProvider"]))
 				print("******************************************************\n")
 		for priority in priorities:
 			pluginfo=self.plugins[priority]

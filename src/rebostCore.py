@@ -197,7 +197,7 @@ class _RebostCore():
 		for idx in verifiedOrigins:
 			for app in self.stores[idx].get_apps():
 				mergeApp=self._preMergeApp(app)
-				oldApp=store.get_app_by_id(mergeApp.get_id())
+				oldApp=store.get_app_by_id_ignore_prefix(mergeApp.get_id())
 				if oldApp!=None:
 					store.remove_app(app)
 					try:
@@ -207,11 +207,10 @@ class _RebostCore():
 						#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
 						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
 						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BOTH_WAYS)
-						if oldApp.get_id().startswith("abc"):
-							print(oldApp.get_icons())
+						replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION
 						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
 						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.BOTH_WAYS)
-						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|appstream.AppSubsumeFlags.ICONS)
+						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				store.add_app(mergeApp)
@@ -264,16 +263,24 @@ class _RebostCore():
 			self._debug("Process {}".format(storeId))
 			if isinstance(storeId,int):
 				for app in self.stores[storeId].get_apps():
+					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
-					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
+					tmpid=mergeApp.get_id()
+					oldApp=self.stores["main"].get_app_by_id_ignore_prefix(mergeApp.get_id())
+					if oldApp==None:
+						oldApp=self.stores["main"].get_app_by_id(originId.lower())
+						if oldApp!=None:
+							oldApp.set_id(mergeApp.get_id())
 					if oldApp!=None:
 						try:
 							self.stores["main"].remove_app(oldApp)
+							replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION
+							mergeApp.subsume(oldApp)
 							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
-							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|appstream.AppSubsumeFlags.ICONS)
+							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
-					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())
+					oldApp=self.stores["mainB"].get_app_by_id_ignore_prefix(mergeApp.get_id())
 					if oldApp!=None:
 						self.stores["mainB"].remove_app(oldApp)
 						self.stores["mainB"].add_app(mergeApp)
@@ -350,7 +357,7 @@ class _RebostCore():
 		if self.initProc==0:
 			self._debug("Appstream tables ready. Rebost core operative")
 			init=self.thExecutor.submit(self._mergeApps)
-			self.thExecutor.submit(self._consolidateApps)
+			#self.thExecutor.submit(self._consolidateApps)
 			init.add_done_callback(self._rebostOperative)
 	#def _callBackInit(self,*args,**kwargs):
 

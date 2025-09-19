@@ -197,16 +197,13 @@ class _RebostCore():
 		for idx in verifiedOrigins:
 			for app in self.stores[idx].get_apps():
 				mergeApp=self._preMergeApp(app)
-				oldApp=store.get_app_by_id_ignore_prefix(mergeApp.get_id())
+				oldApp=store.get_app_by_id(mergeApp.get_id())
 				if oldApp!=None:
 					store.remove_app(app)
 					try:
 						#It seems strange but both subsumes are needed
-						#mergeApp.subsume(oldApp)
 						#add all info, honouring previous subsume
 						#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
-						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
-						#mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BOTH_WAYS)
 						replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION
 						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
 						mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.BOTH_WAYS)
@@ -245,6 +242,8 @@ class _RebostCore():
 				newId=newId.lower().replace(".appimage","").split(".")[-1]
 			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
+		elif app.get_id().count(".")>1: #It seems canonical
+			newId=app.get_id().replace(".desktop","").split(".")[-1]
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
 		return (app)
 	#def _preMergeApp
@@ -266,7 +265,7 @@ class _RebostCore():
 					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
 					tmpid=mergeApp.get_id()
-					oldApp=self.stores["main"].get_app_by_id_ignore_prefix(mergeApp.get_id())
+					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
 					if oldApp==None:
 						oldApp=self.stores["main"].get_app_by_id(originId.lower())
 						if oldApp!=None:
@@ -275,12 +274,12 @@ class _RebostCore():
 						try:
 							self.stores["main"].remove_app(oldApp)
 							replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION
-							mergeApp.subsume(oldApp)
 							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.BUNDLES)
 							mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+							mergeApp.subsume(oldApp)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
-					oldApp=self.stores["mainB"].get_app_by_id_ignore_prefix(mergeApp.get_id())
+					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())
 					if oldApp!=None:
 						self.stores["mainB"].remove_app(oldApp)
 						self.stores["mainB"].add_app(mergeApp)

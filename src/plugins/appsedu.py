@@ -126,7 +126,7 @@ class engine:
 				#Discard the zero: tag
 				columnPkgName=column.text.replace("zero:","")
 				if columnPkgName.lower().endswith("-lliurex"):
-					columnPkgName=columnPkgName.lower().rstrip("-lliurex")
+					columnPkgName=columnPkgName.lower().removesuffix("-lliurex")
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
@@ -135,7 +135,7 @@ class engine:
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
 					if candidate.lower().endswith("-lliurex"):
-						candidate=candidate.lower().rstrip("-lliurex")
+						candidate=candidate.lower().removesuffix("-lliurex")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue
@@ -148,12 +148,15 @@ class engine:
 							columnPkgName=mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))
 						if isinstance(columnPkgName,str)==False:
 							columnPkgName=candidate
+						elif columnPkgName=="":
+							columnPkgName=candidate
 						cats=[]
 						#Categories must be mapped 'cause are translated
 						for cat in columnCats.split(","):
 							realCat=self._getRealCategory(cat.strip())
 							if len(realCat)>0 and realCat not in cats:
 								cats.append(realCat)
+						print("PKGNAME: %{}%".format(columnPkgName))
 						eduApps.append({"app":columnPkgName,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"infopage":infopage})
 						candidate=None
 						categories.extend(cats)

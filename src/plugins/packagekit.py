@@ -212,7 +212,9 @@ class engine:
 				app.set_comment("C",summary)
 				app.set_description("C",desc)
 				app.add_keyword("C",cat)
-				app.add_keyword("C",name)
+				knames=name.split("-")
+				for kname in knames:
+					app.add_keyword("C",kname)
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 				bun.set_id(name)

@@ -37,6 +37,7 @@ class _RebostCore():
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
 		self.config=self._readConfig()
+		self._chkRelease()
 		localLangs=[]
 		for localLang in locale.getlocale():
 			if "_" in localLang:
@@ -73,6 +74,29 @@ class _RebostCore():
 			config=json.loads(fcontent)
 		return(config)
 	#def _readConfig
+
+	def _chkRelease(self):
+		cFile=os.path.join(self.CACHE,"release")
+		cContent="0"
+		if os.path.exists(cFile):
+			with open(cFile,"r") as f:
+				cContent=f.read()
+		cRelease=str(cContent)
+		if self.config.get("release","1.0")!=cRelease:
+			self._debug("--> RELEASE CHANGE DETECTED <--")
+			main=os.path.join(self.CACHE,"main.xml")
+			if os.path.exists(main):
+				os.unlink(main)
+			rawDir=os.path.join(self.CACHE,"raw")
+			if os.path.exists(rawDir):
+				for f in os.scandir(rawDir):
+					os.unlink(f.path)
+			self._debug("--> RELEASE CLEANED <--")
+		if os.path.exists(self.CACHE)==False:
+			os.makedirs(self.CACHE)
+		with open(cFile,"w") as f:
+			f.write(self.config.get("release","1.0"))
+	#def _chkRelease(self):
 
 	def _importPlugin(self,modpath):
 		plugin=None
@@ -191,6 +215,18 @@ class _RebostCore():
 		return(verifiedOrigins)
 	#def _getVerifiedOrigins
 
+	def _doSubsumeApps(self,app,donor):
+		#It seems strange but both subsumes are needed
+		#add all info, honouring previous subsume
+		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
+		replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.COMMENT
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		extendFlags=appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.SCREENSHOTS
+		app.subsume_full(donor,extendFlags)
+		#app.subsume(donor)
+		return(app)
+	#def _doSubsumeApps
+
 	def _preLoadVerified(self,verifiedOrigins):
 		store=appstream.Store()
 		for idx in verifiedOrigins:
@@ -198,10 +234,9 @@ class _RebostCore():
 				mergeApp=self._preMergeApp(app)
 				oldApp=store.get_app_by_id(mergeApp.get_id())
 				if oldApp!=None:
-					store.remove_app(app)
+					#store.remove_app(app)
 					try:
-						#mergeApp.subsume(oldApp)
-						mergeApp.subsume_full(oldApp,appstream.AppSubsumeFlags.NO_OVERWRITE)
+						mergeApp=self._doSubsumeApps(mergeApp,oldApp)
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				store.add_app(mergeApp)
@@ -236,6 +271,8 @@ class _RebostCore():
 				newId=newId.lower().replace(".appimage","").split(".")[-1]
 			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
+		elif app.get_id().count(".")>1: #It seems canonical
+			newId=app.get_id().replace(".desktop","").split(".")[-1]
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
 		return (app)
 	#def _preMergeApp
@@ -243,6 +280,7 @@ class _RebostCore():
 	def _mergeApps(self):
 		self._debug("Filling work table")
 		self.stores["mainB"]=appstream.Store()
+		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
@@ -251,29 +289,41 @@ class _RebostCore():
 		for storeId in self.stores.keys():
 			if storeId in verifiedOrigins:
 				continue
-			self._debug("Process {}".format(storeId))
 			if isinstance(storeId,int):
+				self._debug("Process {}".format(storeId))
 				for app in self.stores[storeId].get_apps():
+					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
-					oldApp=self.stores["main"].get_app_by_id(mergeApp.get_id())
+					tmpid=mergeApp.get_id()
+					oldApp=self.stores["main"].get_app_by_id(tmpid)
+					if oldApp==None:
+						oldApp=self.stores["main"].get_app_by_id(originId.lower())
+						if oldApp!=None:
+							oldApp.set_id(tmpid)
 					if oldApp!=None:
 						try:
-							self.stores["main"].remove_app(oldApp)
-							mergeApp.subsume(oldApp)#,appstream.AppSubsumeFlags.NO_OVERWRITE)
+					#		self.stores["main"].remove_app(oldApp)
+							mergeApp=self._doSubsumeApps(mergeApp,oldApp)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
-					oldApp=self.stores["mainB"].get_app_by_id(mergeApp.get_id())
+					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
 					if oldApp!=None:
-						self.stores["mainB"].remove_app(oldApp)
 						self.stores["mainB"].add_app(mergeApp)
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
 	#def _mergeApps
 
+	def _consolidateApps(self,*args,**kwargs):
+		#Get orphaned apps
+		for app in self.stores["main"].get_apps():
+			if app.get_bundles()==[]:
+				print("Orphaned {}".format(app.get_id()))
+
 	def loadToggle(self):
 		tmp=self.stores["main"]
-		self.stores["main"]=self.stores["mainB"]
+		if "mainB" in self.stores.keys():
+			self.stores["main"]=self.stores["mainB"]
 		self.stores["mainB"]=tmp
 	#def _loadToggle
 
@@ -333,6 +383,7 @@ class _RebostCore():
 		if self.initProc==0:
 			self._debug("Appstream tables ready. Rebost core operative")
 			init=self.thExecutor.submit(self._mergeApps)
+			#self.thExecutor.submit(self._consolidateApps)
 			init.add_done_callback(self._rebostOperative)
 	#def _callBackInit(self,*args,**kwargs):
 
@@ -343,7 +394,7 @@ class _RebostCore():
 			if self.config.get("onlyVerified",False)==True:
 				print("\n******************************************************")
 				print("************* RESTRICTED MODE ENABLED ****************")
-				print("Verified by {}".format(self.config["verifiedProvider"]))
+				print("Verified origins {}".format(self.config["verifiedProvider"]))
 				print("******************************************************\n")
 		for priority in priorities:
 			pluginfo=self.plugins[priority]

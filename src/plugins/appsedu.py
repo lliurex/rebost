@@ -125,8 +125,8 @@ class engine:
 			if (column.attrs["class"][0]=="column-8"):
 				#Discard the zero: tag
 				columnPkgName=column.text.replace("zero:","")
-				if columnPkgName.lower().endswith("-lliurex"):
-					columnPkgName=columnPkgName.lower().removesuffix("-lliurex")
+				columnPkgName=columnPkgName.lower().removesuffix("-lliurex")
+				columnPkgName=columnPkgName.lower().removesuffix("-appimage")
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
@@ -134,8 +134,8 @@ class engine:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
-					if candidate.lower().endswith("-lliurex"):
-						candidate=candidate.lower().removesuffix("-lliurex")
+					candidate=candidate.lower().removesuffix("-lliurex")
+					candidate=columnPkgName.lower().removesuffix("-appimage")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue
@@ -156,7 +156,6 @@ class engine:
 							realCat=self._getRealCategory(cat.strip())
 							if len(realCat)>0 and realCat not in cats:
 								cats.append(realCat)
-						print("PKGNAME: %{}%".format(columnPkgName))
 						eduApps.append({"app":columnPkgName,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"infopage":infopage})
 						candidate=None
 						categories.extend(cats)

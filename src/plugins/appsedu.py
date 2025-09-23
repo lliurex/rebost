@@ -8,8 +8,15 @@ import hashlib
 from bs4 import BeautifulSoup as bs
 
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-EDUAPPS_MAP="/usr/share/rebost-data/lists.d/llx25/eduapps.map"
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/llx25/eduapps.map"
+DATA_DIR="/usr/share/rebost-data/lists.d/"
+EDUAPPS_RELEASE="llx25"
+if os.path.exists(DATA_DIR):
+	for d in os.scandir(DATA_DIR):
+		if d.name.startswith("llx"):
+			EDUAPPS_RELEASE=d.name
+			break
+EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
 i18n={'CAD':"Engineering",
 	'Música':"Music",
 	'Gràfics':"Graphics",
@@ -78,7 +85,8 @@ class engine:
 		if len(mapFixesUrlContent)>0:
 			try:
 				jcontent=json.loads(mapFixesUrlContent)
-			except:
+			except Exception as e:
+				print(e)
 				jcontent={}
 		if len(jcontent)>0:
 			if jcontent!=mapFixes:
@@ -127,6 +135,7 @@ class engine:
 				columnPkgName=column.text.replace("zero:","")
 				columnPkgName=columnPkgName.lower().removesuffix("-lliurex")
 				columnPkgName=columnPkgName.lower().removesuffix("-appimage")
+				columnPkgName=columnPkgName.lower().removesuffix("-snap")
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
@@ -134,8 +143,7 @@ class engine:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
-					candidate=candidate.lower().removesuffix("-lliurex")
-					candidate=columnPkgName.lower().removesuffix("-appimage")
+					candidate=candidate.lower().removesuffix("-lliurex").removesuffix("-appimage")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue
@@ -242,7 +250,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
-		store.set_version("1.0.4")
+		#store.set_version("1.0.4")
 		store.set_origin("appsedu")
 		eduApps=self._getAppsEduCatalogue()
 		rawcontent=self._getRawContent()

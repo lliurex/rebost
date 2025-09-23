@@ -312,6 +312,12 @@ class _RebostCore():
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
+		#Set state
+		for app in self.stores["main"].get_apps():
+			metadata=app.get_metadata()
+			for mkey,mdata in metadata.items():
+				if mdata.endswith(";installed"):
+					app.set_state(appstream.AppState.INSTALLED)
 	#def _mergeApps
 
 	def _consolidateApps(self,*args,**kwargs):

@@ -242,7 +242,7 @@ class engine:
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
-		store.set_version("1.0.4")
+		#store.set_version("1.0.4")
 		store.set_origin("appsedu")
 		eduApps=self._getAppsEduCatalogue()
 		rawcontent=self._getRawContent()

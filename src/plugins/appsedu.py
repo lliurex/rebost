@@ -8,8 +8,15 @@ import hashlib
 from bs4 import BeautifulSoup as bs
 
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-EDUAPPS_MAP="/usr/share/rebost-data/lists.d/llx25/eduapps.map"
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/llx25/eduapps.map"
+DATA_DIR="/usr/share/rebost-data/lists.d/"
+EDUAPPS_RELEASE="llx25"
+if os.path.exists(DATA_DIR):
+	for d in os.scandir(DATA_DIR):
+		if d.name.startswith("llx"):
+			EDUAPPS_RELEASE=d.name
+			break
+EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
 i18n={'CAD':"Engineering",
 	'Música':"Music",
 	'Gràfics':"Graphics",

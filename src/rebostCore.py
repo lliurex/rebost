@@ -132,11 +132,12 @@ class _RebostCore():
 		self._debug("Accessing {}".format(pluginDir))
 		if os.path.exists(pluginDir):
 			for f in os.scandir(pluginDir):
-				plugin=None
+				pluginfo=None
 				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
 					continue
 				pluginfo=self._importPlugin(f.path)
 				if pluginfo!=None:
+					plugin=list(pluginfo.values())[0]
 					#plugin=pluginfo.get(f.name.replace(".py",""),"")
 					if hasattr(plugin,"enabled")==True:
 						if plugin.enabled==False:
@@ -234,7 +235,7 @@ class _RebostCore():
 				mergeApp=self._preMergeApp(app)
 				oldApp=store.get_app_by_id(mergeApp.get_id())
 				if oldApp!=None:
-					#store.remove_app(app)
+					store.remove_app(oldApp)
 					try:
 						mergeApp=self._doSubsumeApps(mergeApp,oldApp)
 					except Exception as e:
@@ -271,8 +272,9 @@ class _RebostCore():
 				newId=newId.lower().replace(".appimage","").split(".")[-1]
 			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
-		elif app.get_id().count(".")>1: #It seems canonical
-			newId=app.get_id().replace(".desktop","").split(".")[-1]
+		newId=app.get_id().replace(".desktop","")
+		if app.get_id().count(".")>1: #It seems canonical
+			newId=app.get_id().split(".")[-1]
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
 		return (app)
 	#def _preMergeApp
@@ -288,6 +290,7 @@ class _RebostCore():
 		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
 		for storeId in self.stores.keys():
 			if storeId in verifiedOrigins:
+				self._debug("Verified {}".format(storeId))
 				continue
 			if isinstance(storeId,int):
 				self._debug("Process {}".format(storeId))
@@ -302,7 +305,7 @@ class _RebostCore():
 							oldApp.set_id(tmpid)
 					if oldApp!=None:
 						try:
-					#		self.stores["main"].remove_app(oldApp)
+							self.stores["main"].remove_app(oldApp)
 							mergeApp=self._doSubsumeApps(mergeApp,oldApp)
 						except Exception as e:
 							self._error(e,msg="_mergeApps")

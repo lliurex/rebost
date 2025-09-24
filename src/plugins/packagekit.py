@@ -16,6 +16,7 @@ class engine:
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.PACKAGE
+		self.enabled=False
 		self.pkClient=packagekit.Client()
 	#def __init__
 

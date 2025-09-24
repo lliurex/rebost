@@ -165,10 +165,11 @@ class _RebostCore():
 		self._debug("Attempt to load {} using {}".format(store,fxml))
 		if os.path.exists(fxml):
 			try:
-				with open(fxml,"r") as f:
-					fcontent=f.read()
-				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
-				store.from_xml(fcontent)
+				store.from_file(Gio.File.parse_name(fxml),None,None)
+				#with open(fxml,"r") as f:
+				#	fcontent=f.read()
+				#fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+				#store.from_xml(fcontent)
 				self._debug("Added {} apps".format(len(store.get_apps())))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
@@ -220,10 +221,11 @@ class _RebostCore():
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
 		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
-		replaceFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.COMMENT
+		app.subsume(donor)
+		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
 		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
-		extendFlags=appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.SCREENSHOTS
-		app.subsume_full(donor,extendFlags)
+		#extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
+		#app.subsume_full(donor,extendFlags)
 		#app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps
@@ -270,14 +272,24 @@ class _RebostCore():
 								tmpId="{}.{}".format(tmpId,i)
 					newId=tmpId.strip().rstrip(".").lstrip(".")
 				newId=newId.lower().replace(".appimage","").split(".")[-1]
-			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
+		#	elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
+			else:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
-		newId=app.get_id().replace(".desktop","")
-		if app.get_id().count(".")>1: #It seems canonical
-			newId=app.get_id().split(".")[-1]
+		else:
+			newId=app.get_id().replace(".desktop","")
+			if app.get_id().count(".")>1: #It seems canonical
+				newId=app.get_id().split(".")[-1]
 		app.set_id(newId.lower().rstrip(".").lstrip("."))
 		return (app)
 	#def _preMergeApp
+
+	def _fixMainStates(self):
+		for app in self.stores["main"].get_apps():
+			metadata=app.get_metadata()
+			for mkey,mdata in metadata.items():
+				if mdata.endswith(";installed"):
+					app.set_state(appstream.AppState.INSTALLED)
+	#def _fixMainStates
 	
 	def _mergeApps(self):
 		self._debug("Filling work table")
@@ -286,6 +298,8 @@ class _RebostCore():
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
+		self.ready=False
+		self.stores["main"].remove_all()
 		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
 		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
 		for storeId in self.stores.keys():
@@ -293,7 +307,7 @@ class _RebostCore():
 				self._debug("Verified {}".format(storeId))
 				continue
 			if isinstance(storeId,int):
-				self._debug("Process {}".format(storeId))
+				self._debug("Process {} ({})".format(storeId,self.stores[storeId].get_size()))
 				for app in self.stores[storeId].get_apps():
 					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
@@ -315,12 +329,6 @@ class _RebostCore():
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
-		#Set state
-		for app in self.stores["main"].get_apps():
-			metadata=app.get_metadata()
-			for mkey,mdata in metadata.items():
-				if mdata.endswith(";installed"):
-					app.set_state(appstream.AppState.INSTALLED)
 	#def _mergeApps
 
 	def _consolidateApps(self,*args,**kwargs):
@@ -365,6 +373,7 @@ class _RebostCore():
 		if resultSet.done():
 			if resultSet.exception():
 				self._error(resultSet.exception(),msg="_rebostOperative")
+		self._fixMainStates()
 		self._debug("Work table ready. Rebost is fully operative")
 		self._debug("Loaded {} apps".format(self.stores["main"].get_size()))
 		self._debug("Loaded {} appsB".format(self.stores["mainB"].get_size()))
@@ -426,6 +435,7 @@ class _RebostCore():
 			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
 			if cacheStore.get_size()>0:
 				self.stores["main"]=cacheStore
+				self._fixMainStates()
 				self._debug("Cached store loaded. Rebost will update data now")
 				self.ready=True
 	#def _loadFromCache
@@ -435,7 +445,8 @@ class _RebostCore():
 	#def getExternalInstaller
 
 	def _initCore(self):
-		self.thExecutor.submit(self._loadFromCache)
+		#self.thExecutor.submit(self._loadFromCache)
+		self._loadFromCache()
 		self._initEngines()
 	#def _initCore
 #class _RebostCore

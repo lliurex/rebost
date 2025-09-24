@@ -182,7 +182,7 @@ class engine:
 						apps.append(self._processSnap(pkg,section))
 				store.add_apps(apps)
 			self.core._toFile(store,fxml)
-		self._debug("Sending {}".format(len(store.get_apps())))
+		self._debug("Sending {}".format(store.get_size()))
 		return(store)
 	#def getAppstreamData
 

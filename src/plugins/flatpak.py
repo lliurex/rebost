@@ -150,7 +150,7 @@ class engine:
 			self._setAppsState(flInst,store)
 			self.core._toFile(store,fxml)
 			self._debug("End loading flatpak metadata")
-		self._debug("Sending {}".format(len(store.get_apps())))
+		self._debug("Sending {}".format(store.get_size()))
 		return(store)
 	#def getAppstreamData
 

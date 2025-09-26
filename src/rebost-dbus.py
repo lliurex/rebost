@@ -248,15 +248,6 @@ class rebostDbusMethods(dbus.service.Object):
 	#def export
 	
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='s')
-	def getInstalledApps(self):
-		action='list'
-		ret=self.rebost.execute(action,installed=True)
-#		ret = zlib.compress(ret.encode(),level=1)
-		return (ret)
-	#def getInstalledApps
-
-	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def getUpgradableApps(self,user=""):
 		action='list'

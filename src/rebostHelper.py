@@ -176,6 +176,8 @@ def _appstreamAppToRebost(app):
 		tmpDescription=app.get_description("C")
 	if tmpName=="" or tmpName==None:
 		tmpName=pkg["id"]
+	if isinstance(tmpDescription,str)==False:
+		tmpDescription=tmpSummary
 	pkg["name"]=tmpName
 	pkg["description"]=tmpDescription
 	pkg["summary"]=tmpSummary

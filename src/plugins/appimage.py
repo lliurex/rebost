@@ -233,8 +233,14 @@ class engine:
 							while len(jrepo.get("data",[]))>0:
 								page+=1
 								repo_raw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
-								jrepo=json.loads(repo_raw)
-								data.extend(jrepo.get("data",[]))
+								if repo_raw!=None:
+									try:
+										jrepo=json.loads(repo_raw)
+										data.extend(jrepo.get("data",[]))
+									except Exception as e:
+										self._debug("Failed to parse {}".format(repo))
+										print(e)
+										print("--------/>")
 								
 						store.add_apps(self._getAppstreamFromDataField(data))
 					elif "items" in jrepo.keys(): #json responde with items field for the pkgs

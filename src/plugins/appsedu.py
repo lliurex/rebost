@@ -135,6 +135,7 @@ class engine:
 				columnPkgName=column.text.replace("zero:","")
 				columnPkgName=columnPkgName.lower().removesuffix("-lliurex")
 				columnPkgName=columnPkgName.lower().removesuffix("-appimage")
+				columnPkgName=columnPkgName.lower().removesuffix("-snap")
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
@@ -142,8 +143,7 @@ class engine:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
-					candidate=candidate.lower().removesuffix("-lliurex")
-					candidate=columnPkgName.lower().removesuffix("-appimage")
+					candidate=candidate.lower().removesuffix("-lliurex").removesuffix("-appimage")
 					if columnIcon==None:
 						self._debug("NO ICON FOR {}".format(candidate))
 						continue

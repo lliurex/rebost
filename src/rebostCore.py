@@ -274,12 +274,13 @@ class _RebostCore():
 				newId=newId.lower().replace(".appimage","").split(".")[-1]
 		#	elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 			else:
-				newId=app.get_id().replace(".desktop","").split(".")[-1]
+				if app.get_id().count(".")>1: #It seems canonical
+					newId=app.get_id().replace(".desktop","").split(".")[-1]
 		else:
 			newId=app.get_id().replace(".desktop","")
 			if app.get_id().count(".")>1: #It seems canonical
 				newId=app.get_id().split(".")[-1]
-		app.set_id(newId.lower().rstrip(".").lstrip("."))
+		app.set_id(newId.lower().removeprefix(".").removesuffix("."))
 		return (app)
 	#def _preMergeApp
 

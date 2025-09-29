@@ -85,7 +85,8 @@ class engine:
 		if len(mapFixesUrlContent)>0:
 			try:
 				jcontent=json.loads(mapFixesUrlContent)
-			except:
+			except Exception as e:
+				print(e)
 				jcontent={}
 		if len(jcontent)>0:
 			if jcontent!=mapFixes:

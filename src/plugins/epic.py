@@ -173,6 +173,23 @@ class engine:
 		return(apps)
 	#def _getIncludedApps
 
+	def _getCategoriesFromEpi(self,appName):
+		categories=[]
+		if appName.startswith("zero-")==False and appName.startswith("llx")==False:
+			appName="zero-lliurex-{}".format(appName)
+		fpath="/usr/share/zero-center/applications/{}".format(appName)
+		if os.path.exists(fpath):
+			with open(fpath,"r") as f:
+				fcontent=f.read()
+			for fline in fcontent.split("\n"):
+				if fline.startswith("Category"):
+					cat=fline.split("=")[-1].strip()
+					cat=self._sectionMap(cat.capitalize())
+					categories.append(cat)
+					break
+		return(categories)
+	#def _getCategoriesFromEpi
+
 	def _getAppsFromEpic(self,epicList,mapFixes):
 		apps=[]
 		names=[]
@@ -186,16 +203,11 @@ class engine:
 				if len(fname)>0:
 					app=self.core.appstream.App()
 					name=os.path.basename(fname).replace(".zmd","")
+					if name in mapFixes["nodisplay"] or fname in mapFixes["nodisplay"]:
+						self._debug("Discard {}".format(name))
+						continue
 					app.set_id(name)
-					if app.get_id() in mapFixes["nodisplay"] or app.get_name() in mapFixes["nodisplay"]:
-						self._debug("Discard {}".format(app.get_id()))
-					continue
 					app.add_pkgname(fname)
-					app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
-					bun=self.core.appstream.Bundle()
-					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-					bun.set_id(fname)
-					app.add_bundle(bun)
 					app.add_keyword("C",fname)
 					app.add_keyword("C","zomando")
 					app.add_keyword("C","zomandos")
@@ -227,6 +239,10 @@ class engine:
 					app.set_description("C",description)
 					app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 					app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(fname)
+					app.add_bundle(bun)
 					apprelease=self.core.appstream.Release()
 					apprelease.set_version("1.0")
 					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
@@ -234,18 +250,9 @@ class engine:
 					app.add_release(apprelease)
 					#Category
 					appName=os.path.basename(fname).replace(".zmd","")+".app"
-					if appName.startswith("zero-")==False and appName.startswith("llx")==False:
-						appName="zero-lliurex-{}".format(appName)
-					fpath="/usr/share/zero-center/applications/{}".format(appName)
-					if os.path.exists(fpath):
-						with open(fpath,"r") as f:
-							fcontent=f.read()
-						for fline in fcontent.split("\n"):
-							if fline.startswith("Category"):
-								cat=fline.split("=")[-1].strip()
-								cat=self._sectionMap(cat.capitalize())
-								app.add_category(cat)
-								break
+					categories=self._getCategoriesFromEpi(appName)
+					for cat in categories:
+						app.add_category(cat)
 					apps.append(app)
 				else:
 					self._debug("Not found {}".format(fname))
@@ -334,7 +341,7 @@ class engine:
 				app.add_bundle(bun)
 				store.add_app(app)
 			self.core._toFile(store,fxml)
-		self._debug("Sending {}".format(len(store.get_apps())))
+		self._debug("Sending {}".format(store.get_size()))
 		return(store)
 	#def getAppstreamData
 

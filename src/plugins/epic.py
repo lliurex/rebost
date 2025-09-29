@@ -209,6 +209,7 @@ class engine:
 					app.set_id(name)
 					app.add_pkgname(fname)
 					app.add_keyword("C",fname)
+					app.add_keyword("C",epiData["zomando"])
 					app.add_keyword("C","zomando")
 					app.add_keyword("C","zomandos")
 					app.set_state(self.core.appstream.AppState.INSTALLED)
@@ -226,6 +227,7 @@ class engine:
 						#app.add_keyword("C",includedApp.get_id())
 						apps.append(includedApp)
 						description+="\n    - {}".format(includedApp.get_id())
+						app.add_keyword("C",includedApp.get_id())
 						if includedApp.get_id() in suggested:
 							continue
 						suggest.add_id(includedApp.get_id())

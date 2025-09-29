@@ -104,6 +104,15 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
+	def getApps(self):
+		ret=self.rebost.getApps()
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def getApps
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
 	def getAppsPerCategory(self):
 		ret=self.rebost.getAppsPerCategory()
 		resultDict=ret.result()
@@ -127,17 +136,17 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
-	def getApps(self):
-		ret=self.rebost.getApps()
+	def getAppsInstalled(self):
+		ret=self.rebost.getAppsInstalled()
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))
-	#def getApps
-	
+	#def getAppsInstalled
+
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='s')
-	def getAppsInstalled(self):
-		ret=self.rebost.getAppsInstalled()
+	def getAppsInstalledPerCategory(self):
+		ret=self.rebost.getAppsInstalledPerCategory()
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))

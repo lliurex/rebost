@@ -289,6 +289,8 @@ class Rebost():
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
 		for app in apps:
+			if app.get_name()==None:
+				continue
 			if app.get_state()==appstream.AppState.INSTALLED:
 				installed.append(app)
 		return(installed)

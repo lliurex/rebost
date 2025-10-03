@@ -84,6 +84,8 @@ class engine:
 		for app in store.get_apps(): #Add bundle for pkgs
 			if app.get_id().endswith("_zmd"):
 				app.set_id(app.get_id().removesuffix("_zmd"))
+			if app.get_id().endswith(".desktop"):
+				app.set_id(app.get_id().removesuffix(".desktop"))
 			if app.get_id() in mapFixes["nodisplay"] or app.get_name() in mapFixes["nodisplay"]:
 				self._debug("Discard {}".format(app.get_id()))
 				continue

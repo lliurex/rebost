@@ -32,6 +32,7 @@ class engine:
 		self.epiManager=epimanager.EpiManager()
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
+		self.mapFixes={}
 	#def __init__
 
 	def _debug(self,msg):
@@ -48,6 +49,7 @@ class engine:
 	def _fetchCatalogue(self,url=""):
 		if len(url)==0:
 			url=EDUAPPS_URL
+		self._debug("Fetching {}".format(url))
 		content=''
 		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
 		try:
@@ -70,6 +72,7 @@ class engine:
 			try:
 				jcontent=json.loads(mapFixesUrlContent)
 			except Exception as e:
+				print("Error processing url map")
 				print(e)
 				jcontent={}
 		if len(jcontent)>0:
@@ -130,7 +133,8 @@ class engine:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
 			for pkg in pkgList:
 				suggested=[]
-				if pkg["name"] not in epiInfo:
+				if pkg["name"] not in epiInfo or pkg["name"] in self.mapFixes["nodisplay"]:
+					self._debug("Discard {}".format(pkg["name"]))
 					continue
 				app=self.core.appstream.App()
 				#suggest=self.core.appstream.Suggest()
@@ -190,7 +194,7 @@ class engine:
 		return(categories)
 	#def _getCategoriesFromEpi
 
-	def _getAppsFromEpic(self,epicList,mapFixes):
+	def _getAppsFromEpic(self,epicList):
 		apps=[]
 		names=[]
 		for epi in epicList:
@@ -203,12 +207,13 @@ class engine:
 				if len(fname)>0:
 					app=self.core.appstream.App()
 					name=os.path.basename(fname).replace(".zmd","")
-					if name in mapFixes["nodisplay"] or fname in mapFixes["nodisplay"]:
+					if name in self.mapFixes["nodisplay"] or fname in self.mapFixes["nodisplay"]:
 						self._debug("Discard {}".format(name))
 						continue
 					app.set_id(name)
 					app.add_pkgname(fname)
 					app.add_keyword("C",fname)
+					app.add_keyword("C",epiData["zomando"])
 					app.add_keyword("C","zomando")
 					app.add_keyword("C","zomandos")
 					app.set_state(self.core.appstream.AppState.INSTALLED)
@@ -226,6 +231,7 @@ class engine:
 						#app.add_keyword("C",includedApp.get_id())
 						apps.append(includedApp)
 						description+="\n    - {}".format(includedApp.get_id())
+						app.add_keyword("C",includedApp.get_id())
 						if includedApp.get_id() in suggested:
 							continue
 						suggest.add_id(includedApp.get_id())
@@ -302,18 +308,18 @@ class engine:
 		store=self.core.appstream.Store()
 		store.set_add_flags(self.core.appstream.StoreAddFlags.USE_UNIQUE_ID)
 		store.set_origin("epic")
-		mapFixes=self._getAppseduMapFixes()
 		epicList=self.epiManager.all_available_epis
 		if self._chkNeedUpdate(epicList)==False:
 			self._debug("Loading from cache")
 			store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
-			lstApps=self._getAppsFromEpic(epicList,mapFixes)
+			self.mapFixes=self._getAppseduMapFixes()
+			lstApps=self._getAppsFromEpic(epicList)
 			store.add_apps(lstApps)
 			pkgs=self._getAppsFromSystem()
 			for pkg in pkgs:
 				pkgId=pkg.get_id()
-				if pkgId.split(";")[0] in mapFixes["nodisplay"] or pkg.get_name() in mapFixes["nodisplay"]:
+				if pkgId.split(";")[0] in self.mapFixes["nodisplay"] or pkg.get_name() in self.mapFixes["nodisplay"]:
 					self._debug("Discard {}".format(pkg.get_id()))
 					continue
 				pkgIdArray=pkgId.split(";")

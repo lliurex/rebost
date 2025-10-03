@@ -276,6 +276,8 @@ class _RebostCore():
 			else:
 				if app.get_id().count(".")>1: #It seems canonical
 					newId=app.get_id().replace(".desktop","").split(".")[-1]
+				else:
+					newId=app.get_id().removesuffix(".desktop")
 		else:
 			newId=app.get_id().replace(".desktop","")
 			if app.get_id().count(".")>1: #It seems canonical

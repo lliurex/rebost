@@ -209,11 +209,12 @@ class Rebost():
 	def _refreshApp(self,appId):
 		self._waitForCore()
 		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId.lower())
-		for bundle in app.get_bundles():
-			for pluginData in self.core.plugins.values():
-				if bundle.get_kind() in list(pluginData.keys()):
-					plugin=pluginData[bundle.get_kind()]
-					app=plugin[0].refreshAppData(app)
+		if app!=None:
+			for bundle in app.get_bundles():
+				for pluginData in self.core.plugins.values():
+					if bundle.get_kind() in list(pluginData.keys()):
+						plugin=pluginData[bundle.get_kind()]
+						app=plugin[0].refreshAppData(app)
 		return(app)
 	#def _refreshApp
 

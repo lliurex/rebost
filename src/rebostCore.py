@@ -76,6 +76,10 @@ class _RebostCore():
 	#def _readConfig
 
 	def _chkRelease(self):
+		if os.path.exists(self.CACHE)==False:
+			os.makedirs(self.CACHE)
+		if os.path.exists(os.path.join(self.CACHE,"raw"))==False:
+			os.makedirs(os.path.join(self.CACHE,"raw"))
 		cFile=os.path.join(self.CACHE,"release")
 		cContent="0"
 		if os.path.exists(cFile):
@@ -92,8 +96,6 @@ class _RebostCore():
 				for f in os.scandir(rawDir):
 					os.unlink(f.path)
 			self._debug("--> RELEASE CLEANED <--")
-		if os.path.exists(self.CACHE)==False:
-			os.makedirs(self.CACHE)
 		with open(cFile,"w") as f:
 			f.write(self.config.get("release","1.0"))
 	#def _chkRelease(self):
@@ -271,17 +273,24 @@ class _RebostCore():
 										continue
 								tmpId="{}.{}".format(tmpId,i)
 					newId=tmpId.strip().rstrip(".").lstrip(".")
-				newId=newId.lower().replace(".appimage","").split(".")[-1]
+				newId=newId.lower().removesuffix(".appimage").split(".")[-1]
 		#	elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 			else:
-				if app.get_id().count(".")>1: #It seems canonical
-					newId=app.get_id().replace(".desktop","").split(".")[-1]
-				else:
-					newId=app.get_id().removesuffix(".desktop")
+				newId=app.get_id().removesuffix(".desktop")
+				if newId.count(".")>1: #It seems canonical
+					tags=newId.split(".")
+					tags.reverse()
+					fallback=""
+					for tag in tags:
+						if tag.isnumeric():
+							fallback=tag
+							continue
+						newId=tag
+						break
 		else:
-			newId=app.get_id().replace(".desktop","")
-			if app.get_id().count(".")>1: #It seems canonical
-				newId=app.get_id().split(".")[-1]
+			newId=app.get_id().removesuffix(".desktop")
+			if newId.count(".")>1: #It seems canonical
+				newId=newId.split(".")[-1]
 		app.set_id(newId.lower().removeprefix(".").removesuffix("."))
 		return (app)
 	#def _preMergeApp

@@ -1,4 +1,4 @@
-rebost (3.0.0-0llx25) noble; urgency=medium
+rebost (3.0.0-0llx25) noble-testing; urgency=medium
 
   * Remove sql support
   * Full appstream support

@@ -7,18 +7,19 @@ from urllib.request import urlretrieve
 import hashlib
 from bs4 import BeautifulSoup as bs
 
-EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-DATA_DIR="/usr/share/rebost-data/lists.d/"
+mapFileDir="/usr/share/rebost-data/lists.d/"
 release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
-EDUAPPS_RELEASE="llx{}".format(release.split(".")[0])
-EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+release="llx{}".format(release.split(".")[0])
+EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 if not os.path.exists(EDUAPPS_MAP):
-	for d in os.scandir(DATA_DIR):
+	for d in os.scandir(mapFileDir):
 		if d.name.startswith("llx"):
-			EDUAPPS_RELEASE=d.name
-			EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+			release=d.name
+			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 			break
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
+EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
+
 i18n={'CAD':"Engineering",
 	'Música':"Music",
 	'Gràfics':"Graphics",

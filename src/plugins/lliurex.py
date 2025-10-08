@@ -4,17 +4,27 @@ from urllib import request
 import gi
 from gi.repository import Gio
 
-DATA_DIR="/usr/share/rebost-data/lists.d/"
+mapFileDir="/usr/share/rebost-data/lists.d/"
 release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
-EDUAPPS_RELEASE="llx{}".format(release.split(".")[0])
-EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+release="llx{}".format(release.split(".")[0])
+EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 if not os.path.exists(EDUAPPS_MAP):
-	for d in os.scandir(DATA_DIR):
+	for d in os.scandir(mapFileDir):
 		if d.name.startswith("llx"):
-			EDUAPPS_RELEASE=d.name
-			EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
+			release=d.name
+			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 			break
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
+
+YAML_DIR="/usr/share/rebost-data/yaml/{}".format(release)
+if not os.path.exists(YAML_DIR):
+	YAML_DIR=os.dirname(YAML_DIR)
+	for d in os.scandir(YAML_DIR):
+		if d.name.startswith("llx"):
+			release=d.name
+			YAML_DIR=os.path.join(YAML_DIR,release)
+			break
+
 
 class engine:
 	def __init__(self,core,*args,**kwargs):
@@ -75,10 +85,10 @@ class engine:
 	def getAppstreamData(self):
 		self._debug("Loading from specified locations")
 		store=self.core.appstream.Store()
-		fdir="/usr/share/rebost-data/yaml/llx23"
-		if os.path.exists(fdir):
-			for f in os.scandir(fdir):
-				store.from_file(Gio.File.parse_name(f.path),None,None)
+		if os.path.exists(YAML_DIR):
+			for f in os.scandir(YAML_DIR):
+				if f.name.endswith(".yml"):
+					store.from_file(Gio.File.parse_name(f.path),"/usr/share/rebost-data/icons/cache")
 		else:
 			self._debug("Can't find {}".format(fdir))
 		mapFixes=self._getAppseduMapFixes()

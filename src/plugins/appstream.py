@@ -27,9 +27,10 @@ class engine:
 		for app in store.get_apps(): #Add bundle for pkgs
 			pkgnames=app.get_pkgnames()
 			if len(pkgnames)>0:
+				pkgname=app.get_pkgname_default()
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.bundle)
-				bun.set_id(pkgnames[0])
+				bun.set_id(pkgname)
 				app.add_bundle(bun)
 		self._debug("Sending {}".format(store.get_size()))
 		return(store)

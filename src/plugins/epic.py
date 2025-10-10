@@ -166,6 +166,7 @@ class engine:
 					bun.set_id(epiName)
 					app.add_bundle(bun)
 				app.add_keyword("C",epiData["zomando"])
+				app.add_keyword("C",epiName)
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
 				#suggest.add_id(epiData["zomando"])

@@ -223,11 +223,11 @@ class _RebostCore():
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
 		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
-		app.subsume(donor)
 		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
 		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
-		#extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
-		#app.subsume_full(donor,extendFlags)
+		app.subsume(donor)
+		extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.KEYWORDS|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
+		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
 		#app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps

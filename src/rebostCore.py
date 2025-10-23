@@ -167,15 +167,12 @@ class _RebostCore():
 		self._debug("Attempt to load {} using {}".format(store,fxml))
 		if os.path.exists(fxml):
 			try:
-				try:
-					store.from_file(Gio.File.parse_name(fxml),None,None)
-				except:
-					pass
-				#with open(fxml,"r") as f:
-				#	fcontent=f.read()
-				#fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
-				#store.from_xml(fcontent)
-				self._debug("Added {} apps".format(len(store.get_apps())))
+				store.from_file(Gio.File.parse_name(fxml),None,None)
+			#	with open(fxml,"r") as f:
+			#		fcontent=f.read()
+			#	fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+			#	store.from_xml(fcontent)
+				self._debug("Added {} apps".format(store.get_size()))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
 				tree = ET.fromstring(fcontent)

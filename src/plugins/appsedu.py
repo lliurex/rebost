@@ -233,7 +233,9 @@ class engine:
 			app.add_category(cat)
 		#Status
 		if eduapp["auth"].lower().startswith("preparan")==True:
-			app.add_kudo_kind(self.core.appstream.KudoKind.UNKNOWN)
+			launchable=self.core.appstream.Launchable()
+			launchable.set_kind(self.core.appstream.LaunchableKind.UNKNOWN)
+			app.add_launchable(launchable)
 		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
 		else:

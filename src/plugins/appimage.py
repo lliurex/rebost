@@ -71,7 +71,7 @@ class engine:
 				if name=="":
 					continue
 				app=self.core.appstream.App()
-				desc=html.escape(htmlparser.handle(japp["description"]).replace("\n","").strip()).replace(":"," - ")
+				desc=html.escape(htmlparser.handle(japp["description"]).replace("\n","").strip()).replace(":"," - ").replace("&","and")
 				if len(desc)==0:
 					desc="Download 'n' run"
 				summary=html.escape(htmlparser.handle(japp["summary"]).replace("\n","").strip())

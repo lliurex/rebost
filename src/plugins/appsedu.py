@@ -232,9 +232,10 @@ class engine:
 		for cat in eduapp["categories"]:
 			app.add_category(cat)
 		#Status
-		if eduapp["auth"].lower().startswith("autori")==False:
+		if eduapp["auth"].lower().startswith("preparan")==True:
+			app.add_kudo_kind(self.core.appstream.KudoKind.UNKNOWN)
+		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
-			app.set_state(self.core.appstream.AppState.UNAVAILABLE)
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		#Release

@@ -1,4 +1,10 @@
-rebost (3.0.1-0llx25) noble-testing; urgency=medium
+rebost (3.0.1-1llx25) noble-testing; urgency=medium
+
+  * Preserve full app state as metadata
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 24 Oct 2025 13:12:21 +0200
+
+rebost (3.0.0-1llx25) noble-testing; urgency=medium
 
   * Remove sql support
   * Full appstream support

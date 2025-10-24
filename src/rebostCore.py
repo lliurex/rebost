@@ -199,7 +199,7 @@ class _RebostCore():
 					with open(fxml,"r") as f:
 						fcontent=f.read()
 					store.from_xml(fcontent)
-					self._debug("Added {} apps".format(len(store.get_apps())))
+					self._debug("Added {} apps".format(store.get_size()))
 				except Exception as e:
 					self._error(e,msg="Error fixing. Requires user intervention")
 		else:
@@ -298,9 +298,18 @@ class _RebostCore():
 	def _fixMainStates(self):
 		for app in self.stores["main"].get_apps():
 			metadata=app.get_metadata()
-			for mkey,mdata in metadata.items():
-				if mdata.endswith(";installed"):
-					app.set_state(appstream.AppState.INSTALLED)
+			if "X-REBOST-BLOCKED" in metadata.keys():
+				if metadata["X-REBOST-BLOCKED"]=="true":
+					app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+			elif "X-REBOST-UNAVAILABLE" in metadata.keys():
+				if metadata["X-REBOST-UNAVAILABLE"]=="true":
+					launchable=appstream.Launchable()
+					launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
+					app.add_launchable(launchable)
+			else:
+				for mkey,mdata in metadata.items():
+					if mdata.endswith(";installed"):
+						app.set_state(appstream.AppState.INSTALLED)
 	#def _fixMainStates
 	
 	def _mergeApps(self):

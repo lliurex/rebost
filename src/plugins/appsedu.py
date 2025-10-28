@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os,shutil,stat
+import os,subprocess
 import json,time
 import urllib
 from urllib.request import Request
@@ -7,16 +7,19 @@ from urllib.request import urlretrieve
 import hashlib
 from bs4 import BeautifulSoup as bs
 
-EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
-DATA_DIR="/usr/share/rebost-data/lists.d/"
-EDUAPPS_RELEASE="llx25"
-if os.path.exists(DATA_DIR):
-	for d in os.scandir(DATA_DIR):
+mapFileDir="/usr/share/rebost-data/lists.d/"
+release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
+release="llx{}".format(release.split(".")[0])
+EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
+if not os.path.exists(EDUAPPS_MAP):
+	for d in os.scandir(mapFileDir):
 		if d.name.startswith("llx"):
-			EDUAPPS_RELEASE=d.name
+			release=d.name
+			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 			break
-EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
+EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
+
 i18n={'CAD':"Engineering",
 	'Música':"Music",
 	'Gràfics':"Graphics",
@@ -76,7 +79,7 @@ class engine:
 	#def _fetchCatalogue
 
 	def _getAppseduMapFixes(self):
-		mapFixes={"nodisplay":[],"alias":{}}
+		mapFixes={"nodisplay":[],"aliases":{}}
 		jcontent={}
 		if os.path.exists(EDUAPPS_MAP):
 			with open(EDUAPPS_MAP,"r") as f:
@@ -229,9 +232,14 @@ class engine:
 		for cat in eduapp["categories"]:
 			app.add_category(cat)
 		#Status
-		if eduapp["auth"].lower().startswith("autori")==False:
+		if eduapp["auth"].lower().startswith("preparan")==True:
+			launchable=self.core.appstream.Launchable()
+			launchable.set_kind(self.core.appstream.LaunchableKind.UNKNOWN)
+			app.add_launchable(launchable)
+			app.add_metadata("X-REBOST-UNAVAILABLE","true")
+		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
-			app.set_state(self.core.appstream.AppState.UNAVAILABLE)
+			app.add_metadata("X-REBOST-BLOCKED","true")
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		#Release

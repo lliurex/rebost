@@ -123,6 +123,8 @@ def _setDetailFromAppstream(app,pkg):
 	pkg["keywords"]=[]
 	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
 		pkg["forbidden"]=True
+	if app.get_launchable_by_kind(appstream.LaunchableKind.UNKNOWN)!=None:
+		pkg["unavailable"]=True
 	localLangs=LOCAL_LANGS[1:]
 	if "ca" in localLangs:
 		idx=localLangs.index("ca")

@@ -76,6 +76,10 @@ class _RebostCore():
 	#def _readConfig
 
 	def _chkRelease(self):
+		if os.path.exists(self.CACHE)==False:
+			os.makedirs(self.CACHE)
+		if os.path.exists(os.path.join(self.CACHE,"raw"))==False:
+			os.makedirs(os.path.join(self.CACHE,"raw"))
 		cFile=os.path.join(self.CACHE,"release")
 		cContent="0"
 		if os.path.exists(cFile):
@@ -92,8 +96,6 @@ class _RebostCore():
 				for f in os.scandir(rawDir):
 					os.unlink(f.path)
 			self._debug("--> RELEASE CLEANED <--")
-		if os.path.exists(self.CACHE)==False:
-			os.makedirs(self.CACHE)
 		with open(cFile,"w") as f:
 			f.write(self.config.get("release","1.0"))
 	#def _chkRelease(self):
@@ -166,11 +168,11 @@ class _RebostCore():
 		if os.path.exists(fxml):
 			try:
 				store.from_file(Gio.File.parse_name(fxml),None,None)
-				#with open(fxml,"r") as f:
-				#	fcontent=f.read()
-				#fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
-				#store.from_xml(fcontent)
-				self._debug("Added {} apps".format(len(store.get_apps())))
+			#	with open(fxml,"r") as f:
+			#		fcontent=f.read()
+			#	fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+			#	store.from_xml(fcontent)
+				self._debug("Added {} apps".format(store.get_size()))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
 				tree = ET.fromstring(fcontent)
@@ -197,7 +199,7 @@ class _RebostCore():
 					with open(fxml,"r") as f:
 						fcontent=f.read()
 					store.from_xml(fcontent)
-					self._debug("Added {} apps".format(len(store.get_apps())))
+					self._debug("Added {} apps".format(store.get_size()))
 				except Exception as e:
 					self._error(e,msg="Error fixing. Requires user intervention")
 		else:
@@ -221,11 +223,11 @@ class _RebostCore():
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
 		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
-		app.subsume(donor)
 		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
 		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
-		#extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
-		#app.subsume_full(donor,extendFlags)
+		app.subsume(donor)
+		extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.KEYWORDS|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
+		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
 		#app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps
@@ -271,17 +273,24 @@ class _RebostCore():
 										continue
 								tmpId="{}.{}".format(tmpId,i)
 					newId=tmpId.strip().rstrip(".").lstrip(".")
-				newId=newId.lower().replace(".appimage","").split(".")[-1]
+				newId=newId.lower().removesuffix(".appimage").split(".")[-1]
 		#	elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 			else:
-				if app.get_id().count(".")>1: #It seems canonical
-					newId=app.get_id().replace(".desktop","").split(".")[-1]
-				else:
-					newId=app.get_id().removesuffix(".desktop")
+				newId=app.get_id().removesuffix(".desktop")
+				if newId.count(".")>1: #It seems canonical
+					tags=newId.split(".")
+					tags.reverse()
+					fallback=""
+					for tag in tags:
+						if tag.isnumeric():
+							fallback=tag
+							continue
+						newId=tag
+						break
 		else:
-			newId=app.get_id().replace(".desktop","")
-			if app.get_id().count(".")>1: #It seems canonical
-				newId=app.get_id().split(".")[-1]
+			newId=app.get_id().removesuffix(".desktop")
+			if newId.count(".")>1: #It seems canonical
+				newId=newId.split(".")[-1]
 		app.set_id(newId.lower().removeprefix(".").removesuffix("."))
 		return (app)
 	#def _preMergeApp
@@ -289,9 +298,18 @@ class _RebostCore():
 	def _fixMainStates(self):
 		for app in self.stores["main"].get_apps():
 			metadata=app.get_metadata()
-			for mkey,mdata in metadata.items():
-				if mdata.endswith(";installed"):
-					app.set_state(appstream.AppState.INSTALLED)
+			if "X-REBOST-BLOCKED" in metadata.keys():
+				if metadata["X-REBOST-BLOCKED"]=="true":
+					app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+			elif "X-REBOST-UNAVAILABLE" in metadata.keys():
+				if metadata["X-REBOST-UNAVAILABLE"]=="true":
+					launchable=appstream.Launchable()
+					launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
+					app.add_launchable(launchable)
+			else:
+				for mkey,mdata in metadata.items():
+					if mdata.endswith(";installed"):
+						app.set_state(appstream.AppState.INSTALLED)
 	#def _fixMainStates
 	
 	def _mergeApps(self):

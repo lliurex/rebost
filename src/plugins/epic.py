@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-import os
+import os,subprocess
 import json
 import html
+from urllib import request
 import hashlib
-import urllib
-from urllib.request import Request
-from urllib.request import urlretrieve
 from epi import epimanager
 import gi
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
-DATA_DIR="/usr/share/rebost-data/lists.d/"
-EDUAPPS_RELEASE="llx25"
-if os.path.exists(DATA_DIR):
-	for d in os.scandir(DATA_DIR):
+
+mapFileDir="/usr/share/rebost-data/lists.d/"
+release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
+release="llx{}".format(release.split(".")[0])
+EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
+if not os.path.exists(EDUAPPS_MAP):
+	for d in os.scandir(mapFileDir):
 		if d.name.startswith("llx"):
-			EDUAPPS_RELEASE=d.name
+			release=d.name
+			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
 			break
-EDUAPPS_MAP=os.path.join(DATA_DIR,EDUAPPS_RELEASE,"eduapps.map")
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(EDUAPPS_RELEASE)
+EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
 
 class engine:
 	def __init__(self,core,*args,**kwargs):
@@ -51,9 +52,9 @@ class engine:
 			url=EDUAPPS_URL
 		self._debug("Fetching {}".format(url))
 		content=''
-		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+		req=request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req,timeout=2) as f:
+			with request.urlopen(req,timeout=2) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
 			self._debug("Couldn't fetch {}".format(url))
@@ -62,7 +63,7 @@ class engine:
 	#def _fetchCatalogue
 
 	def _getAppseduMapFixes(self):
-		mapFixes={"nodisplay":[],"alias":{}}
+		mapFixes={"nodisplay":[],"aliases":{}}
 		jcontent={}
 		if os.path.exists(EDUAPPS_MAP):
 			with open(EDUAPPS_MAP,"r") as f:
@@ -165,6 +166,7 @@ class engine:
 					bun.set_id(epiName)
 					app.add_bundle(bun)
 				app.add_keyword("C",epiData["zomando"])
+				app.add_keyword("C",epiName)
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
 				#suggest.add_id(epiData["zomando"])

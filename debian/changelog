@@ -1,4 +1,4 @@
-rebost (3.0.2-0llx25) jammy; urgency=medium
+rebost (3.0.2-0llx25) noble; urgency=medium
 
   * Try to set appsedu pending apps based on the various auth states
 

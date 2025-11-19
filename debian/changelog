@@ -1,3 +1,9 @@
+rebost (3.0.2-0llx25) jammy; urgency=medium
+
+  * Try to set appsedu pending apps based on the various auth states
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Nov 2025 07:42:19 +0100
+
 rebost (3.0.1-2llx25) noble; urgency=medium
 
   * Stable release

@@ -149,6 +149,19 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getAppsInstalled
 
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='s')
+	def getPendingApps(self):
+		ret=self.rebost.getApps()
+		resultList=ret.result()
+		getResult=[]
+		for app in rebostHelper.appstreamToRebost(resultList):
+			if app.get("unavailable",False)==True and app.get("unauthorized",False)==False:
+				getResult.append({"name":app.get("name"),"alias":app.get("aliases"),"summary":app.get("summary"),"url":app.get("homepage"),"bundles":app.get("bundle")})
+		return(json.dumps(getResult))
+	#def getAppsInstalled
+
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def search(self,pkgname):
 		pkgname=pkgname.lower()

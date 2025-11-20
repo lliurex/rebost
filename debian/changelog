@@ -1,3 +1,9 @@
+rebost (3.0.2-0llx23) jammy; urgency=medium
+
+  * Sync with llx25
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 20 Nov 2025 08:12:03 +0100
+
 rebost (3.0.1-3llx23) jammy; urgency=medium
 
   * Synced with llx25

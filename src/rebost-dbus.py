@@ -44,10 +44,6 @@ class rebostDbusMethods(dbus.service.Object):
 	#def _print
 
 	@dbus.service.signal("net.lliurex.rebost")
-	def loaded(self):
-		pass
-
-	@dbus.service.signal("net.lliurex.rebost")
 	def beginUpdateSignal(self):
 		pass
 	#def storeLoaded
@@ -250,17 +246,16 @@ class rebostDbusMethods(dbus.service.Object):
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
-	def export(self,user=''):
-		action='export'
-		ret=self.rebost.execute(action,user)
+	def export(self,fxml=''):
+		ret=self.rebost.export(fxml)
+		print("Exported to {}".format(ret))
 		return (ret)
 	#def export
 	
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
 	def getUpgradableApps(self,user=""):
-		action='list'
-		ret=self.rebost.execute(action,installed=True,upgradable=True,user=user)
+		ret="Not implemented yet"
 		return (ret)
 	#def getUpgradableApps(self):
 	
@@ -282,7 +277,7 @@ class rebostDbusMethods(dbus.service.Object):
 	def restart(self):
 		ret=True
 		try:
-			self.rebost.execute("restart")
+			self.rebost.restart()
 		except Exception as e:
 			print("Critical error relaunching")
 			print(str(e))
@@ -292,38 +287,8 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='b')
-	def lock(self):
-		ret=False
-		try:
-			ret=self.rebost.execute("lock")
-		except Exception as e:
-			print("Critical error locking")
-			print(str(e))
-		return(ret)
-	#def lock
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='b')
-	def unlock(self):
-		ret=False
-		try:
-			ret=self.rebost.execute("unlock")
-		except Exception as e:
-			print("Critical error unlocking")
-			print(str(e))
-		return(ret)
-	#def unlock
-
-	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='', out_signature='b')
 	def getLockStatus(self):
-		ret=False
-		try:
-			ret=self.rebost.getLockStatus()
-		except Exception as e:
-			print("Critical error getting lock status")
-			print(str(e))
-		return(ret)
+		return(self.getConfig().get("onlyVerified",False))
 	#def getLockStatus
 #class rebostDbusMethods
 	

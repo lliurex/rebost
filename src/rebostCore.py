@@ -380,12 +380,14 @@ class _RebostCore():
 		init.add_done_callback(self._rebostOperative)
 	#def reload(self):
 
-	def export(self):
-		fxml=os.path.join(CACHE,"main.xml")
+	def export(self,fxml=""):
+		if len(fxml.strip())==0:
+			fxml=os.path.join(CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
 			self._error(e,msg="export")
+		return(fxml)
 	#def export
 
 	def _rebostOperative(self,*args):

@@ -232,7 +232,7 @@ class engine:
 		for cat in eduapp["categories"]:
 			app.add_category(cat)
 		#Status
-		if eduapp["auth"].lower().startswith("preparan")==True:
+		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
 			launchable=self.core.appstream.Launchable()
 			launchable.set_kind(self.core.appstream.LaunchableKind.UNKNOWN)
 			app.add_launchable(launchable)

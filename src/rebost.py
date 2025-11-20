@@ -145,6 +145,10 @@ class Rebost():
 		return(result)
 	#def _searchApp
 
+	def export(self,fxml=""):
+		return(self.core.export(fxml))
+	#def export
+
 	def searchAppByUrl(self,url,kind=None):
 		if kind==None:
 			kind=self.core.appstream.UrlKind.HOMEPAGE

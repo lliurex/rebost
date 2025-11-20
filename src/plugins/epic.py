@@ -96,7 +96,7 @@ class engine:
 				epiInfo=json.load(f)
 		pkgInfoList=epiInfo.get("pkg_list",[])
 		for pkgItem in pkgInfoList:
-			name=pkgItem.pop("name")
+			name=pkgItem.pop("name").strip()
 			epiInfo.update({name:pkgItem})
 		return epiInfo
 	#def _getEpiInfo
@@ -133,6 +133,7 @@ class engine:
 		if len(pkgList)>0:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
 			for pkg in pkgList:
+				pkg["name"]=pkg["name"].strip()
 				suggested=[]
 				if pkg["name"] not in epiInfo or pkg["name"] in self.mapFixes["nodisplay"]:
 					self._debug("Discard {}".format(pkg["name"]))

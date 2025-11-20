@@ -1,6 +1,6 @@
-rebost (3.0.3-0llx23) jammy; urgency=medium
+rebost (3.0.4-0llx23) jammy; urgency=medium
 
-  * Sync with llx25
+  * BUG: epic plugin was not stripping pkg names
 
  -- Juanma1980 <juanma1980@gmail.com>  Thu, 20 Nov 2025 12:44:26 +0100
 

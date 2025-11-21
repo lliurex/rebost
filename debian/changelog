@@ -1,4 +1,4 @@
-rebost (3.0.4-0llx23) jammy; urgency=medium
+rebost (3.0.4-1llx23) jammy; urgency=medium
 
   * BUG: epic plugin was not stripping pkg names
 

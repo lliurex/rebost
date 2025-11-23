@@ -300,12 +300,14 @@ class _RebostCore():
 			metadata=app.get_metadata()
 			if "X-REBOST-BLOCKED" in metadata.keys():
 				if metadata["X-REBOST-BLOCKED"]=="true":
-					app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+					#app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+					app.add_kudo("BLOCKED")
 			elif "X-REBOST-UNAVAILABLE" in metadata.keys():
 				if metadata["X-REBOST-UNAVAILABLE"]=="true":
-					launchable=appstream.Launchable()
-					launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
-					app.add_launchable(launchable)
+					#launchable=appstream.Launchable()
+					#launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
+					#app.add_launchable(launchable)
+					app.add_kudo("UNAVAILABLE")
 			else:
 				for mkey,mdata in metadata.items():
 					if mdata.endswith(";installed"):
@@ -314,8 +316,8 @@ class _RebostCore():
 	
 	def _mergeApps(self):
 		self._debug("Filling work table")
-		self.stores["mainB"]=appstream.Store()
-		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
+		self.stores["mainB"]=appstream.Store() #Include all apps
+		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC) #Include verified apps
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
@@ -347,6 +349,8 @@ class _RebostCore():
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
 					if oldApp!=None:
 						self.stores["mainB"].add_app(mergeApp)
+					mergeApp.remove_kudo("UNAVAILABLE")
+					mergeApp.remove_kudo("BLOCKED")
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()

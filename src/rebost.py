@@ -3,7 +3,6 @@ import sys,os,time
 import traceback
 import json
 import importlib
-import dbus
 import locale
 import concurrent.futures as Futures
 import threading
@@ -34,6 +33,8 @@ class Rebost():
 	
 	def _waitForCore(self):
 		initTime=int(time.time())
+		if len(self.core.stores)<=1:
+			self.core.initCore()
 		while self.core.ready==False:
 			time.sleep(0.01)
 			if int(time.time())-initTime>20:

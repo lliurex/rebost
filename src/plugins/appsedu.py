@@ -98,6 +98,10 @@ class engine:
 				mapFixes["nodisplay"]=nodisplay
 				jcontentAliases=jcontent.get("aliases",{})
 				mapFixes["aliases"].update(jcontentAliases)
+		fxml=os.path.join(self.cache,"appsedu.map")
+		if os.path.isdir(os.path.dirname(fxml)):
+			with open(fxml,"w") as f:
+				f.write(json.dumps(mapFixes,indent=4))
 		return(mapFixes)
 	#def _getAppseduMapFixes
 
@@ -118,6 +122,7 @@ class engine:
 		candidate=None
 		columnAuth=None
 		columnName=None
+		columnNameHref=None
 		columnCats=None
 		columnIcon=None
 		columnPkgName=None
@@ -128,7 +133,8 @@ class engine:
 			if (column.attrs["class"][0]=="column-1"):
 				columnIcon=column.img
 			if (column.attrs["class"][0]=="column-2"):
-				columnName=column.find_all("a",href=True)
+				columnNameHref=column.find_all("a",href=True)
+				columnName=column.text
 			if (column.attrs["class"][0]=="column-5"):
 				columnCats=column.text
 			if (column.attrs["class"][0]=="column-7"):
@@ -142,7 +148,7 @@ class engine:
 				if len(columnCats.strip())>0:
 					full=True
 			if full==True:
-				for data in columnName:
+				for data in columnNameHref:
 					infopage=data["href"]
 					candidate=os.path.basename(infopage.strip("/"))
 				if candidate:
@@ -167,7 +173,7 @@ class engine:
 							realCat=self._getRealCategory(cat.strip())
 							if len(realCat)>0 and realCat not in cats:
 								cats.append(realCat)
-						eduApps.append({"app":columnPkgName,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"infopage":infopage})
+						eduApps.append({"app":columnPkgName,"name":columnName,"icon":pkgIcon,"auth":columnAuth,"categories":cats,"infopage":infopage})
 						candidate=None
 						categories.extend(cats)
 				columnAuth=None
@@ -217,7 +223,7 @@ class engine:
 		app.set_id(aliasname)
 		app.add_pkgname(aliasname)
 		for l in self.core.langs:
-			app.set_name(l,pkgname)
+			app.set_name(l,eduapp["name"])
 			app.set_comment(l,eduapp["auth"])
 			app.set_description(l,eduapp["auth"])
 		app.add_keyword("C",pkgname)
@@ -233,12 +239,10 @@ class engine:
 			app.add_category(cat)
 		#Status
 		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
-			launchable=self.core.appstream.Launchable()
-			launchable.set_kind(self.core.appstream.LaunchableKind.UNKNOWN)
-			app.add_launchable(launchable)
+			app.add_kudo("UNAVAILABLE")
 			app.add_metadata("X-REBOST-UNAVAILABLE","true")
 		elif eduapp["auth"].lower().startswith("autori")==False:
-			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
+			app.add_kudo("BLOCKED")
 			app.add_metadata("X-REBOST-BLOCKED","true")
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)

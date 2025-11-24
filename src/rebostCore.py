@@ -14,9 +14,8 @@ from gi.repository import AppStreamGlib as appstream
 
 DBG=True
 SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
-WRKDIR=os.path.join(os.environ["HOME"],".local","share","rebost")
-DBDIR=os.path.join(WRKDIR,"data")
-CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
+#CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
+CACHE=os.path.join("/var","cache","rebost")
 CONFIG="/usr/share/rebost/rebost.conf"
 
 
@@ -24,8 +23,6 @@ class _RebostCore():
 	def __init__(self,*args,**kwargs):
 		self.dbg=DBG
 		self.SCHEMES=SCHEMES
-		self.WRKDIR=WRKDIR
-		self.DBDIR=DBDIR
 		self.CACHE=CACHE
 		self.DBG=DBG
 		self.appstream=appstream
@@ -47,7 +44,7 @@ class _RebostCore():
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
-		self._initCore()
+		#self._initCore()
 	#def __init__
 
 	def _debug(self,msg):
@@ -300,12 +297,14 @@ class _RebostCore():
 			metadata=app.get_metadata()
 			if "X-REBOST-BLOCKED" in metadata.keys():
 				if metadata["X-REBOST-BLOCKED"]=="true":
-					app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+					#app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
+					app.add_kudo("BLOCKED")
 			elif "X-REBOST-UNAVAILABLE" in metadata.keys():
 				if metadata["X-REBOST-UNAVAILABLE"]=="true":
-					launchable=appstream.Launchable()
-					launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
-					app.add_launchable(launchable)
+					#launchable=appstream.Launchable()
+					#launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
+					#app.add_launchable(launchable)
+					app.add_kudo("UNAVAILABLE")
 			else:
 				for mkey,mdata in metadata.items():
 					if mdata.endswith(";installed"):
@@ -314,8 +313,8 @@ class _RebostCore():
 	
 	def _mergeApps(self):
 		self._debug("Filling work table")
-		self.stores["mainB"]=appstream.Store()
-		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
+		self.stores["mainB"]=appstream.Store() #Include all apps
+		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC) #Include verified apps
 		verifiedOrigins=self._getVerifiedOrigins()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
@@ -347,6 +346,8 @@ class _RebostCore():
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
 					if oldApp!=None:
 						self.stores["mainB"].add_app(mergeApp)
+					mergeApp.remove_kudo("UNAVAILABLE")
+					mergeApp.remove_kudo("BLOCKED")
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
@@ -467,10 +468,11 @@ class _RebostCore():
 		return(self.config.get("externalInstaller",""))
 	#def getExternalInstaller
 
-	def _initCore(self):
+	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)
-		self._loadFromCache()
-		self._initEngines()
+		if len(self.stores)<=1:
+			self._loadFromCache()
+			self._initEngines()
 	#def _initCore
 #class _RebostCore
 

@@ -1,3 +1,9 @@
+rebost (3.1.0-0llx25) noble; urgency=medium
+
+  * Rebost switch from per-user dbus service to systemd unit
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 24 Nov 2025 18:29:00 +0100
+
 rebost (3.0.4-0llx25) noble; urgency=medium
 
   * BUG: epic plugin was not stripping pkg names

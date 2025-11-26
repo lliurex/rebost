@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
-import os,shutil,distro,stat
+import os
 import html2text
 import gi
-from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
-import sqlite3
 import json
 import html
-import logging
 import tempfile
 import subprocess
-import time
-import urllib
-from bs4 import BeautifulSoup as bs
-from urllib.request import Request
-from urllib.request import urlretrieve
 import locale
-
 
 LOCAL_LANGS=[]
 for localLang in locale.getlocale():
@@ -25,21 +16,6 @@ for localLang in locale.getlocale():
 		LOCAL_LANGS.append(localLang.split("_")[0])
 		LOCAL_LANGS.append(localLang.split("_")[-1].lower())
 LOCAL_LANGS.insert(0,"C")
-#---< 
-
-def _fixFlatpakIconPath(icon):
-	fpath=os.path.dirname(icon)
-	spath=fpath.split("/")
-	idx=0
-	if "icons" in spath:
-		idx=spath.index("icons")-1
-		fpath="/".join(spath[0:idx])
-	if os.path.isdir(fpath) and idx>0:
-		for d in os.listdir(fpath):
-			if os.path.isdir(os.path.join(fpath,d,"icons")):
-				icon=os.path.join(fpath,d,"/".join(spath[idx+1:]),os.path.basename(rebostPkg['icon']))
-	return icon
-#def _fixFlatpakIconPath
 
 def _sanitizeString(data,scape=False,unescape=False):
 	if isinstance(data,str):
@@ -121,10 +97,13 @@ def _setDetailFromAppstream(app,pkg):
 		pkg["suggests"].extend(suggest.get_ids())
 	pkg["suggests"]=list(set(pkg["suggests"]))
 	pkg["keywords"]=[]
-	if app.has_quirk(appstream.AppQuirk.NOT_LAUNCHABLE):
-		pkg["forbidden"]=True
-	if app.get_launchable_by_kind(appstream.LaunchableKind.UNKNOWN)!=None:
-		pkg["unavailable"]=True
+	if app.get_origin()=="verified":
+		kudos=app.get_kudos()
+		if "BLOCKED" in kudos:
+			pkg["forbidden"]=True
+		if "UNAVAILABLE" in kudos:
+			pkg["unavailable"]=True
+	pkg["origin"]=app.get_origin()
 	localLangs=LOCAL_LANGS[1:]
 	if "ca" in localLangs:
 		idx=localLangs.index("ca")
@@ -189,8 +168,6 @@ def _appstreamAppToRebost(app):
 		pkg['pkgname']=pkg['name']
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 	pkg['icon']=_getIconFromAppstream(app)
-	#if "/flatpak/" in pkg["icon"] and os.path.isfile(pkg["icon"])==False:
-	#	pkg["icon"]=_fixFlatpakIconPath(pkg['icon'])
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
 	pkg['infopage']=app.get_url_item(appstream.UrlKind.CONTACT)
 	pkg=_setDetailFromAppstream(app,pkg)
@@ -455,54 +432,6 @@ def getEpiStatus(episcript):
 	return(st)
 #def getEpiStatus
 
-def getPkgFromTable(table,pkg):
-	#tablePath=os.path.join("/usr/share/rebost/",table)
-	tablePath=os.path.join(WRKDIR,table)
-	ret=[]
-	if os.path.isfile(tablePath):
-		tableName=table.replace(".db","").lower()
-		db=sqlite3.connect(tablePath)
-		cursor=db.cursor()
-		query="Select * from {0} where pkg='{1}'".format(tableName,pkg)
-		try:
-			cursor.execute(query)
-			ret=cursor.fetchall()
-		except:
-			pass
-		db.close()
-	return ret
-#def getStateForPkg
-
-def getPkgFromTablearray(table,pkgarray):
-	tablePath=os.path.join(WRKDIR,table)
-	ret=[]
-	if os.path.isfile(tablePath):
-		tableName=table.replace(".db","").lower()
-		db=sqlite3.connect(tablePath)
-		cursor=db.cursor()
-		query="Select * from {0} where pkg in ({1})'".format(tableName,",".join(pkgarray))
-		try:
-			cursor.execute(query)
-			ret=cursor.fetchall()
-		except:
-			pass
-		db.close()
-	return ret
-#def getPkgFromTablearray
-
-def getStateForPkg(pkg,bundle):
-	tablePath=os.path.join(WRKDIR,"installed.db")
-	ret=[]
-	if os.path.isfile(tablePath):
-		db=sqlite3.connect(tablePath)
-		cursor=db.cursor()
-		query="Select * from installed where pkg='{0}' and bundle='{1}'".format(pkg,bundle)
-		cursor.execute(query)
-		ret=cursor.fetchall()
-		db.close()
-	return ret
-#def getStateForPkg
-
 def chkUnsafeRemoval(package):
 	sw=False
 	_debug("Helper: Checking if remove {} is unsure".format(package))
@@ -520,48 +449,3 @@ def chkUnsafeRemoval(package):
 	_debug("Helper: Checked")
 	return(sw)
 #def chkUnsafeRemoval(package):
-
-def getFiltersList(banlist=False,includelist=False,wordlist=False):
-	wrkDir=WRKDIR #"/usr/share/rebost"
-	folderbanlist=os.path.join(wrkDir,"lists.d/banned")
-	folderincludelist=os.path.join(wrkDir,"lists.d/include")
-	folderWordlist=os.path.join(wrkDir,"lists.d/words")
-	files={"categories":[],"apps":[]}
-	filters={"banlist":files,"includelist":files,"words":[]}
-	if banlist==True:
-		filters["banlist"]=getFilterContent(folderbanlist)
-	if includelist==True:
-		filters["includelist"]=getFilterContent(folderincludelist)
-	if wordlist==True:
-		filters["words"]=getFilterContent(folderWordlist)
-	return(filters)
-
-def getFilterContent(folder):
-	filters={"categories":[],"apps":[]}
-	if "word" in folder:
-		folders=[folder]
-		filters=[]
-	else:
-		folders=[os.path.join(folder,"categories"),os.path.join(folder,"apps")]
-	for folder in folders:
-		if os.path.isdir(folder):
-			for f in os.listdir(folder):
-				if f.endswith("conf"):
-					with open(os.path.join(folder,f),"r") as ffilter:
-						for line in ffilter.readlines():
-							fcontent=line.strip()
-							if "categories" in folder:
-								filters["categories"].append(fcontent)
-							elif "apps" in folder:
-								filters["apps"].append(fcontent)
-							else:
-								filters.append(fcontent)
-	return(filters)
-#def getFilterContent
-
-	#Default banlist. If there's a category banlist file use it
-
-#	banlist=["ActionGame", "Actiongame", "Adventure", "AdventureGame", "Adventuregame", "Amusement","ArcadeGame", "Arcadegame", "BlocksGame", "Blocksgame", "BoardGame", "Boardgame", "Building", "CardGame", "Cardgame", "Chat", "Communication", "Communication & News", "Communication & news",  "ConsoleOnly", "Consoleonly", "Construction", "ContactManagement", "Contactmanagement", "Email", "Emulation", "Emulator",  "Fantasy", "Feed", "Feeds",  "Game", "Games",  "IRCClient",  "InstantMessaging", "Instantmessaging",  "Ircclient",  "LogicGame", "Logicgame", "MMORPG",  "Matrix",  "Mmorpg",  "News", "P2P", "P2p", "PackageManager", "Packagemanager", "Player", "Players", "RemoteAccess", "Remoteaccess",  "Role Playing", "Role playing", "RolePlaying", "Roleplaying",  "Services", "Settings", "Shooter", "Simulation",  "SportsGame", "Sportsgame", "Strategy", "StrategyGame", "Strategygame", "System", "TV", "Telephony", "TelephonyTools", "Telephonytools", "TerminalEmulator", "Terminalemulator",  "Tuner", "Tv", "Unknown", "VideoConference", "Videoconference","WebBrowser"]
-		#appsbanlist=["cryptochecker","digibyte-core","grin","hyperdex","vertcoin-core","syscoin-core","ryowallet","radix_wallet","obsr","nanowallet","mycrypto","p2pool","zapdesktop","demonizer"]
-		#includelist=['graphics', 'Chart', 'Clock', 'Astronomy', 'AudioVideo', 'Publishing', 'Presentation', 'Biology', 'NumericalAnalysis', 'Viewer', 'DataVisualization','Development', 'TextTools', 'FlowChart',  'FP', 'Music', 'Physics', 'Lliurex', 'Scanning', 'Photography', 'resources', 'Productivity',  'MedicalSoftware', 'Graphics', 'Literature', 'Science', 'Zomando',  'Support', 'Geology',  'Engineering', 'Spirituality', '3DGraphics',  'Humanities',  'electronics', 'fonts',  '2DGraphics', 'Math', 'Electricity', 'GUIDesigner', 'Sequencer', 'Chemistry', 'publishing',  'Recorder', 'X-CSuite', 'Accessibility',  'DiscBurning',  'IDE', 'LearnToCode', 'TextEditor', 'Animation', 'Maps', 'Documentation', 'documentation', 'Dictionary', 'Spreadsheet', 'Office', 'Education', 'Art', 'KidsGame', 'Finance', 'Database', 'ComputerScience', 'Sports','WebDevelopment', 'VectorGraphics', 'Debugger', 'Midi',  'OCR', 'Geography',  'Electronics',  'Languages', 'education', 'RasterGraphics', 'Calculator', 'science', 'Translation', 'ImageProcessing', 'Economy', 'Geoscience', 'HamRadio', 'Webdevelopment', 'AudioVideoEditing',  'WordProcessor']
-#def getCategoriesbanlist

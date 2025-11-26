@@ -320,7 +320,7 @@ class rebostDBus():
 		# Declare a name where our service can be reached
 		try:
 			bus_name = dbus.service.BusName("net.lliurex.rebost",
-											bus=dbus.Bus(),
+											bus=dbus.SystemBus(),
 											do_not_queue=True)
 		except dbus.exceptions.NameExistsException:
 			print("service is already running")

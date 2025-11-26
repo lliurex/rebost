@@ -239,13 +239,11 @@ class engine:
 			app.add_category(cat)
 		#Status
 		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
-			launchable=self.core.appstream.Launchable()
-			launchable.set_kind(self.core.appstream.LaunchableKind.UNKNOWN)
-			app.add_launchable(launchable)
-			app.add_metadata("X-REBOST-UNAVAILABLE","true")
+			app.add_kudo("UNAVAILABLE")
+			#app.add_metadata("X-REBOST-UNAVAILABLE","true")
 		elif eduapp["auth"].lower().startswith("autori")==False:
-			app.add_quirk(self.core.appstream.AppQuirk.NOT_LAUNCHABLE)
-			app.add_metadata("X-REBOST-BLOCKED","true")
+			app.add_kudo("BLOCKED")
+			#app.add_metadata("X-REBOST-BLOCKED","true")
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		#Release

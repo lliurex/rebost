@@ -143,7 +143,11 @@ class engine:
 				desc="Download 'n' run"
 			elif len(desc)==0:
 				desc="Download 'n' run"
-			summary=self.core.appstream.markup_import(japp.get("summary",""),self.core.appstream.MarkupConvertFormat.SIMPLE).strip().replace("<p>","",).replace("</p>","")
+			summary=japp.get("summary","")
+			if isinstance(summary,str)==False:
+				descArray=desc.split(" ")
+				summary=" ".join(descArray[0:min(20,len(descArray))])
+			summary=self.core.appstream.markup_import(summary,self.core.appstream.MarkupConvertFormat.SIMPLE).strip().replace("<p>","",).replace("</p>","")
 			if len(summary)==0:
 				summary="Appimage"
 			author=japp.get("authors",[{}])
@@ -239,8 +243,8 @@ class engine:
 										data.extend(jrepo.get("data",[]))
 									except Exception as e:
 										self._debug("Failed to parse {}".format(repo))
-										print(e)
-										print("--------/>")
+										self._debug(e)
+										self._debug("--------/>")
 								
 						store.add_apps(self._getAppstreamFromDataField(data))
 					elif "items" in jrepo.keys(): #json responde with items field for the pkgs

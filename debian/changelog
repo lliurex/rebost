@@ -1,3 +1,9 @@
+rebost (3.1.1-0llx25) noble; urgency=medium
+
+  * Set origin for apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 01 Dec 2025 07:43:54 +0100
+
 rebost (3.1.0-0llx25) noble; urgency=medium
 
   * Rebost switch from per-user dbus service to systemd unit

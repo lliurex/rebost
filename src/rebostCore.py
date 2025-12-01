@@ -241,6 +241,7 @@ class _RebostCore():
 						mergeApp=self._doSubsumeApps(mergeApp,oldApp)
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
+				mergeApp.set_origin("verified")
 				store.add_app(mergeApp)
 		self._debug("Verified table count: {}".format(store.get_size()))
 		return(store)
@@ -345,19 +346,15 @@ class _RebostCore():
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
 					if oldApp!=None:
+						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
-					mergeApp.remove_kudo("UNAVAILABLE")
-					mergeApp.remove_kudo("BLOCKED")
+		#			mergeApp.remove_kudo("UNAVAILABLE")
+		#			mergeApp.remove_kudo("BLOCKED")
+					mergeApp.set_origin("unverified")
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()
 	#def _mergeApps
-
-	def _consolidateApps(self,*args,**kwargs):
-		#Get orphaned apps
-		for app in self.stores["main"].get_apps():
-			if app.get_bundles()==[]:
-				print("Orphaned {}".format(app.get_id()))
 
 	def loadToggle(self):
 		tmp=self.stores["main"]
@@ -397,7 +394,7 @@ class _RebostCore():
 		if resultSet.done():
 			if resultSet.exception():
 				self._error(resultSet.exception(),msg="_rebostOperative")
-		self._fixMainStates()
+		#self._fixMainStates()
 		self._debug("Work table ready. Rebost is fully operative")
 		self._debug("Loaded {} apps".format(self.stores["main"].get_size()))
 		self._debug("Loaded {} appsB".format(self.stores["mainB"].get_size()))
@@ -425,7 +422,6 @@ class _RebostCore():
 		if self.initProc==0:
 			self._debug("Appstream tables ready. Rebost core operative")
 			init=self.thExecutor.submit(self._mergeApps)
-			#self.thExecutor.submit(self._consolidateApps)
 			init.add_done_callback(self._rebostOperative)
 	#def _callBackInit(self,*args,**kwargs):
 
@@ -459,7 +455,7 @@ class _RebostCore():
 			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
 			if cacheStore.get_size()>0:
 				self.stores["main"]=cacheStore
-				self._fixMainStates()
+				#self._fixMainStates()
 				self._debug("Cached store loaded. Rebost will update data now")
 				self.ready=True
 	#def _loadFromCache

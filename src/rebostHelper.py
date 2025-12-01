@@ -97,11 +97,13 @@ def _setDetailFromAppstream(app,pkg):
 		pkg["suggests"].extend(suggest.get_ids())
 	pkg["suggests"]=list(set(pkg["suggests"]))
 	pkg["keywords"]=[]
-	kudos=app.get_kudos()
-	if "BLOCKED" in kudos:
-		pkg["forbidden"]=True
-	if "UNAVAILABLE" in kudos:
-		pkg["unavailable"]=True
+	if app.get_origin()=="verified":
+		kudos=app.get_kudos()
+		if "BLOCKED" in kudos:
+			pkg["forbidden"]=True
+		if "UNAVAILABLE" in kudos:
+			pkg["unavailable"]=True
+	pkg["origin"]=app.get_origin()
 	localLangs=LOCAL_LANGS[1:]
 	if "ca" in localLangs:
 		idx=localLangs.index("ca")

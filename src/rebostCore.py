@@ -443,7 +443,7 @@ class _RebostCore():
 
 	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)
-		if len(self.stores)<=1:
+		if len(self.stores)<=1 and self.initProc==0:
 			self._loadFromCache()
 			self._initEngines()
 	#def _initCore

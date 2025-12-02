@@ -293,25 +293,6 @@ class _RebostCore():
 		return (app)
 	#def _preMergeApp
 
-	def _fixMainStates(self):
-		for app in self.stores["main"].get_apps():
-			metadata=app.get_metadata()
-			if "X-REBOST-BLOCKED" in metadata.keys():
-				if metadata["X-REBOST-BLOCKED"]=="true":
-					#app.add_quirk(appstream.AppQuirk.NOT_LAUNCHABLE)
-					app.add_kudo("BLOCKED")
-			elif "X-REBOST-UNAVAILABLE" in metadata.keys():
-				if metadata["X-REBOST-UNAVAILABLE"]=="true":
-					#launchable=appstream.Launchable()
-					#launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
-					#app.add_launchable(launchable)
-					app.add_kudo("UNAVAILABLE")
-			else:
-				for mkey,mdata in metadata.items():
-					if mdata.endswith(";installed"):
-						app.set_state(appstream.AppState.INSTALLED)
-	#def _fixMainStates
-	
 	def _mergeApps(self):
 		self._debug("Filling work table")
 		self.stores["mainB"]=appstream.Store() #Include all apps
@@ -348,8 +329,6 @@ class _RebostCore():
 					if oldApp!=None:
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
-		#			mergeApp.remove_kudo("UNAVAILABLE")
-		#			mergeApp.remove_kudo("BLOCKED")
 					mergeApp.set_origin("unverified")
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
@@ -394,7 +373,6 @@ class _RebostCore():
 		if resultSet.done():
 			if resultSet.exception():
 				self._error(resultSet.exception(),msg="_rebostOperative")
-		#self._fixMainStates()
 		self._debug("Work table ready. Rebost is fully operative")
 		self._debug("Loaded {} apps".format(self.stores["main"].get_size()))
 		self._debug("Loaded {} appsB".format(self.stores["mainB"].get_size()))
@@ -455,7 +433,6 @@ class _RebostCore():
 			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
 			if cacheStore.get_size()>0:
 				self.stores["main"]=cacheStore
-				#self._fixMainStates()
 				self._debug("Cached store loaded. Rebost will update data now")
 				self.ready=True
 	#def _loadFromCache

@@ -99,6 +99,8 @@ def _setDetailFromAppstream(app,pkg):
 	pkg["keywords"]=[]
 	if app.get_origin()=="verified":
 		kudos=app.get_kudos()
+		if "ASSISTED" in kudos:
+			pkg["assisted"]=True
 		if "BLOCKED" in kudos:
 			pkg["forbidden"]=True
 		if "UNAVAILABLE" in kudos:

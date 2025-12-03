@@ -240,10 +240,10 @@ class engine:
 		#Status
 		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
 			app.add_kudo("UNAVAILABLE")
-			#app.add_metadata("X-REBOST-UNAVAILABLE","true")
+		elif  ("assis" in eduapp["auth"].lower()) or ("asistida" in eduapp["auth"].lower()) or ("coordinada" in eduapp["auth"].lower()):
+			app.add_kudo("ASSISTED")
 		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_kudo("BLOCKED")
-			#app.add_metadata("X-REBOST-BLOCKED","true")
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		#Release

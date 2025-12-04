@@ -10,7 +10,6 @@ Homepage: https://github.com/lliurex/rebost
 Package: rebost
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}, 
-	app2menu-helper,
 	appstream (>=0.12.0-3), 
 	gir1.2-appstream-1.0,
 	gir1.2-appstreamglib-1.0 (>=0.7.7-2), 
@@ -19,6 +18,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
 	libsnapd-glib-2-1(>=1.41),
 	gir1.2-flatpak-1.0,
 	gir1.2-packagekitglib-1.0,
+	python3-app2menu,
 	python3-appconfig (>=0.50),
 	python3-bs4,
 	python3-html2text,

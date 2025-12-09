@@ -78,7 +78,7 @@ class engine:
 			downTypeKey="download_package_type{}".format(idx)
 			downKey="downloadlink{}".format(idx)
 			sizeKey="downloadsize{}".format(idx)
-			versionKey="downloadlink{}".format(idx)
+			versionKey="download_version{}".format(idx)
 			if not japp.get(nameKey,"").lower().endswith("appimage"):
 				continue
 			if japp.get(downTypeKey,"").lower()=="appimage":

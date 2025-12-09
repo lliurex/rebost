@@ -171,7 +171,13 @@ def _appstreamAppToRebost(app):
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 	pkg['icon']=_getIconFromAppstream(app)
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
-	pkg['infopage']=app.get_url_item(appstream.UrlKind.CONTACT)
+	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS]:
+		pkg['infopage']=app.get_url_item(url)
+		if pkg["infopage"]!=None:
+			if len(pkg["infopage"])>0:
+				break
+		else:
+			pkg["infopage"]=""
 	pkg=_setDetailFromAppstream(app,pkg)
 	pkg['categories']=app.get_categories()
 	pkg['license']=app.get_project_license()

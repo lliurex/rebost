@@ -180,7 +180,7 @@ for app in json.loads(installedApps):
 	print(app["id"])
 ```
 
-* Plugin for Slackware's slackpkg 
+* Example plugin implementation for Slackware's slackpkg 
 
 ```
 #!/usr/bin/env python3

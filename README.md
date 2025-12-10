@@ -38,7 +38,7 @@ As simple as import the module and use it.
 
 ## Methods
 * getConfig
- ** Input: None
+	* Input: None
  * Return: { key:value } Dict of config options
 
 * getSupportedFormats

@@ -253,12 +253,12 @@ class engine:
 	#def _getAppsFromSlackpkg
 
 	def _chkNeedUpdate(self,apps):
+		#ToDo
 		update=True
 		return(update)
 	#def _chkNeedUpdate
 
 	def getAppstreamData(self):
-		#ToDo
 		fxml=os.path.join(self.cache,"slackpkg.xml")
 		store=self.core.appstream.Store()
 		store.set_add_flags(self.core.appstream.StoreAddFlags.USE_UNIQUE_ID)

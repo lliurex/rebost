@@ -233,8 +233,8 @@ class engine:
 		for repo in self.repositories:
 			fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
 			try:
-				repo_raw=self._fetchRepo(repo)
-				jrepo=json.loads(repo_raw)
+				repoRaw=self._fetchRepo(repo)
+				jrepo=json.loads(repoRaw)
 			except Exception as e:
 				print("Error in {}: {}".format(repo,e))
 				store=self.core._fromFile(store,fxml)
@@ -251,10 +251,10 @@ class engine:
 						if totalitems>itemsperpage:
 							while len(jrepo.get("data",[]))>0:
 								page+=1
-								repo_raw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
-								if repo_raw!=None:
+								repoRaw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
+								if repoRaw!=None:
 									try:
-										jrepo=json.loads(repo_raw)
+										jrepo=json.loads(repoRaw)
 										data.extend(jrepo.get("data",[]))
 									except Exception as e:
 										self._debug("Failed to parse {}".format(repo))
@@ -270,11 +270,14 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
+		print("REFRESH")
 		name=""
 		bundles=app.get_bundles()
+		appimageBundle=None
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()
+				appimageBundle=bundle
 		name=os.path.basename(name)
 		for appimageDir in APPIMAGE_DIRS:
 			fpath=os.path.join(appimageDir,name)
@@ -285,6 +288,27 @@ class engine:
 			else:
 				status="available"
 				app.set_state(self.core.appstream.AppState.AVAILABLE)
+		detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
+		detailRaw=self._fetchRepo(detailPage)
+		try:
+			detailJson=json.loads(detailRaw)
+			detailFiles=detailJson.get("files")
+			for detail in detailFiles:
+				if detail.get("url","").lower().endswith("appimage"):
+					download=detail["url"]
+					break
+			download=urllib.parse.unquote(download)
+			if appimageBundle.get_kind()==self.bundle:
+				print("ASSIGN {}".format(bundle.get_kind()))
+				appimageBundle.set_id(download)
+		except Exception as e:
+			print(e)
+		bundles=app.get_bundles()
+		for bundle in bundles:
+			print("B: {}".format(bundle))
+			if bundle.get_kind()==self.bundle:
+				print(bundle.get_id())
+		print("--**--")
 		metastatus=app.get_metadata_item("X-REBOST-appimage")
 		metarelease="1;{}".format(status)
 		if metastatus!=None:

@@ -58,7 +58,7 @@ As simple as import the module and use it.
 	* Input: Search string (str)
 	* Return: { score:application }
    
- Search applications by string. The search results are ordered by match score and don't search only by name, also include results by description, keywords...
+ Search applications by string. The search results are ordered by match score. searchApp includes results by name, description, keywords...
 
 * searchAppByUrl
 	* Input: Searched url (str)

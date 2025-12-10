@@ -144,7 +144,7 @@ They must be declared as "engine" class and include some needed methods:
 * __init__
 	* Input: core (optional)
    
-This method can declare a core argument. Rebost will pass it's core to the plugin for it getting all its methods and globals available
+This method can declare a core argument. Rebost will pass it's core to the plugin for exposing its plubic methods and globals
 
 * getAppstreamData
 	* Input: None

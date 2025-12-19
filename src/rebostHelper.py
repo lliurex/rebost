@@ -171,7 +171,13 @@ def _appstreamAppToRebost(app):
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 	pkg['icon']=_getIconFromAppstream(app)
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
-	pkg['infopage']=app.get_url_item(appstream.UrlKind.CONTACT)
+	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS]:
+		pkg['infopage']=app.get_url_item(url)
+		if pkg["infopage"]!=None:
+			if len(pkg["infopage"])>0:
+				break
+		else:
+			pkg["infopage"]=""
 	pkg=_setDetailFromAppstream(app,pkg)
 	pkg['categories']=app.get_categories()
 	pkg['license']=app.get_project_license()
@@ -395,12 +401,7 @@ def _getCommandsForAppimage(rebostpkg,user):
 	destPath=os.path.join(destdir,"{}.appimage".format(rebostpkg['pkgname']))
 	deskName="{}-appimage.desktop".format(rebostpkg['pkgname'])
 	installCmdLine.append("chmod +x {}".format(destPath))
-	if user!='root' and user:
-		installCmdLine.append("chown {0}:{0} {1}".format(user,destPath))
-		installCmdLine.append("[ -e /home/{1}/Appimages ] || ln -s {0} /home/{1}/Appimages".format(destdir,user))
-		installCmdLine.append("[ -e /home/{0}/Appimages ] && chown -R {0}:{0} /home/{0}/Appimages".format(user))
-		installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} \"{1}\" \"{2}\" \"{3}\" \"{4}\" /home/{5}/.local/share/applications/{6} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user,deskName))
-		installCmdLine.append("chown {0}:{0} /home/{0}/.local/share/applications/{1}".format(user,deskName))
+	installCmdLine.append("/usr/share/app2menu/app2menu-helper.py {0} \"{1}\" \"{2}\" \"{3}\" \"{4}\" /usr/share/applications/{6} {4}".format(rebostpkg['pkgname'],rebostpkg['icon'],rebostpkg['summary'],";".join(rebostpkg['categories']),destPath,user,deskName))
 	removeCmd="rm {0} && rm /home/{1}/.local/share/applications/{2}-appimage.desktop;ERR=$?".format(destPath,user,rebostpkg['pkgname'])
 	statusTestLine=("TEST=$( ls {}  1>/dev/null 2>&1 && echo 'installed')".format(destPath))
 	return(installCmd,installCmdLine,removeCmd,removeCmdLine,statusTestLine)

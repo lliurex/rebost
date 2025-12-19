@@ -64,9 +64,24 @@ class engine:
 		htmlparser.scape_snob=True
 		htmlparser.unicode_snob=True
 		for japp in jdata:
-			if not japp.get("downloadname1","").lower().endswith("appimage"):
+			#Search appimage idx
+			idx=1
+			findedIdx=0
+			searchKey="download_package_type"
+			keyList=[(key,val) for key,val in japp.items() if searchKey in key]
+			for values in keyList:
+				findedIdx+=1
+				if values[1].lower()=="appimage":
+					idx=findedIdx
+					break
+			nameKey="downloadname{}".format(idx)
+			downTypeKey="download_package_type{}".format(idx)
+			downKey="downloadlink{}".format(idx)
+			sizeKey="downloadsize{}".format(idx)
+			versionKey="download_version{}".format(idx)
+			if not japp.get(nameKey,"").lower().endswith("appimage"):
 				continue
-			if japp.get("download_package_type1","").lower()=="appimage":
+			if japp.get(downTypeKey,"").lower()=="appimage":
 				name=japp['name'].replace(' - AppImage',"").replace(' - Appimage',"").replace("/","_").replace("\\","_").replace("\"","").replace("\'","")
 				if name=="":
 					continue
@@ -85,8 +100,8 @@ class engine:
 					app.add_keyword("C",tag)
 				app.set_developer_name("C",japp.get("personid",""))
 				app.add_category(japp.get("typename",""))
-				app.add_pkgname(".".join(japp.get("downloadname1","").split(".")[0:-1]))
-				app.add_url(self.core.appstream.UrlKind.HOMEPAGE,japp.get("detailpage",""))
+				app.add_pkgname(".".join(japp.get(nameKey,"").split(".")[0:-1]))
+				app.add_url(self.core.appstream.UrlKind.DETAILS,japp.get("detailpage",""))
 				icn=japp.get("previewpic1","")
 				appicon=self.core.appstream.Icon()
 				appicon.set_kind(self.core.appstream.IconKind.REMOTE)
@@ -107,11 +122,11 @@ class engine:
 				app.add_screenshot(screenshots)
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.bundle)
-				bun.set_id(japp.get("downloadlink1",""))
+				bun.set_id(japp.get(downKey,""))
 				app.add_bundle(bun)
 				apprelease=self.core.appstream.Release()
-				release=japp.get("download_version1","unknown")
-				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,japp.get("downloadsize1",""))
+				release=japp.get(versionKey,"unknown")
+				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,japp.get(sizeKey,""))
 				apprelease.set_version(release)
 				app.add_release(apprelease)
 				idname=app.get_name("C")
@@ -218,8 +233,8 @@ class engine:
 		for repo in self.repositories:
 			fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
 			try:
-				repo_raw=self._fetchRepo(repo)
-				jrepo=json.loads(repo_raw)
+				repoRaw=self._fetchRepo(repo)
+				jrepo=json.loads(repoRaw)
 			except Exception as e:
 				print("Error in {}: {}".format(repo,e))
 				store=self.core._fromFile(store,fxml)
@@ -236,10 +251,10 @@ class engine:
 						if totalitems>itemsperpage:
 							while len(jrepo.get("data",[]))>0:
 								page+=1
-								repo_raw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
-								if repo_raw!=None:
+								repoRaw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
+								if repoRaw!=None:
 									try:
-										jrepo=json.loads(repo_raw)
+										jrepo=json.loads(repoRaw)
 										data.extend(jrepo.get("data",[]))
 									except Exception as e:
 										self._debug("Failed to parse {}".format(repo))
@@ -255,11 +270,14 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
+		print("REFRESH")
 		name=""
 		bundles=app.get_bundles()
+		appimageBundle=None
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()
+				appimageBundle=bundle
 		name=os.path.basename(name)
 		for appimageDir in APPIMAGE_DIRS:
 			fpath=os.path.join(appimageDir,name)
@@ -270,6 +288,27 @@ class engine:
 			else:
 				status="available"
 				app.set_state(self.core.appstream.AppState.AVAILABLE)
+		detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
+		detailRaw=self._fetchRepo(detailPage)
+		try:
+			detailJson=json.loads(detailRaw)
+			detailFiles=detailJson.get("files")
+			for detail in detailFiles:
+				if detail.get("url","").lower().endswith("appimage"):
+					download=detail["url"]
+					break
+			download=urllib.parse.unquote(download)
+			if appimageBundle.get_kind()==self.bundle:
+				print("ASSIGN {}".format(bundle.get_kind()))
+				appimageBundle.set_id(download)
+		except Exception as e:
+			print(e)
+		bundles=app.get_bundles()
+		for bundle in bundles:
+			print("B: {}".format(bundle))
+			if bundle.get_kind()==self.bundle:
+				print(bundle.get_id())
+		print("--**--")
 		metastatus=app.get_metadata_item("X-REBOST-appimage")
 		metarelease="1;{}".format(status)
 		if metastatus!=None:

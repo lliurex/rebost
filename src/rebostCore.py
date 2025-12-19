@@ -346,6 +346,11 @@ class _RebostCore():
 		fxml=os.path.join(CACHE,"main.xml")
 		if os.path.exists(fxml):
 			os.unlink(fxml)
+		raw=os.path.join(CACHE,"raw")
+		if os.path.exists(raw):
+			if os.path.isdir(raw):
+				for f in os.scandir(raw):
+					os.unlink(f.path)
 		self.stores["main"].remove_all()
 		self.stores["mainB"].remove_all()
 		for storeId in self.stores.keys():
@@ -353,8 +358,10 @@ class _RebostCore():
 			if isinstance(storeId,int):
 				self.stores[storeId].remove_all()
 		self._debug("Reloading rebost core")
-		init=self.thExecutor.submit(self._initEngines)
-		init.add_done_callback(self._rebostOperative)
+		self.ready=False
+		self.stores={"main":self.store}
+		self.initProc=0
+		self.plugins=self._loadPlugins()
 	#def reload(self):
 
 	def export(self,fxml=""):
@@ -429,6 +436,7 @@ class _RebostCore():
 			cacheStore=self._fromFile(self.stores["main"],fxml)
 		except Exception as e:
 			self._error(e,msg="_loadFromCache")
+			return
 		if self.ready==False:
 			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
 			if cacheStore.get_size()>0:

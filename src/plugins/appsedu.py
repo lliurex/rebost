@@ -273,7 +273,11 @@ class engine:
 		if len(store.get_apps())==0:
 			self._debug("Loaded {} from eduapps".format(len(eduApps)))
 			for eduapp in eduApps:
+				#Discard systemd and coordinated apps
 				if "sistema" in eduapp["auth"].lower() or "coordinada" in eduapp["auth"].lower():
+					continue
+				#Discard retired apps
+				if "retir" in eduapp["auth"].lower() or "withdraw" in eduapp["auth"].lower():
 					continue
 				store.add_app(self._processApp(eduapp))
 			self.core._toFile(store,fxml)

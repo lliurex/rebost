@@ -256,6 +256,12 @@ class Rebost():
 		self._waitForCore()
 		if self.core.ready==True:
 			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			metadata=app.get_metadata()
+			for key in metadata.keys():
+				if key.startswith("X-REBOST"):
+					if "installed" in metadata[key].lower():
+						app.set_state(appstream.AppState.INSTALLED)
 		return(apps)
 	#def _getApps
 		
@@ -270,8 +276,7 @@ class Rebost():
 		apps=[]
 		categoryapps={}
 		self._waitForCore()
-		if self.core.ready==True:
-			apps=self.core.stores["main"].get_apps()
+		apps=self._getApps()
 		for app in apps:
 			cats=app.get_categories()
 			for cat in cats:
@@ -292,8 +297,7 @@ class Rebost():
 		apps=[]
 		installed=[]
 		self._waitForCore()
-		if self.core.ready==True:
-			apps=self.core.stores["main"].get_apps()
+		apps=self._getApps()
 		for app in apps:
 			if app.get_name()==None:
 				continue

@@ -270,7 +270,6 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		print("REFRESH")
 		name=""
 		bundles=app.get_bundles()
 		appimageBundle=None
@@ -299,16 +298,10 @@ class engine:
 					break
 			download=urllib.parse.unquote(download)
 			if appimageBundle.get_kind()==self.bundle:
-				print("ASSIGN {}".format(bundle.get_kind()))
 				appimageBundle.set_id(download)
 		except Exception as e:
 			print(e)
 		bundles=app.get_bundles()
-		for bundle in bundles:
-			print("B: {}".format(bundle))
-			if bundle.get_kind()==self.bundle:
-				print(bundle.get_id())
-		print("--**--")
 		metastatus=app.get_metadata_item("X-REBOST-appimage")
 		metarelease="1;{}".format(status)
 		if metastatus!=None:

@@ -242,6 +242,8 @@ class engine:
 			app.add_kudo("UNAVAILABLE")
 		elif  ("assis" in eduapp["auth"].lower()) or ("asistida" in eduapp["auth"].lower()) or ("coordinada" in eduapp["auth"].lower()):
 			app.add_kudo("ASSISTED")
+		elif  "web" in eduapp["auth"].strip().lower():
+			app.add_kudo("WEBAPP")
 		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_kudo("BLOCKED")
 		else:
@@ -274,7 +276,7 @@ class engine:
 			self._debug("Loaded {} from eduapps".format(len(eduApps)))
 			for eduapp in eduApps:
 				#Discard systemd and coordinated apps
-				if "sistema" in eduapp["auth"].lower() or "coordinada" in eduapp["auth"].lower():
+				if "sistema" in eduapp["auth"].lower(): # or "coordinada" in eduapp["auth"].lower():
 					continue
 				#Discard retired apps
 				if "retir" in eduapp["auth"].lower() or "withdraw" in eduapp["auth"].lower():

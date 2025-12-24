@@ -103,6 +103,8 @@ def _setDetailFromAppstream(app,pkg):
 			pkg["assisted"]=True
 		if "BLOCKED" in kudos:
 			pkg["forbidden"]=True
+		if "WEBAPP" in kudos:
+			pkg["webapp"]=True
 		if "UNAVAILABLE" in kudos:
 			pkg["unavailable"]=True
 	pkg["origin"]=app.get_origin()

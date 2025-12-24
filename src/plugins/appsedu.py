@@ -242,6 +242,8 @@ class engine:
 			app.add_kudo("UNAVAILABLE")
 		elif  ("assis" in eduapp["auth"].lower()) or ("asistida" in eduapp["auth"].lower()) or ("coordinada" in eduapp["auth"].lower()):
 			app.add_kudo("ASSISTED")
+		elif  "web" in eduapp["auth"].strip().lower():
+			app.add_kudo("WEBAPP")
 		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_kudo("BLOCKED")
 		else:

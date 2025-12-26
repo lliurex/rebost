@@ -1,3 +1,9 @@
+rebost (3.2.0-0llx23) jammy; urgency=medium
+
+  * Add support for appsedu webapps 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 26 Dec 2025 09:18:59 +0100
+
 rebost (3.1.3-0llx23) jammy; urgency=medium
 
   * Force set state from xml

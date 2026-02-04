@@ -261,6 +261,7 @@ class engine:
 		oldState=app.get_state()
 		name=""
 		bundles=app.get_bundles()
+		pkgId=""
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()
@@ -274,7 +275,6 @@ class engine:
 		except Exception as e:
 			print(e)
 			pkgId=""
-		self._debug("PKGID: {}".format(pkgId))
 		if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)

@@ -111,6 +111,6 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		return(app)
+		return(None)
 	#def refreshAppData
 #class engine

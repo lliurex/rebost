@@ -356,6 +356,6 @@ class engine:
 
 	def refreshAppData(self,app):
 		#epic has states but from rebost point of view they're always installed
-		return(app)
+		return(None)
 	#def refreshAppData(self,app):
 #class engine

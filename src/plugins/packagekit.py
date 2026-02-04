@@ -261,6 +261,7 @@ class engine:
 		oldState=app.get_state()
 		name=""
 		bundles=app.get_bundles()
+		pkgId=""
 		for bundle in bundles:
 			if bundle.get_kind()==self.bundle:
 				name=bundle.get_id()

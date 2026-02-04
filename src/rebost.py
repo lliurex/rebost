@@ -218,8 +218,12 @@ class Rebost():
 			for bundle in app.get_bundles():
 				for pluginData in self.core.plugins.values():
 					if bundle.get_kind() in list(pluginData.keys()):
-						plugin=pluginData[bundle.get_kind()]
-						app=plugin[0].refreshAppData(app)
+						plugins=pluginData[bundle.get_kind()]
+						for plugin in plugins:
+							rapp=plugin.refreshAppData(app)
+							if rapp!=None:
+								app=rapp
+								break
 		return(app)
 	#def _refreshApp
 

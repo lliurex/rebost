@@ -274,6 +274,7 @@ class engine:
 		except Exception as e:
 			print(e)
 			pkgId=""
+		self._debug("PKGID: {}".format(pkgId))
 		if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
 			status="installed"
 			app.set_state(self.core.appstream.AppState.INSTALLED)

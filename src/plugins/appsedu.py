@@ -289,5 +289,5 @@ class engine:
 
 	def refreshAppData(self,app):
 		#appsedu has no states
-		return(app)
+		return(None)
 #class engine

@@ -28,6 +28,9 @@ class engine:
 			pkgnames=app.get_pkgnames()
 			if len(pkgnames)>0:
 				pkgname=app.get_pkgname_default()
+				#UBUNTU BUG: wireshark-qt doesn't exists as package
+				if pkgname=="wireshark-qt":
+					pkgname="wireshark"
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.bundle)
 				bun.set_id(pkgname)

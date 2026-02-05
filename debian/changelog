@@ -1,3 +1,10 @@
+rebost (3.2.2-0llx23) jammy; urgency=medium
+
+  * Epic supports refresh appdata
+  * FIX appstream info from ubuntu for wireshark
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 05 Feb 2026 12:27:43 +0100
+
 rebost (3.2.1-1llx23) jammy; urgency=medium
 
   * Improve refresh app 

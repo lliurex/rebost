@@ -356,6 +356,41 @@ class engine:
 
 	def refreshAppData(self,app):
 		#epic has states but from rebost point of view they're always installed
-		return(None)
+		bundles=app.get_bundles()
+		zmd=""
+		for bundle in bundles:
+			if bundle.get_kind()==self.core.appstream.BundleKind.UNKNOWN:
+				zmd=bundle.get_id()
+				break
+		if zmd!="":
+			pkg=app.get_pkgname_default()
+			if isinstance(pkg,str):
+				cmd=["epic","showinfo",zmd]
+				try:
+					output=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+				except:
+					cmd=["epic","showinfo",os.path.basename(zmd.replace("zero-lliurex-",""))]
+					try:
+						output=subprocess.check_output(cmd,encoding="utf8",universal_newlines=True)
+					except:
+						output=""
+				status="available"
+				for l in output.split("\n"):
+					if pkg in l:
+						if "already installed" in l.lower():
+							status="installed"
+							break
+					elif "status: installed" in l.lower():
+						status="installed"
+						break
+				if status=="installed":
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+				else:
+					app.set_state(self.core.appstream.AppState.AVAILABLE)
+				metastatus=app.get_metadata_item("X-REBOST-package")
+				if metastatus!=None:
+					app.remove_metadata("X-REBOST-package")
+				app.add_metadata("X-REBOST-package","1;{}".format(status))
+		return(app)
 	#def refreshAppData(self,app):
 #class engine

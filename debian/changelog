@@ -1,3 +1,9 @@
+rebost (3.2.2-0llx25) noble; urgency=medium
+
+  * Epic plugin supports refreshing app data
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 05 Feb 2026 12:20:33 +0100
+
 rebost (3.2.1-2llx25) noble; urgency=medium
 
   * Improve refresh info for apps

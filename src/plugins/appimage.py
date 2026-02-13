@@ -287,7 +287,10 @@ class engine:
 			else:
 				status="available"
 				app.set_state(self.core.appstream.AppState.AVAILABLE)
-		detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
+		try:
+			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
+		except:
+			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.HOMEPAGE),"loadFiles")
 		detailRaw=self._fetchRepo(detailPage)
 		try:
 			detailJson=json.loads(detailRaw)

@@ -1,3 +1,9 @@
+rebost (3.2.3-0llx23) jammy; urgency=medium
+
+  * Fix NONE as value for urlkind.details in appimage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 13 Feb 2026 12:10:19 +0100
+
 rebost (3.2.2-0llx23) jammy; urgency=medium
 
   * Epic supports refresh appdata

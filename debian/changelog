@@ -1,3 +1,9 @@
+rebost (3.2.3-0llx25) noble; urgency=medium
+
+  * Prevent none for urlKind.DETAILS in appimage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 13 Feb 2026 12:23:25 +0100
+
 rebost (3.2.2-0llx25) noble; urgency=medium
 
   * Epic plugin supports refreshing app data

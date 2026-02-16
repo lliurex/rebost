@@ -413,12 +413,6 @@ class _RebostCore():
 	def _initEngines(self):
 		priorities=list(self.plugins.keys())
 		priorities.sort()
-		if self.config.get("verifiedProvider","")!="":
-			if self.config.get("onlyVerified",False)==True:
-				print("\n******************************************************")
-				print("************* RESTRICTED MODE ENABLED ****************")
-				print("Verified origins {}".format(self.config["verifiedProvider"]))
-				print("******************************************************\n")
 		for priority in priorities:
 			pluginfo=self.plugins[priority]
 			for plugkey,plugmod in pluginfo.items():
@@ -440,6 +434,10 @@ class _RebostCore():
 		if self.ready==False:
 			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
 			if cacheStore.get_size()>0:
+				for app in cacheStore.get_apps():
+					if len(app.get_kudos())>0:
+						if self.config.get("onlyVerified",False)==True:
+							app.set_origin("verified")
 				self.stores["main"]=cacheStore
 				self._debug("Cached store loaded. Rebost will update data now")
 				self.ready=True
@@ -451,6 +449,12 @@ class _RebostCore():
 
 	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)
+		if self.config.get("verifiedProvider","")!="":
+			if self.config.get("onlyVerified",False)==True:
+				print("\n******************************************************")
+				print("************* RESTRICTED MODE ENABLED ****************")
+				print("Verified origins {}".format(self.config["verifiedProvider"]))
+				print("******************************************************\n")
 		if len(self.stores)<=1 and self.initProc==0:
 			self._loadFromCache()
 			self._initEngines()

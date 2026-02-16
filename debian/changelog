@@ -1,3 +1,9 @@
+rebost (3.2.3.1-0llx23) jammy; urgency=medium
+
+  * Check origins for cache
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 16 Feb 2026 10:24:57 +0100
+
 rebost (3.2.3-0llx23) jammy; urgency=medium
 
   * Fix NONE as value for urlkind.details in appimage

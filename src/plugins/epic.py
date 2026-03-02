@@ -30,6 +30,9 @@ class engine:
 			os.makedirs(self.cache)
 		self.includedApps=[]
 		self.bundle=self.core.appstream.BundleKind.UNKNOWN
+		#Fix epic needing known user
+		if os.environ.get("USER",None)==None:
+			os.environ["USER"]="root"
 		self.epiManager=epimanager.EpiManager()
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"

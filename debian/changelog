@@ -1,3 +1,9 @@
+rebost (3.2.4-0llx23) jammy; urgency=medium
+
+  * FIX epic exception if invalid user
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 02 Mar 2026 11:26:43 +0100
+
 rebost (3.2.3.1-0llx23) jammy; urgency=medium
 
   * Check origins for cache

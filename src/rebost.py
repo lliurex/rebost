@@ -88,7 +88,7 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def getFreedesktopCategories
+	#def getSupportedFormats
 
 	def _getConfig(self):
 		return(self.core.config)

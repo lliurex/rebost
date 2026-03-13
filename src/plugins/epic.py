@@ -36,6 +36,7 @@ class engine:
 		self.epiManager=epimanager.EpiManager()
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
+		self.noAppend=[]
 		self.mapFixes={}
 	#def __init__
 
@@ -231,6 +232,8 @@ class engine:
 					includedApps=self._getIncludedApps(epiName,epiData)
 					if len(includedApps)>1:
 						app.add_suggest(suggest)
+					elif len(includedApps)==1:
+						includedApps[0].subsume(app)
 					for includedApp in includedApps:
 						if includedApp.get_id()=="" or includedApp.get_id()==None:
 							continue
@@ -265,7 +268,10 @@ class engine:
 					categories=self._getCategoriesFromEpi(appName)
 					for cat in categories:
 						app.add_category(cat)
-					apps.append(app)
+					if len(includedApps)>=1:
+						apps.append(app)
+						if len(includedApps)==1:
+							self.noAppend.append(fname)
 				else:
 					self._debug("Not found {}".format(fname))
 		return(apps)
@@ -321,13 +327,18 @@ class engine:
 		if len(store.get_apps())==0:
 			self.mapFixes=self._getAppseduMapFixes()
 			lstApps=self._getAppsFromEpic(epicList)
+			self.mapFixes["nodisplay"].extend(self.noAppend)
 			store.add_apps(lstApps)
 			pkgs=self._getAppsFromSystem()
 			for pkg in pkgs:
+				hidden=False
 				pkgId=pkg.get_id()
 				if pkgId.split(";")[0] in self.mapFixes["nodisplay"] or pkg.get_name() in self.mapFixes["nodisplay"]:
-					self._debug("Discard {}".format(pkg.get_id()))
-					continue
+					if pkg.get_name() in self.mapFixes["aliases"].values() or pkgId.split(";")[0] in self.mapFixes["nodisplay"]:
+						hidden=True
+					else:
+						self._debug("Discard {}".format(pkg.get_id()))
+						continue
 				pkgIdArray=pkgId.split(";")
 				name=pkgIdArray[0]
 				release=pkgIdArray[1]
@@ -347,6 +358,9 @@ class engine:
 					store.remove_app(app)
 				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
 					app.add_metadata("X-REBOST-package","{};{}".format(release,"installed"))
+				if hidden==True:
+					self._debug("Hidden -> Alias for {}".format(pkg.get_name()))
+					app.add_metadata("X-REBOST-hidden","{}".format(name))
 				bun=self.core.appstream.Bundle()
 				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
 				bun.set_id(name)

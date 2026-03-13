@@ -84,13 +84,16 @@ def _setDetailFromAppstream(app,pkg):
 				for key,data in metadata.items():
 					if key.startswith("X-REBOST-"):
 						mkey=key.replace("X-REBOST-","")
-						if ";" in data:
-							(release,status)=data.split(";")
-							if status=="installed":
-								pkg["status"].update({mkey:0})
-							else:
-								pkg["status"].update({mkey:1})
-							pkg["versions"].update({mkey:release})
+						if mkey=="hidden":
+							pkg["hidden"]=True
+						else:
+							if ";" in data:
+								(release,status)=data.split(";")
+								if status=="installed":
+									pkg["status"].update({mkey:0})
+								else:
+									pkg["status"].update({mkey:1})
+								pkg["versions"].update({mkey:release})
 	pkg["state"]=app.get_state()
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():

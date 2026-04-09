@@ -177,6 +177,12 @@ class Rebost():
 					if match not in result.keys():
 						result[match]=[]
 					result[match].append(app)
+			if len(result)==0:
+				for app in self.core.stores["main"].get_apps():
+					if search in app.get_id():
+						if search not in result.keys():
+							result[search]=[]
+						result[search].append(app)
 		return(result)
 	#def _searchApp
 

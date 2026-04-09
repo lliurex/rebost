@@ -1,4 +1,4 @@
-rebost (3.2.6-0llx25) noble; urgency=medium
+rebost (3.2.6) noble; urgency=medium
 
   * Search by regex if tokens doesn't find anything
 

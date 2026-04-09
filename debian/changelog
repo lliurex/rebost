@@ -1,3 +1,9 @@
+rebost (3.2.6-0llx25) noble; urgency=medium
+
+  * Search by regex if tokens doesn't find anything
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 09 Apr 2026 13:54:22 +0200
+
 rebost (3.2.5-0llx25) noble; urgency=medium
 
   * Add hidden apps

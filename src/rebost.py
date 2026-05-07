@@ -1,11 +1,6 @@
 #!/usr/bin/python3
 import sys,os,time
-import traceback
-import json
-import importlib
-import locale
 import concurrent.futures as Futures
-import threading
 from rebostCore import _RebostCore
 import gi
 gi.require_version('AppStreamGlib', '1.0')
@@ -40,6 +35,15 @@ class Rebost():
 			if int(time.time())-initTime>20:
 				break
 	#def _waitForCore
+
+	def _chkAliasesChanges(self):
+		self._debug("Checking aliases")
+		if self.core.chkCacheNeedsUpdate()==True:
+			print("************ MAPPING CHANGES DETECTED **************")
+			print("************         RELOADING        **************")
+			self._restart()
+		self._debug("Checking aliases end")
+	#def _chkAliasesChanges
 
 	def _restart(self):
 		return(self.core.reload())
@@ -101,6 +105,17 @@ class Rebost():
 		return(proc)
 	#def getConfig
 
+	def _getMaps(self):
+		return(self.core.getMapFixes())
+	#def _getMaps
+
+	def getMaps(self):
+		proc=self.thExecutor.submit(self._getMaps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getMaps
+
 	def _getFreedesktopCategories(self):
 		#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
 		result={"AudioVideo":["DiscBurning"],
@@ -127,6 +142,10 @@ class Rebost():
 		return(proc)
 	#def getFreedesktopCategories
 
+	def export(self,fxml=""):
+		return(self.core.export(fxml))
+	#def export
+
 	def _searchAppByUrl(self,search,kind):
 		result=[]
 		self._waitForCore()
@@ -144,11 +163,7 @@ class Rebost():
 					result.append(app)
 					break
 		return(result)
-	#def _searchApp
-
-	def export(self,fxml=""):
-		return(self.core.export(fxml))
-	#def export
+	#def _searchAppByUrl
 
 	def searchAppByUrl(self,url,kind=None):
 		if kind==None:
@@ -158,7 +173,7 @@ class Rebost():
 		self.resultQueue[proc.arg]=None
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def searchUrl(self,url):
+	#def searchAppByUrl
 
 	def _searchApp(self,search):
 		result={}
@@ -199,6 +214,11 @@ class Rebost():
 		self._waitForCore()
 		if self.core.ready==True:
 			app=self.core.stores["main"].get_app_by_id_ignore_prefix(show)
+			if app==None:
+				mapping=self.core.getMapFixes()
+				if show in mapping.get("aliases",{}).keys():
+					print("UNKNOWN APP!!")
+					app=self.core.stores["main"].get_app_by_id_ignore_prefix(mapping["aliases"][show])
 			#REM this block search in all the appstream catalogues
 			#for i in self.core.stores.keys():
 			#	if isinstance(i,int):
@@ -219,7 +239,7 @@ class Rebost():
 
 	def _refreshApp(self,appId):
 		self._waitForCore()
-		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId.lower())
+		app=self._showApp(appId.lower())
 		if app!=None:
 			for bundle in app.get_bundles():
 				for pluginData in self.core.plugins.values():
@@ -234,6 +254,7 @@ class Rebost():
 	#def _refreshApp
 
 	def refreshApp(self,appId):
+		self._chkAliasesChanges()
 		proc=self.thExecutor.submit(self._refreshApp,appId)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)

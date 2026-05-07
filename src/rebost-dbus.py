@@ -83,6 +83,14 @@ class rebostDbusMethods(dbus.service.Object):
 	#def getConfig
 
 	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='', out_signature='a{sv}')
+	def getMaps(self):
+		ret=self.rebost.getMaps()
+		resultList=ret.result()
+		return (resultList)
+	#def getMaps
+
+	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='', out_signature='a{sas}')
 	def getFreedesktopCategories(self):
 		ret=self.rebost.getFreedesktopCategories()

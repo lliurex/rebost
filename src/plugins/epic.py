@@ -9,17 +9,6 @@ import gi
 gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import PackageKitGlib as packagekit
 
-mapFileDir="/usr/share/rebost-data/lists.d/"
-release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
-release="llx{}".format(release.split(".")[0])
-EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
-if not os.path.exists(EDUAPPS_MAP):
-	for d in os.scandir(mapFileDir):
-		if d.name.startswith("llx"):
-			release=d.name
-			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
-			break
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
 
 class engine:
 	def __init__(self,core,*args,**kwargs):
@@ -65,31 +54,6 @@ class engine:
 			self._debug(e)
 		return(content)
 	#def _fetchCatalogue
-
-	def _getAppseduMapFixes(self):
-		mapFixes={"nodisplay":[],"aliases":{}}
-		jcontent={}
-		if os.path.exists(EDUAPPS_MAP):
-			with open(EDUAPPS_MAP,"r") as f:
-				mapFixes=json.loads(f.read())
-		mapFixesUrlContent=self._fetchCatalogue(EDUAPPS_MAP_URL)
-		if len(mapFixesUrlContent)>0:
-			try:
-				jcontent=json.loads(mapFixesUrlContent)
-			except Exception as e:
-				print("Error processing url map")
-				print(e)
-				jcontent={}
-		if len(jcontent)>0:
-			if jcontent!=mapFixes:
-				jcontentNodisplay=jcontent.get("nodisplay",[])
-				nodisplay=list(set(mapFixes["nodisplay"]+jcontentNodisplay))
-				mapFixes["nodisplay"]=nodisplay
-				jcontentAliases=jcontent.get("aliases",{})
-				mapFixes["aliases"].update(jcontentAliases)
-		return(mapFixes)
-	#def _getAppseduMapFixes
-
 
 	def _getEpiInfo(self,epiName,zmdName):
 		epiInfo={}
@@ -148,6 +112,10 @@ class engine:
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				name=pkg.get("custom_name",pkg["name"])
 				self.includedApps.append(name)
+				if pkgid in self.mapFixes["aliases"]:
+					if self.mapFixes["aliases"][pkgid]!=epiInfo["zomando"]:
+						self._debug("Was {} -> {}".format(pkgid,self.mapFixes["aliases"].get(pkgid)))
+						pkgid=self.mapFixes["aliases"][pkgid]
 				app.set_id(pkgid)
 				app.set_name("C",name)
 				app.set_comment("C",name)
@@ -325,7 +293,7 @@ class engine:
 			self._debug("Loading from cache")
 			store=self.core._fromFile(store,fxml)
 		if len(store.get_apps())==0:
-			self.mapFixes=self._getAppseduMapFixes()
+			self.mapFixes=self.core.getMapFixes()
 			lstApps=self._getAppsFromEpic(epicList)
 			self.mapFixes["nodisplay"].extend(self.noAppend)
 			store.add_apps(lstApps)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os,json,subprocess
-from urllib import request
+from urllib.request import Request,urlopen
 import gi
 from gi.repository import Gio
 
@@ -49,9 +49,9 @@ class engine:
 		if len(url)==0:
 			url=EDUAPPS_URL
 		content=''
-		req=request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
+		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with request.urlopen(req,timeout=2) as f:
+			with urlopen(req,timeout=2) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
 			self._debug("Couldn't fetch {}".format(url))
@@ -91,7 +91,7 @@ class engine:
 					store.from_file(Gio.File.parse_name(f.path),"/usr/share/rebost-data/icons/cache")
 		else:
 			self._debug("Can't find {}".format(fdir))
-		mapFixes=self._getAppseduMapFixes()
+		mapFixes=self.core.getMapFixes()
 		for app in store.get_apps(): #Add bundle for pkgs
 			if app.get_id().endswith("_zmd"):
 				app.set_id(app.get_id().removesuffix("_zmd"))

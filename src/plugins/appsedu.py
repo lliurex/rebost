@@ -1,23 +1,10 @@
 #!/usr/bin/env python3
-import os,subprocess
+import os
 import json,time
-import urllib
-from urllib.request import Request
-from urllib.request import urlretrieve
+from urllib.request import Request,urlopen
 import hashlib
 from bs4 import BeautifulSoup as bs
 
-mapFileDir="/usr/share/rebost-data/lists.d/"
-release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
-release="llx{}".format(release.split(".")[0])
-EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
-if not os.path.exists(EDUAPPS_MAP):
-	for d in os.scandir(mapFileDir):
-		if d.name.startswith("llx"):
-			release=d.name
-			EDUAPPS_MAP=os.path.join(mapFileDir,release,"eduapps.map")
-			break
-EDUAPPS_MAP_URL="https://github.com/lliurex/rebost-data/raw/refs/heads/master/lists.d/{}/eduapps.map".format(release)
 EDUAPPS_URL="https://portal.edu.gva.es/appsedu/aplicacions-lliurex/"
 
 i18n={'CAD':"Engineering",
@@ -54,6 +41,7 @@ class engine:
 		self.core=core
 		self.dbg=self.core.DBG
 		self.cache=os.path.join(self.core.CACHE,"raw")
+		self.mapDir=os.path.join(self.core.DATA,"lists.d")
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.UNKNOWN
@@ -70,40 +58,13 @@ class engine:
 		content=''
 		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
 		try:
-			with urllib.request.urlopen(req,timeout=2) as f:
+			with urlopen(req,timeout=2) as f:
 				content=(f.read().decode('utf-8'))
 		except Exception as e:
 			self._debug("Couldn't fetch {}".format(url))
 			self._debug(e)
 		return(content)
 	#def _fetchCatalogue
-
-	def _getAppseduMapFixes(self):
-		mapFixes={"nodisplay":[],"aliases":{}}
-		jcontent={}
-		if os.path.exists(EDUAPPS_MAP):
-			with open(EDUAPPS_MAP,"r") as f:
-				mapFixes=json.loads(f.read())
-		mapFixesUrlContent=self._fetchCatalogue(EDUAPPS_MAP_URL)
-		if len(mapFixesUrlContent)>0:
-			try:
-				jcontent=json.loads(mapFixesUrlContent)
-			except Exception as e:
-				print(e)
-				jcontent={}
-		if len(jcontent)>0:
-			if jcontent!=mapFixes:
-				jcontentNodisplay=jcontent.get("nodisplay",[])
-				nodisplay=list(set(mapFixes["nodisplay"]+jcontentNodisplay))
-				mapFixes["nodisplay"]=nodisplay
-				jcontentAliases=jcontent.get("aliases",{})
-				mapFixes["aliases"].update(jcontentAliases)
-		fxml=os.path.join(self.cache,"appsedu.map")
-		if os.path.isdir(os.path.dirname(fxml)):
-			with open(fxml,"w") as f:
-				f.write(json.dumps(mapFixes,indent=4))
-		return(mapFixes)
-	#def _getAppseduMapFixes
 
 	def _getRealCategory(self,cat):
 		cat=i18n.get(cat,cat)
@@ -127,7 +88,7 @@ class engine:
 		columnIcon=None
 		columnPkgName=None
 		categories=[]
-		mapFixes=self._getAppseduMapFixes()
+		mapFixes=self.core.getMapFixes()
 		for column in appInfo:
 			full=False
 			if (column.attrs["class"][0]=="column-1"):

@@ -1,3 +1,10 @@
+rebost (3.2.7) jammy; urgency=medium
+
+  * Centralize maps in core
+  * Implement cache for remote map files
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 07 May 2026 18:19:12 +0200
+
 rebost (3.2.6) jammy; urgency=medium
 
   * Use regex for search if tokens doesn't find anything

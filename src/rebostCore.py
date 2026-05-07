@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import html
 import locale
 import concurrent.futures as Futures
+from urllib.request import Request,urlopen
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -17,6 +18,7 @@ SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
 #CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
 CACHE=os.path.join("/var","cache","rebost")
 CONFIG="/usr/share/rebost/rebost.conf"
+DATA="/usr/share/rebost-data"
 
 
 class _RebostCore():
@@ -24,6 +26,7 @@ class _RebostCore():
 		self.dbg=DBG
 		self.SCHEMES=SCHEMES
 		self.CACHE=CACHE
+		self.DATA=DATA
 		self.DBG=DBG
 		self.appstream=appstream
 		self.stores={}
@@ -446,6 +449,77 @@ class _RebostCore():
 	def getExternalInstaller(self):
 		return(self.config.get("externalInstaller",""))
 	#def getExternalInstaller
+
+	def _getRemoteAppFixes(self,url):
+		content={}
+		urlContent=""
+		if url!="" and isinstance(url,str):
+			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+			try:
+				with urlopen(req,timeout=2) as f:
+					urlContent=(f.read().decode('utf-8'))
+			except Exception as e:
+				self._debug("Couldn't fetch {}".format(url))
+				self._debug(e)
+		if len(urlContent)>0:
+			try:
+				content=json.loads(urlContent)
+			except Exception as e:
+				print(e)
+				content={}
+		return(content)
+	#def _getRemoteAppFixes
+
+	def _getLocalMapFiles(self):
+		#Load map files from DATA
+		mapFiles=[]
+		mapDir=os.path.join(DATA,"lists.d")
+		verifyMaps=[ "{}.map".format(verified) for verified in self.config.get("verifiedProvider",[])]
+		verifyMapsPath=[]
+		for d in os.scandir(mapDir):
+			if d.is_dir():
+				for f in os.scandir(d.path):
+					if f.is_file() and f.name not in verifyMaps:
+						mapFiles.append(f.path)
+					elif f.is_file():
+						verifyMapsPath.append(f.path)
+					
+			elif d.is_file():
+				if d.name not in verifyMaps:
+					mapFiles.append(d.path)
+				else:
+					verifyMapsPath.append(d.path)
+		#Ensure that information will honour the verifiedProviders
+		mapFiles.extend(verifyMapsPath)
+		return(mapFiles)
+	#def _getLocalMapFiles
+
+	def getMapFixes(self):
+		mapFixes={"nodisplay":[],"aliases":{}}
+		mapFiles=self._getLocalMapFiles()
+		for mapFile in mapFiles:
+			self._debug("Reading mapF {}".format(mapFile))
+			if os.path.exists(mapFile) and mapFile.endswith(".map"):
+				mapFixesF={}
+				with open(mapFile,"r") as f:
+					try:
+						mapFixesF=json.loads(f.read())
+					except Exception as e:
+						print("ERROR PROCESSING {}",format(mapFile))
+						print(e)
+				rContent={}
+				if "upstream" in mapFixesF:
+					self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
+					rContent=self._getRemoteAppFixes(mapFixesF["upstream"])
+					rContent["upstream"]=mapFixesF["upstream"]
+				if len(rContent["nodisplay"])>0:
+					mapFixesF=rContent.copy()
+					with open(mapFile,"w") as f:
+						f.write(json.dumps(mapFixesF,indent=4))
+				mapFixes["nodisplay"]=list(set(mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
+				mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
+		return mapFixes
+	#def getMapFixes
 
 	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)

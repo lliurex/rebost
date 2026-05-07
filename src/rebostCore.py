@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import html
 import locale
 import concurrent.futures as Futures
+from urllib.request import Request,urlopen
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
@@ -17,6 +18,7 @@ SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
 #CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
 CACHE=os.path.join("/var","cache","rebost")
 CONFIG="/usr/share/rebost/rebost.conf"
+DATA="/usr/share/rebost-data"
 
 
 class _RebostCore():
@@ -24,6 +26,7 @@ class _RebostCore():
 		self.dbg=DBG
 		self.SCHEMES=SCHEMES
 		self.CACHE=CACHE
+		self.DATA=DATA
 		self.DBG=DBG
 		self.appstream=appstream
 		self.stores={}
@@ -352,7 +355,8 @@ class _RebostCore():
 				for f in os.scandir(raw):
 					os.unlink(f.path)
 		self.stores["main"].remove_all()
-		self.stores["mainB"].remove_all()
+		if "mainB" in self.stores:
+			self.stores["mainB"].remove_all()
 		for storeId in self.stores.keys():
 			self._debug("Process {}".format(storeId))
 			if isinstance(storeId,int):
@@ -446,6 +450,137 @@ class _RebostCore():
 	def getExternalInstaller(self):
 		return(self.config.get("externalInstaller",""))
 	#def getExternalInstaller
+
+	def _chkRemoteFileChanged(self,url):
+		changed=False
+		fname=url.split("://")[-1]
+		fname=fname.replace("/","_")
+		fTag=os.path.join(CACHE,"{}.etag".format(fname))
+		eTag=""
+		oldETag=""
+		try:
+			headers=Request(url,method="HEAD",headers={'User-Agent':'Mozilla/5.0'})
+			with urlopen(headers,timeout=2) as f:
+				eTag=f.headers.get("ETag")
+		except:
+			eTag=""
+		if os.path.exists(fTag):
+			with open(fTag,"r") as f:
+				oldETag=f.read()
+			self._debug("Check ETag: {} {}".format(eTag,oldETag))
+		if eTag!=oldETag:
+			changed=True
+			with open(fTag,"w") as f:
+				f.write(eTag)
+		return(changed)
+	#def _chkRemoteFileChanged
+
+	def _getRemoteMapFixes(self,url):
+		content={}
+		urlContent=""
+		if url!="" and isinstance(url,str):
+			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+			try:
+				with urlopen(req,timeout=2) as f:
+					urlContent=(f.read().decode('utf-8'))
+			except Exception as e:
+				self._debug("Couldn't fetch {}".format(url))
+				self._debug(e)
+		if len(urlContent)>0:
+			try:
+				content=json.loads(urlContent)
+			except Exception as e:
+				print(e)
+				content={}
+		return(content)
+	#def _getRemoteMapFixes
+
+	def _getLocalMapFixes(self,fpath):
+		content={}
+		if os.path.exists(fpath):
+			with open(fpath,"r") as f:
+				try:
+					content=json.loads(f.read())
+				except Exception as e:
+					print("ERROR PROCESSING {}",format(fpath))
+					print(e)
+		return(content)
+	#def _getLocalMapFixes
+
+	def _getLocalMapFiles(self):
+		#Load map files from DATA
+		mapFiles=[]
+		mapDir=os.path.join(DATA,"lists.d")
+		verifyMaps=[ "{}.map".format(verified) for verified in self.config.get("verifiedProvider",[])]
+		verifyMapsPath=[]
+		for d in os.scandir(mapDir):
+			if d.is_dir():
+				for f in os.scandir(d.path):
+					if f.is_file() and f.name not in verifyMaps:
+						mapFiles.append(f.path)
+					elif f.is_file():
+						verifyMapsPath.append(f.path)
+					
+			elif d.is_file():
+				if d.name not in verifyMaps:
+					mapFiles.append(d.path)
+				else:
+					verifyMapsPath.append(d.path)
+		#Ensure that information will honour the verifiedProviders
+		mapFiles.extend(verifyMapsPath)
+		return(mapFiles)
+	#def _getLocalMapFiles
+
+	def _getCacheMapFiles(self):
+		mapFiles=[]
+		for f in os.scandir(CACHE):
+			if f.name.endswith(".map"):
+				mapFiles.append(f.path)
+		return(mapFiles)
+	#def _getCacheMapFiles
+
+	def getMapFixes(self):
+		mapFixes={"nodisplay":[],"aliases":{}}
+		mapFiles=self._getLocalMapFiles()
+		for mapFile in mapFiles:
+			self._debug("Reading mapF {}".format(mapFile))
+			if os.path.exists(mapFile) and mapFile.endswith(".map"):
+				mapFixesF=self._getLocalMapFixes(mapFile)
+				rContent={}
+				if "upstream" in mapFixesF:
+					self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
+					fname=mapFixesF["upstream"].split("://")[-1]
+					fname=fname.replace("/","_")
+					fcache=os.path.join(CACHE,"{}".format(fname))
+					if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
+						rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
+						rContent["upstream"]=mapFixesF["upstream"]
+						with open(fcache,"w") as f:
+							f.write(json.dumps(rContent,indent=4))
+					else:
+						self._debug("Getting mapping from cache")
+						rContent=self._getLocalMapFixes(fcache)
+				if len(rContent.get("nodisplay",[]))>0:
+					mapFixesF=rContent.copy()
+					with open(mapFile,"w") as f:
+						f.write(json.dumps(mapFixesF,indent=4))
+				mapFixes["nodisplay"]=list(set(mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
+				mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
+		return mapFixes
+	#def getMapFixes
+
+	def chkCacheNeedsUpdate(self):
+		update=False
+		cFiles=self._getCacheMapFiles()
+		for cFile in cFiles:
+			with open(cFile,"r") as f:
+				content=json.loads(f.read())
+			if "://" in content.get("upstream",""):
+				if self._chkRemoteFileChanged(content["upstream"])==True:
+					update=True
+					break
+		return update
+	#def chkCacheNeedsUpdate
 
 	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)

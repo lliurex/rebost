@@ -124,14 +124,19 @@ class engine:
 				app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 				app.add_url(self.core.appstream.UrlKind.HELP,"")
 				customIcon=pkg.get("custom_icon")
-				customIconPath=epiData.get("custom_icon_path")
-				if customIcon!=None and customIconPath!=None:
+				if customIcon!=None:
+					customIconPath=epiData.get("custom_icon_path")
+					if customIconPath==None:
+						zmdName=epiInfo["zomando"]
+						zmdName=zmdName.replace(".epi","")
+						epiPath=os.path.join("/","usr","share",zmdName,epiName)
+						customIconPath=os.path.dirname(epiPath)
 					icn=os.path.join(customIconPath,customIcon)
 					appicon=self.core.appstream.Icon()
 					appicon.set_kind(self.core.appstream.IconKind.LOCAL)
 					appicon.set_name(customIcon)
 					appicon.set_filename(icn)
-					app.add_icon(icn)
+					app.add_icon(appicon)
 				bundles=app.get_bundles()
 				if len(bundles)==0:
 					bun=self.core.appstream.Bundle()

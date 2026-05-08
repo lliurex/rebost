@@ -93,7 +93,7 @@ def _setDetailFromAppstream(app,pkg):
 									pkg["status"].update({mkey:0})
 								else:
 									pkg["status"].update({mkey:1})
-								pkg["versions"].update({mkey:release})
+								pkg["versions"].update({mkey:release.split(" ")[0]})
 	pkg["state"]=app.get_state()
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():

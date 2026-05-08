@@ -560,8 +560,8 @@ class _RebostCore():
 			self.mapFixes={"nodisplay":[],"aliases":{}}
 			mapFiles=self._getLocalMapFiles()
 			for mapFile in mapFiles:
-				self._debug("Reading mapF {}".format(mapFile))
 				if os.path.exists(mapFile) and mapFile.endswith(".map"):
+					self._debug("Reading mapF {}".format(mapFile))
 					mapFixesF=self._getLocalMapFixes(mapFile)
 					rContent={}
 					if "upstream" in mapFixesF:

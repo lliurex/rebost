@@ -363,6 +363,13 @@ class _RebostCore():
 			if os.path.isdir(raw):
 				for f in os.scandir(raw):
 					os.unlink(f.path)
+		if os.path.exists(CACHE):
+			for f in os.scandir(CACHE):
+				if f.name.endswith(".map"):
+					print()
+					os.unlink(f.path)
+		self.lastCheckedMapping=0
+		self.getMapFixes()
 		self.stores["main"].remove_all()
 		if "mainB" in self.stores:
 			self.stores["mainB"].remove_all()
@@ -549,12 +556,12 @@ class _RebostCore():
 	#def _getCacheMapFiles
 
 	def getMapFixes(self):
-		if int(time.time())-self.lastCheckedMapping>120 or len(self.mapFixes.get("nodisplay",""))==0:
+		if int(time.time())-self.lastCheckedMapping>120 or len(self.mapFixes.get("nodisplay",[]))==0:
 			self.mapFixes={"nodisplay":[],"aliases":{}}
 			mapFiles=self._getLocalMapFiles()
 			for mapFile in mapFiles:
-				self._debug("Reading mapF {}".format(mapFile))
 				if os.path.exists(mapFile) and mapFile.endswith(".map"):
+					self._debug("Reading mapF {}".format(mapFile))
 					mapFixesF=self._getLocalMapFixes(mapFile)
 					rContent={}
 					if "upstream" in mapFixesF:

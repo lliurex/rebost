@@ -30,6 +30,7 @@ class _RebostCore():
 		self.DBG=DBG
 		self.appstream=appstream
 		self.stores={}
+		self.lastCheckedMapping=0
 		self.initProc=0
 		self.store=appstream.Store()
 		self.stores={"main":self.store}
@@ -245,6 +246,10 @@ class _RebostCore():
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				mergeApp.set_origin("verified")
+				noDsp=self.mapFixes.get("display",[])
+				if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+					self._debug("Hidden -> {}".format(mergeApp.get_name()))
+					mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
 				store.add_app(mergeApp)
 		self._debug("Verified table count: {}".format(store.get_size()))
 		return(store)
@@ -329,6 +334,10 @@ class _RebostCore():
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
+					noDsp=self.mapFixes.get("display",[])
+					if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+						self._debug("Hidden -> {}".format(mergeApp.get_name()))
+						mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
 					if oldApp!=None:
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
@@ -540,33 +549,35 @@ class _RebostCore():
 	#def _getCacheMapFiles
 
 	def getMapFixes(self):
-		mapFixes={"nodisplay":[],"aliases":{}}
-		mapFiles=self._getLocalMapFiles()
-		for mapFile in mapFiles:
-			self._debug("Reading mapF {}".format(mapFile))
-			if os.path.exists(mapFile) and mapFile.endswith(".map"):
-				mapFixesF=self._getLocalMapFixes(mapFile)
-				rContent={}
-				if "upstream" in mapFixesF:
-					self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
-					fname=mapFixesF["upstream"].split("://")[-1]
-					fname=fname.replace("/","_")
-					fcache=os.path.join(CACHE,"{}".format(fname))
-					if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
-						rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
-						rContent["upstream"]=mapFixesF["upstream"]
-						with open(fcache,"w") as f:
-							f.write(json.dumps(rContent,indent=4))
-					else:
-						self._debug("Getting mapping from cache")
-						rContent=self._getLocalMapFixes(fcache)
-				if len(rContent.get("nodisplay",[]))>0:
-					mapFixesF=rContent.copy()
-					with open(mapFile,"w") as f:
-						f.write(json.dumps(mapFixesF,indent=4))
-				mapFixes["nodisplay"]=list(set(mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
-				mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
-		return mapFixes
+		if int(time.time())-self.lastCheckedMapping>120 or len(self.mapFixes.get("nodisplay",""))==0:
+			self.mapFixes={"nodisplay":[],"aliases":{}}
+			mapFiles=self._getLocalMapFiles()
+			for mapFile in mapFiles:
+				self._debug("Reading mapF {}".format(mapFile))
+				if os.path.exists(mapFile) and mapFile.endswith(".map"):
+					mapFixesF=self._getLocalMapFixes(mapFile)
+					rContent={}
+					if "upstream" in mapFixesF:
+						self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
+						fname=mapFixesF["upstream"].split("://")[-1]
+						fname=fname.replace("/","_")
+						fcache=os.path.join(CACHE,"{}".format(fname))
+						if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
+							rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
+							rContent["upstream"]=mapFixesF["upstream"]
+							with open(fcache,"w") as f:
+								f.write(json.dumps(rContent,indent=4))
+						else:
+							self._debug("Getting mapping from cache")
+							rContent=self._getLocalMapFixes(fcache)
+					if len(rContent.get("nodisplay",[]))>0:
+						mapFixesF=rContent.copy()
+						with open(mapFile,"w") as f:
+							f.write(json.dumps(mapFixesF,indent=4))
+					self.mapFixes["nodisplay"]=list(set(self.mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
+					self.mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
+			self.lastCheckedMapping=int(time.time())
+		return self.mapFixes
 	#def getMapFixes
 
 	def chkCacheNeedsUpdate(self):

@@ -28,7 +28,7 @@ class Rebost():
 	
 	def _waitForCore(self):
 		initTime=int(time.time())
-		if len(self.core.stores)<=1:
+		if len(self.core.stores)<=1 and self.core.ready!=True:
 			self.core.initCore()
 		while self.core.ready==False:
 			time.sleep(0.01)

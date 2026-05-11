@@ -168,7 +168,7 @@ class engine:
 		sectionSnaps={}
 		for section in sections:
 			try:
-				if hasattr(self.snap,"find_cateogry_sync"):
+				if hasattr(self.snap,"find_category_sync"):
 					snaps,curr=self.snap.find_category_sync(Snapd.FindFlags.MATCH_NAME,section,None)
 				else:
 					snaps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)

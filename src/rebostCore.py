@@ -581,8 +581,10 @@ class _RebostCore():
 						mapFixesF=rContent.copy()
 						with open(mapFile,"w") as f:
 							f.write(json.dumps(mapFixesF,indent=4))
-					self.mapFixes["nodisplay"]=list(set(self.mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
-					self.mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
+					if "nodisplay" in mapFixesF:
+						self.mapFixes["nodisplay"]=list(set(self.mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
+					if "aliases" in mapFixesF:
+						self.mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
 			self.lastCheckedMapping=int(time.time())
 		return self.mapFixes
 	#def getMapFixes

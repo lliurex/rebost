@@ -206,6 +206,15 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
+	def rawApp(self,pkgname):
+		ret=self.rebost.getRawApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def rawApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
 	def refreshApp(self,pkgname):
 		ret=self.rebost.refreshApp(pkgname)
 		resultList=ret.result()

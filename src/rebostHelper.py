@@ -10,12 +10,21 @@ import tempfile
 import subprocess
 import locale
 
-LOCAL_LANGS=[]
-for localLang in locale.getlocale():
-	if "_" in localLang:
-		LOCAL_LANGS.append(localLang.split("_")[0])
-		LOCAL_LANGS.append(localLang.split("_")[-1].lower())
-LOCAL_LANGS.insert(0,"C")
+def _getLocale():
+	langs=[]
+	for localLang in locale.getlocale():
+		if "_" in localLang:
+			langs.append(localLang.split("_")[0])
+			langs.append(localLang.split("_")[-1].lower())
+	if "ca" in langs:
+		idx=langs.index("ca")
+		if "qcv" not in langs:
+			langs.insert(idx,"qcv")
+		if "ca-valencia" not in langs:
+			langs.insert(idx,"ca-valencia")
+	langs.append("C")
+	return(langs)
+#def _getLocale
 
 def _sanitizeString(data,scape=False,unescape=False):
 	if isinstance(data,str):
@@ -111,12 +120,7 @@ def _setDetailFromAppstream(app,pkg):
 		if "UNAVAILABLE" in kudos:
 			pkg["unavailable"]=True
 	pkg["origin"]=app.get_origin()
-	localLangs=LOCAL_LANGS[1:]
-	if "ca" in localLangs:
-		idx=localLangs.index("ca")
-		localLangs.insert(idx,"qcv")
-		localLangs.insert(idx,"ca-valencia")
-	localLangs.append(LOCAL_LANGS[0])
+	localLangs=_getLocale()
 	for lang in localLangs:
 		pkg["keywords"].extend(app.get_keywords(lang))
 		if len(pkg["keywords"])>0:
@@ -141,12 +145,7 @@ def _appstreamAppToRebost(app):
 	tmpSummary=""
 	tmpDescription=""
 	tmpName=""
-	localLangs=LOCAL_LANGS[1:]
-	if "ca" in localLangs:
-		idx=localLangs.index("ca")
-		localLangs.insert(idx,"qcv")
-		localLangs.insert(idx,"ca-valencia")
-	localLangs.append(LOCAL_LANGS[0])
+	localLangs=_getLocale()
 	for lang in localLangs:
 		if tmpName=="":
 			tmpName=app.get_name(lang)

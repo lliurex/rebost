@@ -261,6 +261,27 @@ class Rebost():
 		return(proc)
 	#def refreshApprefreshApp
 
+	def _getRawApp(self,app):
+		self._waitForCore()
+		apps=[]
+		for pluginData in self.core.plugins.values():
+			for plugins in pluginData.values():
+				for plugin in plugins:
+					if hasattr(plugin,"getRawData"):
+						rapp=plugin.getRawData(app)
+						apps.append(rapp)
+						break
+		return(apps)
+	#def _getRawApp(self,appId):
+
+	def getRawApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._getRawApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApprefreshApp
+
 	def _getCategories(self):
 		apps=[]
 		categories=[]

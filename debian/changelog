@@ -1,3 +1,9 @@
+rebost (3.2.7.1) noble; urgency=medium
+
+  * Improve status check for appimage and flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jun 2026 08:13:40 +0200
+
 rebost (3.2.7) noble; urgency=medium
 
   * Centralize maps in core

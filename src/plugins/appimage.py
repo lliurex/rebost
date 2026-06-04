@@ -278,15 +278,14 @@ class engine:
 				name=bundle.get_id()
 				appimageBundle=bundle
 		name=os.path.basename(name)
+		status="available"
+		app.set_state(self.core.appstream.AppState.AVAILABLE)
 		for appimageDir in APPIMAGE_DIRS:
-			fpath=os.path.join(appimageDir,name)
-			if os.path.exists(fpath):
-				status="installed"
-				app.set_state(self.core.appstream.AppState.INSTALLED)
-				break
-			else:
-				status="available"
-				app.set_state(self.core.appstream.AppState.AVAILABLE)
+			for f in os.scandir(appimageDir):
+				if f.name.lower()==name.lower():
+					status="installed"
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+					break
 		try:
 			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
 		except:

@@ -281,11 +281,12 @@ class engine:
 		status="available"
 		app.set_state(self.core.appstream.AppState.AVAILABLE)
 		for appimageDir in APPIMAGE_DIRS:
-			for f in os.scandir(appimageDir):
-				if f.name.lower()==name.lower():
-					status="installed"
-					app.set_state(self.core.appstream.AppState.INSTALLED)
-					break
+			if os.path.exists(appimageDir):
+				for f in os.scandir(appimageDir):
+					if f.name.lower()==name.lower():
+						status="installed"
+						app.set_state(self.core.appstream.AppState.INSTALLED)
+						break
 		try:
 			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
 		except:

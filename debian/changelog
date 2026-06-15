@@ -1,3 +1,9 @@
+rebost (3.2.7.2) noble; urgency=medium
+
+  * Fix appimage exception if no appimage folder
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 15 Jun 2026 08:41:32 +0200
+
 rebost (3.2.7.1) noble; urgency=medium
 
   * Improve status check for appimage and flatpak

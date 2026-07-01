@@ -1,3 +1,10 @@
+rebost (3.2.7.3) noble; urgency=medium
+
+  * Epic:
+  *  Catch timeout when getting system packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 14:37:09 +0200
+
 rebost (3.2.7.2) noble; urgency=medium
 
   * Fix appimage exception if no appimage folder

@@ -258,9 +258,19 @@ class engine:
 		flags=packagekit.FilterEnum.NONE
 		pk=packagekit.Client()
 		pkListSack=[]
+		pkSack=[]
 		searchValue="zero-"
-		pkList=pk.get_packages(flags,None,self._loadCallback,None)
-		pkSack=pkList.get_package_array()
+		try:
+			pkList=pk.get_packages(flags,None,self._loadCallback,None)
+			pkSack=pkList.get_package_array()
+		except:
+			try:
+				pkList=pk.get_packages(flags,None,self._loadCallback,None)
+				pkSack=pkList.get_package_array()
+			except:
+				pass
+
+
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
 				if "zero-center" in pk.get_id():

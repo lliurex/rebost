@@ -260,6 +260,7 @@ class engine:
 										self._debug("Failed to parse {}".format(repo))
 										self._debug(e)
 										self._debug("--------/>")
+										break
 								
 						store.add_apps(self._getAppstreamFromDataField(data))
 					elif "items" in jrepo.keys(): #json responde with items field for the pkgs
@@ -292,25 +293,26 @@ class engine:
 		except:
 			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.HOMEPAGE),"loadFiles")
 		detailRaw=self._fetchRepo(detailPage)
-		try:
-			detailJson=json.loads(detailRaw)
-			detailFiles=detailJson.get("files")
-			for detail in detailFiles:
-				if detail.get("url","").lower().endswith("appimage"):
-					download=detail["url"]
-					break
-			download=urllib.parse.unquote(download)
-			if appimageBundle.get_kind()==self.bundle:
-				appimageBundle.set_id(download)
-		except Exception as e:
-			print(e)
-		bundles=app.get_bundles()
-		metastatus=app.get_metadata_item("X-REBOST-appimage")
-		metarelease="1;{}".format(status)
-		if metastatus!=None:
-			metarelease="{};{}".format(metastatus.split(";")[0],status)
-			app.remove_metadata("X-REBOST-appimage")
-		app.add_metadata("X-REBOST-appimage","{}".format(metarelease))
+		if detailRaw!='':
+			try:
+				detailJson=json.loads(detailRaw)
+				detailFiles=detailJson.get("files")
+				for detail in detailFiles:
+					if detail.get("url","").lower().endswith("appimage"):
+						download=detail["url"]
+						break
+				download=urllib.parse.unquote(download)
+				if appimageBundle.get_kind()==self.bundle:
+					appimageBundle.set_id(download)
+			except Exception as e:
+				print(e)
+			bundles=app.get_bundles()
+			metastatus=app.get_metadata_item("X-REBOST-appimage")
+			metarelease="1;{}".format(status)
+			if metastatus!=None:
+				metarelease="{};{}".format(metastatus.split(";")[0],status)
+				app.remove_metadata("X-REBOST-appimage")
+			app.add_metadata("X-REBOST-appimage","{}".format(metarelease))
 		return(app)
 	#def refreshAppData(self,app):
 #class engine

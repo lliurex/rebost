@@ -1,3 +1,10 @@
+rebost (3.2.7.4) jammy; urgency=medium
+
+  * Appimage:
+  *  Fix loop on dns error
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 19:42:29 +0200
+
 rebost (3.2.7.3) jammy; urgency=medium
 
   * Epic:

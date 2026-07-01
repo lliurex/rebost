@@ -1,3 +1,10 @@
+rebost (3.2.7.3) jammy; urgency=medium
+
+  * Epic:
+  *  Catch timeout when getting system packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 14:35:50 +0200
+
 rebost (3.2.7.2) jammy; urgency=medium
 
   * Bug: Appimage plugin exception if no appimage folder

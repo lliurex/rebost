@@ -1,3 +1,11 @@
+rebost (3.2.8.1) jammy; urgency=medium
+
+  * Epic:
+  *  Include package bundle for apt and deb
+  *  Fix call to showinfo when epiName was malformed
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 13:41:15 +0200
+
 rebost (3.2.8) jammy; urgency=medium
 
   * Epic:

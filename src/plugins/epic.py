@@ -100,8 +100,11 @@ class engine:
 		pkgList.extend(epiData.get("only_gui_available",[]))
 		if len(pkgList)>0:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
-			bundles={"flatpak":self.core.appstream.BundleKind.FLATPAK,"snap":self.core.appstream.BundleKind.SNAP,"appimage":self.core.appstream.BundleKind.APPIMAGE}
-			bundle=bundles.get(epiInfo.get("type",""),self.core.appstream.BundleKind.UNKNOWN)
+			bundles={"flatpak":self.core.appstream.BundleKind.FLATPAK,"snap":self.core.appstream.BundleKind.SNAP,"appimage":self.core.appstream.BundleKind.APPIMAGE,"package":self.core.appstream.BundleKind.PACKAGE}
+			epiType=epiInfo.get("type","")
+			if epiType in ["apt","deb"]:
+				epiType="package"
+			bundle=bundles.get(epiType,self.core.appstream.BundleKind.UNKNOWN)
 			for pkg in pkgList:
 				pkg["name"]=pkg["name"].strip()
 				suggested=[]
@@ -157,6 +160,11 @@ class engine:
 						aim.set_kind(self.core.appstream.BundleKind.APPIMAGE)
 						aim.set_id(pkgid)
 						app.add_bundle(aim)
+					elif pkgid!=epiName:
+						ebu=self.core.appstream.Bundle()
+						ebu.set_kind(bundle)
+						ebu.set_id(pkgid)
+						app.add_bundle(ebu)
 					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
 					bun.set_id(epiName)
 					app.add_bundle(bun)
@@ -379,7 +387,9 @@ class engine:
 			if bundle.get_kind()==self.core.appstream.BundleKind.UNKNOWN:
 				zmd=bundle.get_id()
 				break
+		
 		if zmd!="":
+			zmd="{}.epi".format(zmd.removesuffix(".epi"))
 			pkg=app.get_pkgname_default()
 			if isinstance(pkg,str):
 				cmd=["epic","showinfo",zmd]

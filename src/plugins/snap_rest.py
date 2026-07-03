@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+import os,hashlib
+import requests
+import concurrent.futures
+import time
+import socket
+import json
+import html,html2text
+import gi
+from gi.repository import Gio
+try:
+	gi.require_version ('Snapd', '2')
+except:
+	gi.require_version ('Snapd', '1')
+from gi.repository import Snapd
+
+class engine:
+	def __init__(self,core,*args,**kwargs):
+		self.core=core
+		self.dbg=self.core.DBG
+		self.cache=os.path.join(self.core.CACHE,"raw")
+		if not os.path.exists(self.cache):
+			os.makedirs(self.cache)
+		self.bundle=self.core.appstream.BundleKind.SNAP
+		self.snap=Snapd.Client()
+		self.enabled=False
+	#def __init__
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("snap: {}".format(msg))
+	#self _debug
+
+	def _getCategories(self,section):
+		categories=[]
+		catMap={
+				"artanddesign":["Graphics","Art"],
+				"art-and-design":["Graphics","Art"],
+				"books-and-reference":["Documentation","Education"],
+				"booksandreference":["Documentation","Education"],
+				"development":["Development"],
+				"devicesandiot":["Development","Robotics","Electronics"],
+				"devices-and-lot":["Development","Robotics","Electronics"],
+				"entertainment":["Amusement"],
+				"education":["Education"],
+				"finance":["Office","Finance"],
+				"games":["Game"],
+				"healthandfitness":["Utility","Amusement"],
+				"health-and-fitness":["Utility","Amusement"],
+				"musicandaudio":["AudioVideo"],
+				"music-and-audio":["AudioVideo"],
+				"newsandweather":["Network","News"],
+				"news-and-weather":["Network","News"],
+				"personalisation":["Settings"],
+				"photoandvideo":["AudioVideo","Graphics"],
+				"photo-and-video":["AudioVideo","Graphics"],
+				"productivity":["Office"],
+				"security":["System","Security"],
+				"serverandcloud":["Network"],
+				"server-and-cloud":["Network"],
+				"science":["Science"],
+				"social":["Network","InstantMessaging"],
+				"utilities":["Utility"]
+				}
+		#Snap categories aren't standard so... 
+		categories=catMap.get(section.lower().replace(" ",""),["Utility"])
+		return(categories)
+	#def getCategories
+	
+	def _processSnap(self,pkg,section):
+		app=self.core.appstream.App()
+		name=self.core.appstream.markup_import(pkg.get_title().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
+		ids=pkg.get_common_ids()
+		if len(ids)>0:
+			app.set_id(ids[0])
+		else:
+			app.set_id(name)
+		app.add_pkgname(pkg.get_name())
+		desc=self.core.appstream.markup_import(pkg.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
+		summary=self.core.appstream.markup_import(pkg.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
+		app.set_name("C",name)
+		app.set_comment("C",summary)
+		app.set_description("C",desc)
+		icn=pkg.get_icon()
+		if icn!=None:
+			appicon=self.core.appstream.Icon()
+			appicon.set_kind(self.core.appstream.IconKind.REMOTE)
+			appicon.set_name(os.path.basename(icn))
+			appicon.set_url(icn)
+			app.add_icon(appicon)
+		bun=self.core.appstream.Bundle()
+		bun.set_kind(self.core.appstream.BundleKind.SNAP)
+		bun.set_id(pkg.get_name())
+		app.add_bundle(bun)
+		screenshots=self.core.appstream.Screenshot()
+		for scr in pkg.get_media():
+			appimg=self.core.appstream.Image()
+			urlimg=scr.get_url()
+			if "small" in urlimg:
+				appimg.set_kind(self.core.appstream.ImageKind.THUMBNAIL)
+			else:
+				appimg.set_kind(self.core.appstream.ImageKind.SOURCE)
+			appimg.set_url(urlimg)
+			screenshots.add_image(appimg)
+		app.add_screenshot(screenshots)
+		for cat in self._getCategories(section):
+			app.add_category(cat)
+		release=pkg.get_version()
+		apprelease=self.core.appstream.Release()
+		apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,pkg.get_download_size())
+		apprelease.set_version(release)
+		if pkg.get_status()==Snapd.SnapStatus.INSTALLED:
+			status="installed"
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+			apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		else:
+			status="available"
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+			apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+		app.add_metadata("X-REBOST-snap","{};{}".format(release,status))
+		app.add_release(apprelease)
+		#URLs
+		contact=pkg.get_contact()
+		if contact!=None:
+			app.add_url(self.core.appstream.UrlKind.CONTACT,contact)
+		site=pkg.get_website()
+		if site!=None:
+			app.add_url(self.core.appstream.UrlKind.HOMEPAGE,site)
+		url=pkg.get_store_url()
+		if url!=None:
+			app.add_url(self.core.appstream.UrlKind.DETAILS,url)
+		projectLicense=pkg.get_license()
+		if projectLicense!=None:
+			app.set_project_license(projectLicense)
+		return(app)
+	#def _processSnap
+
+	def _chkNeedUpdate(self,sectionSnaps):
+		update=True
+		cont=0
+		for section,snaps in sectionSnaps.items():
+			cont+=len(snaps)
+		if cont>0:
+			chash=str(cont)
+			frepo=os.path.join(self.cache,"snap")
+			if os.path.isfile(frepo):
+				fcontent=""
+				with open(frepo,'r') as f:
+					fhash=f.read()
+				if chash==fhash:
+					update=False
+				self._debug(fhash)
+			self._debug(chash)
+			with open(frepo,'w') as f:
+				f.write(chash)
+		return(update)
+	#def _chkNeedUpdate
+
+	def _fetchSnapcraftPage(self,page):
+		url="https://api.snapcraft.io/api/v1/snaps/search"
+		args={"page":page,"size":200}
+		url="https://api.snapcraft.io/api/v2/find"
+		args={"name":"{}*".format(page),"size":200}
+		end=False
+		print("PROCESSING PAGE {}".format(page))
+		headers={"Snap-Device-Series":"16"}  #snapd api is so cool.... but  the rest api is even more cool
+		resp=requests.get(url,params=args,headers=headers)
+		print(resp)
+		jResp=resp.json()
+		data=jResp.get("_embedded",{})
+		snaps=[]
+		for c,d in data.items():
+			for snap in d:
+				print(snap['title'])
+				snaps.append(snap)
+		links=jResp.get("_links",{})
+		nextPage=links.get("next",{}).values()
+		if len(nextPage)==0:
+			end=True
+		return(snaps,end)
+
+	def getAppstreamData(self):
+		store=self.core.appstream.Store()
+		store.set_origin("snap")
+		page=1
+		resultSet=[]
+		snaps=[]
+		allSnaps=[]
+		end=False
+		sectionSnaps={}
+		with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+			url="https://api.snapcraft.io/api/v1/snaps/search"
+			args={"page":1,"size":1}
+			headers={"Snap-Device-Series":"16"}  #snapd api is so cool.... but  the rest api is even more cool
+			resp=requests.get(url,params=args,headers=headers)
+			jResp=resp.json()
+			total=jResp.get("total",{})
+			pages=int(total/200)+1
+			for c in [chr(c) for c in range(ord('a'),ord('z')+1)]:
+				resultSet.append(executor.submit(self._fetchSnapcraftPage,c))
+			#for page in range(0,pages):
+			#	resultSet.append(executor.submit(self._fetchSnapcraftPage,page))
+
+			#for res in concurrent.futures.as_completed(resultSet):
+			#	apps,end=res.result()
+			#	allSnaps.extend(apps)
+			page+=1
+			time.sleep(0.5)
+		with open("/tmp/a","w") as f:
+			for snap in allSnaps:
+				f.write("{}\n".format(snap["title"]))
+					#resultSet=self.snap.find_sync(Snapd.FindFlags.MATCH_COMMON_ID,snap["snap_id"],None)[0]
+					#for app in resultSet:
+					#	categories=[cat.get_name() for cat in app.get_categories()]
+					#	for cat in categories:
+					#		if cat not in sectionSnaps:
+					#			sectionSnaps[cat]=[]
+					#		sectionSnaps[cat].append(app)
+		fxml=os.path.join(self.cache,"snap.xml")
+		if self._chkNeedUpdate(sectionSnaps)==False:
+			self._debug("Loading from cache")
+			store=self.core._fromFile(store,fxml)
+		if len(store.get_apps())==0:
+			for section,snaps in sectionSnaps.items():
+				apps=[]
+				for pkg in  snaps:
+					if pkg.get_name() not in processed:
+						processed.append(pkg.get_name())
+						apps.append(self._processSnap(pkg,section))
+				store.add_apps(apps)
+			self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(store.get_size()))
+		return(store)
+	#def getAppstreamData(self):
+
+	def DEPRECATEDgetAppstreamData(self):
+		snapSocket=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+		snapSocket.connect("/run/snapd.socket")
+		offset=100
+		req=f"GET /v1/snaps/search?page=1&size=200 HTTP/1.1\r\nHost:localhost\r\n\r\n"
+		snapSocket.sendall(req.encode())
+		response=b""
+		while True:
+			data=snapSocket.recv(4096)
+			if not data:
+				break
+			response+=data
+		snapSocket.close()
+		sanitizedResponse=response.split(b"\r\n\r\n")
+		r=sanitizedResponse[1].split(b"\r\n")[1]
+		print(r)
+		jData=json.loads(r.decode("utf8"))
+		cont=0
+		for pkg in jData.get("result"):
+			print(pkg["title"])
+			cont+=1
+			print(cont)
+
+	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		oldState=app.get_state()
+		name=""
+		bundles=app.get_bundles()
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+		try:
+			installedRefs=self.snap.get_snap_sync(name)
+			status="installed"
+			app.set_state(self.core.appstream.AppState.INSTALLED)
+		#	apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		except:
+			status="available"
+			app.set_state(self.core.appstream.AppState.AVAILABLE)
+		#	apprelease.set_state(self.core.appstream.ReleaseState.AVAILABLE)
+		metastatus=app.get_metadata_item("X-REBOST-snap")
+		metarelease="1;{}".format(status)
+		if metastatus!=None:
+			metarelease="{};{}".format(metastatus.split(";")[0],status)
+			app.remove_metadata("X-REBOST-snap")
+		app.add_metadata("X-REBOST-snap","{}".format(metarelease))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

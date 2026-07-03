@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import os,hashlib
+import requests
+import concurrent.futures
+import time
+import socket
+import json
 import html,html2text
 import gi
 from gi.repository import Gio
@@ -18,6 +23,7 @@ class engine:
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.SNAP
 		self.snap=Snapd.Client()
+		self.enabled=False
 	#def __init__
 
 	def _debug(self,msg):
@@ -150,58 +156,66 @@ class engine:
 		return(update)
 	#def _chkNeedUpdate
 
-	def _getClassicSnaps(self):
-		sectionSnaps={}
-		resultSet=[]
-		for c in [chr(c) for c in range(ord('a'),ord('z')+1)]:
-			resultSet=self.snap.find_sync(Snapd.FindFlags.NONE,"{}".format(c),None)[0]
-			if len(resultSet)>=100:
-				print("*** EXCEED {} ***".format(c))
-			for app in resultSet:
-				if c=="c": 
-					print(len(resultSet))
-					print(app.get_name())
-				if app.get_confinement()==Snapd.Confinement.STRICT:
-					continue
-				categories=[cat.get_name() for cat in app.get_categories()]
-				for cat in categories:
-					if cat not in sectionSnaps:
-						sectionSnaps[cat]=[]
-					sectionSnaps[cat].append(app)
-		return(sectionSnaps)
-	#def _getClassicSnaps
+	def _fetchSnapcraftPage(self,page):
+		url="https://api.snapcraft.io/api/v1/snaps/search"
+		args={"page":page,"size":200}
+		url="https://api.snapcraft.io/api/v2/find"
+		args={"name":"{}*".format(page),"size":200}
+		end=False
+		print("PROCESSING PAGE {}".format(page))
+		headers={"Snap-Device-Series":"16"}  #snapd api is so cool.... but  the rest api is even more cool
+		resp=requests.get(url,params=args,headers=headers)
+		print(resp)
+		jResp=resp.json()
+		data=jResp.get("_embedded",{})
+		snaps=[]
+		for c,d in data.items():
+			for snap in d:
+				print(snap['title'])
+				snaps.append(snap)
+		links=jResp.get("_links",{})
+		nextPage=links.get("next",{}).values()
+		if len(nextPage)==0:
+			end=True
+		return(snaps,end)
 
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
 		store.set_origin("snap")
-		sections=[]
-		try:
-			if hasattr(self.snap,"get_categories_sync"):
-				sectionsSnap=self.snap.get_categories_sync()
-				sections=[sc.get_name() for sc in sectionsSnap]
-			else:
-				sections=self.snap.get_sections_sync()
-		except Exception as e:
-			self._debug("Connection seems down")
-			self._debug(e)
-
-		#classicSnaps=self._getClassicSnaps()
-		processed=[]
+		page=1
+		resultSet=[]
+		snaps=[]
+		allSnaps=[]
+		end=False
 		sectionSnaps={}
-		for section in sections:
-			try:
-				if hasattr(self.snap,"find_category_sync"):
-					snaps,curr=self.snap.find_category_sync(Snapd.FindFlags.MATCH_NAME,section,None)
-				else:
-					snaps,curr=self.snap.find_section_sync(Snapd.FindFlags.MATCH_NAME,section,None)
-			except Exception as e:
-				self._debug(e)
-				continue
-			#print("CLASSIC for {}: {}".format(section,len(classicSnaps.get(section,[]))))
-			#for sn in classicSnaps.get(section,[]):
-			#	print(sn.get_name())
-			#snaps.extend(classicSnaps.get(section,[]))
-			sectionSnaps.update({section:snaps})
+		with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+			url="https://api.snapcraft.io/api/v1/snaps/search"
+			args={"page":1,"size":1}
+			headers={"Snap-Device-Series":"16"}  #snapd api is so cool.... but  the rest api is even more cool
+			resp=requests.get(url,params=args,headers=headers)
+			jResp=resp.json()
+			total=jResp.get("total",{})
+			pages=int(total/200)+1
+			for c in [chr(c) for c in range(ord('a'),ord('z')+1)]:
+				resultSet.append(executor.submit(self._fetchSnapcraftPage,c))
+			#for page in range(0,pages):
+			#	resultSet.append(executor.submit(self._fetchSnapcraftPage,page))
+
+			#for res in concurrent.futures.as_completed(resultSet):
+			#	apps,end=res.result()
+			#	allSnaps.extend(apps)
+			page+=1
+			time.sleep(0.5)
+		with open("/tmp/a","w") as f:
+			for snap in allSnaps:
+				f.write("{}\n".format(snap["title"]))
+					#resultSet=self.snap.find_sync(Snapd.FindFlags.MATCH_COMMON_ID,snap["snap_id"],None)[0]
+					#for app in resultSet:
+					#	categories=[cat.get_name() for cat in app.get_categories()]
+					#	for cat in categories:
+					#		if cat not in sectionSnaps:
+					#			sectionSnaps[cat]=[]
+					#		sectionSnaps[cat].append(app)
 		fxml=os.path.join(self.cache,"snap.xml")
 		if self._chkNeedUpdate(sectionSnaps)==False:
 			self._debug("Loading from cache")
@@ -217,6 +231,31 @@ class engine:
 			self.core._toFile(store,fxml)
 		self._debug("Sending {}".format(store.get_size()))
 		return(store)
+	#def getAppstreamData(self):
+
+	def DEPRECATEDgetAppstreamData(self):
+		snapSocket=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+		snapSocket.connect("/run/snapd.socket")
+		offset=100
+		req=f"GET /v1/snaps/search?page=1&size=200 HTTP/1.1\r\nHost:localhost\r\n\r\n"
+		snapSocket.sendall(req.encode())
+		response=b""
+		while True:
+			data=snapSocket.recv(4096)
+			if not data:
+				break
+			response+=data
+		snapSocket.close()
+		sanitizedResponse=response.split(b"\r\n\r\n")
+		r=sanitizedResponse[1].split(b"\r\n")[1]
+		print(r)
+		jData=json.loads(r.decode("utf8"))
+		cont=0
+		for pkg in jData.get("result"):
+			print(pkg["title"])
+			cont+=1
+			print(cont)
+
 	#def getAppstreamData
 
 	def refreshAppData(self,app):

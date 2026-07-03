@@ -100,6 +100,8 @@ class engine:
 		pkgList.extend(epiData.get("only_gui_available",[]))
 		if len(pkgList)>0:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
+			bundles={"flatpak":self.core.appstream.BundleKind.FLATPAK,"snap":self.core.appstream.BundleKind.SNAP,"appimage":self.core.appstream.BundleKind.APPIMAGE}
+			bundle=bundles.get(epiInfo.get("type",""),self.core.appstream.BundleKind.UNKNOWN)
 			for pkg in pkgList:
 				pkg["name"]=pkg["name"].strip()
 				suggested=[]
@@ -140,6 +142,21 @@ class engine:
 				bundles=app.get_bundles()
 				if len(bundles)==0:
 					bun=self.core.appstream.Bundle()
+					if "snap" in name.lower():
+						sna=self.core.appstream.Bundle()
+						sna.set_kind(self.core.appstream.BundleKind.SNAP)
+						sna.set_id(pkgid)
+						app.add_bundle(sna)
+					elif "flatpak" in name.lower():
+						flt=self.core.appstream.Bundle()
+						flt.set_kind(self.core.appstream.BundleKind.FLATPAK)
+						flt.set_id(pkgid)
+						app.add_bundle(flt)
+					elif "appimage" in name.lower():
+						aim=self.core.appstream.Bundle()
+						aim.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+						aim.set_id(pkgid)
+						app.add_bundle(aim)
 					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
 					bun.set_id(epiName)
 					app.add_bundle(bun)
@@ -258,9 +275,19 @@ class engine:
 		flags=packagekit.FilterEnum.NONE
 		pk=packagekit.Client()
 		pkListSack=[]
+		pkSack=[]
 		searchValue="zero-"
-		pkList=pk.get_packages(flags,None,self._loadCallback,None)
-		pkSack=pkList.get_package_array()
+		try:
+			pkList=pk.get_packages(flags,None,self._loadCallback,None)
+			pkSack=pkList.get_package_array()
+		except:
+			try:
+				pkList=pk.get_packages(flags,None,self._loadCallback,None)
+				pkSack=pkList.get_package_array()
+			except:
+				pass
+
+
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
 				if "zero-center" in pk.get_id():

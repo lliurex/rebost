@@ -150,6 +150,27 @@ class engine:
 		return(update)
 	#def _chkNeedUpdate
 
+	def _getClassicSnaps(self):
+		sectionSnaps={}
+		resultSet=[]
+		for c in [chr(c) for c in range(ord('a'),ord('z')+1)]:
+			resultSet=self.snap.find_sync(Snapd.FindFlags.NONE,"{}".format(c),None)[0]
+			if len(resultSet)>=100:
+				print("*** EXCEED {} ***".format(c))
+			for app in resultSet:
+				if c=="c": 
+					print(len(resultSet))
+					print(app.get_name())
+				if app.get_confinement()==Snapd.Confinement.STRICT:
+					continue
+				categories=[cat.get_name() for cat in app.get_categories()]
+				for cat in categories:
+					if cat not in sectionSnaps:
+						sectionSnaps[cat]=[]
+					sectionSnaps[cat].append(app)
+		return(sectionSnaps)
+	#def _getClassicSnaps
+
 	def getAppstreamData(self):
 		store=self.core.appstream.Store()
 		store.set_origin("snap")
@@ -164,6 +185,7 @@ class engine:
 			self._debug("Connection seems down")
 			self._debug(e)
 
+		#classicSnaps=self._getClassicSnaps()
 		processed=[]
 		sectionSnaps={}
 		for section in sections:
@@ -175,6 +197,10 @@ class engine:
 			except Exception as e:
 				self._debug(e)
 				continue
+			#print("CLASSIC for {}: {}".format(section,len(classicSnaps.get(section,[]))))
+			#for sn in classicSnaps.get(section,[]):
+			#	print(sn.get_name())
+			#snaps.extend(classicSnaps.get(section,[]))
 			sectionSnaps.update({section:snaps})
 		fxml=os.path.join(self.cache,"snap.xml")
 		if self._chkNeedUpdate(sectionSnaps)==False:

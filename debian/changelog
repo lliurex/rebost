@@ -1,3 +1,14 @@
+rebost (3.2.8) jammy; urgency=medium
+
+  * Epic:
+  *  Try to figure bundle kind from custom_name
+  * Snap_rest:
+  *  Plugin that uses rest api from snapcraft (disabled ATM)
+  * Snap:
+  *  Method for getting classic snaps (disabled ATM)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 11:29:40 +0200
+
 rebost (3.2.7.4) jammy; urgency=medium
 
   * Appimage:

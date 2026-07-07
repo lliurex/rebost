@@ -142,26 +142,31 @@ def _getScreenshotsFromAppstream(app):
 def _appstreamAppToRebost(app):
 	pkg={"bundle":{},"versions":{},"status":{}}
 	pkg['id']=app.get_id().lower()
-	tmpSummary=""
-	tmpDescription=""
-	tmpName=""
+	tmpSummary=None
+	tmpDescription=None
+	tmpName=None
 	localLangs=_getLocale()
+	if len(localLangs)>0:
+		if localLangs[0].startswith("ca") and localLangs[0]!="ca":
+			localLangs.insert(0,"ca")
+	
 	for lang in localLangs:
-		if tmpName=="":
+		if tmpName==None:
 			tmpName=app.get_name(lang)
-		if tmpSummary=="":
+		if tmpSummary==None:
 			if isinstance(app.get_comment(lang),str)==True:
 				tmpSummary=app.get_comment(lang)
-		if tmpDescription=="":
+		if tmpDescription==None:
 			if isinstance(app.get_description(lang),str)==True:
 				tmpDescription=app.get_description(lang)
-		if tmpSummary!="" and tmpDescription!="" and tmpName!=None:
-			break
-	if tmpSummary=="":
+		if tmpSummary!=None and tmpDescription!=None and tmpName!=None:
+			if tmpSummary!="" and tmpDescription!="" and tmpName!="":
+				break
+	if tmpSummary==None:
 		tmpSummary=app.get_comment("C")
-	if tmpDescription=="":
+	if tmpDescription==None:
 		tmpDescription=app.get_description("C")
-	if tmpName=="" or tmpName==None:
+	if tmpName==None:
 		tmpName=pkg["id"]
 	if isinstance(tmpDescription,str)==False:
 		tmpDescription=tmpSummary

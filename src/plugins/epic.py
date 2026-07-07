@@ -115,15 +115,15 @@ class engine:
 				#suggest=self.core.appstream.Suggest()
 				#suggest.set_kind(self.core.appstream.SuggestKind.UPSTREAM)
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
-				name=pkg.get("custom_name",pkg["name"])
-				self.includedApps.append(name)
+				self.includedApps.append(pkgid)
+				summary=pkg.get("custom_name",pkg["name"])
 				if pkgid in self.mapFixes["aliases"]:
 					if self.mapFixes["aliases"][pkgid]!=epiInfo["zomando"]:
 						self._debug("Was {} -> {}".format(pkgid,self.mapFixes["aliases"].get(pkgid)))
 						pkgid=self.mapFixes["aliases"][pkgid]
 				app.set_id(pkgid)
-				app.set_name("C",name)
-				app.set_comment("C",name)
+				app.set_name("C",pkgid)
+				app.set_comment("C",summary)
 				app.set_description("C","Included in {}".format(epiName.replace(".epi","")))
 				app.add_pkgname(pkgid)
 				app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")

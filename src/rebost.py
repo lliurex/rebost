@@ -3,6 +3,7 @@ import sys,os,time
 import concurrent.futures as Futures
 from rebostCore import _RebostCore
 import gi
+from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 
@@ -217,7 +218,7 @@ class Rebost():
 			if app==None:
 				mapping=self.core.getMapFixes()
 				if show in mapping.get("aliases",{}).keys():
-					print("UNKNOWN APP!!")
+					self._debug("Unknown app {0}, mapped as {1}".format(show,mapping["aliases"][show]))
 					app=self.core.stores["main"].get_app_by_id_ignore_prefix(mapping["aliases"][show])
 			#REM this block search in all the appstream catalogues
 			#for i in self.core.stores.keys():
@@ -249,7 +250,7 @@ class Rebost():
 							rapp=plugin.refreshAppData(app)
 							if rapp!=None:
 								app=rapp
-								break
+								#break
 		return(app)
 	#def _refreshApp
 
@@ -259,7 +260,33 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def refreshApprefreshApp
+	#def refreshApp
+
+	def _addAppFromYml(self,fyml):
+		self._waitForCore()
+		tmpStore=appstream.Store()
+		if os.path.isfile(fyml):
+			try:
+				tmpStore.set_origin("lliurex")
+				tmpStore.from_file(Gio.File.parse_name(fyml),"/usr/share/rebost-data/icons/cache")
+			except Exception as e:
+				print("Error pargins {0}: {1}".format(fyml,e))
+		else:
+			print("XML File not found: {}".format(fyml))
+		app=None
+		apps=tmpStore.get_apps()
+		if len(apps)>0:
+			app=apps[0]
+		return(app)
+	#def _addAppFromYml
+
+	def addAppFromYml(self,fyml):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._addAppFromYml,fyml)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def addAppFromYml
 
 	def _getRawApp(self,app):
 		self._waitForCore()

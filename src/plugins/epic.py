@@ -145,17 +145,17 @@ class engine:
 				bundles=app.get_bundles()
 				if len(bundles)==0:
 					bun=self.core.appstream.Bundle()
-					if "snap" in name.lower():
+					if "snap" in pkgid.lower():
 						sna=self.core.appstream.Bundle()
 						sna.set_kind(self.core.appstream.BundleKind.SNAP)
 						sna.set_id(pkgid)
 						app.add_bundle(sna)
-					elif "flatpak" in name.lower():
+					elif "flatpak" in pkgid.lower():
 						flt=self.core.appstream.Bundle()
 						flt.set_kind(self.core.appstream.BundleKind.FLATPAK)
 						flt.set_id(pkgid)
 						app.add_bundle(flt)
-					elif "appimage" in name.lower():
+					elif "appimage" in pkgid.lower():
 						aim=self.core.appstream.Bundle()
 						aim.set_kind(self.core.appstream.BundleKind.APPIMAGE)
 						aim.set_id(pkgid)

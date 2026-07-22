@@ -223,9 +223,9 @@ class rebostDbusMethods(dbus.service.Object):
 	#def refreshApp
 
 	@dbus.service.method("net.lliurex.rebost",
-						 in_signature='s', out_signature='s')
-	def addAppFromYml(self,fyml):
-		ret=self.rebost.addAppFromYml(fyml)
+						 in_signature='sss', out_signature='s')
+	def addAppFromYml(self,fyml,bundKind,bundId):
+		ret=self.rebost.addAppFromYml(fyml,{bundKind:bundId})
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))

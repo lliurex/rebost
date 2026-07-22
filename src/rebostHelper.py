@@ -103,6 +103,8 @@ def _setDetailFromAppstream(app,pkg):
 								else:
 									pkg["status"].update({mkey:1})
 								pkg["versions"].update({mkey:release.split(" ")[0]})
+			if len(pkg["versions"])==0 and len(versionArray)>0:
+				pkg["versions"].update({"package":versionArray[0]})
 	pkg["state"]=app.get_state()
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():
@@ -180,7 +182,7 @@ def _appstreamAppToRebost(app):
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 	pkg['icon']=_getIconFromAppstream(app)
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
-	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS]:
+	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS,appstream.UrlKind.HELP]:
 		pkg['infopage']=app.get_url_item(url)
 		if pkg["infopage"]!=None:
 			if len(pkg["infopage"])>0:

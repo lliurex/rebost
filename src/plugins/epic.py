@@ -23,6 +23,7 @@ class engine:
 		if os.environ.get("USER",None)==None:
 			os.environ["USER"]="root"
 		self.epiManager=epimanager.EpiManager()
+		self.name="epic"
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
 		self.noAppend=[]

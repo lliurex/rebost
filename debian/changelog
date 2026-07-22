@@ -1,3 +1,9 @@
+rebost (3.2.9) jammy; urgency=medium
+
+  * Add apps from yml files
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 22 Jul 2026 14:17:16 +0200
+
 rebost (3.2.8.1) jammy; urgency=medium
 
   * Epic:

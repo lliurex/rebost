@@ -103,6 +103,8 @@ def _setDetailFromAppstream(app,pkg):
 								else:
 									pkg["status"].update({mkey:1})
 								pkg["versions"].update({mkey:release.split(" ")[0]})
+			if len(pkg["versions"])==0 and len(versionArray)>0:
+				pkg["versions"].update({"package":versionArray[0]})
 	pkg["state"]=app.get_state()
 	pkg["suggests"]=[]
 	for suggest in app.get_suggests():
@@ -142,26 +144,31 @@ def _getScreenshotsFromAppstream(app):
 def _appstreamAppToRebost(app):
 	pkg={"bundle":{},"versions":{},"status":{}}
 	pkg['id']=app.get_id().lower()
-	tmpSummary=""
-	tmpDescription=""
-	tmpName=""
+	tmpSummary=None
+	tmpDescription=None
+	tmpName=None
 	localLangs=_getLocale()
+	if len(localLangs)>0:
+		if localLangs[0].startswith("ca") and localLangs[0]!="ca":
+			localLangs.insert(0,"ca")
+	
 	for lang in localLangs:
-		if tmpName=="":
+		if tmpName==None:
 			tmpName=app.get_name(lang)
-		if tmpSummary=="":
+		if tmpSummary==None:
 			if isinstance(app.get_comment(lang),str)==True:
 				tmpSummary=app.get_comment(lang)
-		if tmpDescription=="":
+		if tmpDescription==None:
 			if isinstance(app.get_description(lang),str)==True:
 				tmpDescription=app.get_description(lang)
-		if tmpSummary!="" and tmpDescription!="" and tmpName!=None:
-			break
-	if tmpSummary=="":
+		if tmpSummary!=None and tmpDescription!=None and tmpName!=None:
+			if tmpSummary!="" and tmpDescription!="" and tmpName!="":
+				break
+	if tmpSummary==None:
 		tmpSummary=app.get_comment("C")
-	if tmpDescription=="":
+	if tmpDescription==None:
 		tmpDescription=app.get_description("C")
-	if tmpName=="" or tmpName==None:
+	if tmpName==None:
 		tmpName=pkg["id"]
 	if isinstance(tmpDescription,str)==False:
 		tmpDescription=tmpSummary
@@ -175,7 +182,7 @@ def _appstreamAppToRebost(app):
 	pkg['pkgname']=pkg['pkgname'].strip().replace("-desktop","")
 	pkg['icon']=_getIconFromAppstream(app)
 	pkg['homepage']=app.get_url_item(appstream.UrlKind.HOMEPAGE)
-	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS]:
+	for url in [appstream.UrlKind.CONTACT,appstream.UrlKind.DETAILS,appstream.UrlKind.HELP]:
 		pkg['infopage']=app.get_url_item(url)
 		if pkg["infopage"]!=None:
 			if len(pkg["infopage"])>0:

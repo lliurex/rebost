@@ -3,6 +3,7 @@ import sys,os,time
 import concurrent.futures as Futures
 from rebostCore import _RebostCore
 import gi
+from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 
@@ -217,7 +218,7 @@ class Rebost():
 			if app==None:
 				mapping=self.core.getMapFixes()
 				if show in mapping.get("aliases",{}).keys():
-					print("UNKNOWN APP!!")
+					self._debug("Unknown app {0}, mapped as {1}".format(show,mapping["aliases"][show]))
 					app=self.core.stores["main"].get_app_by_id_ignore_prefix(mapping["aliases"][show])
 			#REM this block search in all the appstream catalogues
 			#for i in self.core.stores.keys():
@@ -249,7 +250,7 @@ class Rebost():
 							rapp=plugin.refreshAppData(app)
 							if rapp!=None:
 								app=rapp
-								break
+								#break
 		return(app)
 	#def _refreshApp
 
@@ -259,7 +260,83 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def refreshApprefreshApp
+	#def refreshApp
+
+	def _addAppFromYml(self,fyml,bundle):
+		self._waitForCore()
+		tmpStore=appstream.Store()
+		if os.path.isfile(fyml):
+			try:
+				tmpStore.set_origin("lliurex")
+				tmpStore.from_file(Gio.File.parse_name(fyml),"/usr/share/rebost-data/icons/cache")
+			except Exception as e:
+				print("Error pargins {0}: {1}".format(fyml,e))
+		else:
+			print("XML File not found: {}".format(fyml))
+		app=None
+		apps=tmpStore.get_apps()
+		if len(apps)>0:
+			app=apps[0]
+			if app!=None:
+				originId=app.get_id()
+				print("Id: {}".format(originId))
+				mergeApp=self.core._preMergeApp(app)
+				tmpid=mergeApp.get_id()
+				oldApp=self.core.stores["main"].get_app_by_id(tmpid)
+				if oldApp==None:
+					oldApp=self.core.stores["main"].get_app_by_id(originId.lower())
+					if oldApp!=None:
+						oldApp.set_id(tmpid)
+				if oldApp!=None:
+					try:
+						self.core.stores["main"].remove_app(oldApp)
+						mergeApp=self.core._doSubsumeApps(mergeApp,oldApp)
+					except Exception as e:
+						self._error(e,msg="_mergeApps")
+				#oldApp=self.core.stores["mainB"].get_app_by_id(tmpid)
+				noDsp=self.core.getMapFixes().get("display",[])
+				if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+					self._debug("Hidden -> {}".format(mergeApp.get_name()))
+					mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
+				#if oldApp!=None:
+				#	mergeApp.set_origin("verified")
+				#	self.core.stores["mainB"].add_app(mergeApp)
+				mergeApp.set_origin("unverified")
+				pkgname=mergeApp.get_pkgname_default()
+				if pkgname==None:
+					appId=mergeApp.get_id().removesuffix(".desktop")
+					pkgname=appId.split(".")[-1].lower()
+					mergeApp.add_pkgname(pkgname)
+				for bundleKind,bundleId in bundle.items():
+					bun=self.core.appstream.Bundle()
+					if bundleKind=="package":
+						bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
+					elif bundleKind=="snap":
+						bun.set_kind(self.core.appstream.BundleKind.SNAP)
+					elif bundleKind=="flatpak":
+						bun.set_kind(self.core.appstream.BundleKind.FLATPAK)
+					elif bundleKind=="appimage":
+						bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+					else:
+						bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(bundleId)
+					mergeApp.add_bundle(bun)
+				if len(mergeApp.get_bundles())==0:
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(mergeApp.get_pkgname_default())
+					mergeApp.add_bundle(bun)
+				self.core.stores["main"].add_app(mergeApp)
+		return(app)
+	#def _addAppFromYml
+
+	def addAppFromYml(self,fyml,bundle={}):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._addAppFromYml,fyml,bundle)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def addAppFromYml
 
 	def _getRawApp(self,app):
 		self._waitForCore()

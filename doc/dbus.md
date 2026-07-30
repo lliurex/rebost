@@ -32,7 +32,10 @@ This methods are only available for users with permissions
 - rawApp [string appId]: Returns the raw data of and application
 
 # Examples
+
+* Search of an app through d-bus using qdbus from terminal:
 ```
 $ qdbus --system net.lliurex.rebost /net/lliurex/rebost net.lliurex.rebost.showApp alea
 ```
 > [{"bundle": {"unknown": "zero-installer-util-classroom.epi", "package": "alea"}, "versions": {"package": "0.23.2"}, "status": {"package": 1}, "id": "alea", "name": "Alea", "description": "Autoritzada - Botiga", "summary": "Autoritzada - Botiga", "pkgname": "alea", "icon": "/usr/share/zero-installer-util-classroom/alea.png", "homepage": "https://portal.edu.gva.es/appsedu/alea/", "infopage": "", "state": 2, "suggests": [], "keywords": ["Utility", "alea", "appsedu", "classroom", "installer", "util", "zero", "zero-installer-util-classroom", "zero-installer-util-classroom.epi"], "origin": null, "categories": ["Utility"], "license": null, "screenshots": []}]
+

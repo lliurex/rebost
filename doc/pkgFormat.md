@@ -1,6 +1,6 @@
 # Rebost package format
 
-Although internally the info is stored in [Appstream metadata format](https://www.freedesktop.org/software/appstream/docs/chap-AppStream-About.html) externally is presented in rebost own json based format. This way the data returned by dbus or python-api is in the same format and the non-standard fields needed by LliureX could be implemented respecting the standard at same time.
+Although internally the info is stored in [Appstream metadata format](https://www.freedesktop.org/software/appstream/docs/chap-AppStream-About.html) externally is presented in rebost own json based format. This way the data returned by dbus or python-api is in the same format and the non-standard fields needed by LliureX could be implemented without breaking compatibility with appstream standard.
 
 ## Fields
 

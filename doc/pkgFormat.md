@@ -28,7 +28,12 @@ A package in rebost has the next fields:
 - "origin" # Stores the origin of the app. Actually it only contains if is verified or not
 - "categories" # Array of standard freedesktop categories the app belongs to
 - "license" # App license
-- "screenshots" # Array with urls of screenshots
+- "screenshots" # Array with urls of screenshotsç
+
+*Special fields*
+This fields are not standard. A verified provider could mark an application as "forbidden" or list an application that is not for end user.
+- "forbidden" # App is marked as forbidden
+- "hidden" # App is marked as hidden
 
 # Appstream non-standard extensions
 

@@ -25,7 +25,7 @@ As simple as import the module and use it.
 * export
 	* Input: Destination file (str) Path to file
 	* Return: None
- Export applications to destination file
+ Export applications to given output file
 
 * searchApp
 	* Input: Search string (str)
@@ -43,19 +43,19 @@ As simple as import the module and use it.
 	* Input: Application name (str)
 	* Return: Application
    
- Returns the application data related to the given name
+ Returns the application data of to the given app
 
 * refreshApp
 	* Input: Application name (str)
 	* Return: Application
    
- Return the application after refreshing the cache data
+ Return the application data after refreshing the cache
 
 * getCategories
 	* Input: None
 	* Return: [ categories ] Array of categories
    
- Not used. The different package or bundle systems don't ever use standarized categories. This method returns all the categories collected
+ The different package or bundle systems don't ever use standarized categories. This method returns all the categories collected. Not needed for normal use
 
 * getApps
 	* Input: None
@@ -76,7 +76,7 @@ As simple as import the module and use it.
 	* Output: None
    
  Set application's state as indicated, optionally only for a specified bundle or temporally.
- The state is one of appstreamglib.AppState. If temporally is not indicated or is true (true/false) the state is stored, otherwise only is setted after next data reload
+ The state is one of [appstreamglib.AppState](https://lazka.github.io/pgi-docs/AppStreamGlib-1.0/enums.html#AppStreamGlib.AppState). If temporally is not indicated or is true (true/false) the state is stored, otherwise only is setted after next data reload
 
 * getExternalInstaller
 	* Input: None

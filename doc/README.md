@@ -19,4 +19,3 @@
 -[Rebost package format](pkgFormat.md)
 
 -[Application processing](mergingApps.md)
--

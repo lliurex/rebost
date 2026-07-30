@@ -5,7 +5,7 @@ It has a plugin mechanism for supporting almost any package manager or bundle di
 
 # Usage
 
-Rebost, as specified, isn't a software management per se. Its main purpose is to collect the information from the different plugins and offer it to software stores in [appstream metadata](https://www.freedesktop.org/software/appstream/docs/chap-AppStream-About.html) or in its own json based format. The information could be accessed from a python module or d-bus queries, giving the stores the freedom and need to implement the management tasks (install/uninstall basically).
+Rebost, as specified, isn't a software management per se. Its main purpose is to collect the information from the different plugins and offer it to software stores in [appstream metadata](https://www.freedesktop.org/software/appstream/docs/chap-AppStream-About.html) or in [its own json based format](doc/pkgFormat.md). The information could be accessed from a python module or d-bus queries, giving the stores the freedom and need to implement the management tasks (install/uninstall basically).
 
 # Documentation
 

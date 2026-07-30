@@ -31,6 +31,7 @@ A package in rebost has the next fields:
 - "screenshots" # Array with urls of screenshotsç
 
 *Special fields*
+
 This fields are not standard. A verified provider could mark an application as "forbidden" or list an application that is not for end user.
 - "forbidden" # App is marked as forbidden
 - "hidden" # App is marked as hidden

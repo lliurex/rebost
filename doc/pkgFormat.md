@@ -6,7 +6,7 @@ Although internally the info is stored in [Appstream metadata format](https://ww
 
 A package in rebost has the next fields:
 
-- "bundle" # The bundles this apps is distributed from. Each kind has the install candidate (be it a pkgname, flatpak id, url for dowlonad, etc..) as value.
+- "bundle" # The bundles this apps is distributed from. Each kind has the install candidate (be it a pkgname, flatpak id, url for download, etc..) as value.
   - "package":"pkgName"  
   - "appimage":"downloadUrl"
   - "flatpak": "flatpakId"

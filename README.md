@@ -19,6 +19,9 @@ The following keys are supported:
     "release": Data release number. Release of the data format. If rebost detects a mismatch between data release and it's own data format the cache would be regenerated.
 }
 ```
+# Documentation
+
+Docs with API and examples are located at [docs](doc)
 
 # D-Bus methods
 

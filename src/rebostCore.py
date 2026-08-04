@@ -48,6 +48,7 @@ class _RebostCore():
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
+		self.getMapFixes()
 		#self._initCore()
 	#def __init__
 
@@ -176,6 +177,9 @@ class _RebostCore():
 				self._debug("Added {} apps".format(store.get_size()))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
+				with open(fxml,"r") as f:
+					fcontent=f.read()
+				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
 				tree = ET.fromstring(fcontent)
 				r=tree.getroot()
 				for description in r.iter('description'):
@@ -257,6 +261,7 @@ class _RebostCore():
 
 	def _preMergeApp(self,app):
 		newId=app.get_id()
+		aliases=self.mapFixes.get("aliases",{})
 		if len(app.get_bundles())>0:
 			if app.get_bundles()[0].get_kind()==appstream.BundleKind.FLATPAK:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
@@ -297,7 +302,11 @@ class _RebostCore():
 			newId=app.get_id().removesuffix(".desktop")
 			if newId.count(".")>1: #It seems canonical
 				newId=newId.split(".")[-1]
-		app.set_id(newId.lower().removeprefix(".").removesuffix("."))
+		newId=newId.lower().removeprefix(".").removesuffix(".")
+		if newId in aliases.keys():
+			newId=aliases[newId]
+		if newId!=app.get_id():
+			app.set_id(newId)
 		return (app)
 	#def _preMergeApp
 
@@ -312,6 +321,7 @@ class _RebostCore():
 		self.stores["main"].remove_all()
 		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
 		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
+		aliases=self.mapFixes.get("aliases",{})
 		for storeId in self.stores.keys():
 			if storeId in verifiedOrigins:
 				self._debug("Verified {}".format(storeId))
@@ -319,6 +329,10 @@ class _RebostCore():
 			if isinstance(storeId,int):
 				self._debug("Process {} ({})".format(storeId,self.stores[storeId].get_size()))
 				for app in self.stores[storeId].get_apps():
+					appId=app.get_id()
+					if appId in aliases.keys():
+						self._debug("Change ID from {0} to {1}".format(appId,aliases[appId]))
+						app.set_id(aliases[appId])
 					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
 					tmpid=mergeApp.get_id()
@@ -373,7 +387,6 @@ class _RebostCore():
 					print()
 					os.unlink(f.path)
 		self.lastCheckedMapping=0
-		self.getMapFixes()
 		self.stores["main"].remove_all()
 		if "mainB" in self.stores:
 			self.stores["mainB"].remove_all()

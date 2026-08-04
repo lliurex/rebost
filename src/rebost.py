@@ -242,11 +242,15 @@ class Rebost():
 		self._waitForCore()
 		app=self._showApp(appId.lower())
 		if app!=None:
+			seen=[]
 			for bundle in app.get_bundles():
 				for pluginData in self.core.plugins.values():
 					if bundle.get_kind() in list(pluginData.keys()):
 						plugins=pluginData[bundle.get_kind()]
 						for plugin in plugins:
+							if plugin in seen:
+								continue
+							seen.append(plugin)
 							rapp=plugin.refreshAppData(app)
 							if rapp!=None:
 								app=rapp

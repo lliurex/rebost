@@ -236,12 +236,6 @@ class engine:
 
 	def _loadExtendedData(self,eduapp,app):
 		eduapp.update(self._loadDetailsForApp(eduapp["infopage"],forceCache=True))
-		if "alea" in eduapp["infopage"].lower():
-			print("######################################")
-			print("######################################")
-			print(eduapp)
-			print("######################################")
-			print("######################################")
 		for l in self.core.langs:
 			app.set_name(l,eduapp["name"])
 			app.set_comment(l,eduapp["auth"])

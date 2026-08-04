@@ -42,7 +42,6 @@ class engine:
 		self.dbg=self.core.DBG
 		self.cache=os.path.join(self.core.CACHE,"raw")
 		self.cacheApps=os.path.join(self.cache,"metainfo")
-		self.mapDir=os.path.join(self.core.DATA,"lists.d")
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
 		if not os.path.exists(self.cacheApps):
@@ -91,7 +90,6 @@ class engine:
 		columnIcon=None
 		columnPkgName=None
 		categories=[]
-		mapFixes=self.core.getMapFixes()
 		for column in appInfo:
 			full=False
 			if (column.attrs["class"][0]=="column-1"):
@@ -122,11 +120,6 @@ class engine:
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						if candidate in mapFixes["nodisplay"] or columnPkgName in mapFixes["nodisplay"]:
-							continue
-						if candidate in mapFixes["aliases"] or columnPkgName in mapFixes["aliases"]:
-							self._debug("Was {} -> {}".format(columnPkgName,mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))))
-							columnPkgName=mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))
 						if isinstance(columnPkgName,str)==False:
 							columnPkgName=candidate
 						elif columnPkgName=="":

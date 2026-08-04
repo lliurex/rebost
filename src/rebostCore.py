@@ -223,7 +223,7 @@ class _RebostCore():
 	def _doSubsumeApps(self,app,donor):
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
-		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
+		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
 		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
 		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 		app.subsume(donor)
@@ -362,7 +362,11 @@ class _RebostCore():
 		if os.path.exists(raw):
 			if os.path.isdir(raw):
 				for f in os.scandir(raw):
-					os.unlink(f.path)
+					if f.is_file()==True:
+						os.unlink(f.path)
+					elif f.is_dir()==True:
+						for ff in os.scandir(f.path):
+							os.unlink(ff.path)
 		if os.path.exists(CACHE):
 			for f in os.scandir(CACHE):
 				if f.name.endswith(".map"):

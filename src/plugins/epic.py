@@ -17,7 +17,6 @@ class engine:
 		self.cache=os.path.join(self.core.CACHE,"raw")
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
-		self.includedApps=[]
 		self.bundle=self.core.appstream.BundleKind.UNKNOWN
 		#Fix epic needing known user
 		if os.environ.get("USER",None)==None:
@@ -27,7 +26,6 @@ class engine:
 		self.zmdDir="/usr/share/zero-center/zmds"
 		self.appDir="/usr/share/zero-center/applications"
 		self.noAppend=[]
-		self.mapFixes={}
 	#def __init__
 
 	def _debug(self,msg):
@@ -70,7 +68,18 @@ class engine:
 		return epiInfo
 	#def _getEpiInfo
 
-	def _getIcon(self,name):
+	def _setDefaultInfo(self,app,pkg):
+		summary=pkg.get("custom_name",pkg["name"])
+		app.set_name("C",app.get_id())
+		app.set_comment("C",summary)
+		app.set_description("C","Included in {}".format(app.get_id()))
+		app.add_pkgname(app.get_id())
+		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
+		app.add_url(self.core.appstream.UrlKind.HELP,"")
+	#def _setDefaultInfo
+
+	def _getIcon(self,fname):
+		name=os.path.basename(fname).replace(".zmd","")
 		appicon=None
 		matchName=name
 		candidateDirs=["/usr/share/banners/lliurex-neu",os.path.join("/usr/share","{}".format(name)),os.path.join("/usr/share","{}".format(name.replace("zero-lliurex-","")))]
@@ -94,87 +103,87 @@ class engine:
 		return (appicon)
 	#get _getIcon
 
+	def _setIcon(self,app,pkg):
+		customIcon=pkg.get("custom_icon")
+		if customIcon!=None:
+			customIconPath=epiData.get("custom_icon_path")
+			if customIconPath==None:
+				zmdName=epiData["zomando"]
+				zmdName=zmdName.replace(".epi","")
+				epiPath=os.path.join("/","usr","share",zmdName,epiName)
+				customIconPath=os.path.dirname(epiPath)
+			icn=os.path.join(customIconPath,customIcon)
+			appicon=self.core.appstream.Icon()
+			appicon.set_kind(self.core.appstream.IconKind.LOCAL)
+			appicon.set_name(customIcon)
+			appicon.set_filename(icn)
+			app.add_icon(appicon)
+	#def _setIcon
+
+	def _getBundleKind(self,epiType):
+		if epiType in ["apt","deb"]:
+			epiType="package"
+		bundles={"flatpak":self.core.appstream.BundleKind.FLATPAK,\
+			"snap":self.core.appstream.BundleKind.SNAP,\
+			"appimage":self.core.appstream.BundleKind.APPIMAGE,\
+			"package":self.core.appstream.BundleKind.PACKAGE}
+		bundle=bundles.get(epiType,self.core.appstream.BundleKind.UNKNOWN)
+		return(bundle)
+	#def _getBundleKind
+
+	def _setBundleKind(self,app,epiName,epiInfo):
+		pkgid=app.get_id()
+		bundles=app.get_bundles()
+		if len(bundles)==0:
+			bun=self.core.appstream.Bundle()
+			if "snap" in pkgid.lower():
+				sna=self.core.appstream.Bundle()
+				sna.set_kind(self.core.appstream.BundleKind.SNAP)
+				sna.set_id(pkgid)
+				app.add_bundle(sna)
+			elif "flatpak" in pkgid.lower():
+				flt=self.core.appstream.Bundle()
+				flt.set_kind(self.core.appstream.BundleKind.FLATPAK)
+				flt.set_id(pkgid)
+				app.add_bundle(flt)
+			elif "appimage" in pkgid.lower():
+				aim=self.core.appstream.Bundle()
+				aim.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+				aim.set_id(pkgid)
+				app.add_bundle(aim)
+			elif pkgid!=epiName:
+				ebu=self.core.appstream.Bundle()
+				bundle=self._getBundleKind(epiInfo.get("type",""))
+				if bundle!=self.core.appstream.BundleKind.UNKNOWN:
+					ebu.set_kind(bundle)
+					ebu.set_id(pkgid)
+					app.add_bundle(ebu)
+			bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+			bun.set_id(epiName)
+			app.add_bundle(bun)
+	#def _setBundleKind
+
 	def _getIncludedApps(self,epiName,epiData):
 		apps=[]
 		seen=[]
+		if epiData.get("zomando")==None:
+			return apps
 		pkgList=epiData.get("pkg_list",[])
 		pkgList.extend(epiData.get("only_gui_available",[]))
 		if len(pkgList)>0:
 			epiInfo=self._getEpiInfo(epiName,epiData["zomando"])
-			bundles={"flatpak":self.core.appstream.BundleKind.FLATPAK,"snap":self.core.appstream.BundleKind.SNAP,"appimage":self.core.appstream.BundleKind.APPIMAGE,"package":self.core.appstream.BundleKind.PACKAGE}
-			epiType=epiInfo.get("type","")
-			if epiType in ["apt","deb"]:
-				epiType="package"
-			bundle=bundles.get(epiType,self.core.appstream.BundleKind.UNKNOWN)
 			for pkg in pkgList:
-				pkg["name"]=pkg["name"].strip()
-				suggested=[]
-				if pkg["name"] not in epiInfo or pkg["name"] in self.mapFixes["nodisplay"]:
-					self._debug("Discard {}".format(pkg["name"]))
-					continue
 				app=self.core.appstream.App()
-				#suggest=self.core.appstream.Suggest()
-				#suggest.set_kind(self.core.appstream.SuggestKind.UPSTREAM)
+				pkg["name"]=pkg["name"].strip()
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
-				self.includedApps.append(pkgid)
-				summary=pkg.get("custom_name",pkg["name"])
-				if pkgid in self.mapFixes["aliases"]:
-					if self.mapFixes["aliases"][pkgid]!=epiInfo["zomando"]:
-						self._debug("Was {} -> {}".format(pkgid,self.mapFixes["aliases"].get(pkgid)))
-						pkgid=self.mapFixes["aliases"][pkgid]
 				app.set_id(pkgid)
-				app.set_name("C",pkgid)
-				app.set_comment("C",summary)
-				app.set_description("C","Included in {}".format(epiName.replace(".epi","")))
-				app.add_pkgname(pkgid)
-				app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
-				app.add_url(self.core.appstream.UrlKind.HELP,"")
-				customIcon=pkg.get("custom_icon")
-				if customIcon!=None:
-					customIconPath=epiData.get("custom_icon_path")
-					if customIconPath==None:
-						zmdName=epiInfo["zomando"]
-						zmdName=zmdName.replace(".epi","")
-						epiPath=os.path.join("/","usr","share",zmdName,epiName)
-						customIconPath=os.path.dirname(epiPath)
-					icn=os.path.join(customIconPath,customIcon)
-					appicon=self.core.appstream.Icon()
-					appicon.set_kind(self.core.appstream.IconKind.LOCAL)
-					appicon.set_name(customIcon)
-					appicon.set_filename(icn)
-					app.add_icon(appicon)
-				bundles=app.get_bundles()
-				if len(bundles)==0:
-					bun=self.core.appstream.Bundle()
-					if "snap" in pkgid.lower():
-						sna=self.core.appstream.Bundle()
-						sna.set_kind(self.core.appstream.BundleKind.SNAP)
-						sna.set_id(pkgid)
-						app.add_bundle(sna)
-					elif "flatpak" in pkgid.lower():
-						flt=self.core.appstream.Bundle()
-						flt.set_kind(self.core.appstream.BundleKind.FLATPAK)
-						flt.set_id(pkgid)
-						app.add_bundle(flt)
-					elif "appimage" in pkgid.lower():
-						aim=self.core.appstream.Bundle()
-						aim.set_kind(self.core.appstream.BundleKind.APPIMAGE)
-						aim.set_id(pkgid)
-						app.add_bundle(aim)
-					elif pkgid!=epiName:
-						ebu=self.core.appstream.Bundle()
-						ebu.set_kind(bundle)
-						ebu.set_id(pkgid)
-						app.add_bundle(ebu)
-					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-					bun.set_id(epiName)
-					app.add_bundle(bun)
+				self._setDefaultInfo(app,pkg)
+				self._setIcon(app,epiData)
+				self._setBundleKind(app,epiName,epiInfo)
 				app.add_keyword("C",epiData["zomando"])
 				app.add_keyword("C",epiName)
 				for keyword in epiData["zomando"].split("-"):
 					app.add_keyword("C",keyword)
-				#suggest.add_id(epiData["zomando"])
-				#app.add_suggest(suggest)
 				if app.get_id() not in seen:
 					apps.append(app)
 					seen.append(app.get_id())
@@ -182,6 +191,15 @@ class engine:
 			self._debug("No packages found for {}".format(fname))
 		return(apps)
 	#def _getIncludedApps
+
+	def _getIdFromZmd(self,epiName):
+		epiId=epiName
+		if epiName.startswith("zero-"):
+			epiId="zero.lliurex.{}".format("-".join(epiName.split("-")[2:])).removesuffix(".epi")
+		else:
+			epiId="zero.lliurex.{}".format(epiName).removesuffix(".epi")
+		return(epiId)
+	#def _getIdFromZmd
 
 	def _getCategoriesFromEpi(self,appName):
 		categories=[]
@@ -200,73 +218,113 @@ class engine:
 		return(categories)
 	#def _getCategoriesFromEpi
 
+	def _addDefaultKeywords(self,fname,zmd,app):
+		fname=fname.removesuffix(".epi")
+		zmd=zmd.removesuffix(".epi")
+		app.add_keyword("C",fname)
+		if zmd!=fname:
+			app.add_keyword("C",zmd)
+		app.add_keyword("C","zomando")
+		app.add_keyword("C","zomandos")
+		return(app)
+	#def _addDefaultKeywords
+
+	def _addSuggestedApps(self,includedApps,app):
+		if len(includedApps)>1:
+			suggested=[]
+			suggest=self.core.appstream.Suggest()
+			for includedApp in includedApps:
+				appId=includedApp.get_id()
+				if appId not in suggested:
+					suggest.add_id(appId)
+					suggested.append(appId)
+			app.add_suggest(suggest)
+		return(app)
+	#def _addSuggestedApps(self,app,includedApps):
+
+	def _appendIncludedApps(self,includedApps,app):
+		apps=[]
+		if len(includedApps)==1:
+			includedApps[0].subsume(app)
+		description=app.get_description("C")
+		if description==None:
+			description=""
+		for includedApp in includedApps:
+			if includedApp.get_id()=="" or includedApp.get_id()==None:
+				continue
+			#app.add_keyword("C",includedApp.get_id())
+			apps.append(includedApp)
+			description+="\n    - {}".format(includedApp.get_id())
+			app.add_keyword("C",includedApp.get_id())
+		for l in self.core.langs:
+			app.set_description(l,description)
+		app.set_description("C",description)
+		return(apps)
+	#def _appendIncludedApps
+
+	def _addExtendedInfo(self,epiData,app):
+		summary=epiData.get("custom_name",app.get_id())
+		description=summary
+		for l in self.core.langs:
+			app.set_name(l,app.get_id())
+			app.set_comment(l,summary)
+			app.set_description(l,description)
+		app.set_name("C",app.get_id())
+		app.set_comment("C",summary)
+		app.set_description("C",description)
+		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
+		app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")
+	#def _addExtendedInfo
+
+	def _addBundle(self,fname,app):
+		bun=self.core.appstream.Bundle()
+		bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+		bun.set_id(fname)
+		app.add_bundle(bun)
+	#def _addBundle
+
+	def _addRelease(self,app):
+		apprelease=self.core.appstream.Release()
+		apprelease.set_version("zomando")
+		apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
+		app.set_state(self.core.appstream.AppState.INSTALLED)
+		app.add_release(apprelease)
+	#def _addRelease
+
+	def _addCategoriesFromAppFile(self,fname,app):
+		#Category
+		appName=os.path.basename(fname).replace(".zmd","")+".app"
+		categories=self._getCategoriesFromEpi(appName)
+		for cat in categories:
+			app.add_category(cat)
+	#def _addCategoriesFromAppFile
+
 	def _getAppsFromEpic(self,epicList):
 		apps=[]
-		names=[]
 		for epi in epicList:
+			#Each epi is an app by itself but it could be:
+			# - MetaZomando: Zomando that installs more than one app
+			# - Installer: Zomando that performs the install of an app
+			# - Auxiliary: Zomandos that don't do anything special 
 			for epiName,epiData in epi.items():
-				suggested=[]
-				suggest=self.core.appstream.Suggest()
-				includedCategories=[]
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
+					includedApps=self._getIncludedApps(epiName,epiData)
 					app=self.core.appstream.App()
-					name=os.path.basename(fname).replace(".zmd","")
-					if name in self.mapFixes["nodisplay"] or fname in self.mapFixes["nodisplay"]:
-						self._debug("Discard {}".format(name))
-						continue
-					app.set_id(name)
+					app.set_id(self._getIdFromZmd(epiName))
 					app.add_pkgname(fname)
-					app.add_keyword("C",fname)
-					app.add_keyword("C",epiData["zomando"])
-					app.add_keyword("C","zomando")
-					app.add_keyword("C","zomandos")
+					self._addDefaultKeywords(fname,epiData["zomando"],app)
 					app.set_state(self.core.appstream.AppState.INSTALLED)
-					icn=self._getIcon(name)
+					icn=self._getIcon(fname)
 					if icn!=None:
 						app.add_icon(icn)
-					summary=epiData.get("custom_name",os.path.basename(fname).replace(".zmd",""))
-					description=summary
-					includedApps=self._getIncludedApps(epiName,epiData)
-					if len(includedApps)>1:
-						app.add_suggest(suggest)
-					elif len(includedApps)==1:
-						includedApps[0].subsume(app)
-					for includedApp in includedApps:
-						if includedApp.get_id()=="" or includedApp.get_id()==None:
-							continue
-						#app.add_keyword("C",includedApp.get_id())
-						apps.append(includedApp)
-						description+="\n    - {}".format(includedApp.get_id())
-						app.add_keyword("C",includedApp.get_id())
-						if includedApp.get_id() in suggested:
-							continue
-						suggest.add_id(includedApp.get_id())
-						suggested.append(includedApp.get_id())
-					for l in self.core.langs:
-						app.set_name(l,os.path.basename(fname).replace(".zmd",""))
-						app.set_comment(l,summary)
-						app.set_description(l,description)
-					app.set_name("C",os.path.basename(fname).replace(".zmd",""))
-					app.set_comment("C",summary)
-					app.set_description("C",description)
-					app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
-					app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")
-					bun=self.core.appstream.Bundle()
-					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-					bun.set_id(fname)
-					app.add_bundle(bun)
-					apprelease=self.core.appstream.Release()
-					apprelease.set_version("1.0")
-					apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)
-					app.set_state(self.core.appstream.AppState.INSTALLED)
-					app.add_release(apprelease)
-					#Category
-					appName=os.path.basename(fname).replace(".zmd","")+".app"
-					categories=self._getCategoriesFromEpi(appName)
-					for cat in categories:
-						app.add_category(cat)
+					apps.extend(self._appendIncludedApps(includedApps,app))
+					self._addSuggestedApps(apps,app)
+					self._addExtendedInfo(epiData,app)
+					self._addBundle(fname,app)
+					self._addRelease(app)
+					self._addCategoriesFromAppFile(fname,app)
 					if len(includedApps)>=1:
 						apps.append(app)
 						if len(includedApps)==1:
@@ -280,12 +338,11 @@ class engine:
 		return
 	#def _loadCallback
 
-	def _getAppsFromSystem(self):
+	def _getPkgSack(self,searchValue="zero-"):
 		flags=packagekit.FilterEnum.NONE
 		pk=packagekit.Client()
 		pkListSack=[]
 		pkSack=[]
-		searchValue="zero-"
 		try:
 			pkList=pk.get_packages(flags,None,self._loadCallback,None)
 			pkSack=pkList.get_package_array()
@@ -295,14 +352,43 @@ class engine:
 				pkSack=pkList.get_package_array()
 			except:
 				pass
-
-
 		for pk in pkSack:
 			if pk.get_id().split(";")[0].startswith(searchValue):
 				if "zero-center" in pk.get_id():
 					continue
 				pkListSack.append(pk)
 		return(pkListSack)
+	#def _getPkgSack
+
+	def _getAppFromPkg(self,pkg,appId,name):
+		app=self.core.appstream.App()
+		app.set_id(appId)
+		app.add_pkgname(name)
+		desc=html.escape(pkg.get_summary().strip())
+		app.set_description("C",desc)
+		summary=desc.split("\n")[0]
+		app.set_comment("C",summary)
+		bun=self.core.appstream.Bundle()
+		bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
+		bun.set_id(name)
+		app.add_bundle(bun)
+		return(app)
+	#def _getAppFromPkg
+
+	def _getAppsFromSystem(self,store):
+		pkgSack=self._getPkgSack()
+		apps=[]
+		for pkg in pkgSack:
+			pkgInfo=pkg.get_id()
+			name,release,origin,arch=pkgInfo.split(";")
+			if name.count("-")==1:
+				continue
+			appId=self._getIdFromZmd(name)
+			#If exists discard
+			if store.get_app_by_id(appId):
+				continue
+			apps.append(self._getAppFromPkg(pkg,appId,name))
+		return(apps)
 	#def _getAppsFromSystem
 
 	def _chkNeedUpdate(self,apps):
@@ -324,60 +410,27 @@ class engine:
 		return(update)
 	#def _chkNeedUpdate
 
-	def getAppstreamData(self):
-		fxml=os.path.join(self.cache,"epic.xml")
+	def _storeFromCache(self,fxml):
 		store=self.core.appstream.Store()
 		store.set_add_flags(self.core.appstream.StoreAddFlags.USE_UNIQUE_ID)
 		store.set_origin("epic")
-		epicList=self.epiManager.all_available_epis
-		if self._chkNeedUpdate(epicList)==False:
-			self._debug("Loading from cache")
-			store=self.core._fromFile(store,fxml)
-		if len(store.get_apps())==0:
-			self.mapFixes=self.core.getMapFixes()
-			lstApps=self._getAppsFromEpic(epicList)
-			self.mapFixes["nodisplay"].extend(self.noAppend)
-			store.add_apps(lstApps)
-			pkgs=self._getAppsFromSystem()
-			for pkg in pkgs:
-				hidden=False
-				pkgId=pkg.get_id()
-				if pkgId.split(";")[0] in self.mapFixes["nodisplay"] or pkg.get_name() in self.mapFixes["nodisplay"]:
-					if pkg.get_name() in self.mapFixes["aliases"].values() or pkgId.split(";")[0] in self.mapFixes["nodisplay"]:
-						hidden=True
-					else:
-						self._debug("Discard {}".format(pkg.get_id()))
-						continue
-				pkgIdArray=pkgId.split(";")
-				name=pkgIdArray[0]
-				release=pkgIdArray[1]
-				origin=pkgIdArray[2]
-				arch=pkgIdArray[3]
-				app=store.get_app_by_id(name)
-				if app==None:
-					app=self.core.appstream.App()
-					app.set_id(name)
-					app.add_pkgname(name)
-					desc=html.escape(pkg.get_summary().strip())
-					app.set_description("C",desc)
-					summary=desc.split("\n")[0]
-					app.set_comment("C",summary)
-					#app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
-				else:
-					store.remove_app(app)
-				if "auto:" in pkgId or "manual:" in pkgId or "installed" in pkgId:
-					app.add_metadata("X-REBOST-package","{};{}".format(release,"installed"))
-				if hidden==True:
-					self._debug("Hidden -> Alias for {}".format(pkg.get_name()))
-					app.add_metadata("X-REBOST-hidden","{}".format(name))
-				bun=self.core.appstream.Bundle()
-				bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
-				bun.set_id(name)
-				app.add_bundle(bun)
-				store.add_app(app)
-			self.core._toFile(store,fxml)
-		self._debug("Sending {}".format(store.get_size()))
+	#	if self._chkNeedUpdate(epicList)==False:
+	#		self._debug("Loading from cache")
+	#		store=self.core._fromFile(store,fxml)
 		return(store)
+	#def _storeFromCache
+
+	def getAppstreamData(self):
+		fxml=os.path.join(self.cache,"epic.xml")
+		store=self._storeFromCache(fxml)
+		if len(store.get_apps())==0:
+			availableEpis=self.epiManager.all_available_epis
+			epiApps=self._getAppsFromEpic(availableEpis)
+			store.add_apps(epiApps)
+			pkgApps=self._getAppsFromSystem(store)
+			store.add_apps(pkgApps)
+		self.core._toFile(store,fxml)
+		return store
 	#def getAppstreamData
 
 	def refreshAppData(self,app):

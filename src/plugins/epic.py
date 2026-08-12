@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os,subprocess
+from random import shuffle
 import json
 import html
 from urllib import request
@@ -68,11 +69,14 @@ class engine:
 		return epiInfo
 	#def _getEpiInfo
 
-	def _setDefaultInfo(self,app,pkg):
+	def _setDefaultInfo(self,app,pkg,epiName):
 		summary=pkg.get("custom_name",pkg["name"])
-		app.set_name("C",app.get_id())
+		name=pkg["name"].strip()
+		if name.count(".")>1:
+			name=name.split(".")[-1]
+		app.set_name("C",name)
 		app.set_comment("C",summary)
-		app.set_description("C","Included in {}".format(app.get_id()))
+		app.set_description("C","Included in {}".format(epiName))
 		app.add_pkgname(app.get_id())
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 		app.add_url(self.core.appstream.UrlKind.HELP,"")
@@ -177,13 +181,9 @@ class engine:
 				pkg["name"]=pkg["name"].strip()
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				app.set_id(pkgid)
-				self._setDefaultInfo(app,pkg)
+				self._setDefaultInfo(app,pkg,epiName)
 				self._setIcon(app,epiData)
 				self._setBundleKind(app,epiName,epiInfo)
-				app.add_keyword("C",epiData["zomando"])
-				app.add_keyword("C",epiName)
-				for keyword in epiData["zomando"].split("-"):
-					app.add_keyword("C",keyword)
 				if app.get_id() not in seen:
 					apps.append(app)
 					seen.append(app.get_id())
@@ -224,8 +224,9 @@ class engine:
 		app.add_keyword("C",fname)
 		if zmd!=fname:
 			app.add_keyword("C",zmd)
-		app.add_keyword("C","zomando")
-		app.add_keyword("C","zomandos")
+		last=zmd.split("-")[-1]
+		if last!=zmd:
+			app.add_keyword("C",last)
 		return(app)
 	#def _addDefaultKeywords
 
@@ -236,8 +237,10 @@ class engine:
 			for includedApp in includedApps:
 				appId=includedApp.get_id()
 				if appId not in suggested:
-					suggest.add_id(appId)
 					suggested.append(appId)
+			shuffle(suggested)
+			for suggestApp in suggested[0:min(5,len(suggested))]:
+				suggest.add_id(suggestApp)
 			app.add_suggest(suggest)
 		return(app)
 	#def _addSuggestedApps(self,app,includedApps):
@@ -246,30 +249,29 @@ class engine:
 		apps=[]
 		if len(includedApps)==1:
 			includedApps[0].subsume(app)
-		description=app.get_description("C")
-		if description==None:
-			description=""
 		for includedApp in includedApps:
 			if includedApp.get_id()=="" or includedApp.get_id()==None:
 				continue
 			#app.add_keyword("C",includedApp.get_id())
 			apps.append(includedApp)
-			description+="\n    - {}".format(includedApp.get_id())
-			app.add_keyword("C",includedApp.get_id())
-		for l in self.core.langs:
-			app.set_description(l,description)
-		app.set_description("C",description)
+			self._addDefaultKeywords("",app.get_name("C"),includedApp)
 		return(apps)
 	#def _appendIncludedApps
 
-	def _addExtendedInfo(self,epiData,app):
-		summary=epiData.get("custom_name",app.get_id())
-		description=summary
+	def _addExtendedInfo(self,epiData,app,apps):
+		if len(epiData.get("pkg_list",[]))==1:
+			summary=epiData["pkg_list"][0].get("custom_name",epiData.get("zomando"))
+		else:
+			summary=epiData.get("custom_name",epiData.get("zomando"))
+		suggests=""
+		if len(apps)>0:
+			suggests=":"
+			for suggest in apps:
+				suggests+="\n - {}".format(suggest.get_name("C"))
+		description=summary+suggests
 		for l in self.core.langs:
-			app.set_name(l,app.get_id())
-			app.set_comment(l,summary)
-			app.set_description(l,description)
-		app.set_name("C",app.get_id())
+			app.set_name(l,epiData.get("zomando",app.get_id()))
+		app.set_name("C",epiData.get("zomando",app.get_id()))
 		app.set_comment("C",summary)
 		app.set_description("C",description)
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
@@ -310,7 +312,6 @@ class engine:
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
-					includedApps=self._getIncludedApps(epiName,epiData)
 					app=self.core.appstream.App()
 					app.set_id(self._getIdFromZmd(epiName))
 					app.add_pkgname(fname)
@@ -319,9 +320,10 @@ class engine:
 					icn=self._getIcon(fname)
 					if icn!=None:
 						app.add_icon(icn)
+					includedApps=self._getIncludedApps(epiName,epiData)
+					self._addExtendedInfo(epiData,app,includedApps)
 					apps.extend(self._appendIncludedApps(includedApps,app))
 					self._addSuggestedApps(apps,app)
-					self._addExtendedInfo(epiData,app)
 					self._addBundle(fname,app)
 					self._addRelease(app)
 					self._addCategoriesFromAppFile(fname,app)
@@ -329,6 +331,8 @@ class engine:
 						apps.append(app)
 						if len(includedApps)==1:
 							self.noAppend.append(fname)
+						else:
+							app.add_category("zomando")
 				else:
 					self._debug("Not found {}".format(fname))
 		return(apps)

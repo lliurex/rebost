@@ -44,6 +44,8 @@ class _RebostCore():
 			if "_" in localLang:
 				localLangs.append(localLang.split("_")[0])
 				localLangs.append(localLang.split("_")[-1].lower())
+		if "ca" in localLangs:
+			localLangs.append("ca-valencia")
 		localLangs.insert(0,"C")
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
@@ -228,11 +230,42 @@ class _RebostCore():
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
 		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
-		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
-		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		appDesc={}
+		appSumm={}
+		donorDesc={}
+		donorSumm={}
+		for l in self.langs:
+			desc=app.get_description(l)
+			if desc==None:
+				desc=""
+			summ=app.get_comment(l)
+			if summ==None:
+				summ=""
+			appDesc.update({l:{"desc":desc,"summ":summ}})
+			desc=donor.get_description(l)
+			if desc==None:
+				desc=""
+			summ=donor.get_comment(l)
+			if summ==None:
+				summ=""
+			donorDesc.update({l:{"desc":desc,"summ":summ}})
 		app.subsume(donor)
-		extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.KEYWORDS|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
+		replaceFlags=appstream.AppSubsumeFlags.ICONS|\
+			appstream.AppSubsumeFlags.STATE|\
+			appstream.AppSubsumeFlags.NAME
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
+			appstream.AppSubsumeFlags.METADATA|\
+			appstream.AppSubsumeFlags.KEYWORDS|\
+			appstream.AppSubsumeFlags.URL|\
+			appstream.AppSubsumeFlags.SCREENSHOTS
 		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
+	#	replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|\
+		for l,desc in donorDesc.items():
+			if len(appDesc[l]["desc"])<len(desc["desc"]):
+				app.set_description(l,desc["desc"])
+			if len(appDesc[l]["summ"])<len(desc["summ"]):
+				app.set_comment(l,desc["summ"])
 		#app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps
@@ -353,6 +386,7 @@ class _RebostCore():
 						self._debug("Hidden -> {}".format(mergeApp.get_name()))
 						mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
 					if oldApp!=None:
+						self.stores["mainB"].remove_app(oldApp)
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
 					mergeApp.set_origin("unverified")

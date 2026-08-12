@@ -180,6 +180,7 @@ class engine:
 		content=""
 		page=os.path.basename(url.removesuffix("/"))
 		cachePage=os.path.join(self.cacheApps,page)
+		self._debug("From: {}".format(cachePage))
 		if os.path.exists(cachePage):
 			with open(cachePage,"r") as f:
 				content=f.read()
@@ -229,10 +230,10 @@ class engine:
 
 	def _loadExtendedData(self,eduapp,app):
 		eduapp.update(self._loadDetailsForApp(eduapp["infopage"],forceCache=True))
-		for l in self.core.langs:
-			app.set_name(l,eduapp["name"])
-			app.set_comment(l,eduapp["auth"])
-			app.set_description(l,eduapp.get("description",eduapp["auth"]))
+		app.set_name("C",eduapp["name"])
+		#app.set_comment("C",eduapp["auth"])
+		app.set_comment("ca","")
+		app.set_description("ca",eduapp.get("description",""))
 		app.add_keyword("C",eduapp.get("app","").strip())
 		if "url" in eduapp.keys():
 			app.add_url(self.core.appstream.UrlKind.DETAILS,eduapp["url"])
@@ -258,7 +259,7 @@ class engine:
 		app.add_pkgname(aliasname)
 		app=self._loadExtendedData(eduapp,app)
 		#Status
-		#If an app is not evaluated thyye auth field could be "preparando despliegue", "preparant desplegament", "en avaluacio" or "en evaluacion"
+		#If an app is not evaluated the auth field could be "preparando despliegue", "preparant desplegament", "en avaluacio" or "en evaluacion"
 		#Get common strings and check.
 		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
 			app.add_kudo("UNAVAILABLE")

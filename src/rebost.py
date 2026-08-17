@@ -266,6 +266,30 @@ class Rebost():
 		return(proc)
 	#def refreshApp
 
+	def _refreshVerifiedApp(self,appId):
+		self._waitForCore()
+		app=self._refreshApp(appId.lower())
+		if app!=None:
+			seen=[]
+			verified=self.core.config["verifiedProvider"]
+			plugins=self.core.plugins
+			for plugin in plugins.values():
+				for b,engines in plugin.items():
+					for engine in engines:
+						if hasattr(engine,"name"):
+							if engine.name in verified:
+								app=engine.refreshAppData(app)
+		return(app)
+	#def _refreshVerifiedApp
+
+	def refreshVerifiedApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._refreshVerifiedApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApp
+
 	def _addAppFromYml(self,fyml,bundle):
 		self._waitForCore()
 		tmpStore=appstream.Store()

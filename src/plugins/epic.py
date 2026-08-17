@@ -328,11 +328,12 @@ class engine:
 					self._addRelease(app)
 					self._addCategoriesFromAppFile(fname,app)
 					if len(includedApps)>=1:
-						apps.append(app)
 						if len(includedApps)==1:
 							self.noAppend.append(fname)
+							includedApps[0].set_id(app.get_id())
 						else:
 							app.add_category("zomando")
+						apps.append(app)
 				else:
 					self._debug("Not found {}".format(fname))
 		return(apps)

@@ -22,6 +22,8 @@ def _getLocale():
 			langs.insert(idx,"qcv")
 		if "ca-valencia" not in langs:
 			langs.insert(idx,"ca-valencia")
+	if "es" not in langs:
+		langs.append("es")
 	langs.append("C")
 	return(langs)
 #def _getLocale
@@ -124,7 +126,9 @@ def _setDetailFromAppstream(app,pkg):
 	pkg["origin"]=app.get_origin()
 	localLangs=_getLocale()
 	for lang in localLangs:
-		pkg["keywords"].extend(app.get_keywords(lang))
+		for key in app.get_keywords(lang):
+			key="#{}".format(key.removeprefix("#"))
+			pkg["keywords"].append(key)
 		if len(pkg["keywords"])>0:
 			break
 	return(pkg)

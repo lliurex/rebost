@@ -38,6 +38,7 @@ i18n={'CAD':"Engineering",
 
 class engine:
 	def __init__(self,core,*args,**kwargs):
+		self.name="appsedu"
 		self.core=core
 		self.dbg=self.core.DBG
 		self.cache=os.path.join(self.core.CACHE,"raw")
@@ -255,7 +256,9 @@ class engine:
 		aliasname=eduapp.get("alias","").strip()
 		if len(aliasname)==0:
 			aliasname=pkgname
-		app.set_id(aliasname)
+		if aliasname.startswith("zero-"):
+			aliasname="zero.lliurex.{}".format("-".join(aliasname.split("-")[2:])).removesuffix(".epi")
+		app.set_id(aliasname)#.replace("zero-lliurex-",""))
 		app.add_pkgname(aliasname)
 		app=self._loadExtendedData(eduapp,app)
 		#Status

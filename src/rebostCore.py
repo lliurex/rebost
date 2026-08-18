@@ -250,13 +250,10 @@ class _RebostCore():
 				summ=""
 			donorDesc.update({l:{"desc":desc,"summ":summ}})
 		app.subsume(donor)
-		replaceFlags=appstream.AppSubsumeFlags.ICONS|\
-			appstream.AppSubsumeFlags.STATE|\
-			appstream.AppSubsumeFlags.NAME
-		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
 			appstream.AppSubsumeFlags.METADATA|\
 			appstream.AppSubsumeFlags.KEYWORDS|\
+			appstream.AppSubsumeFlags.ICONS|\
 			appstream.AppSubsumeFlags.URL|\
 			appstream.AppSubsumeFlags.SCREENSHOTS
 		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
@@ -266,7 +263,12 @@ class _RebostCore():
 				app.set_description(l,desc["desc"])
 			if len(appDesc[l]["summ"])<len(desc["summ"]):
 				app.set_comment(l,desc["summ"])
-		#app.subsume(donor)
+		app.subsume(donor)
+		replaceFlags=appstream.AppSubsumeFlags.ICONS|\
+			appstream.AppSubsumeFlags.STATE|\
+			appstream.AppSubsumeFlags.NAME
+		replaceFlags=appstream.AppSubsumeFlags.STATE
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 		return(app)
 	#def _doSubsumeApps
 

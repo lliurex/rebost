@@ -331,6 +331,7 @@ class engine:
 						if len(includedApps)==1:
 							self.noAppend.append(fname)
 							includedApps[0].set_id(app.get_id())
+							includedApps[0].set_state(self.core.appstream.AppState.INSTALLED)
 						else:
 							app.add_category("zomando")
 						apps.append(app)

@@ -226,10 +226,7 @@ class _RebostCore():
 		return(verifiedOrigins)
 	#def _getVerifiedOrigins
 
-	def _doSubsumeApps(self,app,donor):
-		#It seems strange but both subsumes are needed
-		#add all info, honouring previous subsume
-		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
+	def _getOldData(self,app,donor):
 		appDesc={}
 		appSumm={}
 		donorDesc={}
@@ -249,6 +246,14 @@ class _RebostCore():
 			if summ==None:
 				summ=""
 			donorDesc.update({l:{"desc":desc,"summ":summ}})
+		return(appDesc,appSumm,donorDesc,donorSumm)
+	#def _getOldData
+
+	def _doSubsumeApps(self,app,donor):
+		#It seems strange but both subsumes are needed
+		#add all info, honouring previous subsume
+		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
+		appDesc,appSumm,donorDesc,donorSumm=self._getOldData(app,donor)
 		app.subsume(donor)
 		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
 			appstream.AppSubsumeFlags.METADATA|\
@@ -257,18 +262,15 @@ class _RebostCore():
 			appstream.AppSubsumeFlags.URL|\
 			appstream.AppSubsumeFlags.SCREENSHOTS
 		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
-	#	replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|\
+		replaceFlags=appstream.AppSubsumeFlags.STATE|\
+				appstream.AppSubsumeFlags.NAME
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 		for l,desc in donorDesc.items():
 			if len(appDesc[l]["desc"])<len(desc["desc"]):
 				app.set_description(l,desc["desc"])
 			if len(appDesc[l]["summ"])<len(desc["summ"]):
 				app.set_comment(l,desc["summ"])
 		app.subsume(donor)
-		replaceFlags=appstream.AppSubsumeFlags.ICONS|\
-			appstream.AppSubsumeFlags.STATE|\
-			appstream.AppSubsumeFlags.NAME
-		replaceFlags=appstream.AppSubsumeFlags.STATE
-		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
 		return(app)
 	#def _doSubsumeApps
 

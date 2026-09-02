@@ -462,7 +462,14 @@ class engine:
 					except:
 						output=""
 				status="available"
+				included=False
 				for l in output.split("\n"):
+					if "EPIC: " in l:
+						includedPkgs=l.split(":")[-1].strip().split()
+						if l in includedPkgs:
+							included=True
+						else:break
+
 					if pkg in l:
 						if "already installed" in l.lower():
 							status="installed"
@@ -470,14 +477,15 @@ class engine:
 					elif "status: installed" in l.lower():
 						status="installed"
 						break
-				if status=="installed":
-					app.set_state(self.core.appstream.AppState.INSTALLED)
-				else:
-					app.set_state(self.core.appstream.AppState.AVAILABLE)
-				metastatus=app.get_metadata_item("X-REBOST-package")
-				if metastatus!=None:
-					app.remove_metadata("X-REBOST-package")
-				app.add_metadata("X-REBOST-package","1;{}".format(status))
+				if included==True:
+					if status=="installed":
+						app.set_state(self.core.appstream.AppState.INSTALLED)
+					else:
+						app.set_state(self.core.appstream.AppState.AVAILABLE)
+					metastatus=app.get_metadata_item("X-REBOST-package")
+					if metastatus!=None:
+						app.remove_metadata("X-REBOST-package")
+					app.add_metadata("X-REBOST-package","1;{}".format(status))
 		return(app)
 	#def refreshAppData(self,app):
 #class engine

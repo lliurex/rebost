@@ -385,7 +385,7 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def refreshApprefreshApp
+	#def getRawApp
 
 	def _getCategories(self):
 		apps=[]

@@ -242,11 +242,15 @@ class Rebost():
 		self._waitForCore()
 		app=self._showApp(appId.lower())
 		if app!=None:
+			seen=[]
 			for bundle in app.get_bundles():
 				for pluginData in self.core.plugins.values():
 					if bundle.get_kind() in list(pluginData.keys()):
 						plugins=pluginData[bundle.get_kind()]
 						for plugin in plugins:
+							if plugin in seen:
+								continue
+							seen.append(plugin)
 							rapp=plugin.refreshAppData(app)
 							if rapp!=None:
 								app=rapp
@@ -257,6 +261,30 @@ class Rebost():
 	def refreshApp(self,appId):
 		self._chkAliasesChanges()
 		proc=self.thExecutor.submit(self._refreshApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApp
+
+	def _refreshVerifiedApp(self,appId):
+		self._waitForCore()
+		app=self._refreshApp(appId.lower())
+		if app!=None:
+			seen=[]
+			verified=self.core.config["verifiedProvider"]
+			plugins=self.core.plugins
+			for plugin in plugins.values():
+				for b,engines in plugin.items():
+					for engine in engines:
+						if hasattr(engine,"name"):
+							if engine.name in verified:
+								app=engine.refreshAppData(app)
+		return(app)
+	#def _refreshVerifiedApp
+
+	def refreshVerifiedApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._refreshVerifiedApp,appId)
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
@@ -357,7 +385,7 @@ class Rebost():
 		proc.arg=len(self.resultQueue)
 		proc.add_done_callback(self._actionCallback)
 		return(proc)
-	#def refreshApprefreshApp
+	#def getRawApp
 
 	def _getCategories(self):
 		apps=[]

@@ -173,8 +173,12 @@ def _appstreamAppToRebost(app):
 				break
 	if tmpSummary==None:
 		tmpSummary=app.get_comment("C")
+		if tmpSummary==None:
+			tmpSummary=""
 	if tmpDescription==None:
 		tmpDescription=app.get_description("C")
+		if tmpDescription==None:
+			tmpDescription=""
 	if tmpName==None:
 		tmpName=pkg["id"]
 	if isinstance(tmpDescription,str)==False:

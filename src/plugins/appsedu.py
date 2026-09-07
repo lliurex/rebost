@@ -199,9 +199,11 @@ class engine:
 		for cat in eduapp["categories"]:
 			app.add_category(cat)
 		#Status
-		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
+		auth=eduapp["auth"].lower()
+		if (auth.startswith("preparan")==True) or ("valua" in auth):
 			app.add_kudo("UNAVAILABLE")
-		elif  ("assis" in eduapp["auth"].lower()) or ("asistida" in eduapp["auth"].lower()) or ("coordinada" in eduapp["auth"].lower()):
+		#"assis" match "assistida" (it should be "atesa"...) and "assisted"
+		elif  ("atesa" in autho) or ("assis" in auth) or ("asistida" in auth) or ("coordinada" in auth):
 			app.add_kudo("ASSISTED")
 		elif  "web" in eduapp["auth"].strip().lower():
 			app.add_kudo("WEBAPP")

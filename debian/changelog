@@ -1,3 +1,24 @@
+rebost (3.3.0) jammy; urgency=medium
+  * Only fill well-known info
+  * Change subsume of info
+  * Centralize mapping in core
+  * Reloading data cleans cache subdirs
+  * Don't launch twice refreshApp on same plugin
+  * Implement refreshAppFromVerified: only from verified sources
+  * Give permissions to all for listing categories
+  * Epic:
+  *  Discard single app zmds
+  *  Improve refreshApp
+  *  Add zomando as category
+  * Snap:
+  *  Use name for pkgname
+  * Appimage:
+  *  Cache per url
+  * Appsedu:
+  *  Use ca as base lang
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 07 Sep 2026 13:51:54 +0200
+
 rebost (3.2.9) jammy; urgency=medium
 
   * Add apps from yml files

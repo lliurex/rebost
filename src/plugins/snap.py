@@ -63,18 +63,19 @@ class engine:
 	
 	def _processSnap(self,pkg,section):
 		app=self.core.appstream.App()
-		name=self.core.appstream.markup_import(pkg.get_title().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 		ids=pkg.get_common_ids()
+		pkgname=pkg.get_name()
 		if len(ids)>0:
 			app.set_id(ids[0])
 		else:
-			app.set_id(name)
-		app.add_pkgname(pkg.get_name())
-		desc=self.core.appstream.markup_import(pkg.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
-		summary=self.core.appstream.markup_import(pkg.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
+			app.set_id(pkgname)
+		app.add_pkgname(pkgname)
+		name=self.core.appstream.markup_import(pkg.get_title().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
 		app.set_name("C",name)
-		app.set_comment("C",summary)
+		desc=self.core.appstream.markup_import(pkg.get_description().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE)
 		app.set_description("C",desc)
+		summary=self.core.appstream.markup_import(pkg.get_summary().strip(),self.core.appstream.MarkupConvertFormat.SIMPLE).replace("<p>","",).replace("</p>","")
+		app.set_comment("C",summary)
 		icn=pkg.get_icon()
 		if icn!=None:
 			appicon=self.core.appstream.Icon()

@@ -44,10 +44,13 @@ class _RebostCore():
 			if "_" in localLang:
 				localLangs.append(localLang.split("_")[0])
 				localLangs.append(localLang.split("_")[-1].lower())
+		if "ca" in localLangs:
+			localLangs.append("ca-valencia")
 		localLangs.insert(0,"C")
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
+		self.getMapFixes()
 		#self._initCore()
 	#def __init__
 
@@ -176,6 +179,9 @@ class _RebostCore():
 				self._debug("Added {} apps".format(store.get_size()))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
+				with open(fxml,"r") as f:
+					fcontent=f.read()
+				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
 				tree = ET.fromstring(fcontent)
 				r=tree.getroot()
 				for description in r.iter('description'):
@@ -220,16 +226,51 @@ class _RebostCore():
 		return(verifiedOrigins)
 	#def _getVerifiedOrigins
 
+	def _getOldData(self,app,donor):
+		appDesc={}
+		appSumm={}
+		donorDesc={}
+		donorSumm={}
+		for l in self.langs:
+			desc=app.get_description(l)
+			if desc==None:
+				desc=""
+			summ=app.get_comment(l)
+			if summ==None:
+				summ=""
+			appDesc.update({l:{"desc":desc,"summ":summ}})
+			desc=donor.get_description(l)
+			if desc==None:
+				desc=""
+			summ=donor.get_comment(l)
+			if summ==None:
+				summ=""
+			donorDesc.update({l:{"desc":desc,"summ":summ}})
+		return(appDesc,appSumm,donorDesc,donorSumm)
+	#def _getOldData
+
 	def _doSubsumeApps(self,app,donor):
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
-		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status)
-		replaceFlags=appstream.AppSubsumeFlags.DESCRIPTION|appstream.AppSubsumeFlags.STATE|appstream.AppSubsumeFlags.COMMENT
-		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
+		appDesc,appSumm,donorDesc,donorSumm=self._getOldData(app,donor)
 		app.subsume(donor)
-		extendFlags=appstream.AppSubsumeFlags.ICONS|appstream.AppSubsumeFlags.BUNDLES|appstream.AppSubsumeFlags.METADATA|appstream.AppSubsumeFlags.KEYWORDS|appstream.AppSubsumeFlags.URL|appstream.AppSubsumeFlags.SCREENSHOTS
+		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
+			appstream.AppSubsumeFlags.METADATA|\
+			appstream.AppSubsumeFlags.KEYWORDS|\
+			appstream.AppSubsumeFlags.ICONS|\
+			appstream.AppSubsumeFlags.URL|\
+			appstream.AppSubsumeFlags.SCREENSHOTS
 		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
-		#app.subsume(donor)
+		replaceFlags=appstream.AppSubsumeFlags.STATE|\
+				appstream.AppSubsumeFlags.NAME
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		for l,desc in donorDesc.items():
+			if len(appDesc[l]["desc"])<len(desc["desc"]):
+				app.set_description(l,desc["desc"])
+			if len(appDesc[l]["summ"])<len(desc["summ"]):
+				app.set_comment(l,desc["summ"])
+		app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps
 
@@ -257,6 +298,7 @@ class _RebostCore():
 
 	def _preMergeApp(self,app):
 		newId=app.get_id()
+		aliases=self.mapFixes.get("aliases",{})
 		if len(app.get_bundles())>0:
 			if app.get_bundles()[0].get_kind()==appstream.BundleKind.FLATPAK:
 				newId=app.get_id().replace(".desktop","").split(".")[-1]
@@ -297,7 +339,11 @@ class _RebostCore():
 			newId=app.get_id().removesuffix(".desktop")
 			if newId.count(".")>1: #It seems canonical
 				newId=newId.split(".")[-1]
-		app.set_id(newId.lower().removeprefix(".").removesuffix("."))
+		newId=newId.lower().removeprefix(".").removesuffix(".")
+		if newId in aliases.keys():
+			newId=aliases[newId]
+		if newId!=app.get_id():
+			app.set_id(newId)
 		return (app)
 	#def _preMergeApp
 
@@ -312,6 +358,7 @@ class _RebostCore():
 		self.stores["main"].remove_all()
 		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
 		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
+		aliases=self.mapFixes.get("aliases",{})
 		for storeId in self.stores.keys():
 			if storeId in verifiedOrigins:
 				self._debug("Verified {}".format(storeId))
@@ -319,6 +366,10 @@ class _RebostCore():
 			if isinstance(storeId,int):
 				self._debug("Process {} ({})".format(storeId,self.stores[storeId].get_size()))
 				for app in self.stores[storeId].get_apps():
+					appId=app.get_id()
+					if appId in aliases.keys():
+						self._debug("Change ID from {0} to {1}".format(appId,aliases[appId]))
+						app.set_id(aliases[appId])
 					originId=app.get_id()
 					mergeApp=self._preMergeApp(app)
 					tmpid=mergeApp.get_id()
@@ -339,6 +390,7 @@ class _RebostCore():
 						self._debug("Hidden -> {}".format(mergeApp.get_name()))
 						mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
 					if oldApp!=None:
+						self.stores["mainB"].remove_app(oldApp)
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
 					mergeApp.set_origin("unverified")
@@ -362,14 +414,17 @@ class _RebostCore():
 		if os.path.exists(raw):
 			if os.path.isdir(raw):
 				for f in os.scandir(raw):
-					os.unlink(f.path)
+					if f.is_file()==True:
+						os.unlink(f.path)
+					elif f.is_dir()==True:
+						for ff in os.scandir(f.path):
+							os.unlink(ff.path)
 		if os.path.exists(CACHE):
 			for f in os.scandir(CACHE):
 				if f.name.endswith(".map"):
 					print()
 					os.unlink(f.path)
 		self.lastCheckedMapping=0
-		self.getMapFixes()
 		self.stores["main"].remove_all()
 		if "mainB" in self.stores:
 			self.stores["mainB"].remove_all()

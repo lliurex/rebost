@@ -38,12 +38,15 @@ i18n={'CAD':"Engineering",
 
 class engine:
 	def __init__(self,core,*args,**kwargs):
+		self.name="appsedu"
 		self.core=core
 		self.dbg=self.core.DBG
 		self.cache=os.path.join(self.core.CACHE,"raw")
-		self.mapDir=os.path.join(self.core.DATA,"lists.d")
+		self.cacheApps=os.path.join(self.cache,"metainfo")
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
+		if not os.path.exists(self.cacheApps):
+			os.makedirs(self.cacheApps)
 		self.bundle=self.core.appstream.BundleKind.UNKNOWN
 	#def __init__
 
@@ -88,7 +91,6 @@ class engine:
 		columnIcon=None
 		columnPkgName=None
 		categories=[]
-		mapFixes=self.core.getMapFixes()
 		for column in appInfo:
 			full=False
 			if (column.attrs["class"][0]=="column-1"):
@@ -119,11 +121,6 @@ class engine:
 						continue
 					pkgIcon=columnIcon["src"]
 					if candidate:
-						if candidate in mapFixes["nodisplay"] or columnPkgName in mapFixes["nodisplay"]:
-							continue
-						if candidate in mapFixes["aliases"] or columnPkgName in mapFixes["aliases"]:
-							self._debug("Was {} -> {}".format(columnPkgName,mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))))
-							columnPkgName=mapFixes["aliases"].get(candidate,mapFixes["aliases"].get(columnPkgName))
 						if isinstance(columnPkgName,str)==False:
 							columnPkgName=candidate
 						elif columnPkgName=="":
@@ -172,6 +169,84 @@ class engine:
 		return(update)
 	#def _chkNeedUpdate
 
+	def _setAppIcon(self,app,icn):
+		appicon=self.core.appstream.Icon()
+		appicon.set_kind(self.core.appstream.IconKind.REMOTE)
+		appicon.set_name(os.path.basename(icn))
+		appicon.set_url(icn)
+		app.add_icon(appicon)
+	#def _setAppIcon
+
+	def _readCacheApp(self,url):
+		content=""
+		page=os.path.basename(url.removesuffix("/"))
+		cachePage=os.path.join(self.cacheApps,page)
+		self._debug("From: {}".format(cachePage))
+		if os.path.exists(cachePage):
+			with open(cachePage,"r") as f:
+				content=f.read()
+		return(content)
+	#def _readCacheApp
+
+	def _writeCacheApp(self,url,content):
+		if len(content)>0:
+			page=os.path.basename(url.removesuffix("/"))
+			if os.path.exists(self.cacheApps)==False:
+				os.makedir(self.cacheApps)
+			with open(os.path.join(self.cacheApps,page),"w") as f:
+				f.write(content)
+		return
+	#def _writeCacheApp
+
+	def _getUrlContent(self,url,forceCache):
+		content=self._readCacheApp(url)
+		if len(content)==0 and forceCache==False:
+			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+			try:
+				with urlopen(req,timeout=2) as f:
+					content=f.read().decode('utf-8')
+				self._writeCacheApp(url,content)
+			except Exception as e:
+				self._debug("Couldn't fetch {}".format(url))
+				self._debug(e)
+		return(content)
+	#def _getUrlContent
+
+	def _loadDetailsForApp(self,url,forceCache=False):
+		content=self._getUrlContent(url,forceCache)
+		details={}
+		if len(content)>0:
+			bscontent=bs(content,"html.parser")
+			appDesc=bscontent.find("div",["acf-view__descripcio-field"])
+			if appDesc!=None:
+				details["description"]=appDesc.text
+			appIcon=bscontent.find("img",class_="acf-view__image")
+			if appIcon!=None:
+				details["icon"]=appIcon.get("src","")
+			urlEditor=bscontent.find("a",["acf-view__url_editor-link acf-view__link"],href=True)
+			if urlEditor!=None:
+				details["url"]=urlEditor.get("href","")
+		return(details)
+	#def _loadDetailsForApp
+
+	def _loadExtendedData(self,eduapp,app):
+		eduapp.update(self._loadDetailsForApp(eduapp["infopage"],forceCache=True))
+		app.set_name("C",eduapp["name"])
+		#app.set_comment("C",eduapp["auth"])
+		app.set_comment("ca","")
+		app.set_description("ca",eduapp.get("description",""))
+		app.add_keyword("C",eduapp.get("app","").strip())
+		if "url" in eduapp.keys():
+			app.add_url(self.core.appstream.UrlKind.DETAILS,eduapp["url"])
+		#Icon
+		icn=eduapp["icon"]
+		if len(icn)>0:
+			self._setAppIcon(app,icn)
+		for cat in eduapp["categories"]:
+			app.add_category(cat)
+		return(app)
+	#def _loadExtendedData(self,app):
+
 	def _processApp(self,eduapp):
 		app=self.core.appstream.App()
 		app.set_trust_flags(self.core.appstream.AppTrustFlags.COMPLETE)
@@ -180,35 +255,27 @@ class engine:
 		pkgname=eduapp.get("app","").strip()
 		aliasname=eduapp.get("alias","").strip()
 		if len(aliasname)==0:
-			aliasname=eduapp["app"]
-		app.set_id(aliasname)
+			aliasname=pkgname
+		if aliasname.startswith("zero-"):
+			aliasname="zero.lliurex.{}".format("-".join(aliasname.split("-")[2:])).removesuffix(".epi")
+		app.set_id(aliasname)#.replace("zero-lliurex-",""))
 		app.add_pkgname(aliasname)
-		for l in self.core.langs:
-			app.set_name(l,eduapp["name"])
-			app.set_comment(l,eduapp["auth"])
-			app.set_description(l,eduapp["auth"])
-		app.add_keyword("C",pkgname)
-		#Icon
-		icn=eduapp["icon"]
-		if len(icn)>0:
-			appicon=self.core.appstream.Icon()
-			appicon.set_kind(self.core.appstream.IconKind.REMOTE)
-			appicon.set_name(os.path.basename(icn))
-			appicon.set_url(icn)
-			app.add_icon(appicon)
-		for cat in eduapp["categories"]:
-			app.add_category(cat)
+		app=self._loadExtendedData(eduapp,app)
 		#Status
+		#If an app is not evaluated the auth field could be "preparando despliegue", "preparant desplegament", "en avaluacio" or "en evaluacion"
 		auth=eduapp["auth"].lower()
 		if (auth.startswith("preparan")==True) or ("valua" in auth):
 			app.add_kudo("UNAVAILABLE")
 		#"assis" match "assistida" (it should be "atesa"...) and "assisted"
 		elif  ("atesa" in autho) or ("assis" in auth) or ("asistida" in auth) or ("coordinada" in auth):
 			app.add_kudo("ASSISTED")
+		#For webapps it will contain the chain "web"
 		elif  "web" in eduapp["auth"].strip().lower():
 			app.add_kudo("WEBAPP")
+		#Only valid apps begins with "Autorizada" or "Autoritzada"
 		elif eduapp["auth"].lower().startswith("autori")==False:
 			app.add_kudo("BLOCKED")
+		#If no valid option then surely is available for install
 		else:
 			app.set_state(self.core.appstream.AppState.AVAILABLE)
 		#Release
@@ -251,6 +318,17 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		#appsedu has no states
-		return(None)
+		url=app.get_url_item(self.core.appstream.UrlKind.HOMEPAGE)
+		if url.lower().startswith("https://portal.edu.gva.es/appsedu/")==True:
+			details=self._loadDetailsForApp(url)
+			if "description" in details.keys():
+				for l in self.core.langs:
+					app.set_description(l,details["description"])
+			if "icon" in details.keys():
+				icn=details["icon"]
+				if len(icn)>0:
+					self._setAppIcon(app,icn)
+			if "url" in details.keys():
+				app.add_url(self.core.appstream.UrlKind.DETAILS,details["url"])
+		return(app)
 #class engine

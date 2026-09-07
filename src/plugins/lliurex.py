@@ -24,6 +24,7 @@ class engine:
 		if not os.path.exists(self.cache):
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.PACKAGE
+		self.name="lliurex"
 	#def __init__
 
 	def _debug(self,msg):
@@ -80,7 +81,19 @@ class engine:
 	#def getAppstreamData
 
 	def refreshAppData(self,app):
-		return(None)
+		#Best effort to identify zomandos as packages and do things, a lot of them. Believe me.
+		bundles=app.get_bundles()
+		pkgname=app.get_pkgname_default()
+		appId=app.get_id()
+		mapping=self.core.getMapFixes()
+		if len(bundles)==1:
+			if appId==pkgname:
+				if appId.startswith("zero-lliurex"):
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(appId)
+					app.add_bundle(bun)
+		return(app)
 	#def refreshAppData
 
 	def getRawData(self,app):

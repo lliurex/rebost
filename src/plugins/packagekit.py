@@ -17,6 +17,7 @@ class engine:
 			os.makedirs(self.cache)
 		self.bundle=self.core.appstream.BundleKind.PACKAGE
 		self.pkClient=packagekit.Client()
+		self.name="package"
 	#def __init__
 
 	def _debug(self,msg):

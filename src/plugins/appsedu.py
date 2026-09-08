@@ -181,8 +181,8 @@ class engine:
 		content=""
 		page=os.path.basename(url.removesuffix("/"))
 		cachePage=os.path.join(self.cacheApps,page)
-		self._debug("From: {}".format(cachePage))
 		if os.path.exists(cachePage):
+			self._debug("From cache file {}".format(cachePage))
 			with open(cachePage,"r") as f:
 				content=f.read()
 		return(content)
@@ -267,7 +267,7 @@ class engine:
 		if (auth.startswith("preparan")==True) or ("valua" in auth):
 			app.add_kudo("UNAVAILABLE")
 		#"assis" match "assistida" (it should be "atesa"...) and "assisted"
-		elif  ("atesa" in autho) or ("assis" in auth) or ("asistida" in auth) or ("coordinada" in auth):
+		elif  ("atesa" in auth) or ("assis" in auth) or ("asistida" in auth) or ("coordinada" in auth):
 			app.add_kudo("ASSISTED")
 		#For webapps it will contain the chain "web"
 		elif  "web" in eduapp["auth"].strip().lower():

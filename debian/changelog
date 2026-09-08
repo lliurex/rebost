@@ -1,3 +1,13 @@
+rebost (3.3.1) jammy; urgency=medium
+
+  * Fix nodisplay filter
+  * Appsedu:
+  *  Fix typo in auth state detection
+  * Epic:
+  *  Improve icon assignment
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 08 Sep 2026 08:33:20 +0200
+
 rebost (3.3.0) jammy; urgency=medium
   * Only fill well-known info
   * Change subsume of info

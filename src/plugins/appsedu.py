@@ -181,8 +181,8 @@ class engine:
 		content=""
 		page=os.path.basename(url.removesuffix("/"))
 		cachePage=os.path.join(self.cacheApps,page)
-		self._debug("From: {}".format(cachePage))
 		if os.path.exists(cachePage):
+			self._debug("From cache file {}".format(cachePage))
 			with open(cachePage,"r") as f:
 				content=f.read()
 		return(content)
@@ -263,11 +263,11 @@ class engine:
 		app=self._loadExtendedData(eduapp,app)
 		#Status
 		#If an app is not evaluated the auth field could be "preparando despliegue", "preparant desplegament", "en avaluacio" or "en evaluacion"
-		#Get common strings and check.
-		if (eduapp["auth"].lower().startswith("preparan")==True) or ("valua" in eduapp["auth"].lower()):
+		auth=eduapp["auth"].lower()
+		if (auth.startswith("preparan")==True) or ("valua" in auth):
 			app.add_kudo("UNAVAILABLE")
-		#For assisted installs it could be "assistida","asistida" or "coordinada"
-		elif  ("assis" in eduapp["auth"].lower()) or ("asistida" in eduapp["auth"].lower()) or ("coordinada" in eduapp["auth"].lower()):
+		#"assis" match "assistida" (it should be "atesa"...) and "assisted"
+		elif  ("atesa" in auth) or ("assis" in auth) or ("asistida" in auth) or ("coordinada" in auth):
 			app.add_kudo("ASSISTED")
 		#For webapps it will contain the chain "web"
 		elif  "web" in eduapp["auth"].strip().lower():

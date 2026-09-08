@@ -287,10 +287,10 @@ class _RebostCore():
 					except Exception as e:
 						self._error(e,msg="_preLoadVerified")
 				mergeApp.set_origin("verified")
-				noDsp=self.mapFixes.get("display",[])
+				noDsp=self.mapFixes.get("nodisplay",[])
 				if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
 					self._debug("Hidden -> {}".format(mergeApp.get_name()))
-					mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
+					mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
 				store.add_app(mergeApp)
 		self._debug("Verified table count: {}".format(store.get_size()))
 		return(store)
@@ -385,10 +385,10 @@ class _RebostCore():
 						except Exception as e:
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
-					noDsp=self.mapFixes.get("display",[])
+					noDsp=self.mapFixes.get("nodisplay",[])
 					if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
 						self._debug("Hidden -> {}".format(mergeApp.get_name()))
-						mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
+						mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
 					if oldApp!=None:
 						self.stores["mainB"].remove_app(oldApp)
 						mergeApp.set_origin("verified")

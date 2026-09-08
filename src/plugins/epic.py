@@ -109,14 +109,22 @@ class engine:
 
 	def _setIcon(self,app,pkg):
 		customIcon=pkg.get("custom_icon")
-		if customIcon!=None:
-			customIconPath=epiData.get("custom_icon_path")
-			if customIconPath==None:
-				zmdName=epiData["zomando"]
-				zmdName=zmdName.replace(".epi","")
-				epiPath=os.path.join("/","usr","share",zmdName,epiName)
-				customIconPath=os.path.dirname(epiPath)
-			icn=os.path.join(customIconPath,customIcon)
+		icn=""
+		if os.path.isfile(customIcon)==True:
+			icn=customIcon
+		else:
+			if customIcon.count("/")>2: #Is a path but doesn't have the extension
+				imgExtensions=[".svg",".png",".jpg",".bmp",".jpeg"]
+				dPath=os.path.dirname(customIcon)
+				dName=os.path.basename(customIcon)
+				if os.path.exists(dPath):
+					for f in os.scandir(dPath):
+						if f.name.startswith(dName) and f.name.split(".")[-1].lower() in imgExtensions:
+							icn=f.path
+							break
+			elif pkg.get("custom_icon_path","")!="":
+				icn=pkg["custom_icon_path"]
+		if icn!="":
 			appicon=self.core.appstream.Icon()
 			appicon.set_kind(self.core.appstream.IconKind.LOCAL)
 			appicon.set_name(customIcon)
@@ -182,7 +190,7 @@ class engine:
 				pkgid=pkg.get("name").split(" ")[0].rstrip(",").rstrip(".").rstrip(":")
 				app.set_id(pkgid)
 				self._setDefaultInfo(app,pkg,epiName)
-				self._setIcon(app,epiData)
+				self._setIcon(app,pkg)
 				self._setBundleKind(app,epiName,epiInfo)
 				if app.get_id() not in seen:
 					apps.append(app)

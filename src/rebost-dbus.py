@@ -206,12 +206,39 @@ class rebostDbusMethods(dbus.service.Object):
 
 	@dbus.service.method("net.lliurex.rebost",
 						 in_signature='s', out_signature='s')
+	def rawApp(self,pkgname):
+		ret=self.rebost.getRawApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def rawApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
 	def refreshApp(self,pkgname):
 		ret=self.rebost.refreshApp(pkgname)
 		resultList=ret.result()
 		getResult=rebostHelper.appstreamToRebost(resultList)
 		return(json.dumps(getResult))
 	#def refreshApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='s', out_signature='s')
+	def refreshVerifiedApp(self,pkgname):
+		ret=self.rebost.refreshVerifiedApp(pkgname)
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def refreshApp
+
+	@dbus.service.method("net.lliurex.rebost",
+						 in_signature='sss', out_signature='s')
+	def addAppFromYml(self,fyml,bundKind,bundId):
+		ret=self.rebost.addAppFromYml(fyml,{bundKind:bundId})
+		resultList=ret.result()
+		getResult=rebostHelper.appstreamToRebost(resultList)
+		return(json.dumps(getResult))
+	#def addAppFromYml
 
 	def _getStateFromValue(self,value):
 		if value==1:

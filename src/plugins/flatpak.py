@@ -172,7 +172,7 @@ class engine:
 			appName=ref.format_ref()
 			if appName==None:
 				continue
-			if name==appName.lower():
+			if name.lower()==appName.lower():
 				status="installed"
 				app.set_state(self.core.appstream.AppState.INSTALLED)
 			#	apprelease.set_state(self.core.appstream.ReleaseState.INSTALLED)

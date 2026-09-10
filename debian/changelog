@@ -1,3 +1,85 @@
+rebost (3.3.1) jammy; urgency=medium
+
+  * Fix nodisplay filter
+  * Appsedu:
+  *  Fix typo in auth state detection
+  * Epic:
+  *  Improve icon assignment
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 08 Sep 2026 08:33:20 +0200
+
+rebost (3.3.0) jammy; urgency=medium
+  * Only fill well-known info
+  * Change subsume of info
+  * Centralize mapping in core
+  * Reloading data cleans cache subdirs
+  * Don't launch twice refreshApp on same plugin
+  * Implement refreshAppFromVerified: only from verified sources
+  * Give permissions to all for listing categories
+  * Epic:
+  *  Discard single app zmds
+  *  Improve refreshApp
+  *  Add zomando as category
+  * Snap:
+  *  Use name for pkgname
+  * Appimage:
+  *  Cache per url
+  * Appsedu:
+  *  Use ca as base lang
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 07 Sep 2026 13:51:54 +0200
+
+rebost (3.2.9) jammy; urgency=medium
+
+  * Add apps from yml files
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 22 Jul 2026 14:17:16 +0200
+
+rebost (3.2.8.1) jammy; urgency=medium
+
+  * Epic:
+  *  Include package bundle for apt and deb
+  *  Fix call to showinfo when epiName was malformed
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 13:41:15 +0200
+
+rebost (3.2.8) jammy; urgency=medium
+
+  * Epic:
+  *  Try to figure bundle kind from custom_name
+  * Snap_rest:
+  *  Plugin that uses rest api from snapcraft (disabled ATM)
+  * Snap:
+  *  Method for getting classic snaps (disabled ATM)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 11:29:40 +0200
+
+rebost (3.2.7.4) jammy; urgency=medium
+
+  * Appimage:
+  *  Fix loop on dns error
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 19:42:29 +0200
+
+rebost (3.2.7.3) jammy; urgency=medium
+
+  * Epic:
+  *  Catch timeout when getting system packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 14:35:50 +0200
+
+rebost (3.2.7.2) jammy; urgency=medium
+
+  * Bug: Appimage plugin exception if no appimage folder
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 15 Jun 2026 08:38:10 +0200
+
+rebost (3.2.7.1) jammy; urgency=medium
+
+  * Improve status check for appimage and flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jun 2026 08:13:40 +0200
+
 rebost (3.2.7) jammy; urgency=medium
 
   * Centralize maps in core

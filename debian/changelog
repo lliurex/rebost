@@ -1,3 +1,9 @@
+rebost (3.3.2) noble; urgency=medium
+
+  * Use all pkgnames for nodisplay filters
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 17 Sep 2026 12:37:51 +0200
+
 rebost (3.3.1) noble; urgency=medium
 
   * Fix nodisplay filter

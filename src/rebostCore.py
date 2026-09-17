@@ -288,7 +288,11 @@ class _RebostCore():
 						self._error(e,msg="_preLoadVerified")
 				mergeApp.set_origin("verified")
 				noDsp=self.mapFixes.get("nodisplay",[])
-				if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+				appKnownAs=[mergeApp.get_id(),mergeApp.get_name()]
+				appKnownAs.extend(mergeApp.get_pkgnames())
+				allApps=list(set(noDsp))
+				allApps.extend(list(set(appKnownAs)))
+				if len(allApps) != len(set(allApps)):
 					self._debug("Hidden -> {}".format(mergeApp.get_name()))
 					mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
 				store.add_app(mergeApp)
@@ -386,7 +390,11 @@ class _RebostCore():
 							self._error(e,msg="_mergeApps")
 					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
 					noDsp=self.mapFixes.get("nodisplay",[])
-					if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+					appKnownAs=[mergeApp.get_id(),mergeApp.get_name()]
+					appKnownAs.extend(mergeApp.get_pkgnames())
+					allApps=list(set(noDsp))
+					allApps.extend(list(set(appKnownAs)))
+					if len(allApps) != len(set(allApps)):
 						self._debug("Hidden -> {}".format(mergeApp.get_name()))
 						mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
 					if oldApp!=None:

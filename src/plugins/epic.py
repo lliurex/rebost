@@ -143,7 +143,7 @@ class engine:
 		return(bundle)
 	#def _getBundleKind
 
-	def _setBundleKind(self,app,epiName,epiInfo):
+	def _setBundleKind(self,app,epiName,epiInfo,zmdPath):
 		pkgid=app.get_id()
 		bundles=app.get_bundles()
 		if len(bundles)==0:
@@ -171,11 +171,16 @@ class engine:
 					ebu.set_id(pkgid)
 					app.add_bundle(ebu)
 			bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-			bun.set_id(epiName)
+			if zmdPath=="":
+				scriptName=script["name"]
+				scriptName="/".join(scriptName.split("/")[:-1])+"/{}".format(epiName)
+				bun.set_id(scriptName)
+			else:
+				bun.set_id(zmdPath)
 			app.add_bundle(bun)
 	#def _setBundleKind
 
-	def _getIncludedApps(self,epiName,epiData):
+	def _getIncludedApps(self,epiName,epiData,zmdPath):
 		apps=[]
 		seen=[]
 		if epiData.get("zomando")==None:
@@ -191,7 +196,7 @@ class engine:
 				app.set_id(pkgid)
 				self._setDefaultInfo(app,pkg,epiName)
 				self._setIcon(app,pkg)
-				self._setBundleKind(app,epiName,epiInfo)
+				self._setBundleKind(app,epiName,epiInfo,zmdPath)
 				if app.get_id() not in seen:
 					apps.append(app)
 					seen.append(app.get_id())
@@ -320,6 +325,7 @@ class engine:
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
+					zmdPath=os.path.join("/usr","share","zero-center","zmds","{}.zmd".format(epiData["zomando"]))
 					app=self.core.appstream.App()
 					app.set_id(self._getIdFromZmd(epiName))
 					app.add_pkgname(fname)
@@ -328,11 +334,11 @@ class engine:
 					icn=self._getIcon(fname)
 					if icn!=None:
 						app.add_icon(icn)
-					includedApps=self._getIncludedApps(epiName,epiData)
+					includedApps=self._getIncludedApps(epiName,epiData,zmdPath)
 					self._addExtendedInfo(epiData,app,includedApps)
 					apps.extend(self._appendIncludedApps(includedApps,app))
 					self._addSuggestedApps(apps,app)
-					self._addBundle(fname,app)
+					self._addBundle(zmdPath,app)
 					self._addRelease(app)
 					self._addCategoriesFromAppFile(fname,app)
 					if len(includedApps)>=1:

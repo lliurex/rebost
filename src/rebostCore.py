@@ -100,7 +100,11 @@ class _RebostCore():
 			rawDir=os.path.join(self.CACHE,"raw")
 			if os.path.exists(rawDir):
 				for f in os.scandir(rawDir):
-					os.unlink(f.path)
+					if f.is_dir()==False:
+						os.unlink(f.path)
+					elif for f2 in os.scandir(f.path):
+						if f2.is_dir()==False:
+							os.unlink(f2.path)
 			self._debug("--> RELEASE CLEANED <--")
 		with open(cFile,"w") as f:
 			f.write(self.config.get("release","1.0"))

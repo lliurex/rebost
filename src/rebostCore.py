@@ -45,7 +45,9 @@ class _RebostCore():
 				localLangs.append(localLang.split("_")[0])
 				localLangs.append(localLang.split("_")[-1].lower())
 		if "ca" in localLangs:
-			localLangs.append("ca-valencia")
+			idx=localLangs.index("ca")
+			localLangs.insert(idx+1,"ca-valencia")
+			localLangs.insert(idx+1,"ca@valencia")
 		localLangs.insert(0,"C")
 		self.langs=list(set(localLangs))
 		self.plugins=self._loadPlugins()

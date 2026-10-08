@@ -69,13 +69,28 @@ class engine:
 		return epiInfo
 	#def _getEpiInfo
 
+	def _getLocalizedString(self,string):
+		#The type is variant: dict or string
+		localeCode="C"
+		for language in self.core.langs:
+			localeCode=language.lower().split("-")[0].split("@")[0]
+			if language in string.keys() or localeCode in string.keys():
+				localeString=string.get(language,string.get(localeCode,""))
+				break
+		return(localeCode,localeString)
+	#def _getLocalizedString
+
 	def _setDefaultInfo(self,app,pkg,epiName):
-		summary=pkg.get("custom_name",pkg["name"])
 		name=pkg["name"].strip()
 		if name.count(".")>1:
 			name=name.split(".")[-1]
 		app.set_name("C",name)
-		app.set_comment("C",summary)
+		#Epic files could have i18 so check the type for strings
+		summary=pkg.get("custom_name",pkg["name"])
+		localeCode="C"
+		if isinstance(summary,dict):
+			localeCode,summary=self._getLocalizedString(summary)
+		app.set_comment(localeCode,summary)
 		app.set_description("C","Included in {}".format(epiName))
 		app.add_pkgname(app.get_id())
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
@@ -143,7 +158,7 @@ class engine:
 		return(bundle)
 	#def _getBundleKind
 
-	def _setBundleKind(self,app,epiName,epiInfo):
+	def _setBundleKind(self,app,epiName,epiInfo,zmdPath):
 		pkgid=app.get_id()
 		bundles=app.get_bundles()
 		if len(bundles)==0:
@@ -171,11 +186,16 @@ class engine:
 					ebu.set_id(pkgid)
 					app.add_bundle(ebu)
 			bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
-			bun.set_id(epiName)
+			if zmdPath=="":
+				scriptName=script["name"]
+				scriptName="/".join(scriptName.split("/")[:-1])+"/{}".format(epiName)
+				bun.set_id(scriptName)
+			else:
+				bun.set_id(zmdPath)
 			app.add_bundle(bun)
 	#def _setBundleKind
 
-	def _getIncludedApps(self,epiName,epiData):
+	def _getIncludedApps(self,epiName,epiData,zmdPath):
 		apps=[]
 		seen=[]
 		if epiData.get("zomando")==None:
@@ -191,7 +211,7 @@ class engine:
 				app.set_id(pkgid)
 				self._setDefaultInfo(app,pkg,epiName)
 				self._setIcon(app,pkg)
-				self._setBundleKind(app,epiName,epiInfo)
+				self._setBundleKind(app,epiName,epiInfo,zmdPath)
 				if app.get_id() not in seen:
 					apps.append(app)
 					seen.append(app.get_id())
@@ -267,20 +287,23 @@ class engine:
 	#def _appendIncludedApps
 
 	def _addExtendedInfo(self,epiData,app,apps):
+		for l in self.core.langs:
+			app.set_name(l,epiData.get("zomando",app.get_id()))
+		app.set_name("C",epiData.get("zomando",app.get_id()))
 		if len(epiData.get("pkg_list",[]))==1:
 			summary=epiData["pkg_list"][0].get("custom_name",epiData.get("zomando"))
 		else:
 			summary=epiData.get("custom_name",epiData.get("zomando"))
+		localeCode="C"
+		if isinstance(summary,dict):
+			localeCode,summary=self._getLocalizedString(summary)
+		app.set_comment(localeCode,summary)
 		suggests=""
 		if len(apps)>0:
 			suggests=":"
 			for suggest in apps:
 				suggests+="\n - {}".format(suggest.get_name("C"))
 		description=summary+suggests
-		for l in self.core.langs:
-			app.set_name(l,epiData.get("zomando",app.get_id()))
-		app.set_name("C",epiData.get("zomando",app.get_id()))
-		app.set_comment("C",summary)
 		app.set_description("C",description)
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 		app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")
@@ -320,6 +343,7 @@ class engine:
 				self._debug("Processing {} ({})".format(epiName,len(epiData)))
 				fname=epiData.get("zomando")
 				if len(fname)>0:
+					zmdPath=os.path.join("/usr","share","zero-center","zmds","{}.zmd".format(epiData["zomando"]))
 					app=self.core.appstream.App()
 					app.set_id(self._getIdFromZmd(epiName))
 					app.add_pkgname(fname)
@@ -328,11 +352,11 @@ class engine:
 					icn=self._getIcon(fname)
 					if icn!=None:
 						app.add_icon(icn)
-					includedApps=self._getIncludedApps(epiName,epiData)
+					includedApps=self._getIncludedApps(epiName,epiData,zmdPath)
 					self._addExtendedInfo(epiData,app,includedApps)
 					apps.extend(self._appendIncludedApps(includedApps,app))
 					self._addSuggestedApps(apps,app)
-					self._addBundle(fname,app)
+					self._addBundle(zmdPath,app)
 					self._addRelease(app)
 					self._addCategoriesFromAppFile(fname,app)
 					if len(includedApps)>=1:

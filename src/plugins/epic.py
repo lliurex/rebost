@@ -69,13 +69,28 @@ class engine:
 		return epiInfo
 	#def _getEpiInfo
 
+	def _getLocalizedString(self,string):
+		#The type is variant: dict or string
+		localeCode="C"
+		for language in self.core.langs:
+			localeCode=language.lower().split("-")[0].split("@")[0]
+			if language in string.keys() or localeCode in string.keys():
+				localeString=string.get(language,string.get(localeCode,""))
+				break
+		return(localeCode,localeString)
+	#def _getLocalizedString
+
 	def _setDefaultInfo(self,app,pkg,epiName):
-		summary=pkg.get("custom_name",pkg["name"])
 		name=pkg["name"].strip()
 		if name.count(".")>1:
 			name=name.split(".")[-1]
 		app.set_name("C",name)
-		app.set_comment("C",summary)
+		#Epic files could have i18 so check the type for strings
+		summary=pkg.get("custom_name",pkg["name"])
+		localeCode="C"
+		if isinstance(summary,dict):
+			localeCode,summary=self._getLocalizedString(summary)
+		app.set_comment(localeCode,summary)
 		app.set_description("C","Included in {}".format(epiName))
 		app.add_pkgname(app.get_id())
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
@@ -272,20 +287,23 @@ class engine:
 	#def _appendIncludedApps
 
 	def _addExtendedInfo(self,epiData,app,apps):
+		for l in self.core.langs:
+			app.set_name(l,epiData.get("zomando",app.get_id()))
+		app.set_name("C",epiData.get("zomando",app.get_id()))
 		if len(epiData.get("pkg_list",[]))==1:
 			summary=epiData["pkg_list"][0].get("custom_name",epiData.get("zomando"))
 		else:
 			summary=epiData.get("custom_name",epiData.get("zomando"))
+		localeCode="C"
+		if isinstance(summary,dict):
+			localeCode,summary=self._getLocalizedString(summary)
+		app.set_comment(localeCode,summary)
 		suggests=""
 		if len(apps)>0:
 			suggests=":"
 			for suggest in apps:
 				suggests+="\n - {}".format(suggest.get_name("C"))
 		description=summary+suggests
-		for l in self.core.langs:
-			app.set_name(l,epiData.get("zomando",app.get_id()))
-		app.set_name("C",epiData.get("zomando",app.get_id()))
-		app.set_comment("C",summary)
 		app.set_description("C",description)
 		app.add_url(self.core.appstream.UrlKind.HOMEPAGE,"https://github.com/lliurex")
 		app.add_url(self.core.appstream.UrlKind.HELP,"https://wiki.edu.gva.es/lliurex/tiki-index.php")

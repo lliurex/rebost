@@ -81,6 +81,14 @@ class _RebostCore():
 		return(config)
 	#def _readConfig
 
+	def updateConfig(self):
+		config=self._readConfig()
+		if hasattr(self,"config"):
+			self.config.update(config)
+		else:
+			self.config=config
+	#def updateConfig(self)
+
 	def _chkRelease(self):
 		if os.path.exists(self.CACHE)==False:
 			os.makedirs(self.CACHE)

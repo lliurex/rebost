@@ -1,3 +1,16 @@
+rebost (3.3.4) jammy; urgency=medium
+
+  * flatpak:
+  *  Add mechanism for fix knowed apps with malformed id
+  * epic:
+  *  Remove zmd suffix
+  * rebostCore:
+  *  Preserve local icon
+  * rebostHelper:
+  *  Always use local icons
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Oct 2026 13:16:46 +0200
+
 rebost (3.3.3) jammy; urgency=medium
 
   * Add support for 18n epic 

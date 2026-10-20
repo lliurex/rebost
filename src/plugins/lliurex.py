@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+import os,subprocess,locale
+import gi
+from gi.repository import Gio
+
+mapFileDir="/usr/share/rebost-data/lists.d/"
+release=subprocess.check_output(["/usr/bin/lliurex-version","-n"],universal_newlines=True,encoding="utf8")
+release="llx{}".format(release.split(".")[0])
+YAML_DIR="/usr/share/rebost-data/yaml/{}".format(release)
+
+if not os.path.exists(YAML_DIR):
+	YAML_DIR=os.dirname(YAML_DIR)
+	for d in os.scandir(YAML_DIR):
+		if d.name.startswith("llx"):
+			release=d.name
+			YAML_DIR=os.path.join(YAML_DIR,release)
+			break
+
+class engine:
+	def __init__(self,core,*args,**kwargs):
+		self.core=core
+		self.dbg=self.core.DBG
+		self.cache=os.path.join(self.core.CACHE,"raw")
+		if not os.path.exists(self.cache):
+			os.makedirs(self.cache)
+		self.bundle=self.core.appstream.BundleKind.PACKAGE
+		self.name="lliurex"
+	#def __init__
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("lliurex: {}".format(msg))
+	#self _debug
+
+	def _chkNeedUpdate(self,fappstream):
+		return(True)
+	#def _chkNeedUpdate
+
+	def _fetchCatalogue(self,url=""):
+		if len(url)==0:
+			url=EDUAPPS_URL
+		content=''
+		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+		try:
+			with urlopen(req,timeout=2) as f:
+				content=(f.read().decode('utf-8'))
+		except Exception as e:
+			self._debug("Couldn't fetch {}".format(url))
+			self._debug(e)
+		return(content)
+	#def _fetchCatalogue
+
+	def getAppstreamData(self):
+		self._debug("Loading from specified locations")
+		store=self.core.appstream.Store()
+		if os.path.exists(YAML_DIR):
+			for f in os.scandir(YAML_DIR):
+				if f.name.endswith(".yml"):
+					store.from_file(Gio.File.parse_name(f.path),"/usr/share/rebost-data/icons/cache")
+					self._debug("Loading store from YAML: {}".format(f.path))
+		else:
+			self._debug("Can't find {}".format(fdir))
+		mapFixes=self.core.getMapFixes()
+		for app in store.get_apps(): #Add bundle for pkgs
+			if app.get_id().endswith("_zmd"):
+				app.set_id(app.get_id().removesuffix("_zmd"))
+			if app.get_id().endswith(".desktop"):
+				app.set_id(app.get_id().removesuffix(".desktop"))
+			if app.get_id() in mapFixes["nodisplay"] or app.get_name() in mapFixes["nodisplay"]:
+				self._debug("Discard {}".format(app.get_id()))
+				continue
+			app.set_origin("lliurex")
+			pkgnames=app.get_pkgnames()
+			if len(pkgnames)>0:
+				bun=self.core.appstream.Bundle()
+				bun.set_kind(self.bundle)
+				bun.set_id(pkgnames[0])
+				app.add_bundle(bun)
+		self._debug("Sending {}".format(store.get_size()))
+		return(store)
+	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		#Best effort to identify zomandos as packages and do things, a lot of them. Believe me.
+		bundles=app.get_bundles()
+		pkgname=app.get_pkgname_default()
+		appId=app.get_id()
+		mapping=self.core.getMapFixes()
+		if len(bundles)==1:
+			if appId==pkgname:
+				if appId.startswith("zero-lliurex"):
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(appId)
+					app.add_bundle(bun)
+		return(app)
+	#def refreshAppData
+
+	def getRawData(self,app):
+		store=self.getAppstreamData()
+		appData=store.get_app_by_id_ignore_prefix(app)
+		return(appData)
+	#def getRawData
+#class engine

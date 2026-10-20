@@ -1,0 +1,15 @@
+polkit.addRule(function(action, subject) {
+    if ( action.id == "net.lliurex.rebost.unlock") {
+	    if ( subject.active == true && subject.local == true && subject.isInGroup("sudo") ) return polkit.Result.AUTH_ADMIN;
+	    return polkit.Result.NO;
+    }
+});
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "net.lliurex.rebost.unlock.test") {
+	    if ( subject.active == true && subject.local == true && subject.isInGroup("sudo") ) return polkit.Result.YES;
+        return polkit.Result.NO;
+    }
+
+    return polkit.Result.NOT_HANDLED;
+});

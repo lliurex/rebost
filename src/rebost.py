@@ -1,0 +1,516 @@
+#!/usr/bin/python3
+import sys,os,time
+import concurrent.futures as Futures
+from rebostCore import _RebostCore
+import gi
+from gi.repository import Gio
+gi.require_version('AppStreamGlib', '1.0')
+from gi.repository import AppStreamGlib as appstream
+
+DBG=True
+
+class Rebost():
+	def __init__(self,*args,**kwargs):
+		self.core=_RebostCore()
+		self.dbg=self.core.DBG
+		self.resultQueue={}
+		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
+	#def __init__(self,*args,**kwargs):
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("rebost: {}".format(msg))
+	#def _debug
+
+	def _actionCallback(self,*args,**kwargs):
+		resultSet=args[0]
+		self.resultQueue[resultSet.arg]=resultSet
+	#def _actionCallback
+	
+	def _waitForCore(self):
+		initTime=int(time.time())
+		if len(self.core.stores)<=1 and self.core.ready!=True:
+			self.core.initCore()
+		while self.core.ready==False:
+			time.sleep(0.01)
+			if int(time.time())-initTime>20:
+				break
+	#def _waitForCore
+
+	def _chkAliasesChanges(self):
+		self._debug("Checking aliases")
+		if self.core.chkCacheNeedsUpdate()==True:
+			print("************ MAPPING CHANGES DETECTED **************")
+			print("************         RELOADING        **************")
+			self._restart()
+		self._debug("Checking aliases end")
+	#def _chkAliasesChanges
+
+	def _restart(self):
+		return(self.core.reload())
+	#def _restart
+
+	def restart(self):
+		proc=self.thExecutor.submit(self._restart)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def toggleLock
+
+	def _toggleLock(self):
+		st=self.core.config.get("onlyVerified",True)
+		self.core.config["onlyVerified"]=not(st)
+		self.core.loadToggle()
+		return(self.core.config)
+	#def _toggleLock
+
+	def toggleLock(self):
+		proc=self.thExecutor.submit(self._toggleLock)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def toggleLock
+
+	def _getSupportedFormats(self):
+		formats=[]
+		for bundle in self.core.supportedformats:
+			if bundle==appstream.BundleKind.PACKAGE:
+				formats.append("package")
+			elif bundle==appstream.BundleKind.FLATPAK:
+				formats.append("flatpak")
+			elif bundle==appstream.BundleKind.SNAP:
+				formats.append("snap")
+			elif bundle==appstream.BundleKind.APPIMAGE:
+				formats.append("appimage")
+			elif bundle==appstream.BundleKind.UNKNOWN:
+				formats.append("unknown")
+		formats=list(set(formats))
+		return(formats)
+	#def _getSupportedFormats
+
+	def getSupportedFormats(self):
+		proc=self.thExecutor.submit(self._getSupportedFormats)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getSupportedFormats
+
+	def _getConfig(self):
+		self.core.updateConfig()
+		return(self.core.config)
+	#def _getConfig
+
+	def getConfig(self):
+		proc=self.thExecutor.submit(self._getConfig)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getConfig
+
+	def _getMaps(self):
+		return(self.core.getMapFixes())
+	#def _getMaps
+
+	def getMaps(self):
+		proc=self.thExecutor.submit(self._getMaps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getMaps
+
+	def _getFreedesktopCategories(self):
+		#From freedesktop https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
+		result={"AudioVideo":["DiscBurning"],
+			"Audio":["Midi","Mixer","Sequencer","Tuner","Recorder","Player"],
+			"Video":["AudioVideoEditing","Player","Recorder","TV"],
+			"Development":["Building","Debugger","IDE","GUIDesigner","Profiling","RevisionControl","Translation","Database","ProjectManagement","WebDevelopment"],
+			"Education":["Art","Construction","Music","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","ImageProcessing","Literature","Maps","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","Spirituality","Sports","ParallelComputing"],
+			"Game":["ActionGame","AdventureGame","ArcadeGame","BoardGame","BlocksGame","CardGame","Emulator","KidsGame","LogicGame","RolePlaying","Shooter","Simulation","SportsGame","StrategyGame","LauncherStore"],
+			"Graphics":["2DGraphics","VectorGraphics","RasterGraphics","3DGraphics","Scanning","OCR","Photography","Publishing","Viewer"],
+			"Network":["Email","Dialup","InstantMessaging","Chat","IRCCLient","Feed","FileTransfer","HamRadio","News","P2P","RemoteAcces","Telephony","TelephonyTools","VideoConference","WebBrowser","WebDevelopment"],
+			"Office":["Calendar","ContactManagement","Database","Dictionary","Chart","Email","Finance","FlowChart","PDA","ProjectManagement","Presentation","Spreadsheet","WordProcessor","Photography","Publishing","Viewer"],
+			"Science":["Construction","Languages","ArtificialIntelligence","Astronomy","Biology","Chemistry","ComputerScience","DataVisualization","Economy","Electricity","Geography","Geology","Geoscience","History","Humanities","Literature","Math","NumericalAnalysis","MedicalSoftware","Physics","Robotics","ParallelComputing"],
+			"Settings":["Security","Accessibility"],
+			"System":["Security","Emulator","FileTools","FileManager","TerminalEmulator","FileSystem","Monitor"],
+			"Utility":["TextTools","TelephonyTools","Maps","Archiving","Compression","FileTools","Accessibility","Calculator","Clock","TextEditor"]
+			}
+		return(result)
+	#def _getFreedesktopCategories
+
+	def getFreedesktopCategories(self):
+		proc=self.thExecutor.submit(self._getFreedesktopCategories)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getFreedesktopCategories
+
+	def export(self,fxml=""):
+		return(self.core.export(fxml))
+	#def export
+
+	def _searchAppByUrl(self,search,kind):
+		result=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			searchItems=[search]
+			for app in self.core.stores["main"].get_apps():
+				appUrl=app.get_url_item(kind)
+				if "/es/" in search:
+					searchItems.append(search.replace("/es",""))
+				elif "/va/" in search:
+					searchItems.append(search.replace("/va",""))
+				elif "/ca/" in search:
+					searchItems.append(search.replace("/ca",""))
+				if appUrl in searchItems:
+					result.append(app)
+					break
+		return(result)
+	#def _searchAppByUrl
+
+	def searchAppByUrl(self,url,kind=None):
+		if kind==None:
+			kind=self.core.appstream.UrlKind.HOMEPAGE
+		proc=self.thExecutor.submit(self._searchAppByUrl,url,kind)
+		proc.arg=len(self.resultQueue)
+		self.resultQueue[proc.arg]=None
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def searchAppByUrl
+
+	def _searchApp(self,search):
+		result={}
+		self._waitForCore()
+		if self.core.ready==True:
+			tokens=self.core.appstream.utils_search_tokenize(search)
+			if len(tokens)==0:
+				tokens=search.split(" ")
+			for app in self.core.stores["main"].get_apps():
+				app.set_search_match(appstream.AppSearchMatch.ID|appstream.AppSearchMatch.NAME|appstream.AppSearchMatch.PKGNAME|appstream.AppSearchMatch.KEYWORD|appstream.AppSearchMatch.DESCRIPTION)
+				match=app.search_matches(tokens[0])
+				if len(tokens)>1:
+					for s in tokens[1:len(tokens)-1]:
+						match=int(app.search_matches(s)/2)
+				if match>10:
+					if match not in result.keys():
+						result[match]=[]
+					result[match].append(app)
+			if len(result)==0:
+				for app in self.core.stores["main"].get_apps():
+					if search in app.get_id():
+						if search not in result.keys():
+							result[search]=[]
+						result[search].append(app)
+		return(result)
+	#def _searchApp
+
+	def searchApp(self,search):
+		proc=self.thExecutor.submit(self._searchApp,search)
+		proc.arg=len(self.resultQueue)
+		self.resultQueue[proc.arg]=None
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def searchApp
+
+	def _showApp(self,show):
+		app=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			app=self.core.stores["main"].get_app_by_id_ignore_prefix(show)
+			if app==None:
+				mapping=self.core.getMapFixes()
+				if show in mapping.get("aliases",{}).keys():
+					self._debug("Unknown app {0}, mapped as {1}".format(show,mapping["aliases"][show]))
+					app=self.core.stores["main"].get_app_by_id_ignore_prefix(mapping["aliases"][show])
+			#REM this block search in all the appstream catalogues
+			#for i in self.core.stores.keys():
+			#	if isinstance(i,int):
+			#		itapp=self.core.stores[i].get_app_by_id_ignore_prefix(show)
+			#		if itapp!=None:
+			#			print(itapp.get_state())
+			#<---- REM
+		return(app)
+	#def _showApp
+
+	def showApp(self,show):
+		proc=self.thExecutor.submit(self._showApp,show)
+		proc.arg=len(self.resultQueue)
+		self.resultQueue[proc.arg]=None
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def showApp
+
+	def _refreshApp(self,appId):
+		self._waitForCore()
+		app=self._showApp(appId.lower())
+		if app!=None:
+			seen=[]
+			for bundle in app.get_bundles():
+				for pluginData in self.core.plugins.values():
+					if bundle.get_kind() in list(pluginData.keys()):
+						plugins=pluginData[bundle.get_kind()]
+						for plugin in plugins:
+							if plugin in seen:
+								continue
+							seen.append(plugin)
+							rapp=plugin.refreshAppData(app)
+							if rapp!=None:
+								app=rapp
+								#break
+		return(app)
+	#def _refreshApp
+
+	def refreshApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._refreshApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApp
+
+	def _refreshVerifiedApp(self,appId):
+		self._waitForCore()
+		app=self._refreshApp(appId.lower())
+		if app!=None:
+			seen=[]
+			verified=self.core.config["verifiedProvider"]
+			plugins=self.core.plugins
+			for plugin in plugins.values():
+				for b,engines in plugin.items():
+					for engine in engines:
+						if hasattr(engine,"name"):
+							if engine.name in verified:
+								app=engine.refreshAppData(app)
+		return(app)
+	#def _refreshVerifiedApp
+
+	def refreshVerifiedApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._refreshVerifiedApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def refreshApp
+
+	def _addAppFromYml(self,fyml,bundle):
+		self._waitForCore()
+		tmpStore=appstream.Store()
+		if os.path.isfile(fyml):
+			try:
+				tmpStore.set_origin("lliurex")
+				tmpStore.from_file(Gio.File.parse_name(fyml),"/usr/share/rebost-data/icons/cache")
+			except Exception as e:
+				print("Error pargins {0}: {1}".format(fyml,e))
+		else:
+			print("XML File not found: {}".format(fyml))
+		app=None
+		apps=tmpStore.get_apps()
+		if len(apps)>0:
+			app=apps[0]
+			if app!=None:
+				originId=app.get_id()
+				print("Id: {}".format(originId))
+				mergeApp=self.core._preMergeApp(app)
+				tmpid=mergeApp.get_id()
+				oldApp=self.core.stores["main"].get_app_by_id(tmpid)
+				if oldApp==None:
+					oldApp=self.core.stores["main"].get_app_by_id(originId.lower())
+					if oldApp!=None:
+						oldApp.set_id(tmpid)
+				if oldApp!=None:
+					try:
+						self.core.stores["main"].remove_app(oldApp)
+						mergeApp=self.core._doSubsumeApps(mergeApp,oldApp)
+					except Exception as e:
+						self._error(e,msg="_mergeApps")
+				#oldApp=self.core.stores["mainB"].get_app_by_id(tmpid)
+				noDsp=self.core.getMapFixes().get("display",[])
+				if mergeApp.get_id() in noDsp or mergeApp.get_name() in noDsp:
+					self._debug("Hidden -> {}".format(mergeApp.get_name()))
+					mergeApp.add_metadata("X-REBOST-hidden","{}".format(name))
+				#if oldApp!=None:
+				#	mergeApp.set_origin("verified")
+				#	self.core.stores["mainB"].add_app(mergeApp)
+				mergeApp.set_origin("unverified")
+				pkgname=mergeApp.get_pkgname_default()
+				if pkgname==None:
+					appId=mergeApp.get_id().removesuffix(".desktop")
+					pkgname=appId.split(".")[-1].lower()
+					mergeApp.add_pkgname(pkgname)
+				for bundleKind,bundleId in bundle.items():
+					bun=self.core.appstream.Bundle()
+					if bundleKind=="package":
+						bun.set_kind(self.core.appstream.BundleKind.PACKAGE)
+					elif bundleKind=="snap":
+						bun.set_kind(self.core.appstream.BundleKind.SNAP)
+					elif bundleKind=="flatpak":
+						bun.set_kind(self.core.appstream.BundleKind.FLATPAK)
+					elif bundleKind=="appimage":
+						bun.set_kind(self.core.appstream.BundleKind.APPIMAGE)
+					else:
+						bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(bundleId)
+					mergeApp.add_bundle(bun)
+				if len(mergeApp.get_bundles())==0:
+					bun=self.core.appstream.Bundle()
+					bun.set_kind(self.core.appstream.BundleKind.UNKNOWN)
+					bun.set_id(mergeApp.get_pkgname_default())
+					mergeApp.add_bundle(bun)
+				self.core.stores["main"].add_app(mergeApp)
+		return(app)
+	#def _addAppFromYml
+
+	def addAppFromYml(self,fyml,bundle={}):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._addAppFromYml,fyml,bundle)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def addAppFromYml
+
+	def _getRawApp(self,app):
+		self._waitForCore()
+		apps=[]
+		for pluginData in self.core.plugins.values():
+			for plugins in pluginData.values():
+				for plugin in plugins:
+					if hasattr(plugin,"getRawData"):
+						rapp=plugin.getRawData(app)
+						apps.append(rapp)
+						break
+		return(apps)
+	#def _getRawApp(self,appId):
+
+	def getRawApp(self,appId):
+		self._chkAliasesChanges()
+		proc=self.thExecutor.submit(self._getRawApp,appId)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getRawApp
+
+	def _getCategories(self):
+		apps=[]
+		categories=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			cats=app.get_categories()
+			categories.extend(cats)
+			categories=list(set(categories))
+		return(categories)
+	#def _getCategories
+
+	def getCategories(self):
+		proc=self.thExecutor.submit(self._getCategories)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getCategories
+
+
+	def _getApps(self):
+		apps=[]
+		self._waitForCore()
+		if self.core.ready==True:
+			apps=self.core.stores["main"].get_apps()
+		for app in apps:
+			metadata=app.get_metadata()
+			for key in metadata.keys():
+				if key.startswith("X-REBOST"):
+					if "installed" in metadata[key].lower():
+						app.set_state(appstream.AppState.INSTALLED)
+		return(apps)
+	#def _getApps
+		
+	def getApps(self):
+		proc=self.thExecutor.submit(self._getApps)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getApps
+
+	def _getAppsPerCategory(self):
+		apps=[]
+		categoryapps={}
+		self._waitForCore()
+		apps=self._getApps()
+		for app in apps:
+			cats=app.get_categories()
+			for cat in cats:
+				if not cat in categoryapps.keys():
+					categoryapps[cat]=[]
+				categoryapps[cat].append(app)
+		return(categoryapps)
+	#def _getAppsPerCategory
+
+	def getAppsPerCategory(self):
+		proc=self.thExecutor.submit(self._getAppsPerCategory)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getAppsPerCategories
+
+	def _getAppsInstalled(self):
+		apps=[]
+		installed=[]
+		self._waitForCore()
+		apps=self._getApps()
+		for app in apps:
+			if app.get_name()==None:
+				continue
+			if app.get_state()==appstream.AppState.INSTALLED:
+				installed.append(app)
+		return(installed)
+	#def _getInstalledApps
+
+	def getAppsInstalled(self):
+		proc=self.thExecutor.submit(self._getAppsInstalled)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getAppsInstalled
+
+	def _setStateForApp(self,appId,appState,bundle,temp):
+		app=self.core.stores["main"].get_app_by_id_ignore_prefix(appId)
+		if app!=None:
+			app.set_state(appState)
+			if bundle!=None:
+				metadata=app.get_metadata()
+				mkey="X-REBOST-{}".format(bundle)
+				if appState==appstream.AppState.INSTALLED:
+					state="installed"
+				else:
+					state="available"
+				if mkey in metadata.keys():
+					app.remove_metadata(mkey)
+				release=metadata[mkey].split(";")[0]
+				app.add_metadata(mkey,"{};{}".format(release,state))
+			if temp==False:
+				self.core.stores["main"].remove_app_by_id(app.get_id())
+				self.core.stores["main"].add_app(app)
+				self.core.export()
+		return(app)
+	#def _setStateForApp
+
+	def setStateForApp(self,appId,appState,bundle=None,temp=True):
+		proc=self.thExecutor.submit(self._setStateForApp,appId,appState,bundle,temp)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def setStateForApp
+
+	def _getExternalInstaller(self):
+		installer=""
+		self._waitForCore()
+		if self.core.ready==True:
+			installer=self.core.getExternalInstaller()
+		return(installer)
+	#def _getExternalInstaller
+
+	def getExternalInstaller(self):
+		proc=self.thExecutor.submit(self._getExternalInstaller)
+		proc.arg=len(self.resultQueue)
+		proc.add_done_callback(self._actionCallback)
+		return(proc)
+	#def getExternalInstaller

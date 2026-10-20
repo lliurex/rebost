@@ -1,0 +1,11 @@
+[Unit]
+Description=rebost d-bus server
+
+[Service]
+BusName=net.lliurex.rebost
+ExecStart=/usr/share/rebost/rebost-dbus.py
+Type=dbus
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

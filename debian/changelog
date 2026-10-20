@@ -1,3 +1,273 @@
+rebost (3.3.4.1) noble; urgency=medium
+
+  * flatpak:
+  *  Add mechanism for fix knowed apps with malformed id
+  * epic:
+  *  Remove zmd suffix
+  * rebostCore:
+  *  Preserve local icon
+  * rebostHelper:
+  *  Always use local icons
+  * config:
+  *  Use new store installer
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Oct 2026 12:37:28 +0200
+
+rebost (3.3.2) noble; urgency=medium
+
+  * Use all pkgnames for nodisplay filters
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 17 Sep 2026 12:37:51 +0200
+
+rebost (3.3.1) noble; urgency=medium
+
+  * Fix nodisplay filter
+  * Appsedu:
+  *  Fix typo in auth state detection
+  * Epic:
+  *  Improve icon assignment
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 08 Sep 2026 09:06:44 +0200
+
+rebost (3.3.0) noble; urgency=medium
+  * Only fill well-known info
+  * Change subsume of info
+  * Centralize mapping in core
+  * Reloading data cleans cache subdirs
+  * Don't launch twice refreshApp on same plugin
+  * Implement refreshAppFromVerified: only from verified sources
+  * Give permissions to all for listing categories
+  * Epic:
+  *  Discard single app zmds
+  *  Improve refreshApp
+  *  Add zomando as category
+  * Snap:
+  *  Use name for pkgname
+  * Appimage:
+  *  Cache per url
+  * Appsedu:
+  *  Use ca as base lang
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 03 Sep 2026 12:13:25 +0200
+
+rebost (3.2.9) noble; urgency=medium
+
+  * Add apps from yml files
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 22 Jul 2026 11:56:00 +0200
+
+rebost (3.2.8.1) noble; urgency=medium
+
+  * Epic:
+  *  Include package bundle for apt and deb
+  *  Fix call to showinfo when epiName was malformed
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 13:42:40 +0200
+
+rebost (3.2.8) noble; urgency=medium
+
+  * Epic:
+  *  Try to figure bundle kind from custom_name
+  * Snap_rest:
+  *  Plugin that uses rest api from snapcraft (disabled ATM)
+  * Snap:
+  *  Method for getting classic snaps (disabled ATM)
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 03 Jul 2026 11:24:03 +0200
+
+rebost (3.2.7.4) noble; urgency=medium
+
+  * Appimage:
+  *  Fix loop on dns error
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 19:44:16 +0200
+
+rebost (3.2.7.3) noble; urgency=medium
+
+  * Epic:
+  *  Catch timeout when getting system packages
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 01 Jul 2026 14:37:09 +0200
+
+rebost (3.2.7.2) noble; urgency=medium
+
+  * Fix appimage exception if no appimage folder
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 15 Jun 2026 08:41:32 +0200
+
+rebost (3.2.7.1) noble; urgency=medium
+
+  * Improve status check for appimage and flatpak
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 04 Jun 2026 08:13:40 +0200
+
+rebost (3.2.7) noble; urgency=medium
+
+  * Centralize maps in core
+  * Implement cache for remote map files
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 11 May 2026 07:36:47 +0200
+
+rebost (3.2.6) noble; urgency=medium
+
+  * Search by regex if tokens doesn't find anything
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 09 Apr 2026 13:54:22 +0200
+
+rebost (3.2.5-0llx25) noble; urgency=medium
+
+  * Add hidden apps
+  * Hide zmds with only one app
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 13 Mar 2026 17:50:43 +0100
+
+rebost (3.2.4-0llx25) noble; urgency=medium
+
+  * FIX epic exception if invalid user
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 02 Mar 2026 11:26:43 +0100
+
+rebost (3.2.3.1-0llx25) noble; urgency=medium
+
+  * Check origins for cache
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 16 Feb 2026 10:28:20 +0100
+
+rebost (3.2.3-0llx25) noble; urgency=medium
+
+  * Fix NONE as value for urlkind.details in appimage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 13 Feb 2026 12:23:25 +0100
+
+rebost (3.2.2-0llx25) noble; urgency=medium
+
+  * Epic plugin supports refreshing app data
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 05 Feb 2026 12:20:33 +0100
+
+rebost (3.2.1-2llx25) noble; urgency=medium
+
+  * Improve refresh info for apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 04 Feb 2026 09:55:04 +0100
+
+rebost (3.2.0-0llx25) noble; urgency=medium
+
+  * Add support for appsedu webapps 
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 26 Dec 2025 09:11:10 +0100
+
+rebost (3.1.3-0llx25) noble; urgency=medium
+
+  * Force set state from xml
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Dec 2025 17:21:13 +0100
+
+rebost (3.1.2.1-0llx25) noble; urgency=medium
+
+  * Refresh cache on demand
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 23 Dec 2025 09:44:23 +0100
+
+rebost (3.1.2-0llx25) noble; urgency=medium
+
+  * Appimage: refresh download link on demand
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 10 Dec 2025 12:58:07 +0100
+
+rebost (3.1.1-1llx25) noble; urgency=medium
+
+  * Set origin for apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 01 Dec 2025 07:43:54 +0100
+
+rebost (3.1.0-0llx25) noble; urgency=medium
+
+  * Rebost switch from per-user dbus service to systemd unit
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 24 Nov 2025 18:29:00 +0100
+
+rebost (3.0.4-0llx25) noble; urgency=medium
+
+  * BUG: epic plugin was not stripping pkg names
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 20 Nov 2025 16:53:14 +0100
+
+rebost (3.0.3-0llx25) noble; urgency=medium
+
+  * Add dbus method for get pending apps
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 20 Nov 2025 12:42:47 +0100
+
+rebost (3.0.2-0llx25) noble; urgency=medium
+
+  * Try to set appsedu pending apps based on the various auth states
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 19 Nov 2025 07:42:19 +0100
+
+rebost (3.0.1-2llx25) noble; urgency=medium
+
+  * Stable release
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 29 Oct 2025 11:14:37 +0100
+
+rebost (3.0.1-2llx25) noble-testing; urgency=medium
+
+  * Preserve full app state as metadata
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 24 Oct 2025 13:12:21 +0200
+
+rebost (3.0.0-1llx25) noble-testing; urgency=medium
+
+  * Remove sql support
+  * Full appstream support
+  * sqlmanager set as deprecated
+  * Non-compatible with <3.0
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 08 Sep 2025 12:32:57 +0200
+
+rebost (2.7.2.1-0llx25) noble; urgency=medium
+
+  * Fix null value in infopage
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 29 Jul 2025 09:31:38 +0200
+
+rebost (2.7.2-0llx25) noble; urgency=medium
+
+  * Use map (local and remote) for info fixes
+
+ -- Juanma1980 <juanma1980@gmail.com>  Fri, 25 Jul 2025 12:36:46 +0200
+
+rebost (2.7.1.7-1llx25) noble; urgency=medium
+
+  * Sync with jammy
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 10 Jul 2025 12:00:28 +0200
+
+rebost (2.7.1.6-0llx25) noble; urgency=medium
+
+  * Support orphaned zmds
+  * Don't include non-conformant info when exporting yml
+  * Enable cache if sql token is present
+  * Deep search for zmd icons (even if orphaned)
+  * Restore from critical error
+
+ -- Juanma1980 <juanma1980@gmail.com>  Thu, 19 Jun 2025 12:46:55 +0200
+
+rebost (2.7.1.4-1llx25) noble; urgency=medium
+
+  * Sync with jammy
+
+ -- Juanma1980 <juanma1980@gmail.com>  Wed, 11 Jun 2025 11:35:01 +0200
+
+rebost (2.7.1.3-1llx25) noble; urgency=medium
+
+  * Add getFreedesktopCategories
+  * Update aliases tree
+  * Change zmd behavior
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 19 May 2025 14:01:22 +0200
+
 rebost (2.7.0-0llx25) noble; urgency=medium
 
   * Sync with jammy

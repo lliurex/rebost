@@ -1,648 +1,706 @@
-#!/usr/bin/env python3
-import sys
-import importlib
-import requests
-import os,shutil,stat
-import multiprocessing
-import threading
-import time
+#!/usr/bin/python3
+import sys,os,time
+import traceback
 import json
-import signal
-import subprocess
+import importlib.util
+import xml.etree.ElementTree as ET
+import html
+import locale
+import concurrent.futures as Futures
+from urllib.request import Request,urlopen
 import gi
+from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
 
-class Rebost():
+DBG=True
+SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
+#CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
+CACHE=os.path.join("/var","cache","rebost")
+CONFIG="/usr/share/rebost/rebost.conf"
+DATA="/usr/share/rebost-data"
+
+
+class _RebostCore():
 	def __init__(self,*args,**kwargs):
-		self.dbg=False
-		self.propagateDbg=True
-		self.dbCache="/tmp/.cache/rebost"
-		self.rebostWrkDir=os.path.join(self.dbCache,os.environ.get("USER"))
-		self._iniCache()
-		self.confFile=os.path.join(self.rebostPath,"store.json")
-		self.includeFile=os.path.join(self.rebostPath,"lists.d")
-		self.rebostPathTmp=os.path.join(self.rebostWrkDir,"tmp")
-		self.plugDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
-		self.plugins={}
-		self.pluginInfo={}
-		self.plugAttrMandatory=["enabled","packagekind","priority","actions"]
-		self.plugAttrOptional=["user","autostartActions","postAutostartActions"]
-		self.process={}
-		if os.path.exists(self.confFile)==False:
-			if os.path.exists(self.rebostPath)==False:
-				os.makedirs(self.rebostPath)
-			shutil.copy2("/usr/share/rebost/store.json",self.confFile)
-		else:
-			with open(self.confFile,"r") as f:
-				fcontent=f.read()
-				if isinstance(fcontent,str)==False:
-					fcontent="{}"
-				elif len(fcontent)==0:
-					fcontent="{}"
-				usrconf=json.loads(fcontent)
-			with open ("/usr/share/rebost/store.json","r") as f:
-				sysconf=json.loads(f.read())
-			if len(usrconf)!=len(sysconf):
-				usrconf=sysconf.copy()
-				usrconf["release"]="-1"
-			if sysconf.get("release","")!=usrconf.get("release","-1"):
-				usrconf.update({"release":sysconf.get("release","")})
-				with open(self.confFile,"w") as f:
-					json.dump(usrconf, f, ensure_ascii=False, indent=4)
-				self._cleanData(force=True)
+		self.dbg=DBG
+		self.SCHEMES=SCHEMES
+		self.CACHE=CACHE
+		self.DATA=DATA
+		self.DBG=DBG
+		self.appstream=appstream
+		self.stores={}
+		self.lastCheckedMapping=0
+		self.initProc=0
 		self.store=appstream.Store()
-		self.config={}
-		self.procId=1
-		signal.signal(signal.SIGALRM,self._launchRebostUpdated)
-	#def __init__(self,*args,**kwargs):
-
-	def _iniCache(self):
-		#Preserve cache 
-		#if os.path.exists(self.rebostWrkDir)==True:
-		#	for f in os.scandir(self.rebostWrkDir):
-		#		if os.path.isfile(f.path):
-		#			if f.path.endswith(".db"):
-		#				os.unlink(f.path)
-		#		elif os.path.isdir(f.path):
-		#			for fd in os.scandir(f.path):
-		#				if os.path.isfile(fd.path):
-		#					os.unlink(fd.path)
-		#	#shutil.rmtree(self.rebostWrkDir)
-		#else:
-		if os.path.exists(self.rebostWrkDir)==False:
-			os.makedirs(self.rebostWrkDir)
-		try:
-			os.chmod(self.dbCache,stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
-		except:
-			pass
-		finally:
-			os.chmod(self.rebostWrkDir,stat.S_IRWXU)
-		home=os.environ.get("HOME",self.dbCache)
-		if len(home)>0:
-			self.cache=os.path.join(home,".cache","rebost")
-		else:
-			self.cache=self.rebostWrkDir
-		self.rebostPath=os.path.join(home,".config","rebost")
-	#def _iniCache
-	
-	def _launchRebostUpdated(self,*args,**kwargs):
-		self._copyTmpToCache()
-		self._log("Cache restored")
-		signal.raise_signal(signal.SIGUSR2)
-	#def _launchRebostUpdated(self,*args,**kwargs):
-
-	def run(self):
-		self._log("Starting rebost")
-		self._loadPlugins()
-		self._log("Plugins loaded")
-		self._loadPluginInfo()
-		self._log("Plugins processed")
-		self.mode=""
-		self._processConfig()
-		if self.mode=="appsedu":
-			print("********* APPSEDU MODE ENABLED ********")
-		self._log("Config readed")
-		if self._copyCacheToTmp()==True:
-			self._log("Cache enabled")
-			self._beginAutostartActions()
-		else:
-			self._log("Cache unavailable")
-			self._autostartActions()
-		self._log("Autostart ended.")
-	#def run
-
-	def _log(self,msg):
-		print("rebost: {}".format(msg))
-		try:
-			with open("/var/log/rebost.log","a") as f:
-				f.write("{}\n".format(msg))
-		except:
-			pass
-	#def _log
+		self.stores={"main":self.store}
+		self.supportedformats=[]
+		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
+		self.ready=False
+		self.config=self._readConfig()
+		self._chkRelease()
+		localLangs=[]
+		for localLang in locale.getlocale():
+			if "_" in localLang:
+				localLangs.append(localLang.split("_")[0])
+				localLangs.append(localLang.split("_")[-1].lower())
+		if "ca" in localLangs:
+			idx=localLangs.index("ca")
+			localLangs.insert(idx+1,"ca-valencia")
+			localLangs.insert(idx+1,"ca@valencia")
+		localLangs.insert(0,"C")
+		self.langs=list(set(localLangs))
+		self.plugins=self._loadPlugins()
+		self._debug("Supported formats: {}".format(self.supportedformats))
+		self.getMapFixes()
+		#self._initCore()
+	#def __init__
 
 	def _debug(self,msg):
-		if self.dbg:
-			print("rebost: {}".format(msg))
+		if self.dbg==True:
+			print("core: {}".format(msg))
 	#def _debug
-	
-	def _setGuiEnabled(self,state):
-		self._debug("Set gui mode: {}".format(state))
-		self.gui=state
 
-	def _setPluginDbg(self):
-		for plugin,pluginObject in self.plugins.items():
-			try:
-				pluginObject.setDebugEnabled(self.dbg)
-			except Exception as e:
-				print(e)
-	#def _setPluginDbg
+	def _error(self,e,msg=""):
+		print("{}: {}\n<------ TRACEBACK ------>".format(msg,e))
+		print(traceback.format_exc())
+		print ("<------ TRACEBACK -----/>")
+	#def _error
 
-	####
-	#Load and register the plugins from plugin dir
-	####
-	def _loadPlugins(self):
-		self._debug("Accessing {}".format(self.plugDir))
-		disabledPlugins={}
-		if os.path.isdir(self.plugDir):
-			sys.path.insert(1,self.plugDir)
-			for plugin in os.listdir(self.plugDir):
-				if plugin.endswith(".py") and plugin!='__init__.py':
-					try:
-						imp=importlib.import_module((plugin.replace(".py","")))
-						#Get plugin status
-						if "rebostHelper" not in plugin:
-							pluginObject=imp.main()
-						else:
-							pluginObject=imp
-					except Exception as e:
-						self._log("Failed importing {0}: {1}".format(plugin,e))
-						continue
-					if "rebostHelper" in plugin:
-						enabled=True
-					else:
-						enabled=self._getPluginEnabled(pluginObject)
-					if enabled!=False:
-						self.plugins[plugin.replace(".py","")]=pluginObject
-						if enabled:
-							print("Plugin loaded: {}".format(plugin))
-						else:
-							print("{} will set its status".format(plugin))
-					else:
-						self._debug("Plugin disabled: {}".format(plugin))
-						disabledPlugins[plugin.replace(".py","")]=False
-		if len(disabledPlugins)>0:
-			self._writeConfig(disabledPlugins)
-	#def _loadPlugins
-
-	def _getPluginEnabled(self,pluginObject):
-		enabled=None
-		if 'enabled' in pluginObject.__dict__.keys():
-			enabled=pluginObject.enabled
-		return enabled
-	#def _getPluginEnabled
-
-	def _loadPluginInfo(self):
-		delPlugins=[]
-		for plugin,pluginObject in self.plugins.items():
-			mandatory=self.plugAttrMandatory.copy()
-			plugInfo={}
-			for item,value in pluginObject.__dict__.items():
-				if item in mandatory or item in self.plugAttrOptional:
-					plugInfo["{}".format(item)]=value
-					if item=="user":
-						pluginObject.__dict__[item]="lliurex"
-				if item in mandatory:
-					mandatory.remove(item)
-			if len(mandatory)>0:
-				#Disable plugin as not all values have been set
-				if plugin!="rebostHelper":
-					print("Disable {} as faulting values: {}".format(plugin,mandatory))
-					delPlugins.append(plugin)
-				else:
-					pluginObject.setDebugEnabled(self.dbg)
-			else:
-				self.pluginInfo[plugin]=plugInfo
-				if self.propagateDbg:
-					try:
-						pluginObject.setDebugEnabled(self.dbg)
-					except Exception as e:
-						print(e)
-		for plugin in delPlugins:
-			del(self.plugins[plugin])
-	#def _loadPluginInfo
-
-	def _writeConfig(self,config):
-		return()
-		cfg=self._readConfig()
-		cfgFile=self.confFile
-		for key,value in config.items():
-			key=key.replace("Helper","")
-			cfg[key]=value
-		if os.path.isfile(cfgFile):
-			with open(cfgFile,'w') as f:
-				try:
-					f.write(json.dumps(cfg,skipkeys=True))
-				except:
-					pass
-	#def _writeConfig
-
-	def _processConfig(self):
-		cfg=self._readConfig()
-		for plugin,state in cfg.items():
-			if state==True:
-				self._enable(plugin)
-			else:
-				self._disable(plugin)
-		self.restricted=cfg.get("restricted",True)
-		self.mainTableForRestrict=cfg.get("maintable","")
-		self.forceApps=cfg.get("forceApps",{})
-		self.mode=cfg.get("mode","")
-	#def _processConfig
+	def setConfigValue(self,key,value):
+		self.config.update({key:value})
+	#def setConfigValue
 
 	def _readConfig(self):
-		cfg={}
-		include={}
-		sysConf="/usr/share/rebost/store.json"
-		#print("Reading {}".format(self.confFile))
-		print("Reading {}".format(sysConf))
-		if os.path.isfile(sysConf):
-			with open(sysConf,'r') as f:
-				try:
-					cfg=json.loads(f.read())
-				except:
-					pass
-		if os.path.isfile(self.includeFile):
-			with open(self.includeFile,'r') as f:
-				try:
-					include=json.loads(f.read())
-				except:
-					pass
-		if len(include)>0:
-			cfg["forceApps"]=include
-		return(cfg)
+		config={}
+		if os.path.isfile(CONFIG):
+			fcontent=""
+			with open(CONFIG,"r") as f:
+				fcontent=f.read()
+			config=json.loads(fcontent)
+		return(config)
 	#def _readConfig
 
-	def _enable(self,bundle):
-		swEnabled=False
-		tmpPath="/usr/share/rebost/tmp"
-		if os.path.isdir(tmpPath) and len(bundle)>=4:
-			prefix=bundle[0]+bundle[3]
-			if prefix:
-				for f in os.listdir(tmpPath):
-					if f.startswith(prefix):
-						swEnabled=True
-						break
-		if swEnabled==False:
-			if os.path.isfile(os.path.join(tmpPath,"sq.lu")):
-				os.remove(os.path.join(tmpPath,"sq.lu"))
-	#def _enable
-
-	def _disable(self,bundle):
-		disable=[]
-		for plugin,data in self.pluginInfo.items():
-			if data.get("packagekind","")==bundle:
-				disable.append(plugin)
-		tables={"eduapp":"eduapps.db","zomando":"zomandos.db","package":"packagekit.db","flatpak":"flatpak.db","snap":"snap.db","appimage":"appimage.db"}
-		for plugin in disable:
-			self._debug("Config disable {}".format(plugin))
-			del(self.pluginInfo[plugin])
-			table=tables.get(bundle,"")
-			if len(table)>0:
-				self._debug("Deleting table {}".format(table))
-				tpaths=[os.path.join(self.rebostWrkDir,table),os.path.join(self.cache,table)]
-				for tpath in tpaths:
-					if os.path.isfile(tpath):
-						os.remove(tpath)
-						self._debug(" - Deleting {}".format(tpath))
-				prefix=plugin[0]+plugin[3]
-				fprefixes=[os.path.join(self.rebostPathTmp,"{}.lu".format(prefix.lower())),os.path.join(self.cache,"tmp","{}.lu".format(prefix.lower()))]
-				for fprefix in fprefixes:
-					if os.path.isfile(fprefix):
-						os.remove(fprefix)
-		if len(disable)>0:
-			if os.path.isfile(os.path.join(self.rebostPathTmp,"sq.lu")):
-				os.remove(os.path.join(self.rebostPathTmp,"sq.lu"))
-		return()
-	#def _disable
-
-	def _chkNetwork(self):
-		def trace_function(frame, event, arg):
-			if time.time() - start > TOTAL_TIMEOUT:
-				raise Exception('Timed out!') # Use whatever exception you consider appropriate.
-
-			return trace_function
-		##
-		TOTAL_TIMEOUT = 1
-		start = time.time()
-		sys.settrace(trace_function)
-
-		sw=True
-		try:
-			res = requests.get('http://lliurex.net/jammy/', timeout=(1, 2)) # Use whatever timeout values you consider appropriate.
-		except:
-			sw=False
-		finally:
-			sys.settrace(None) # Remove the time constraint and continue normally.
-		return sw
-	#def _chkNetwork
-
-	def _copyCacheToTmp(self):
-		copied=False
-		tmpCache=os.path.join(self.cache,"tmp")
-		if os.path.exists(tmpCache):
-			sqLu=os.path.join(self.rebostPathTmp,"sq.lu")
-			if os.path.exists(sqLu)==True:
-				return()
-			elif os.path.exists(self.rebostPathTmp)==False:
-				os.makedirs(self.rebostPathTmp)
-			print(sqLu)
-			for db in os.scandir(self.cache):
-				if db.path.endswith(".db"):
-					shutil.copy2(db.path,os.path.join(self.rebostWrkDir,db.name))
-					if copied==False:
-						copied=True
-					self._debug("Copy: {0} -> {1}".format(db.path,os.path.join(self.rebostWrkDir,db.name)))
-			for lu in os.scandir(tmpCache):
-				if lu.path.endswith(".lu"):
-					shutil.copy2(lu.path,os.path.join(self.rebostPathTmp,lu.name))
-					self._debug("Copy: {0} -> {1}".format(lu.path,os.path.join(self.rebostWrkDir,lu.name)))
-		return(copied)
-	#def _copyCacheToTmp
-
-	def _copyTmpToCache(self):
-		if os.path.exists(self.cache)==False:
-			os.makedirs(self.cache)
-		if os.path.exists(self.rebostPathTmp):
-			for db in os.scandir(self.rebostWrkDir):
-				if db.path.endswith(".db"):
-					shutil.copy2(db.path,"{}/{}".format(self.cache,db.name))
-					self._debug("Restore db: {0} -> {1}".format(db.path,os.path.join(self.cache,db.name)))
-			tmpCache=os.path.join(self.cache,"tmp")
-			if os.path.exists(tmpCache)==False:
-				os.makedirs(tmpCache)
-			for lu in os.scandir(self.rebostPathTmp):
-				if lu.path.endswith(".lu"):
-					shutil.copy2(lu.path,os.path.join(tmpCache,lu.name))
-					self._debug("Save: {0} -> {1}".format(lu.path,os.path.join(tmpCache,lu.name)))
-	#def _copyTmpToCache
-
-	def _beginAutostartActions(self):
-		proc=multiprocessing.Process(target=self._autostartActions,daemon=False)
-		proc.start()
-	#def _beginAutostartActions
-		
-	def _autostartActions(self):
-		actionDict={}
-		postactionDict={}
-		postactions=[]
-		actions=[]
-		for plugin,info in self.pluginInfo.items():
-			actions=info.get('autostartActions',[])
-			packagekind=info.get("packagekind","*")
-			if self.forceApps.get(packagekind,{})!={}:
-				if hasattr(self.plugins[plugin],"forceApps"):
-					self.plugins[plugin].forceApps=self.forceApps[packagekind]
-				
-			postactions=info.get('postAutostartActions',[])
-			if len(actions)>0:
-				self._debug("Loading autostart actions for {}".format(plugin))
-				priority=info.get('priority',0)
-				newDict=actionDict.get(priority,{})
-				newDict[plugin]=actions
-				network=self._chkNetwork()
-				if network==True or priority==100:
-					actionDict[priority]=newDict.copy()
-				else:
-					print("Error autostart {}: Network error".format(plugin))
-					#actionDict[priority]=newDict.copy()
-			if len(postactions)>0:
-				priority=info.get('priority',0)
-				newDictPost=postactionDict.get(priority,{})
-				newDictPost[plugin]=postactions
-				postactionDict[priority]=newDictPost.copy()
-		#Launch actions by priority
-		actionList=list(actionDict.keys())
-		actionList.sort(reverse=False)
-		procList=[]
-		for priority in actionList:
-			for plugin,actions in actionDict[priority].items():
-				for action in actions:
-					try:
-						procList.append(self._execute(action,'','',plugin=plugin,th=False))
-					except Exception as e:
-						self._debug("Error launching {} from {}: {}".format(action,plugin,e))
-						self._log("Error launching {} from {}: {}".format(action,plugin,e))
-						print("Error launching {} from {}: {}".format(action,plugin,e))
-		for proc in procList:
-			if isinstance(proc,threading.Thread):
-				proc.join()
-			elif isinstance(proc,multiprocessing.Process):
-				proc.join()
-		self._debug("postactions: {}".format(postactionDict))
-		if len(postactionDict)>0:
-			actionList=list(postactionDict.keys())
-			actionList.sort(reverse=False)
-			procList=[]
-			for priority in actionList:
-				self._debug("Launching postactions")
-				for plugin,actions in postactionDict[priority].items():
-					for action in actions:
-						try:
-							pr=self._execute(action,'','',plugin=plugin,th=True)
-							pr.join()
-						except Exception as e:
-							self._debug("Error launching {} from {}: {}".format(action,plugin,e))
-		self._launchRebostUpdated()
-	#def _autostartActions
-	
-	def execute(self,action,package='',extraParms=None,extraParms2=None,user='',n4dkey='',**kwargs):
-		rebostPkgList=[]
-		store=[]
-		self._debug("Parms:\n-action: {}*\n-package: {}*\n-extraParms: {}*\nplugin: {}*".format(action,package,extraParms,extraParms2))
-		if extraParms:
-			for regPlugin,info in self.pluginInfo.items():
-				if info.get('packagekind','package')==str(extraParms):
-					bundle=str(extraParms)
-		plugin=''
-		for plugName,plugAction in self.pluginInfo.items():
-			if action in plugAction.get('actions',[]):
-				plugin=plugName
-				break
-		coreAction=False
-		if os.path.exists(self.rebostPathTmp)==False:
-			self.restart()
-		if len(plugin)==0:
-			#search for a local method
-			if hasattr(self,action):
-				plugin="core"
-				rebostPkgList.extend(self._executeCoreAction(action))
-		if plugin!="core":
-			self._debug("Executing {} from {}".format(action,self.plugins[plugin]))
-			self._debug("Parms:\n-action: {}%\n-package: {}%\n-extraParms: {}%\nplugin: {}%\nuser: {}%".format(action,package,extraParms,plugin,user))
-			rebostPkgList.extend(self.plugins[plugin].execute(action=action,parms=package,extraParms=extraParms,extraParms2=extraParms2,user=user,n4dkey=n4dkey,**kwargs))
-		#Generate the store with results and sanitize them
-		if action!='getCategories':
-			if not isinstance(rebostPkgList,list):
-				rebostPkgList=[rebostPkgList]
-			store=self._sanitizeStore(rebostPkgList)
+	def updateConfig(self):
+		config=self._readConfig()
+		if hasattr(self,"config"):
+			self.config.update(config)
 		else:
-			catList=[]
-			for cat in rebostPkgList:
-				catList.append(cat[0])
-			store=json.dumps(catList)
-		#if action=="install" or action=="remove" or action=="test":
-		if action=="install" or action=="remove":
-			self._launchRebostUpdated()
-		return(store)
-	#def execute
-			
-	def _sanitizeStore(self,appstore):
-		self._debug("Sanitize store {}".format(int(time.time())))
-		store=[]
-		unorder_store=[]
-		pkgDict={}
-		components=[]
-		self._debug("Begin Sanitize store {}".format(int(time.time())))
-		for rebostpkg in appstore:
-			if isinstance(rebostpkg,tuple):
-				try:
-					(pkg,app)=rebostpkg
-				except:
-					self._debug("Error sanitize")
-					self._debug(rebostpkg)
-					continue
-			else:
-				app=rebostpkg
-			if isinstance(app,str):
-				try:
-					appJson=json.loads(app)
-					if appJson.get('name').startswith("lliurex-meta")==False:
-						store.append(app)
-				except:
-					store.append(app)
-			else:
-				store.append(app)
-		self._debug("End sanitize")
-		return(json.dumps(store))
-	#def _sanitizeStore
-	
-	def _execute(self,action,package,bundle='',plugin=None,th=True):
-		proc=None
-		plugList=[]
-		if not plugin:  
-			for plugin,info in self.pluginInfo.items():
-				if action in info['actions']:
-					if bundle:
-						if ((bundle==info['packagekind']) or (info['packagekind'] in ['*',''])):
-							plugList.append(plugin)
+			self.config=config
+	#def updateConfig(self)
+
+	def _chkRelease(self):
+		if os.path.exists(self.CACHE)==False:
+			os.makedirs(self.CACHE)
+		if os.path.exists(os.path.join(self.CACHE,"raw"))==False:
+			os.makedirs(os.path.join(self.CACHE,"raw"))
+		cFile=os.path.join(self.CACHE,"release")
+		cContent="0"
+		if os.path.exists(cFile):
+			with open(cFile,"r") as f:
+				cContent=f.read()
+		cRelease=str(cContent)
+		if self.config.get("release","1.0")!=cRelease:
+			self._debug("--> RELEASE CHANGE DETECTED <--")
+			main=os.path.join(self.CACHE,"main.xml")
+			if os.path.exists(main):
+				os.unlink(main)
+			rawDir=os.path.join(self.CACHE,"raw")
+			if os.path.exists(rawDir):
+				for f in os.scandir(rawDir):
+					if f.is_dir()==False:
+						os.unlink(f.path)
 					else:
-						plugList.append(plugin)
-		else:
-			plugList.append(plugin)
-		if plugList:
-			for plugin in plugList:
-				proc=self._executeAction(plugin,action,package,bundle,th)
-		else:
-			proc=None
-		return(proc)
-	#def _execute
+						for f2 in os.scandir(f.path):
+							if f2.is_dir()==False:
+								os.unlink(f2.path)
+			self._debug("--> RELEASE CLEANED <--")
+		with open(cFile,"w") as f:
+			f.write(self.config.get("release","1.0"))
+	#def _chkRelease(self):
 
-	def _executeAction(self,plugin,action,package,bundle='',th=True):
-		retval=1
-		proc=None
-		self._debug("Launching {} from {} (th {})".format(action,plugin,th))
-		if th:
-			proc=threading.Thread(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}))
-		else:
-			proc=multiprocessing.Process(target=self.plugins[plugin].execute,kwargs=({'action':action,'parms':package}),daemon=False)
-		try:
-			proc.start()
-		except Exception as e:
-			print(e)
-			retval=0
-		return(proc)
-	#def _executeAction
-
-	def _executeCoreAction(self,action,th=True):
-		retval=1
-		rs=[{}]
-		proc=None
-		self._debug("Launching {} from CORE (th {})".format(action,th))
-		func=eval("self.{}".format(action))
-		if th:
-			proc=threading.Thread(target=func)
-		else:
-			proc=multiprocessing.Process(target=func,daemon=False)
-		try:
-			proc.start()
-		except Exception as e:
-			print(e)
-			retval=0
-		return(rs)
-	#def _executeCoreAction
-	
-	def getEpiPkgStatus(self,epifile):
-		self._debug("Getting status from {}".format(epifile))
-		stdout='1'
-		if os.path.isfile(epifile):
+	def _importPlugin(self,modpath):
+		plugin=None
+		modname=os.path.basename(modpath).replace(".py","")
+		self._debug("Inspecting plugin {} at {}".format(modname,modpath))
+		if os.path.exists(modpath):
 			try:
-				proc=subprocess.run(["{}".format(epifile),'getStatus'],stdout=subprocess.PIPE)
-				stdout=proc.stdout.decode().strip()
+				spec = importlib.util.spec_from_file_location("engine",modpath)
+				pluginlib = importlib.util.module_from_spec(spec)
+				sys.modules["module.name"] = pluginlib
+				spec.loader.exec_module(pluginlib)
+				pluginmod=pluginlib.engine(self)
+				
+				#if hasattr(pluginlib,"engine")==True:
+				if hasattr(pluginmod,"bundle")==True:
+					modname=pluginmod.bundle
+					self.supportedformats.append(pluginmod.bundle)
+				else:
+					modname=modname.replace(".py","")
+				plugin={modname:pluginmod}
+				#else:
+				#	self._debug("Discarded {}".format(modname))
 			except Exception as e:
-				stdout=str(e)
+				self._error("Failed importing {0}: {1}".format(modpath,e))
 		else:
-			stdout="23"
-		return (stdout)
-	#def getEpiPkgStatus
+			self._debug("{} not found".format(modpath))
+		return(plugin)
+	#def _importPlugin
 
-	def getFiltersEnabled(self):
-		state=True
-		try:
-			state=self.plugins["sqlHelper"].whitelist
-		except Exception as e:
-			print(e)
-			print("Critical error. Restarting rebost service now")
-			self.run()
-		return(state)
-	#def getFiltersEnabled(self):
-
-	def getProgress(self):
-		rs=self.plugins['rebostPrcMan'].execute(action='progress')
-		return(json.dumps(rs))
-	#def getProgress(self):
-
-	def _cleanData(self,force=False):
-		self._debug("Cleaning tmp")
-		datadirs=[self.rebostPathTmp,os.path.join(self.cache,"tmp")]
-		for d in datadirs:
-			if os.path.isdir(d)==False:
-				continue
-			for i in os.scandir(d):
-				try:
-					os.remove(i.path)
-					self._debug("rm {}".format(i.path))
-				except Exception as e:
-					print(e)
-					self._debug(e)
-		if force==True:
-			self._debug("Removing databases")
-			dbDirs=[self.rebostPath,self.cache,self.rebostWrkDir]
-			for dbDir in dbDirs:
-				if os.path.isdir(dbDir)==False:
+	def _loadPlugins(self):
+		pluginDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
+		plugins={}
+		self._debug("Accessing {}".format(pluginDir))
+		if os.path.exists(pluginDir):
+			for f in os.scandir(pluginDir):
+				pluginfo=None
+				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
 					continue
-				for i in os.scandir(dbDir):
-					if i.path.endswith(".db"):
-						try:
-							os.remove(i.path)
-							self._debug("rm {}".format(i.path))
-						except Exception as e:
-							print(e)
-							self._debug(e)
-	#def _cleanData
+				pluginfo=self._importPlugin(f.path)
+				if pluginfo!=None:
+					plugin=list(pluginfo.values())[0]
+					#plugin=pluginfo.get(f.name.replace(".py",""),"")
+					if hasattr(plugin,"enabled")==True:
+						if plugin.enabled==False:
+							self._debug("Disabled plugin {}".format(f.name))
+							continue
+					priority=100
+					if hasattr(plugin,"priority")==True:
+						priority=plugin.priority
+					if priority not in plugins.keys():
+						plugins[priority]={}
+					modkey=list(pluginfo.keys())[0]
+					plugindict=plugins[priority]
+					if plugindict.get(modkey)!=None:
+						plugindict[modkey].append(pluginfo[modkey])
+					else:
+						plugindict.update({modkey:[pluginfo[modkey]]})
+		return(plugins)
+	#def _loadPlugins
 
-	def forceUpdate(self,force=False):
-		if isinstance(force,int):
-			if force==1:
-				force=True
+	def _toFile(self,store,fxml):
+		store.to_file(Gio.File.parse_name(fxml),appstream.NodeToXmlFlags.FORMAT_MULTILINE|appstream.NodeToXmlFlags.FORMAT_INDENT)
+	#def _toFile
+
+	def _fromFile(self,store,fxml):
+		self._debug("Attempt to load {} using {}".format(store,fxml))
+		if os.path.exists(fxml):
+			try:
+				store.from_file(Gio.File.parse_name(fxml),None,None)
+			#	with open(fxml,"r") as f:
+			#		fcontent=f.read()
+			#	fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+			#	store.from_xml(fcontent)
+				self._debug("Added {} apps".format(store.get_size()))
+			except Exception as e:
+				self._debug("Malformed {}".format(fxml))
+				with open(fxml,"r") as f:
+					fcontent=f.read()
+				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+				tree = ET.fromstring(fcontent)
+				r=tree.getroot()
+				for description in r.iter('description'):
+					txt=[]
+					for i in list(description):
+						desc=i.text
+						if isinstance(desc,str)==False:
+							desc=""
+						description.remove(i)
+						txt.append(desc.strip())
+					text=html.escape("{}".format(txt))
+					desc="<p>{}</p>".format(text)
+					try:
+						elem=ET.fromstring(desc)
+					except Exception as e:
+						self._error(e,msg="_fromFile")
+					description.append(elem)
+				os.unlink(fxml)
+				tree.write(fxml,xml_declaration="1.0",encoding="UTF-8")
+				self._debug("Updated {}".format(fxml))
+				try:
+					with open(fxml,"r") as f:
+						fcontent=f.read()
+					store.from_xml(fcontent)
+					self._debug("Added {} apps".format(store.get_size()))
+				except Exception as e:
+					self._error(e,msg="Error fixing. Requires user intervention")
+		else:
+			self._debug("{} not found".format(fxml))
+		return(store)
+	#def _fromFile
+
+	def _getVerifiedOrigins(self):
+		matchTables=self.config.get("verifiedProvider",[])
+		verifiedOrigins=[]
+		for matchTable in matchTables:
+			for idx,store in self.stores.items():
+				if isinstance(idx,int)==False:
+					continue
+				if store.get_origin()==matchTable:
+					verifiedOrigins.append(idx)
+		return(verifiedOrigins)
+	#def _getVerifiedOrigins
+
+	def _getOldData(self,app,donor):
+		appDesc={}
+		appSumm={}
+		donorDesc={}
+		donorSumm={}
+		icon=None
+		if app.get_icon_path()!=None:
+			icon=app.get_icon_default()
+		for l in self.langs:
+			desc=app.get_description(l)
+			if desc==None:
+				desc=""
+			summ=app.get_comment(l)
+			if summ==None:
+				summ=""
+			appDesc.update({l:{"desc":desc,"summ":summ}})
+			desc=donor.get_description(l)
+			if desc==None:
+				desc=""
+			summ=donor.get_comment(l)
+			if summ==None:
+				summ=""
+			donorDesc.update({l:{"desc":desc,"summ":summ}})
+		return(appDesc,appSumm,donorDesc,donorSumm,icon)
+	#def _getOldData
+
+	def _doSubsumeApps(self,app,donor):
+		#It seems strange but both subsumes are needed
+		#add all info, honouring previous subsume
+		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
+		appDesc,appSumm,donorDesc,donorSumm,icon=self._getOldData(app,donor)
+		app.subsume(donor)
+		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
+			appstream.AppSubsumeFlags.METADATA|\
+			appstream.AppSubsumeFlags.KEYWORDS|\
+			appstream.AppSubsumeFlags.ICONS|\
+			appstream.AppSubsumeFlags.URL|\
+			appstream.AppSubsumeFlags.SCREENSHOTS
+		app.subsume_full(donor,appstream.AppSubsumeFlags.BOTH_WAYS|extendFlags)
+		replaceFlags=appstream.AppSubsumeFlags.STATE|\
+				appstream.AppSubsumeFlags.NAME
+		app.subsume_full(donor,appstream.AppSubsumeFlags.REPLACE|replaceFlags)
+		for l,desc in donorDesc.items():
+			if len(appDesc[l]["desc"])<len(desc["desc"]):
+				app.set_description(l,desc["desc"])
+			if len(appDesc[l]["summ"])<len(desc["summ"]):
+				app.set_comment(l,desc["summ"])
+		if icon!=None:
+			app.add_icon(icon)
+		app.subsume(donor)
+		return(app)
+	#def _doSubsumeApps
+
+	def _preLoadVerified(self,verifiedOrigins):
+		store=appstream.Store()
+		for idx in verifiedOrigins:
+			for app in self.stores[idx].get_apps():
+				mergeApp=self._preMergeApp(app)
+				oldApp=store.get_app_by_id(mergeApp.get_id())
+				if oldApp!=None:
+					store.remove_app(oldApp)
+					try:
+						mergeApp=self._doSubsumeApps(mergeApp,oldApp)
+					except Exception as e:
+						self._error(e,msg="_preLoadVerified")
+				mergeApp.set_origin("verified")
+				noDsp=self.mapFixes.get("nodisplay",[])
+				appKnownAs=[mergeApp.get_id(),mergeApp.get_name()]
+				appKnownAs.extend(mergeApp.get_pkgnames())
+				allApps=list(set(noDsp))
+				allApps.extend(list(set(appKnownAs)))
+				if len(allApps) != len(set(allApps)):
+					self._debug("Hidden -> {}".format(mergeApp.get_name()))
+					mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
+				store.add_app(mergeApp)
+		self._debug("Verified table count: {}".format(store.get_size()))
+		return(store)
+	#def _preLoadVerified
+
+	def _preMergeApp(self,app):
+		newId=app.get_id()
+		aliases=self.mapFixes.get("aliases",{})
+		if len(app.get_bundles())>0:
+			if app.get_bundles()[0].get_kind()==appstream.BundleKind.FLATPAK:
+				fixes=["gdevelop"]
+				splitId=app.get_id().replace(".desktop","").split(".")
+				newId=splitId[-1]
+				if len(splitId)>2:
+					if splitId[1].lower() in fixes:
+						newId=splitId[1]
+			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.APPIMAGE:
+				newId=app.get_id().strip()
+				#Canonical name
+				if newId.count("-")==2:
+					newId=newId.split("-")[0]
+				#Kdenlive (perhaps others)
+				elif newId.count("_")==3:
+					newId=newId.split("_")[0]
+				else:
+					tmpId=""
+					while tmpId=="":
+						arrayId=newId.strip().split(".")
+						for item in arrayId:
+							for i in item.split("-"):
+								if i.isdigit():
+									if tmpId!="":
+										continue
+								tmpId="{}.{}".format(tmpId,i)
+					newId=tmpId.strip().rstrip(".").lstrip(".")
+				newId=newId.lower().removesuffix(".appimage").split(".")[-1]
+		#	elif app.get_bundles()[0].get_kind()==appstream.BundleKind.SNAP:
 			else:
-				force=False
-		self._debug("Rebost forcing update. Deep clean: {}".format(force))
-		self._cleanData(force=force)
-		return(self.restart())
-	#def getProgress(self):
+				newId=app.get_id().removesuffix(".desktop")
+				if newId.count(".")>1: #It seems canonical
+					tags=newId.split(".")
+					tags.reverse()
+					fallback=""
+					for tag in tags:
+						if tag.isnumeric():
+							fallback=tag
+							continue
+						newId=tag
+						break
+		else:
+			newId=app.get_id().removesuffix(".desktop")
+			if newId.count(".")>1: #It seems canonical
+				newId=newId.split(".")[-1]
+		newId=newId.lower().removeprefix(".").removesuffix(".")
+		if newId in aliases.keys():
+			newId=aliases[newId]
+		if newId!=app.get_id():
+			app.set_id(newId)
+		return (app)
+	#def _preMergeApp
 
-	def restart(self):
-		self.run()
-		return('[{}]')
+	def _mergeApps(self):
+		self._debug("Filling work table")
+		self.stores["mainB"]=appstream.Store() #Include all apps
+		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC) #Include verified apps
+		verifiedOrigins=self._getVerifiedOrigins()
+		if len(verifiedOrigins)>0:
+			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
+		self.ready=False
+		self.stores["main"].remove_all()
+		self.stores["main"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC)
+		self.stores["main"].add_apps(self.stores["mainB"].dup_apps())
+		aliases=self.mapFixes.get("aliases",{})
+		for storeId in self.stores.keys():
+			if storeId in verifiedOrigins:
+				self._debug("Verified {}".format(storeId))
+				continue
+			if isinstance(storeId,int):
+				self._debug("Process {} ({})".format(storeId,self.stores[storeId].get_size()))
+				for app in self.stores[storeId].get_apps():
+					appId=app.get_id()
+					if appId in aliases.keys():
+						self._debug("Change ID from {0} to {1}".format(appId,aliases[appId]))
+						app.set_id(aliases[appId])
+					originId=app.get_id()
+					mergeApp=self._preMergeApp(app)
+					tmpid=mergeApp.get_id()
+					oldApp=self.stores["main"].get_app_by_id(tmpid)
+					if oldApp==None:
+						oldApp=self.stores["main"].get_app_by_id(originId.lower())
+						if oldApp!=None:
+							oldApp.set_id(tmpid)
+					if oldApp!=None:
+						try:
+							self.stores["main"].remove_app(oldApp)
+							mergeApp=self._doSubsumeApps(mergeApp,oldApp)
+						except Exception as e:
+							self._error(e,msg="_mergeApps")
+					oldApp=self.stores["mainB"].get_app_by_id(tmpid)
+					noDsp=self.mapFixes.get("nodisplay",[])
+					appKnownAs=[mergeApp.get_id(),mergeApp.get_name()]
+					appKnownAs.extend(mergeApp.get_pkgnames())
+					allApps=list(set(noDsp))
+					allApps.extend(list(set(appKnownAs)))
+					if len(allApps) != len(set(allApps)):
+						self._debug("Hidden -> {}".format(mergeApp.get_name()))
+						mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
+					mergeApp.set_origin("unverified")
+					if oldApp!=None:
+						self.stores["mainB"].remove_app(oldApp)
+						mergeApp.set_origin("verified")
+						self.stores["mainB"].add_app(mergeApp)
+					self.stores["main"].add_app(mergeApp)
+		if self.config.get("onlyVerified",False)==True:
+			self.loadToggle()
+	#def _mergeApps
 
+	def loadToggle(self):
+		tmp=self.stores["main"]
+		if "mainB" in self.stores.keys():
+			self.stores["main"]=self.stores["mainB"]
+		self.stores["mainB"]=tmp
+	#def _loadToggle
 
-	def update(self):
-		return
-	
-	def fullUpdate(self):
-		return
+	def reload(self):
+		fxml=os.path.join(CACHE,"main.xml")
+		if os.path.exists(fxml):
+			os.unlink(fxml)
+		raw=os.path.join(CACHE,"raw")
+		if os.path.exists(raw):
+			if os.path.isdir(raw):
+				for f in os.scandir(raw):
+					if f.is_file()==True:
+						os.unlink(f.path)
+					elif f.is_dir()==True:
+						for ff in os.scandir(f.path):
+							os.unlink(ff.path)
+		if os.path.exists(CACHE):
+			for f in os.scandir(CACHE):
+				if f.name.endswith(".map"):
+					print()
+					os.unlink(f.path)
+		self.lastCheckedMapping=0
+		self.stores["main"].remove_all()
+		if "mainB" in self.stores:
+			self.stores["mainB"].remove_all()
+		for storeId in self.stores.keys():
+			self._debug("Process {}".format(storeId))
+			if isinstance(storeId,int):
+				self.stores[storeId].remove_all()
+		self._debug("Reloading rebost core")
+		self.ready=False
+		self.stores={"main":self.store}
+		self.initProc=0
+		self.plugins=self._loadPlugins()
+	#def reload(self):
 
-	def commitData(self):
-		self._copyTmpToCache()
-	#def commitData
+	def export(self,fxml=""):
+		if len(fxml.strip())==0:
+			fxml=os.path.join(CACHE,"main.xml")
+		try:
+			self._toFile(self.stores["main"],fxml)
+		except Exception as e:
+			self._error(e,msg="export")
+		return(fxml)
+	#def export
+
+	def _rebostOperative(self,*args):
+		self.ready=True
+		resultSet=args[0]
+		if resultSet.done():
+			if resultSet.exception():
+				self._error(resultSet.exception(),msg="_rebostOperative")
+		self._debug("Work table ready. Rebost is fully operative")
+		self._debug("Loaded {} apps".format(self.stores["main"].get_size()))
+		self._debug("Loaded {} appsB".format(self.stores["mainB"].get_size()))
+		self.export()
+	#def _rebostOperative
+
+	def _callBackInit(self,*args,**kwargs):
+		self._debug("Callback for {}".format(*args))
+		storeId=len(self.stores)
+		resultSet=args[0]
+		self._debug("State {}".format(resultSet.done()))
+		if resultSet.done():
+			if resultSet.exception():
+				self._error(resultSet.exception(),msg="_callBackInit")
+			else:
+				store=resultSet.result()
+				self.stores.update({storeId:store})
+		self.initProc-=1
+		partial=0
+		stores=self.stores.copy()
+		for k in stores.keys():
+			if isinstance(k,int):
+				partial+=len(stores[k].get_apps())
+		self._debug("Apps in store: {} Init({})".format(partial,self.initProc))
+		if self.initProc==0:
+			self._debug("Appstream tables ready. Rebost core operative")
+			init=self.thExecutor.submit(self._mergeApps)
+			init.add_done_callback(self._rebostOperative)
+	#def _callBackInit(self,*args,**kwargs):
+
+	def _initEngines(self):
+		priorities=list(self.plugins.keys())
+		priorities.sort()
+		for priority in priorities:
+			pluginfo=self.plugins[priority]
+			for plugkey,plugmod in pluginfo.items():
+				if isinstance(plugkey,self.appstream.BundleKind):
+					self._debug((priority,plugkey))
+					for mod in plugmod:
+						init=self.thExecutor.submit(mod.getAppstreamData)
+						self.initProc+=1
+						init.add_done_callback(self._callBackInit)
+	#def _initEngines
+
+	def _loadFromCache(self):
+		fxml=os.path.join(CACHE,"main.xml")
+		try:
+			cacheStore=self._fromFile(self.stores["main"],fxml)
+		except Exception as e:
+			self._error(e,msg="_loadFromCache")
+			return
+		if self.ready==False:
+			self._debug("Loading {} apps from cache".format(cacheStore.get_size()))
+			if cacheStore.get_size()>0:
+				for app in cacheStore.get_apps():
+					if len(app.get_kudos())>0:
+						if self.config.get("onlyVerified",False)==True:
+							app.set_origin("verified")
+				self.stores["main"]=cacheStore
+				self._debug("Cached store loaded. Rebost will update data now")
+				self.ready=True
+	#def _loadFromCache
+
+	def getExternalInstaller(self):
+		return(self.config.get("externalInstaller",""))
+	#def getExternalInstaller
+
+	def _chkRemoteFileChanged(self,url):
+		changed=False
+		fname=url.split("://")[-1]
+		fname=fname.replace("/","_")
+		fTag=os.path.join(CACHE,"{}.etag".format(fname))
+		eTag=""
+		oldETag=""
+		try:
+			headers=Request(url,method="HEAD",headers={'User-Agent':'Mozilla/5.0'})
+			with urlopen(headers,timeout=2) as f:
+				eTag=f.headers.get("ETag")
+		except:
+			eTag=""
+		if os.path.exists(fTag):
+			with open(fTag,"r") as f:
+				oldETag=f.read()
+			self._debug("Check ETag: {} {}".format(eTag,oldETag))
+		if eTag!=oldETag:
+			changed=True
+			with open(fTag,"w") as f:
+				f.write(eTag)
+		return(changed)
+	#def _chkRemoteFileChanged
+
+	def _getRemoteMapFixes(self,url):
+		content={}
+		urlContent=""
+		if url!="" and isinstance(url,str):
+			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+			try:
+				with urlopen(req,timeout=2) as f:
+					urlContent=(f.read().decode('utf-8'))
+			except Exception as e:
+				self._debug("Couldn't fetch {}".format(url))
+				self._debug(e)
+		if len(urlContent)>0:
+			try:
+				content=json.loads(urlContent)
+			except Exception as e:
+				print(e)
+				content={}
+		return(content)
+	#def _getRemoteMapFixes
+
+	def _getLocalMapFixes(self,fpath):
+		content={}
+		if os.path.exists(fpath):
+			with open(fpath,"r") as f:
+				try:
+					content=json.loads(f.read())
+				except Exception as e:
+					print("ERROR PROCESSING {}",format(fpath))
+					print(e)
+		return(content)
+	#def _getLocalMapFixes
+
+	def _getLocalMapFiles(self):
+		#Load map files from DATA
+		mapFiles=[]
+		mapDir=os.path.join(DATA,"lists.d")
+		verifyMaps=[ "{}.map".format(verified) for verified in self.config.get("verifiedProvider",[])]
+		verifyMapsPath=[]
+		for d in os.scandir(mapDir):
+			if d.is_dir():
+				for f in os.scandir(d.path):
+					if f.is_file() and f.name not in verifyMaps:
+						mapFiles.append(f.path)
+					elif f.is_file():
+						verifyMapsPath.append(f.path)
+					
+			elif d.is_file():
+				if d.name not in verifyMaps:
+					mapFiles.append(d.path)
+				else:
+					verifyMapsPath.append(d.path)
+		#Ensure that information will honour the verifiedProviders
+		mapFiles.extend(verifyMapsPath)
+		return(mapFiles)
+	#def _getLocalMapFiles
+
+	def _getCacheMapFiles(self):
+		mapFiles=[]
+		for f in os.scandir(CACHE):
+			if f.name.endswith(".map"):
+				mapFiles.append(f.path)
+		return(mapFiles)
+	#def _getCacheMapFiles
+
+	def getMapFixes(self):
+		if int(time.time())-self.lastCheckedMapping>120 or len(self.mapFixes.get("nodisplay",[]))==0:
+			self.mapFixes={"nodisplay":[],"aliases":{}}
+			mapFiles=self._getLocalMapFiles()
+			for mapFile in mapFiles:
+				if os.path.exists(mapFile) and mapFile.endswith(".map"):
+					self._debug("Reading mapF {}".format(mapFile))
+					mapFixesF=self._getLocalMapFixes(mapFile)
+					rContent={}
+					if "upstream" in mapFixesF:
+						self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
+						fname=mapFixesF["upstream"].split("://")[-1]
+						fname=fname.replace("/","_")
+						fcache=os.path.join(CACHE,"{}".format(fname))
+						if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
+							rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
+							rContent["upstream"]=mapFixesF["upstream"]
+							with open(fcache,"w") as f:
+								f.write(json.dumps(rContent,indent=4))
+						else:
+							self._debug("Getting mapping from cache")
+							rContent=self._getLocalMapFixes(fcache)
+					if len(rContent.get("nodisplay",[]))>0:
+						mapFixesF=rContent.copy()
+						with open(mapFile,"w") as f:
+							f.write(json.dumps(mapFixesF,indent=4))
+					if "nodisplay" in mapFixesF:
+						self.mapFixes["nodisplay"]=list(set(self.mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
+					if "aliases" in mapFixesF:
+						self.mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
+			self.lastCheckedMapping=int(time.time())
+		return self.mapFixes
+	#def getMapFixes
+
+	def chkCacheNeedsUpdate(self):
+		update=False
+		cFiles=self._getCacheMapFiles()
+		for cFile in cFiles:
+			with open(cFile,"r") as f:
+				content=json.loads(f.read())
+			if "://" in content.get("upstream",""):
+				if self._chkRemoteFileChanged(content["upstream"])==True:
+					update=True
+					break
+		return update
+	#def chkCacheNeedsUpdate
+
+	def initCore(self):
+		#self.thExecutor.submit(self._loadFromCache)
+		if self.config.get("verifiedProvider","")!="":
+			if self.config.get("onlyVerified",False)==True:
+				print("\n******************************************************")
+				print("************* RESTRICTED MODE ENABLED ****************")
+				print("Verified origins {}".format(self.config["verifiedProvider"]))
+				print("******************************************************\n")
+		if len(self.stores)<=1 and self.initProc==0:
+			self._loadFromCache()
+			self._initEngines()
+	#def _initCore
+#class _RebostCore
+

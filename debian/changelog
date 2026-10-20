@@ -1,4 +1,4 @@
-rebost (3.3.4) noble; urgency=medium
+rebost (3.3.4.1) noble; urgency=medium
 
   * flatpak:
   *  Add mechanism for fix knowed apps with malformed id
@@ -8,6 +8,8 @@ rebost (3.3.4) noble; urgency=medium
   *  Preserve local icon
   * rebostHelper:
   *  Always use local icons
+  * config:
+  *  Use new store installer
 
  -- Juanma1980 <juanma1980@gmail.com>  Tue, 20 Oct 2026 12:37:28 +0200
 

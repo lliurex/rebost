@@ -287,9 +287,11 @@ class engine:
 	#def _appendIncludedApps
 
 	def _addExtendedInfo(self,epiData,app,apps):
+		name=epiData.get("zomando",app.get_id())
+		name=name.replace("zero-","").replace("lliurex-","")
 		for l in self.core.langs:
-			app.set_name(l,epiData.get("zomando",app.get_id()))
-		app.set_name("C",epiData.get("zomando",app.get_id()))
+			app.set_name(l,name)
+		app.set_name("C",name)
 		if len(epiData.get("pkg_list",[]))==1:
 			summary=epiData["pkg_list"][0].get("custom_name",epiData.get("zomando"))
 		else:

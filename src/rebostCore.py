@@ -325,7 +325,12 @@ class _RebostCore():
 		aliases=self.mapFixes.get("aliases",{})
 		if len(app.get_bundles())>0:
 			if app.get_bundles()[0].get_kind()==appstream.BundleKind.FLATPAK:
-				newId=app.get_id().replace(".desktop","").split(".")[-1]
+				fixes=["gdevelop"]
+				splitId=app.get_id().replace(".desktop","").split(".")
+				newId=splitId[-1]
+				if len(splitId)>2:
+					if splitId[1].lower() in fixes:
+						newId=splitId[1]
 			elif app.get_bundles()[0].get_kind()==appstream.BundleKind.APPIMAGE:
 				newId=app.get_id().strip()
 				#Canonical name

@@ -246,6 +246,9 @@ class _RebostCore():
 		appSumm={}
 		donorDesc={}
 		donorSumm={}
+		icon=None
+		if app.get_icon_path()!=None:
+			icon=app.get_icon_default()
 		for l in self.langs:
 			desc=app.get_description(l)
 			if desc==None:
@@ -261,14 +264,14 @@ class _RebostCore():
 			if summ==None:
 				summ=""
 			donorDesc.update({l:{"desc":desc,"summ":summ}})
-		return(appDesc,appSumm,donorDesc,donorSumm)
+		return(appDesc,appSumm,donorDesc,donorSumm,icon)
 	#def _getOldData
 
 	def _doSubsumeApps(self,app,donor):
 		#It seems strange but both subsumes are needed
 		#add all info, honouring previous subsume
 		#subsume_full will need lot of flags to load all the info, only put empty fields (including installed status aka metadata)
-		appDesc,appSumm,donorDesc,donorSumm=self._getOldData(app,donor)
+		appDesc,appSumm,donorDesc,donorSumm,icon=self._getOldData(app,donor)
 		app.subsume(donor)
 		extendFlags=appstream.AppSubsumeFlags.BUNDLES|\
 			appstream.AppSubsumeFlags.METADATA|\
@@ -285,6 +288,8 @@ class _RebostCore():
 				app.set_description(l,desc["desc"])
 			if len(appDesc[l]["summ"])<len(desc["summ"]):
 				app.set_comment(l,desc["summ"])
+		if icon!=None:
+			app.add_icon(icon)
 		app.subsume(donor)
 		return(app)
 	#def _doSubsumeApps
@@ -412,11 +417,11 @@ class _RebostCore():
 					if len(allApps) != len(set(allApps)):
 						self._debug("Hidden -> {}".format(mergeApp.get_name()))
 						mergeApp.add_metadata("X-REBOST-hidden","{}".format(mergeApp.get_id()))
+					mergeApp.set_origin("unverified")
 					if oldApp!=None:
 						self.stores["mainB"].remove_app(oldApp)
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
-					mergeApp.set_origin("unverified")
 					self.stores["main"].add_app(mergeApp)
 		if self.config.get("onlyVerified",False)==True:
 			self.loadToggle()

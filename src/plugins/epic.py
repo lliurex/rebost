@@ -222,10 +222,9 @@ class engine:
 
 	def _getIdFromZmd(self,epiName):
 		epiId=epiName
-		if epiName.startswith("zero-"):
-			epiId="zero.lliurex.{}".format("-".join(epiName.split("-")[2:])).removesuffix(".epi")
-		else:
-			epiId="zero.lliurex.{}".format(epiName).removesuffix(".epi")
+		name=epiName.replace("zero-","").replace("lliurex-","").removesuffix(".epi")
+		epiId=name
+		print("NAME; {} -> {}".format(epiName,epiId))
 		return(epiId)
 	#def _getIdFromZmd
 

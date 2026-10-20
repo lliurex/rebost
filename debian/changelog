@@ -1,5 +1,7 @@
 rebost (3.3.4) noble; urgency=medium
 
+  * flatpak:
+  *  Add mechanism for fix knowed apps with malformed id
   * epic:
   *  Remove zmd suffix
   * rebostCore:

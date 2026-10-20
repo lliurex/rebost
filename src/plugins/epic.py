@@ -222,10 +222,9 @@ class engine:
 
 	def _getIdFromZmd(self,epiName):
 		epiId=epiName
-		if epiName.startswith("zero-"):
-			epiId="zero.lliurex.{}".format("-".join(epiName.split("-")[2:])).removesuffix(".epi")
-		else:
-			epiId="zero.lliurex.{}".format(epiName).removesuffix(".epi")
+		name=epiName.replace("zero-","").replace("lliurex-","").removesuffix(".epi")
+		epiId=name
+		print("NAME; {} -> {}".format(epiName,epiId))
 		return(epiId)
 	#def _getIdFromZmd
 
@@ -287,9 +286,11 @@ class engine:
 	#def _appendIncludedApps
 
 	def _addExtendedInfo(self,epiData,app,apps):
+		name=epiData.get("zomando",app.get_id())
+		name=name.replace("zero-","").replace("lliurex-","")
 		for l in self.core.langs:
-			app.set_name(l,epiData.get("zomando",app.get_id()))
-		app.set_name("C",epiData.get("zomando",app.get_id()))
+			app.set_name(l,name)
+		app.set_name("C",name)
 		if len(epiData.get("pkg_list",[]))==1:
 			summary=epiData["pkg_list"][0].get("custom_name",epiData.get("zomando"))
 		else:

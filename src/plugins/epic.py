@@ -224,7 +224,6 @@ class engine:
 		epiId=epiName
 		name=epiName.replace("zero-","").replace("lliurex-","").removesuffix(".epi")
 		epiId=name
-		print("NAME; {} -> {}".format(epiName,epiId))
 		return(epiId)
 	#def _getIdFromZmd
 

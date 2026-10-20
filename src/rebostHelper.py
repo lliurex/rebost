@@ -75,7 +75,6 @@ def _getIconFromAppstream(app):
 		if url:
 			if url.startswith("http"):
 				iconf=url
-				break
 			if url.startswith("org/"):
 				iconf="https://dl.flathub.org/media/{}".format(url)
 	return(iconf)

@@ -1,4 +1,4 @@
-rebost (3.3.4.1) noble; urgency=medium
+rebost (3.3.4.1) jammy; urgency=medium
 
   * flatpak:
   *  Add mechanism for fix knowed apps with malformed id

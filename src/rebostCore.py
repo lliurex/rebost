@@ -604,10 +604,18 @@ class _RebostCore():
 		if os.path.exists(fpath):
 			with open(fpath,"r") as f:
 				try:
-					content=json.loads(f.read())
+					data=f.read()
+					content=json.loads(data)
 				except Exception as e:
-					print("ERROR PROCESSING {}",format(fpath))
+					print("ERROR PROCESSING {}".format(fpath))
 					print(e)
+					try:
+						for line in data.split("\n"):
+							if line.strip().startswith("\"upstream\":"):
+								content["upstream"]=line.split(":",1)[-1].strip().replace('"','').replace(",","")
+								break
+					except Exception as e:
+						print(e)
 		return(content)
 	#def _getLocalMapFixes
 

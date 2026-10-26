@@ -2,33 +2,27 @@
 import sys,os,time
 import traceback
 import json
-import importlib.util
 import xml.etree.ElementTree as ET
 import html
-import locale
 import concurrent.futures as Futures
 from urllib.request import Request,urlopen
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
-
+from aux.config import rebostConfig
+from aux.extras import _rebostAux
 DBG=True
-SCHEMES=os.path.join(os.path.dirname(os.path.realpath(__file__)),"schemes")
-#CACHE=os.path.join(os.environ["HOME"],".cache","rebost")
-CACHE=os.path.join("/var","cache","rebost")
-CONFIG="/usr/share/rebost/rebost.conf"
-DATA="/usr/share/rebost-data"
-
 
 class _RebostCore():
 	def __init__(self,*args,**kwargs):
-		self.dbg=DBG
-		self.SCHEMES=SCHEMES
-		self.CACHE=CACHE
-		self.DATA=DATA
 		self.DBG=DBG
+		self.rconfig=rebostConfig()
+		self.config=self.rconfig.readConfig()
 		self.appstream=appstream
+		self.aux=_rebostAux(self.rconfig,self)
+		self.CACHE=self.config["cache"]
+		self.DATA=self.config["data"]
 		self.stores={}
 		self.lastCheckedMapping=0
 		self.initProc=0
@@ -37,19 +31,8 @@ class _RebostCore():
 		self.supportedformats=[]
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
-		self.config=self._readConfig()
 		self._chkRelease()
-		localLangs=[]
-		for localLang in locale.getlocale():
-			if "_" in localLang:
-				localLangs.append(localLang.split("_")[0])
-				localLangs.append(localLang.split("_")[-1].lower())
-		if "ca" in localLangs:
-			idx=localLangs.index("ca")
-			localLangs.insert(idx+1,"ca-valencia")
-			localLangs.insert(idx+1,"ca@valencia")
-		localLangs.insert(0,"C")
-		self.langs=list(set(localLangs))
+		self.langs=self.aux.getLangs()
 		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
 		self.getMapFixes()
@@ -57,7 +40,7 @@ class _RebostCore():
 	#def __init__
 
 	def _debug(self,msg):
-		if self.dbg==True:
+		if self.DBG==True:
 			print("core: {}".format(msg))
 	#def _debug
 
@@ -67,114 +50,19 @@ class _RebostCore():
 		print ("<------ TRACEBACK -----/>")
 	#def _error
 
-	def setConfigValue(self,key,value):
-		self.config.update({key:value})
-	#def setConfigValue
-
-	def _readConfig(self):
-		config={}
-		if os.path.isfile(CONFIG):
-			fcontent=""
-			with open(CONFIG,"r") as f:
-				fcontent=f.read()
-			config=json.loads(fcontent)
-		return(config)
-	#def _readConfig
-
-	def updateConfig(self):
-		config=self._readConfig()
-		if hasattr(self,"config"):
-			self.config.update(config)
-		else:
-			self.config=config
-	#def updateConfig(self)
+	def readConfig(self):
+		return(self.rconfig.readConfig())
+	#def readConfig
 
 	def _chkRelease(self):
-		if os.path.exists(self.CACHE)==False:
-			os.makedirs(self.CACHE)
-		if os.path.exists(os.path.join(self.CACHE,"raw"))==False:
-			os.makedirs(os.path.join(self.CACHE,"raw"))
-		cFile=os.path.join(self.CACHE,"release")
-		cContent="0"
-		if os.path.exists(cFile):
-			with open(cFile,"r") as f:
-				cContent=f.read()
-		cRelease=str(cContent)
-		if self.config.get("release","1.0")!=cRelease:
+		if self.aux.releaseChanged()==True:
 			self._debug("--> RELEASE CHANGE DETECTED <--")
-			main=os.path.join(self.CACHE,"main.xml")
-			if os.path.exists(main):
-				os.unlink(main)
-			rawDir=os.path.join(self.CACHE,"raw")
-			if os.path.exists(rawDir):
-				for f in os.scandir(rawDir):
-					if f.is_dir()==False:
-						os.unlink(f.path)
-					else:
-						for f2 in os.scandir(f.path):
-							if f2.is_dir()==False:
-								os.unlink(f2.path)
+			self.aux.cleanFiles()
 			self._debug("--> RELEASE CLEANED <--")
-		with open(cFile,"w") as f:
-			f.write(self.config.get("release","1.0"))
 	#def _chkRelease(self):
 
-	def _importPlugin(self,modpath):
-		plugin=None
-		modname=os.path.basename(modpath).replace(".py","")
-		self._debug("Inspecting plugin {} at {}".format(modname,modpath))
-		if os.path.exists(modpath):
-			try:
-				spec = importlib.util.spec_from_file_location("engine",modpath)
-				pluginlib = importlib.util.module_from_spec(spec)
-				sys.modules["module.name"] = pluginlib
-				spec.loader.exec_module(pluginlib)
-				pluginmod=pluginlib.engine(self)
-				
-				#if hasattr(pluginlib,"engine")==True:
-				if hasattr(pluginmod,"bundle")==True:
-					modname=pluginmod.bundle
-					self.supportedformats.append(pluginmod.bundle)
-				else:
-					modname=modname.replace(".py","")
-				plugin={modname:pluginmod}
-				#else:
-				#	self._debug("Discarded {}".format(modname))
-			except Exception as e:
-				self._error("Failed importing {0}: {1}".format(modpath,e))
-		else:
-			self._debug("{} not found".format(modpath))
-		return(plugin)
-	#def _importPlugin
-
 	def _loadPlugins(self):
-		pluginDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"plugins")
-		plugins={}
-		self._debug("Accessing {}".format(pluginDir))
-		if os.path.exists(pluginDir):
-			for f in os.scandir(pluginDir):
-				pluginfo=None
-				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
-					continue
-				pluginfo=self._importPlugin(f.path)
-				if pluginfo!=None:
-					plugin=list(pluginfo.values())[0]
-					#plugin=pluginfo.get(f.name.replace(".py",""),"")
-					if hasattr(plugin,"enabled")==True:
-						if plugin.enabled==False:
-							self._debug("Disabled plugin {}".format(f.name))
-							continue
-					priority=100
-					if hasattr(plugin,"priority")==True:
-						priority=plugin.priority
-					if priority not in plugins.keys():
-						plugins[priority]={}
-					modkey=list(pluginfo.keys())[0]
-					plugindict=plugins[priority]
-					if plugindict.get(modkey)!=None:
-						plugindict[modkey].append(pluginfo[modkey])
-					else:
-						plugindict.update({modkey:[pluginfo[modkey]]})
+		self.supportedformats,plugins=self.aux.loadPlugins()
 		return(plugins)
 	#def _loadPlugins
 
@@ -440,10 +328,10 @@ class _RebostCore():
 	#def _loadToggle
 
 	def reload(self):
-		fxml=os.path.join(CACHE,"main.xml")
+		fxml=os.path.join(self.CACHE,"main.xml")
 		if os.path.exists(fxml):
 			os.unlink(fxml)
-		raw=os.path.join(CACHE,"raw")
+		raw=os.path.join(self.CACHE,"raw")
 		if os.path.exists(raw):
 			if os.path.isdir(raw):
 				for f in os.scandir(raw):
@@ -452,8 +340,8 @@ class _RebostCore():
 					elif f.is_dir()==True:
 						for ff in os.scandir(f.path):
 							os.unlink(ff.path)
-		if os.path.exists(CACHE):
-			for f in os.scandir(CACHE):
+		if os.path.exists(self.CACHE):
+			for f in os.scandir(self.CACHE):
 				if f.name.endswith(".map"):
 					print()
 					os.unlink(f.path)
@@ -474,7 +362,7 @@ class _RebostCore():
 
 	def export(self,fxml=""):
 		if len(fxml.strip())==0:
-			fxml=os.path.join(CACHE,"main.xml")
+			fxml=os.path.join(self.CACHE,"main.xml")
 		try:
 			self._toFile(self.stores["main"],fxml)
 		except Exception as e:
@@ -524,7 +412,7 @@ class _RebostCore():
 		for priority in priorities:
 			pluginfo=self.plugins[priority]
 			for plugkey,plugmod in pluginfo.items():
-				if isinstance(plugkey,self.appstream.BundleKind):
+				if isinstance(plugkey,appstream.BundleKind):
 					self._debug((priority,plugkey))
 					for mod in plugmod:
 						init=self.thExecutor.submit(mod.getAppstreamData)
@@ -533,7 +421,7 @@ class _RebostCore():
 	#def _initEngines
 
 	def _loadFromCache(self):
-		fxml=os.path.join(CACHE,"main.xml")
+		fxml=os.path.join(self.CACHE,"main.xml")
 		try:
 			cacheStore=self._fromFile(self.stores["main"],fxml)
 		except Exception as e:
@@ -556,27 +444,7 @@ class _RebostCore():
 	#def getExternalInstaller
 
 	def _chkRemoteFileChanged(self,url):
-		changed=False
-		fname=url.split("://")[-1]
-		fname=fname.replace("/","_")
-		fTag=os.path.join(CACHE,"{}.etag".format(fname))
-		eTag=""
-		oldETag=""
-		try:
-			headers=Request(url,method="HEAD",headers={'User-Agent':'Mozilla/5.0'})
-			with urlopen(headers,timeout=2) as f:
-				eTag=f.headers.get("ETag")
-		except:
-			eTag=""
-		if os.path.exists(fTag):
-			with open(fTag,"r") as f:
-				oldETag=f.read()
-			self._debug("Check ETag: {} {}".format(eTag,oldETag))
-		if eTag!=oldETag:
-			changed=True
-			with open(fTag,"w") as f:
-				f.write(eTag)
-		return(changed)
+		return(self.aux._chkRemoteFileChanged(url))
 	#def _chkRemoteFileChanged
 
 	def _getRemoteMapFixes(self,url):
@@ -620,9 +488,9 @@ class _RebostCore():
 	#def _getLocalMapFixes
 
 	def _getLocalMapFiles(self):
-		#Load map files from DATA
+		#Load map files from self.DATA
 		mapFiles=[]
-		mapDir=os.path.join(DATA,"lists.d")
+		mapDir=os.path.join(self.DATA,"lists.d")
 		verifyMaps=[ "{}.map".format(verified) for verified in self.config.get("verifiedProvider",[])]
 		verifyMapsPath=[]
 		for d in os.scandir(mapDir):
@@ -645,7 +513,7 @@ class _RebostCore():
 
 	def _getCacheMapFiles(self):
 		mapFiles=[]
-		for f in os.scandir(CACHE):
+		for f in os.scandir(self.CACHE):
 			if f.name.endswith(".map"):
 				mapFiles.append(f.path)
 		return(mapFiles)
@@ -664,7 +532,7 @@ class _RebostCore():
 						self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
 						fname=mapFixesF["upstream"].split("://")[-1]
 						fname=fname.replace("/","_")
-						fcache=os.path.join(CACHE,"{}".format(fname))
+						fcache=os.path.join(self.CACHE,"{}".format(fname))
 						if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
 							rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
 							rContent["upstream"]=mapFixesF["upstream"]

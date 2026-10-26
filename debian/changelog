@@ -1,3 +1,10 @@
+rebost (3.3.5) jammy; urgency=medium
+
+  * Move non-essential code from core to libs (WIP)
+  * Use github api for checking changes in mappings
+
+ -- Juanma1980 <juanma1980@gmail.com>  Mon, 26 Oct 2026 09:30:57 +0100
+
 rebost (3.3.4.1) jammy; urgency=medium
 
   * flatpak:

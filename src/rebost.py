@@ -96,8 +96,7 @@ class Rebost():
 	#def getSupportedFormats
 
 	def _getConfig(self):
-		self.core.updateConfig()
-		return(self.core.config)
+		return(self.core.readConfig())
 	#def _getConfig
 
 	def getConfig(self):

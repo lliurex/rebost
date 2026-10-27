@@ -2,7 +2,7 @@
 import json,os
 
 CONFIG="/usr/share/rebost/rebost.conf"
-class rebostConfig:
+class _rebostConfig:
 	def __init__(self,*args):
 		self.dbg=False
 		self.config={}
@@ -21,4 +21,17 @@ class rebostConfig:
 		self.config["data"]="/usr/share/rebost-data"
 		return(self.config)
 	#def readConfig(self):
+
+	def _getVerifiedOrigins(self,stores):
+		config=self.readConfig()
+		matchTables=config.get("verifiedProvider",[])
+		verifiedOrigins=[]
+		for matchTable in matchTables:
+			for idx,store in stores.items():
+				if isinstance(idx,int)==False:
+					continue
+				if store.get_origin()==matchTable:
+					verifiedOrigins.append(idx)
+		return(verifiedOrigins)
+	#def _getVerifiedOrigins
 

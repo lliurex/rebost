@@ -1,41 +1,40 @@
 #!/usr/bin/python3
-import sys,os,time
+import sys,os
 import traceback
 import json
-import xml.etree.ElementTree as ET
-import html
 import concurrent.futures as Futures
-from urllib.request import Request,urlopen
 import gi
 from gi.repository import Gio
 gi.require_version('AppStreamGlib', '1.0')
 from gi.repository import AppStreamGlib as appstream
-from aux.config import rebostConfig
-from aux.extras import _rebostAux
+from aux._config import _rebostConfig
+from aux._extras import _rebostAux
+from aux._plugins import _rebostPlugins
+from aux._map import _rebostMap
 DBG=True
 
 class _RebostCore():
 	def __init__(self,*args,**kwargs):
 		self.DBG=DBG
-		self.rconfig=rebostConfig()
-		self.config=self.rconfig.readConfig()
-		self.appstream=appstream
-		self.aux=_rebostAux(self.rconfig,self)
-		self.CACHE=self.config["cache"]
-		self.DATA=self.config["data"]
 		self.stores={}
 		self.lastCheckedMapping=0
+		self.config=_rebostConfig()
+		self.appstream=appstream
+		config=self.readConfig()
+		self.CACHE=config["cache"]
+		self.aux=_rebostAux(self)
+		self.langs=self.aux.getLangs()
+		self.map=_rebostMap(self)
+		self._chkRelease()
+		self._plugins=_rebostPlugins(self)
+		self.plugins=self._loadPlugins()
 		self.initProc=0
 		self.store=appstream.Store()
 		self.stores={"main":self.store}
 		self.supportedformats=[]
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
-		self._chkRelease()
-		self.langs=self.aux.getLangs()
-		self.plugins=self._loadPlugins()
 		self._debug("Supported formats: {}".format(self.supportedformats))
-		self.getMapFixes()
 		#self._initCore()
 	#def __init__
 
@@ -51,7 +50,7 @@ class _RebostCore():
 	#def _error
 
 	def readConfig(self):
-		return(self.rconfig.readConfig())
+		return(self.config.readConfig())
 	#def readConfig
 
 	def _chkRelease(self):
@@ -62,7 +61,7 @@ class _RebostCore():
 	#def _chkRelease(self):
 
 	def _loadPlugins(self):
-		self.supportedformats,plugins=self.aux.loadPlugins()
+		self.supportedformats,plugins=self._plugins.loadPlugins()
 		return(plugins)
 	#def _loadPlugins
 
@@ -75,35 +74,10 @@ class _RebostCore():
 		if os.path.exists(fxml):
 			try:
 				store.from_file(Gio.File.parse_name(fxml),None,None)
-			#	with open(fxml,"r") as f:
-			#		fcontent=f.read()
-			#	fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
-			#	store.from_xml(fcontent)
 				self._debug("Added {} apps".format(store.get_size()))
 			except Exception as e:
 				self._debug("Malformed {}".format(fxml))
-				with open(fxml,"r") as f:
-					fcontent=f.read()
-				fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
-				tree = ET.fromstring(fcontent)
-				r=tree.getroot()
-				for description in r.iter('description'):
-					txt=[]
-					for i in list(description):
-						desc=i.text
-						if isinstance(desc,str)==False:
-							desc=""
-						description.remove(i)
-						txt.append(desc.strip())
-					text=html.escape("{}".format(txt))
-					desc="<p>{}</p>".format(text)
-					try:
-						elem=ET.fromstring(desc)
-					except Exception as e:
-						self._error(e,msg="_fromFile")
-					description.append(elem)
-				os.unlink(fxml)
-				tree.write(fxml,xml_declaration="1.0",encoding="UTF-8")
+				self._aux.fixMalformedXml(fxml)
 				self._debug("Updated {}".format(fxml))
 				try:
 					with open(fxml,"r") as f:
@@ -118,15 +92,7 @@ class _RebostCore():
 	#def _fromFile
 
 	def _getVerifiedOrigins(self):
-		matchTables=self.config.get("verifiedProvider",[])
-		verifiedOrigins=[]
-		for matchTable in matchTables:
-			for idx,store in self.stores.items():
-				if isinstance(idx,int)==False:
-					continue
-				if store.get_origin()==matchTable:
-					verifiedOrigins.append(idx)
-		return(verifiedOrigins)
+		return(self.config._getVerifiedOrigins(self.stores))
 	#def _getVerifiedOrigins
 
 	def _getOldData(self,app,donor):
@@ -269,6 +235,7 @@ class _RebostCore():
 		self.stores["mainB"]=appstream.Store() #Include all apps
 		self.stores["mainB"].set_add_flags(appstream.StoreAddFlags.USE_MERGE_HEURISTIC) #Include verified apps
 		verifiedOrigins=self._getVerifiedOrigins()
+		self.mapFixes=self.getMapFixes()
 		if len(verifiedOrigins)>0:
 			self.stores["mainB"]=self._preLoadVerified(verifiedOrigins)
 		self.ready=False
@@ -316,7 +283,8 @@ class _RebostCore():
 						mergeApp.set_origin("verified")
 						self.stores["mainB"].add_app(mergeApp)
 					self.stores["main"].add_app(mergeApp)
-		if self.config.get("onlyVerified",False)==True:
+		config=self.readConfig()
+		if config.get("onlyVerified",False)==True:
 			self.loadToggle()
 	#def _mergeApps
 
@@ -328,23 +296,7 @@ class _RebostCore():
 	#def _loadToggle
 
 	def reload(self):
-		fxml=os.path.join(self.CACHE,"main.xml")
-		if os.path.exists(fxml):
-			os.unlink(fxml)
-		raw=os.path.join(self.CACHE,"raw")
-		if os.path.exists(raw):
-			if os.path.isdir(raw):
-				for f in os.scandir(raw):
-					if f.is_file()==True:
-						os.unlink(f.path)
-					elif f.is_dir()==True:
-						for ff in os.scandir(f.path):
-							os.unlink(ff.path)
-		if os.path.exists(self.CACHE):
-			for f in os.scandir(self.CACHE):
-				if f.name.endswith(".map"):
-					print()
-					os.unlink(f.path)
+		self.aux.cleanFiles()
 		self.lastCheckedMapping=0
 		self.stores["main"].remove_all()
 		if "mainB" in self.stores:
@@ -432,7 +384,8 @@ class _RebostCore():
 			if cacheStore.get_size()>0:
 				for app in cacheStore.get_apps():
 					if len(app.get_kudos())>0:
-						if self.config.get("onlyVerified",False)==True:
+						config=self.readConfig()
+						if config.get("onlyVerified",False)==True:
 							app.set_origin("verified")
 				self.stores["main"]=cacheStore
 				self._debug("Cached store loaded. Rebost will update data now")
@@ -440,139 +393,26 @@ class _RebostCore():
 	#def _loadFromCache
 
 	def getExternalInstaller(self):
-		return(self.config.get("externalInstaller",""))
+		config=self.readConfig()
+		return(config.get("externalInstaller",""))
 	#def getExternalInstaller
 
-	def _chkRemoteFileChanged(self,url):
-		return(self.aux._chkRemoteFileChanged(url))
-	#def _chkRemoteFileChanged
-
-	def _getRemoteMapFixes(self,url):
-		content={}
-		urlContent=""
-		if url!="" and isinstance(url,str):
-			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
-			try:
-				with urlopen(req,timeout=2) as f:
-					urlContent=(f.read().decode('utf-8'))
-			except Exception as e:
-				self._debug("Couldn't fetch {}".format(url))
-				self._debug(e)
-		if len(urlContent)>0:
-			try:
-				content=json.loads(urlContent)
-			except Exception as e:
-				print(e)
-				content={}
-		return(content)
-	#def _getRemoteMapFixes
-
-	def _getLocalMapFixes(self,fpath):
-		content={}
-		if os.path.exists(fpath):
-			with open(fpath,"r") as f:
-				try:
-					data=f.read()
-					content=json.loads(data)
-				except Exception as e:
-					print("ERROR PROCESSING {}".format(fpath))
-					print(e)
-					try:
-						for line in data.split("\n"):
-							if line.strip().startswith("\"upstream\":"):
-								content["upstream"]=line.split(":",1)[-1].strip().replace('"','').replace(",","")
-								break
-					except Exception as e:
-						print(e)
-		return(content)
-	#def _getLocalMapFixes
-
-	def _getLocalMapFiles(self):
-		#Load map files from self.DATA
-		mapFiles=[]
-		mapDir=os.path.join(self.DATA,"lists.d")
-		verifyMaps=[ "{}.map".format(verified) for verified in self.config.get("verifiedProvider",[])]
-		verifyMapsPath=[]
-		for d in os.scandir(mapDir):
-			if d.is_dir():
-				for f in os.scandir(d.path):
-					if f.is_file() and f.name not in verifyMaps:
-						mapFiles.append(f.path)
-					elif f.is_file():
-						verifyMapsPath.append(f.path)
-					
-			elif d.is_file():
-				if d.name not in verifyMaps:
-					mapFiles.append(d.path)
-				else:
-					verifyMapsPath.append(d.path)
-		#Ensure that information will honour the verifiedProviders
-		mapFiles.extend(verifyMapsPath)
-		return(mapFiles)
-	#def _getLocalMapFiles
-
-	def _getCacheMapFiles(self):
-		mapFiles=[]
-		for f in os.scandir(self.CACHE):
-			if f.name.endswith(".map"):
-				mapFiles.append(f.path)
-		return(mapFiles)
-	#def _getCacheMapFiles
-
 	def getMapFixes(self):
-		if int(time.time())-self.lastCheckedMapping>120 or len(self.mapFixes.get("nodisplay",[]))==0:
-			self.mapFixes={"nodisplay":[],"aliases":{}}
-			mapFiles=self._getLocalMapFiles()
-			for mapFile in mapFiles:
-				if os.path.exists(mapFile) and mapFile.endswith(".map"):
-					self._debug("Reading mapF {}".format(mapFile))
-					mapFixesF=self._getLocalMapFixes(mapFile)
-					rContent={}
-					if "upstream" in mapFixesF:
-						self._debug("Checking remote URL {}".format(mapFixesF["upstream"]))
-						fname=mapFixesF["upstream"].split("://")[-1]
-						fname=fname.replace("/","_")
-						fcache=os.path.join(self.CACHE,"{}".format(fname))
-						if self._chkRemoteFileChanged(mapFixesF["upstream"])==True or os.path.exists(fcache)==False:
-							rContent=self._getRemoteMapFixes(mapFixesF["upstream"])
-							rContent["upstream"]=mapFixesF["upstream"]
-							with open(fcache,"w") as f:
-								f.write(json.dumps(rContent,indent=4))
-						else:
-							self._debug("Getting mapping from cache")
-							rContent=self._getLocalMapFixes(fcache)
-					if len(rContent.get("nodisplay",[]))>0:
-						mapFixesF=rContent.copy()
-						with open(mapFile,"w") as f:
-							f.write(json.dumps(mapFixesF,indent=4))
-					if "nodisplay" in mapFixesF:
-						self.mapFixes["nodisplay"]=list(set(self.mapFixes["nodisplay"]+mapFixesF["nodisplay"]))
-					if "aliases" in mapFixesF:
-						self.mapFixes["aliases"].update(mapFixesF.get("aliases",{}))
-			self.lastCheckedMapping=int(time.time())
-		return self.mapFixes
+		return(self.map._getMapFixes())
 	#def getMapFixes
 
 	def chkCacheNeedsUpdate(self):
-		update=False
-		cFiles=self._getCacheMapFiles()
-		for cFile in cFiles:
-			with open(cFile,"r") as f:
-				content=json.loads(f.read())
-			if "://" in content.get("upstream",""):
-				if self._chkRemoteFileChanged(content["upstream"])==True:
-					update=True
-					break
-		return update
+		return(self.map.chkCacheNeedsUpdate())
 	#def chkCacheNeedsUpdate
 
 	def initCore(self):
 		#self.thExecutor.submit(self._loadFromCache)
-		if self.config.get("verifiedProvider","")!="":
-			if self.config.get("onlyVerified",False)==True:
+		config=self.readConfig()
+		if config.get("verifiedProvider","")!="":
+			if config.get("onlyVerified",False)==True:
 				print("\n******************************************************")
 				print("************* RESTRICTED MODE ENABLED ****************")
-				print("Verified origins {}".format(self.config["verifiedProvider"]))
+				print("Verified origins {}".format(config["verifiedProvider"]))
 				print("******************************************************\n")
 		if len(self.stores)<=1 and self.initProc==0:
 			self._loadFromCache()

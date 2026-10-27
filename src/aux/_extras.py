@@ -2,12 +2,12 @@
 import locale
 import os,sys,json
 from urllib.request import Request,urlopen
-import importlib.util
+import xml.etree.ElementTree as ET
 
 class _rebostAux:
 	def __init__(self,*args):
-		self.rconfig=args[0]
-		self.core=args[1]
+		self.core=args[0]
+		self.config=self.core.config
 		self.DBG=self.core.DBG
 	#def __init__
 
@@ -36,22 +36,22 @@ class _rebostAux:
 	#def getLangs
 
 	def releaseChanged(self):
-		self.config=self.rconfig.readConfig()
+		config=self.config.readConfig()
 		changed=False
-		if os.path.exists(self.config["cache"])==False:
-			os.makedirs(self.config["cache"])
-		if os.path.exists(os.path.join(self.config["cache"],"raw"))==False:
-			os.makedirs(os.path.join(self.config["cache"],"raw"))
-		cFile=os.path.join(self.config["cache"],"release")
+		if os.path.exists(config["cache"])==False:
+			os.makedirs(config["cache"])
+		if os.path.exists(os.path.join(config["cache"],"raw"))==False:
+			os.makedirs(os.path.join(config["cache"],"raw"))
+		cFile=os.path.join(config["cache"],"release")
 		cContent="0"
 		if os.path.exists(cFile):
 			with open(cFile,"r") as f:
 				cContent=f.read()
 		cRelease=str(cContent)
-		if self.config.get("release","1.0")!=cRelease:
+		if config.get("release","1.0")!=cRelease:
 			changed=True
 		with open(cFile,"w") as f:
-			f.write(self.config.get("release","1.0"))
+			f.write(config.get("release","1.0"))
 		return(changed)
 	#def releaseChanged
 
@@ -74,17 +74,16 @@ class _rebostAux:
 
 	def _chkRemoteFileChanged(self,url):
 		changed=False
-		print("GET URL: {}".format(url))
 		oldETag=""
 		fname=url.split("://")[-1]
 		fname=fname.replace("/","_")
-		fTag=os.path.join(self.CACHE,"{}.etag".format(fname))
+		CACHE=self.config.readConfig().get("cache","/tmp")
+		fTag=os.path.join(CACHE,"{}.etag".format(fname))
 		try:
 			with open(fTag,"r") as f:
 				oldETag=json.load(f)
 		except:
 			oldETag={}
-		print("GET URL: {}".format(url))
 		self._debug("Check ETag: {}".format(oldETag))
 		if isinstance(oldETag,dict)==False:
 			oldETag={}
@@ -109,78 +108,46 @@ class _rebostAux:
 	#def _chkRemoteFileChanged
 
 	def cleanFiles(self):
-		main=os.path.join(self.config["cache"],"main.xml")
-		if os.path.exists(main):
-			os.unlink(main)
-		rawDir=os.path.join(self.config["cache"],"raw")
-		if os.path.exists(rawDir):
-			for f in os.scandir(rawDir):
-				if f.is_dir()==False:
+		cache=self.config.readConfig().get("cache","/tmp")
+		fxml=os.path.join(cache,"main.xml")
+		if os.path.exists(fxml):
+			os.unlink(fxml)
+		raw=os.path.join(cache,"raw")
+		if os.path.exists(raw):
+			if os.path.isdir(raw):
+				for f in os.scandir(raw):
+					if f.is_file()==True:
+						os.unlink(f.path)
+					elif f.is_dir()==True:
+						for ff in os.scandir(f.path):
+							os.unlink(ff.path)
+		if os.path.exists(cache):
+			for f in os.scandir(cache):
+				if f.name.endswith(".map"):
 					os.unlink(f.path)
-				else:
-					for f2 in os.scandir(f.path):
-						if f2.is_dir()==False:
-							os.unlink(f2.path)
 	#def cleanFiles
 
-	def _importPlugin(self,modpath):
-		plugin=None
-		modname=os.path.basename(modpath).replace(".py","")
-		self._debug("Inspecting plugin {} at {}".format(modname,modpath))
-		if os.path.exists(modpath):
+	def fixMalformedXml(self,fxml):
+		with open(fxml,"r") as f:
+			fcontent=f.read()
+		fcontent=fcontent.replace("&lt;","").replace("&gt","").replace("&"," &amp;")
+		tree = ET.fromstring(fcontent)
+		r=tree.getroot()
+		for description in r.iter('description'):
+			txt=[]
+			for i in list(description):
+				desc=i.text
+				if isinstance(desc,str)==False:
+					desc=""
+				description.remove(i)
+				txt.append(desc.strip())
+			text=html.escape("{}".format(txt))
+			desc="<p>{}</p>".format(text)
 			try:
-				spec = importlib.util.spec_from_file_location("engine",modpath)
-				pluginlib = importlib.util.module_from_spec(spec)
-				sys.modules["module.name"] = pluginlib
-				spec.loader.exec_module(pluginlib)
-				pluginmod=pluginlib.engine(self.core)
-				
-				#if hasattr(pluginlib,"engine")==True:
-				if hasattr(pluginmod,"bundle")==True:
-					modname=pluginmod.bundle
-					self.supportedformats.append(pluginmod.bundle)
-				else:
-					modname=modname.replace(".py","")
-				plugin={modname:pluginmod}
-				#else:
-				#	self._debug("Discarded {}".format(modname))
+				elem=ET.fromstring(desc)
 			except Exception as e:
-				self._error("Failed importing {0}: {1}".format(modpath,e))
-		else:
-			self._debug("{} not found".format(modpath))
-		return(plugin)
-	#def _importPlugin
-
-	def loadPlugins(self):
-		self.config=self.rconfig.readConfig()
-		self.CACHE=self.config["cache"]
-		self.supportedformats=[]
-		pluginDir=os.path.join(os.path.dirname(os.path.realpath(__file__)),"../","plugins")
-		plugins={}
-		self._debug("Accessing {}".format(pluginDir))
-		if os.path.exists(pluginDir):
-			for f in os.scandir(pluginDir):
-				pluginfo=None
-				if (not f.name.endswith(".py")) or (f.name.startswith("_")):
-					continue
-				pluginfo=self._importPlugin(f.path)
-				if pluginfo!=None:
-					plugin=list(pluginfo.values())[0]
-					#plugin=pluginfo.get(f.name.replace(".py",""),"")
-					if hasattr(plugin,"enabled")==True:
-						if plugin.enabled==False:
-							self._debug("Disabled plugin {}".format(f.name))
-							continue
-					priority=100
-					if hasattr(plugin,"priority")==True:
-						priority=plugin.priority
-					if priority not in plugins.keys():
-						plugins[priority]={}
-					modkey=list(pluginfo.keys())[0]
-					plugindict=plugins[priority]
-					if plugindict.get(modkey)!=None:
-						plugindict[modkey].append(pluginfo[modkey])
-					else:
-						plugindict.update({modkey:[pluginfo[modkey]]})
-		return(self.supportedformats,plugins)
-	#def loadPlugins
+				self._error(e,msg="_fromFile")
+			description.append(elem)
+		os.unlink(fxml)
+		tree.write(fxml,xml_declaration="1.0",encoding="UTF-8")
+	#def fixMalformedXml

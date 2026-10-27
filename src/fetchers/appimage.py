@@ -1,0 +1,394 @@
+#!/usr/bin/python3
+import os,stat
+import json
+import re
+import hashlib
+import html2text
+import html
+import urllib
+from urllib.request import Request
+from urllib.request import urlretrieve
+
+APPIMAGE_DIRS=["/opt/appimages"]
+class engine:
+	def __init__(self,core,*args,**kwargs):
+		self.core=core
+		self.dbg=self.core.DBG
+		self.cache=os.path.join(self.core.CACHE,"raw")
+		if not os.path.exists(self.cache):
+			os.makedirs(self.cache)
+		self.bundle=self.core.appstream.BundleKind.APPIMAGE
+		self.repositories=["https://api.appimagehub.com/ocs/v1/content/data?format=json&language=es","https://appimage.github.io/feed.json"]
+	#def __init__
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("appimage: {}".format(msg))
+	#self _debug
+
+	def _fetchRepo(self,repo,getargs=""):
+		self._debug("Fetching {}".format(repo+getargs))
+		content=''
+		req=Request(repo+getargs, headers={'User-Agent':'Mozilla/5.0'})
+		try:
+			with urllib.request.urlopen(req,timeout=3) as f:
+				content=f.read().decode('utf-8')
+		except Exception as e:
+			print("Couldn't fetch {}".format(repo))
+			self._debug(e)
+		return(content)
+	#def _fetchRepo
+
+	def _chkUpdateNeeded(self,repo,content):
+		update=True
+		frepo=os.path.join(self.cache,"{}".format(repo.split("/")[2]))
+		data=content.copy()
+		if "data" in data.keys():
+			data["data"]=""
+		ccontent=json.dumps(data,separators=(',',':'))
+		chash=hashlib.md5(ccontent.encode("utf-8")).hexdigest()
+		if os.path.exists(frepo):
+			with open(frepo,"r") as f:
+				fhash=f.read().strip()
+			if chash==fhash:
+				update=False
+		with open(frepo,"w") as f:
+			f.write(chash)
+		return(update)
+	#def _chkUpdateNeeded
+
+	def _getAppstreamFromDataField(self,jdata):
+		self._debug("Processing data for {} apps".format(len(jdata)))
+		apps=[]
+		htmlparser=html2text.HTML2Text()
+		htmlparser.scape_snob=True
+		htmlparser.unicode_snob=True
+		for japp in jdata:
+			#Search appimage idx
+			idx=1
+			findedIdx=0
+			searchKey="download_package_type"
+			keyList=[(key,val) for key,val in japp.items() if searchKey in key]
+			for values in keyList:
+				findedIdx+=1
+				if values[1].lower()=="appimage":
+					idx=findedIdx
+					break
+			nameKey="downloadname{}".format(idx)
+			downTypeKey="download_package_type{}".format(idx)
+			downKey="downloadlink{}".format(idx)
+			sizeKey="downloadsize{}".format(idx)
+			versionKey="download_version{}".format(idx)
+			if not japp.get(nameKey,"").lower().endswith("appimage"):
+				continue
+			if japp.get(downTypeKey,"").lower()=="appimage":
+				name=japp['name'].replace(' - AppImage',"").replace(' - Appimage',"").replace("/","_").replace("\\","_").replace("\"","").replace("\'","")
+				if name=="":
+					continue
+				app=self.core.appstream.App()
+				desc=html.escape(htmlparser.handle(japp["description"]).replace("\n","").strip()).replace(":"," - ").replace("&","and")
+				if len(desc)==0:
+					desc="Download 'n' run"
+				summary=html.escape(htmlparser.handle(japp["summary"]).replace("\n","").strip())
+				summary=htmlparser.handle(japp['summary']).replace("\n","").strip()
+				if len(summary)==0:
+					summary="Appimage"
+				app.set_name("C",name)
+				app.set_description("C",desc)
+				app.set_comment("C",summary)
+				for tag in japp.get("tags","").split(","):
+					app.add_keyword("C",tag)
+				app.set_developer_name("C",japp.get("personid",""))
+				app.add_category(japp.get("typename",""))
+				app.add_pkgname(".".join(japp.get(nameKey,"").split(".")[0:-1]))
+				app.add_url(self.core.appstream.UrlKind.DETAILS,japp.get("detailpage",""))
+				icn=japp.get("previewpic1","")
+				appicon=self.core.appstream.Icon()
+				appicon.set_kind(self.core.appstream.IconKind.REMOTE)
+				appicon.set_name(os.path.basename(icn))
+				appicon.set_url(icn)
+				app.add_icon(appicon)
+				screenshots=self.core.appstream.Screenshot()
+				for imgfield in ["previewpic2","smallpreviewpic1","smallpreviewpic2"]:
+					appimg=self.core.appstream.Image()
+					if "small" in imgfield:
+						appimg.set_kind(self.core.appstream.ImageKind.THUMBNAIL)
+					else:
+						appimg.set_kind(self.core.appstream.ImageKind.SOURCE)
+					img=japp.get(imgfield,"")
+					if len(img)>0:
+						appimg.set_url(img)
+						screenshots.add_image(appimg)
+				app.add_screenshot(screenshots)
+				bun=self.core.appstream.Bundle()
+				bun.set_kind(self.bundle)
+				bun.set_id(japp.get(downKey,""))
+				app.add_bundle(bun)
+				apprelease=self.core.appstream.Release()
+				release=japp.get(versionKey,"unknown")
+				apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,japp.get(sizeKey,""))
+				apprelease.set_version(release)
+				app.add_release(apprelease)
+				idname=app.get_name("C")
+				if idname.lower().endswith(".appimage"):
+					idname=".".join(idname.strip().split(".")[0:-1])
+				app.set_id("com.appimagehub.{}".format(idname.replace(" ","")))
+				#self._debug("Added {} - {}".format(name,app.get_pkgname_default()))
+				status="available"
+				app.add_metadata("X-REBOST-appimage","{};{}".format(release,status))
+				if status=="installed":
+					app.set_state(self.core.appstream.AppState.INSTALLED)
+				apps.append(app)
+		return(apps)
+	#def _getAppstreamFromDataField
+
+	def _setDescription(self,app,japp):
+			desc=self.core.appstream.markup_convert(japp.get("description","").strip(),self.core.appstream.MarkupKind.TEXT)
+			if desc==None:
+				desc="Appimage"
+			elif len(desc)==0:
+				desc="Appimage"
+			app.set_description(desc,"C")
+			summary=japp.get("summary","")
+			if isinstance(summary,str)==False:
+				descArray=desc.split(" ")
+				summary=" ".join(descArray[0:min(20,len(descArray))])
+			summary=self.core.appstream.markup_convert(summary,self.core.appstream.MarkupKind.TEXT).strip().replace("<p>","",).replace("</p>","")
+			if len(summary)==0:
+				summary="Appimage"
+			app.set_summary(summary,"C")
+	#def _setDescription
+
+	def _setAuthor(self,app,jdata):
+		author=japp.get("authors",japp.get("personid"))
+		if author!=None:
+			devel=self.core.appstream.Developer()
+			if isinstance(author,dict):
+				authorId=author.get("name","anonymous")
+			else
+				authorId=author
+			devel.set_id(authorId)
+			devel.set_name(authorId)
+			app.set_developer(devel)
+	#def _setAuthor
+
+	def _addCategories(self,app,jdata):
+		if "typename" in japp.keys():
+			japp["categories"]=[japp["typename"]]
+		for cat in japp.get("categories",[]):
+			if cat!=None:
+				app.add_category(cat)
+	#def _addCategories
+
+	def _setIcon(self,app,japp):
+		if "icons" in japp.keys():
+			icons=japp.get('icons',[])
+			if isinstance(icons,list):
+				icn=icons[0]
+		else:
+			icn=japp.get("icon",japp.get("smallpreviewpic1")
+		if len(icn)>0 and not icn.startswith("http"):
+			icn="https://appimage.github.io/database/{}".format(icn)
+		if len(icn.strip())>0:
+			appicon=self.core.appstream.Icon()
+			appicon.set_kind(self.core.appstream.IconKind.REMOTE)
+			appicon.set_name(os.path.basename(icn))
+			appicon.set_url(icn)
+			app.add_icon(appicon)
+	#def _setIcon
+
+	def _addScreenshots(self,app,japp):
+		if "screenshots" in japp.keys():
+			scrs=japp.get("screenshots",[])
+		else:
+			if "previewpic1" in japp.keys():
+				idx=1
+				scrs=[]
+				scr=japp["previewpic{}".format(idx)]
+				while scr!=None:
+					scr=japp.get("previewpic{}".format(idx))
+					scrs.append(scr)
+					idx+=1
+		if isinstance(scrs,list):
+			if len(scrs)>0:
+				screenshots=self.core.appstream.Screenshot()
+				for f in scrs:
+					appimg=self.core.appstream.Image()
+					if f.startswith("http")==False:
+						urlimg="https://appimage.github.io/database/{}".format(f)
+					else:
+						urlimg=f
+					if "small" in f:
+						appimg.set_kind(self.core.appstream.ImageKind.THUMBNAIL)
+					else:
+						appimg.set_kind(self.core.appstream.ImageKind.SOURCE)
+					appimg.set_url(urlimg)
+					screenshots.add_image(appimg)
+				app.add_screenshot(screenshots)
+	#def _addScreenshots
+
+	def _getGithubLastRelease(gitUrl):
+		headers = {"Accept": "application/vnd.github.v3+json"}
+		response = requests.get(gitUrl, headers=headers)
+		response.raise_for_status()
+		release = response.json()
+		assets = release.get("assets", [])
+		url=""
+		if len(assets)>0:
+			for asset in assets:
+				if asset.get("name","").lower().endswith(".appimage"):
+					url = asset["browser_download_url"]
+					print(url)
+				
+		return(url)
+	#def getGithubLastRelease
+
+	def _setRelease(self,app,japp):
+		if "version" in japp.keys():
+			version=japp["version"]
+		elif "links" in japp.keys()
+			releaseLinks=japp["links"]
+			if isinstance(releaseLinks,dict):
+				for idx,rLink in releaseLinks.items():
+					if rLink.get("type","").lower()=="download":
+						urlLink=rLink.get("url","")
+						url=self._getGithubLastRelease(urlLink)
+				
+
+	def _getAppstreamFromData(self,jdata):
+		self._debug("Processing items for {} apps".format(len(jdata)))
+		apps=[]
+		htmlparser=html2text.HTML2Text()
+		htmlparser.scape_snob=True
+		htmlparser.unicode_snob=True
+		for japp in jdata:
+			name=japp.get("name","").replace(" - AppImage","").replace(" - Appimage","")
+			if name=="":
+				continue
+			app=self.core.appstream.Component()
+			app.set_name(name,"C")
+			self._setDescription(app,japp)
+			self._setAuthor(app,japp)
+			self._addCategories(app,japp)
+			self._setIcon(app,japp)
+			self._addScreenshots(app,japp)
+			self._setRelease(app,japp)
+		#REM FIX RELEASES
+		#	apprelease=self.core.appstream.Release()
+		#	apprelease.set_size(self.core.appstream.SizeKind.DOWNLOAD,japp.get("downloadsize1",""))
+		#	apprelease.set_version(japp.get("download_version1"))
+		#	app.add_release(apprelease)
+		#	app.set_id("com.appimagehub.{}".format(app.get_pkgname_default()))
+			links=japp.get('links')
+			installerurl=''
+			release="unknown"
+			status="available"
+			while links:
+				link=links.pop(0)
+				if link.get('url') and link.get('type','').lower()=='download':
+					installerUrl=link['url']
+		#REM FIX RELEASES
+					if installerUrl.split('/')>2:
+						release=installerUrl.split('/')[-2]
+			bun=self.core.appstream.Bundle()
+			bun.set_kind(self.bundle)
+			bun.set_id(installerUrl)
+			app.add_bundle(bun)
+			app.set_id("io.github.{}".format(name.lower().replace(" ","")))
+			app.add_metadata("X-REBOST-appimage","{};{}".format(release,status))
+			apps.append(app)
+		return(apps)
+	#def _getAppstreamFromItemsField
+
+	def getAppstreamData(self):
+		#store=self.core.appstream.Store()
+		store=self.core.appstream.Metadata()
+		store.set_origin("appimage")
+		for repo in self.repositories:
+			fxml=os.path.join(self.cache,"{}.xml".format(repo.split("/")[2]))
+			try:
+				repoRaw=self._fetchRepo(repo)
+				jrepo=json.loads(repoRaw)
+			except Exception as e:
+				print("Error in {}: {}".format(repo,e))
+				store=self.core._fromFile(store,fxml)
+			else:
+				if self._chkUpdateNeeded(repo,jrepo)==False:
+					self._debug("Loading from cache")
+					store=self.core._fromFile(store,fxml)
+				if len(store.get_apps())==0:
+					if "data" in jrepo.keys(): #json responde with data field for the pkgs
+						itemsperpage=jrepo.get("itemsperpage",0)
+						totalitems=jrepo.get("totalitems",0)
+						data=jrepo["data"]
+						page=0
+						if totalitems>itemsperpage:
+							while len(jrepo.get("data",[]))>0:
+								page+=1
+								repoRaw=self._fetchRepo(repo,getargs="&pagesize=100&page={}".format(page))
+								if repoRaw!=None:
+									try:
+										jrepo=json.loads(repoRaw)
+										data.extend(jrepo.get("data",[]))
+									except Exception as e:
+										self._debug("Failed to parse {}".format(repo))
+										self._debug(e)
+										self._debug("--------/>")
+										break
+						apps=self._getAppstreamFromDataField(data):
+								
+					elif "items" in jrepo.keys(): #json responde with items field for the pkgs
+						apps=self._getAppstreamFromItemsField(jrepo["items"])
+					for app in apps:
+						store.add_component(app)
+					self.core._toFile(store,fxml)
+		self._debug("Sending {}".format(len(store.get_apps())))
+		return(store)
+	#def getAppstreamData
+
+	def refreshAppData(self,app):
+		name=""
+		bundles=app.get_bundles()
+		appimageBundle=None
+		for bundle in bundles:
+			if bundle.get_kind()==self.bundle:
+				name=bundle.get_id()
+				appimageBundle=bundle
+		name=os.path.basename(name)
+		status="available"
+		app.set_state(self.core.appstream.AppState.AVAILABLE)
+		for appimageDir in APPIMAGE_DIRS:
+			if os.path.exists(appimageDir):
+				for f in os.scandir(appimageDir):
+					if f.name.lower()==name.lower():
+						status="installed"
+						app.set_state(self.core.appstream.AppState.INSTALLED)
+						break
+		try:
+			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.DETAILS),"loadFiles")
+		except:
+			detailPage=os.path.join(app.get_url_item(self.core.appstream.UrlKind.HOMEPAGE),"loadFiles")
+		detailRaw=self._fetchRepo(detailPage)
+		if detailRaw!='':
+			try:
+				detailJson=json.loads(detailRaw)
+				detailFiles=detailJson.get("files")
+				for detail in detailFiles:
+					if detail.get("url","").lower().endswith("appimage"):
+						download=detail["url"]
+						break
+				download=urllib.parse.unquote(download)
+				if appimageBundle.get_kind()==self.bundle:
+					appimageBundle.set_id(download)
+			except Exception as e:
+				print(e)
+			bundles=app.get_bundles()
+			metastatus=app.get_metadata_item("X-REBOST-appimage")
+			metarelease="1;{}".format(status)
+			if metastatus!=None:
+				metarelease="{};{}".format(metastatus.split(";")[0],status)
+				app.remove_metadata("X-REBOST-appimage")
+			app.add_metadata("X-REBOST-appimage","{}".format(metarelease))
+		return(app)
+	#def refreshAppData(self,app):
+#class engine

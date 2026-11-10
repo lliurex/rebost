@@ -1,3 +1,10 @@
+rebost (3.3.6) noble; urgency=medium
+
+  * Non-essential code moved to core
+  * Fix cache check
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 10 Nov 2026 13:59:38 +0100
+
 rebost (3.3.5) noble; urgency=medium
 
   * Move non-essential code from core to libs (WIP)

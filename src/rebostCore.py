@@ -34,7 +34,6 @@ class _RebostCore():
 		self.supportedformats=[]
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 		self.ready=False
-		self._debug("Supported formats: {}".format(self.supportedformats))
 		#self._initCore()
 	#def __init__
 
@@ -62,6 +61,7 @@ class _RebostCore():
 
 	def _loadPlugins(self):
 		self.supportedformats,plugins=self._plugins.loadPlugins()
+		self._debug("Supported formats: {}".format(self.supportedformats))
 		return(plugins)
 	#def _loadPlugins
 

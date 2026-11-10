@@ -74,19 +74,20 @@ class _rebostAux:
 
 	def _chkRemoteFileChanged(self,url):
 		changed=False
-		oldETag=""
+		cacheETag=""
 		fname=url.split("://")[-1]
 		fname=fname.replace("/","_")
 		CACHE=self.config.readConfig().get("cache","/tmp")
 		fTag=os.path.join(CACHE,"{}.etag".format(fname))
 		try:
 			with open(fTag,"r") as f:
-				oldETag=json.load(f)
-		except:
-			oldETag={}
-		self._debug("Check ETag: {}".format(oldETag))
-		if isinstance(oldETag,dict)==False:
-			oldETag={}
+				cacheETag=f.read().replace("\"","")
+		except Exception as e:
+			print(e)
+			cacheETag={}
+		if isinstance(cacheETag,str)==False:
+			cacheETag=""
+		self._debug("Check ETag: {}".format(cacheETag))
 		headers={"user-agent":'Python-urllib-SHA-Checker/1.0'}
 		url=self._getUrlApiFromRaw(url)
 		self._debug("API URL: {}".format(url))
@@ -95,15 +96,14 @@ class _rebostAux:
 			with urlopen(req,timeout=2) as f:
 				resp=json.loads(f.read().decode("utf8"))
 				ETag=resp.get("sha")
-				if ETag!=oldETag:
+				if ETag!=cacheETag:
 					changed=True
 					with open(fTag,"w") as f:
-						json.dump(ETag,f)
-					oldETag=ETag
+						f.write(ETag)
+					cacheETag=ETag
 		except Exception as e:
 			print(e)
-			pass
-		self._debug("Check ETag end: {}".format(oldETag))
+        :x
 		return(changed)
 	#def _chkRemoteFileChanged
 

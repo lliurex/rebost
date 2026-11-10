@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import os
+import os,time
 from urllib.request import Request,urlopen
 import concurrent.futures as Futures
 import hashlib
 from bs4 import BeautifulSoup as bs
 import gi
-from gi.repository import Gio
 gi.require_version('AppStream', '1.0')
 from gi.repository import AppStream as appstream
 
@@ -57,10 +56,13 @@ class fetcher:
 	def __init__(self,*args,**kwargs):
 		self.name="appsedu"
 		self.dbg=True
+		self.priority=100
+		self.mapping={}
 		#self.cache=os.path.join(self.core.CACHE,"raw")
-		self.cache="/tmp/cache"
-		self.cacheApps=os.path.join(self.cache,"metainfo")
-		self.store=appstream.Metadata()
+		self.cache=os.path.join("/tmp","appstream","cache",self.name)
+		if os.path.exists(self.cache)==False:
+			os.makedirs(self.cache)
+		self.store=kwargs["store"]
 		self.thExecutor=Futures.ThreadPoolExecutor(max_workers=4)
 	#def __init__
 
@@ -71,13 +73,23 @@ class fetcher:
 
 	def _fetchUrl(self,url):
 		content=''
-		req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
-		try:
-			with urlopen(req,timeout=2) as f:
-				content=(f.read().decode('utf-8'))
-		except Exception as e:
-			self._debug("Couldn't fetch {}".format(url))
-			self._debug(e)
+		cache=os.path.basename(url.removesuffix("/"))
+		cache=os.path.join(self.cache,cache)
+		if os.path.exists(cache):
+			with open(cache,"r") as f:
+				content=f.read()
+			self._debug("Cache: {}".format(cache))
+		else:
+			req=Request(url, headers={'User-Agent':'Mozilla/5.0'})
+			try:
+				with urlopen(req,timeout=2) as f:
+					content=f.read().decode('utf-8')
+			except Exception as e:
+				self._debug("Couldn't fetch {}".format(url))
+				self._debug(e)
+			else:
+				with open(cache,"w") as f:
+					f.write(content)
 		return(content)
 	#def _fetchUrl
 
@@ -130,11 +142,31 @@ class fetcher:
 		return(kind)
 	#def _getKind
 
-	def _getId(self,bscontent):
+	def _setLaunchable(self,app):
+		kind=app.get_kind()
+		launchable=appstream.Launchable()
+		if kind==appstream.ComponentKind.WEB_APP:
+			launchable.set_kind(appstream.LaunchableKind.URL)
+			launchable.add_entry(app.get_url(appstream.UrlKind.HOMEPAGE))
+		else:
+			launchable.set_kind(appstream.LaunchableKind.UNKNOWN)
+		return(launchable)
+	#def _setLaunchable
+
+	def _getId(self,bscontent,url):
 		cid=""
 		appId=bscontent.find("a",class_="boto-blau",href=True)
 		if appId!=None:
-			cid=appId["href"].split("://")[-1].strip()
+			cid=appId["href"].removesuffix("/").split("://")[-1].strip()
+		else:
+			cid=os.path.basename(url.removesuffix("/")).lower()
+		if cid in self.mapping["aliases"]:
+			#self._debug("Map {0}->{1}".format(cid,self.mapping["aliases"][cid]))
+			cid=self.mapping["aliases"][cid]
+		if cid in self.mapping["nodisplay"]:
+			cid=""
+		cid=cid.removesuffix("-lliurex")
+		cid=cid.removeprefix("zero-lliurex-")
 		return(cid)
 	#def _getId
 
@@ -149,18 +181,18 @@ class fetcher:
 		if appName!=None:
 			name=appName.text
 		return(name)
-	#def _getDesc
+	#def _getName
 
 	def _getDesc(self,bscontent):
 		desc=""
 		appDesc=bscontent.find("div",["acf-view__descripcio-field"])
 		if appDesc!=None:
 			desc=appDesc.text
-		return(desc)
+		return("<p>{}</p>".format(desc))
 	#def _getDesc
 
 	def _getSummary(self,description):
-		summary=description.split(".")[0].strip()
+		summary=description.removeprefix("<p>").removesuffix("</p>").split(".")[0].strip()
 		if summary.count(" ")>12:
 			summary=" ".join(summary.split(" ")[:11]).strip()+"..."
 		if len(summary)>100:
@@ -230,28 +262,28 @@ class fetcher:
 		if len(content)>0:
 			bscontent=bs(content,"html.parser")
 			app=appstream.Component()
-			app.set_kind(self._getKind(bscontent))
-			self._getAvailability(bscontent)
-			app.set_origin("appsedu")
-			app.set_priority(100)
-			app.set_id(self._getId(bscontent))
-			app.set_name(self._getName(bscontent),"C")
-			app.set_description(self._getDesc(bscontent))
-			app.set_summary(self._getSummary(app.get_description()),"C")
-			for cat in self._getCategories(bscontent):
-				app.add_category(cat)
-			app.add_icon(self._getIcon(bscontent))
-			app.add_url(appstream.UrlKind.UNKNOWN,url)
-			for urls in self._getUrls(bscontent):
-				urlK,urlD=urls
-				app.add_url(urlK,urlD)
-			app.add_content_rating(self._getRating(bscontent))
-			self.store.add_component(app)
+			app.set_id(self._getId(bscontent,url))
+			app.set_data_id(app.get_id())
+			if app.get_id()!="":
+				app.set_kind(self._getKind(bscontent))
+				self._getAvailability(bscontent)
+				app.set_merge_kind(appstream.MergeKind.REPLACE)
+				app.set_origin("appsedu")
+				app.set_priority(self.priority)
+				app.set_name(self._getName(bscontent),"C")
+				app.set_description(self._getDesc(bscontent),"C")
+				app.set_summary(self._getSummary(app.get_description()),"C")
+				for cat in self._getCategories(bscontent):
+					app.add_category(cat)
+				app.add_icon(self._getIcon(bscontent))
+				app.add_url(appstream.UrlKind.UNKNOWN,url)
+				for urls in self._getUrls(bscontent):
+					urlK,urlD=urls
+					app.add_url(urlK,urlD)
+				app.add_launchable(self._setLaunchable(app))
+				app.add_content_rating(self._getRating(bscontent))
+				self.store.add_component(app)
 		self.jobs-=1
-		if self.jobs==0:
-			a=self.store.components_to_catalog(appstream.FormatKind.XML)
-			with open("/tmp/appsedu.dep11","w") as f:
-				f.write(a)
 	#def _generateAppstreamForApp
 
 	def _fetchApp(self,url):
@@ -263,14 +295,19 @@ class fetcher:
 		self._writeCache(content,fpath)
 		return(url,content)
 
-	def fetchCatalogue(self):
+	def fetchCatalogue(self,mapping={}):
 		content=self._fetchUrl(EDUAPPS_URL)
-		fpath=os.path.join(self.cache,"appsedu.raw")
+		fpath=os.path.join(self.cache,"appsedur,.raw")
 		self._writeCache(content,fpath)
+		self.mapping["nodisplay"]=mapping.get("nodisplay",[])
+		self.mapping["aliases"]=mapping.get("aliases",{})
 		appUrls=self._getAppUrls(content)
 		self.jobs=0
 		if len(appUrls)>0:
 			for url in appUrls:
 				init=self.thExecutor.submit(self._fetchApp,url)
 				init.add_done_callback(self._generateAppstreamForApp)
+		while self.jobs>0:
+			time.sleep(0.5)
+		return(self.store)
 	#def fetchCatalogue

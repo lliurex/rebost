@@ -1,4 +1,4 @@
-rebost (3.4.0) jammy; urgency=medium
+rebost (3.4.0) noble; urgency=medium
 
   * code splitted in several libs
   * catalogue generation helper

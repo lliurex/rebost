@@ -1,3 +1,11 @@
+rebost (3.4.0) jammy; urgency=medium
+
+  * code splitted in several libs
+  * catalogue generation helper
+  * fix bug #1929
+
+ -- Juanma1980 <juanma1980@gmail.com>  Tue, 24 Nov 2026 10:53:23 +0100
+
 rebost (3.3.5) jammy; urgency=medium
 
   * Move non-essential code from core to libs (WIP)

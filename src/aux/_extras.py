@@ -103,7 +103,6 @@ class _rebostAux:
 					cacheETag=ETag
 		except Exception as e:
 			print(e)
-        :x
 		return(changed)
 	#def _chkRemoteFileChanged
 
